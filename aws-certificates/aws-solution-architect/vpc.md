@@ -101,14 +101,67 @@ TBA
 8. More complex situations. Thus, AWS prefers Security Group over NACL.
    ![[vpc-nacl-complex.png]]
 9. NACLs can filter traffics by IPs/CIDR, ports & protocols, but not by logical resources
-10. NACLs cannot be assigned to AWS resources, only subnets
-11. NACLs are usually use together with Security Groups to add explicit DENY (Bad IPs/Nets)
+10. **NACLs cannot be assigned to AWS resources**, only subnets
+11. NACLs are usually use together with Security Groups to add **explicit DENY** (Bad IPs/Nets)
 12. Each subnet can have and only have one NACL (Default or Custom)
 13. A NACL can be associated with multiple subnets
 
-## NAT Gateway
+## Security Groups
 
-TBA
+1. Security group is stateful - detect response traffic automatically;
+2. Allowed (IN or OUT) request = allowed response
+3. **NO EXPLICIT DENY** ... only ALLOW or Implicit DENY
+4. can't be used to block specific bad actors (e.g. block a specific IP on port 443)
+5. Supports IP/CIDR ... and logical resources, including other security groups and itself
+6. Attached to ENI (Elastic Network Interface, a logical networking component in a VPC that represents a virtual network card), not instances nor subnets.
+7. SG topology:
+   ![[vpc-security-group.png]]
+8. SG supports using logical references as source (inbound rules) or target (outbound rules). The benefits are listed below (screenshot 1). It also allows self reference (screenshot 2). 
+   ![[vpc-security-group-logical-ref.png]]
+   ![[vpc-security-group-logical-self-ref.png]]
+
+## Network ACL (NACL) vs Security Group
+
+| Feature                   | NACL                                                           | Security Group                                                                    |
+| ------------------------- | -------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| **Operates at**           | Subnet level                                                   | Resource/Instance level                                                           |
+| **Stateful/Stateless**    | Stateless                                                      | Stateful                                                                          |
+| **Rule Types**            | Allow AND Deny                                                 | Allow only (Implicit Deny)                                                        |
+| **Rule Evaluation**       | Processed in order (lowest rule # first); stops at first match | All rules evaluated before decision; no ordering                                  |
+| **Explicit Deny**         | Yes                                                            | No (only Implicit Deny)                                                           |
+| **Return Traffic**        | Must be explicitly allowed (ephemeral ports!)                  | Automatically allowed                                                             |
+| **Default (VPC-created)** | Allows all inbound & outbound                                  | Allows inbound from same SG; allows all outbound                                  |
+| **Custom/New**            | Denies all inbound & outbound                                  | Denies all inbound; allows all outbound                                           |
+| **Association**           | 1 subnet -> exactly 1 NACL; 1 NACL -> many subnets             | Up to 5 SGs per resource; many-to-many with resources                             |
+| **Applies to**            | All instances in the associated subnet (automatic)             | Only instances explicitly assigned to the SG                                      |
+| **Rule Scope**            | IPs/CIDR, ports, protocols                                     | IPs/CIDR, ports, protocols, **logical resources** (other SGs, prefix lists, self) |
+| **Use Case**              | Broad subnet-level filtering; **block specific bad IPs**       | Fine-grained instance-level access control                                        |
+| **Best Practice**         | Use with SGs to add explicit DENY for known bad actors         | Primary firewall for resource-level traffic control                               |
+
+> [!tip] Exam Tip
+> Since NACLs are **stateless**, you must allow both the request port (e.g. 443) AND the **ephemeral port range** (1024–65535) for return traffic. Security Groups handle this automatically because they are stateful.
+
+## Network Address Translation (NAT) & NAT Gateway
+
+1. It is a set of processes for remapping SRC or DST IPs
+2. NAT is **IP masquerading** - hiding CIDR blocks behind one IP, i.e. give private CIDR range outgoing internet* access.
+3. Two types of NAT Gateway:
+   - **Public NAT GW** (default) - lives in a **public subnet**, associated with an **Elastic IP**. Allows private subnet instances to reach the internet. Must route to an IGW.
+   - **Private NAT GW** - lives in a private subnet, no EIP. Used for VPC-to-VPC or hybrid (overlapping CIDRs) communication via TGW/VGW.
+4. NAT GW is **stateful** - it tracks connections so it can map return traffic back to the original instance. Unsolicited inbound connections are dropped (no matching state entry).
+5. NAT GW is **many-to-one** (unlike IGW's 1:1 mapping) - multiplexes many connections behind a single IP.
+6. How a Public NAT GW works (outbound + return):
+   - **Outbound (two translations)**:
+     1. Instance sends: `(src: 10.16.32.10, dst: 1.3.3.7)`
+     2. Private subnet route table has `0.0.0.0/0 -> nat-gw` -> VPC router forwards packet to NAT GW
+     3. NAT GW rewrites src to its own **private IP** and records the mapping: `(src: NAT_GW_PRIV_IP, dst: 1.3.3.7)`
+     4. NAT GW route table has `0.0.0.0/0 -> igw` -> packet reaches IGW
+     5. IGW maps NAT GW's private IP to its **Elastic IP**: `(src: NAT_GW_EIP, dst: 1.3.3.7)` -> internet. Note: the EIP is associated with the NAT GW at the AWS resource level, but the NAT GW's ENI only carries its private IP. The IGW maintains the NAT_GW_PRIV_IP <-> NAT_GW_EIP mapping and performs the actual packet translation (same mechanism as EC2 public IPs).
+   - **Return (reverse two translations)**:
+     1. Response arrives at IGW: `(src: 1.3.3.7, dst: NAT_GW_EIP)`
+     2. IGW maps EIP back to NAT GW's private IP: `(src: 1.3.3.7, dst: NAT_GW_PRIV_IP)`
+     3. NAT GW looks up state table, rewrites dst back to original instance: `(src: 1.3.3.7, dst: 10.16.32.10)`
+     4. Packet delivered to instance
 
 ## AWS PrivateLink
 
