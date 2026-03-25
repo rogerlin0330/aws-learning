@@ -1,2 +1,3 @@
 # obsidian-notes
-Repo for managing my notes.
+
+Repo for managing my Obsidian notes.
