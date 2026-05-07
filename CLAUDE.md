@@ -47,6 +47,7 @@ updated: YYYY-MM-DD
 - Gotchas and common mistakes go in: `> [!warning] Gotcha`
 - Keep a `## References` section at the bottom for source links.
 - Images go in `wiki/assets/` (the wiki is self-contained; do not reference images from `raw/`). Embed with descriptive alt text: `![what the diagram shows](../assets/filename.png)`. Place images immediately after the paragraph or section they illustrate.
+- When raw study notes reference images (Obsidian syntax: `![[filename.png]]`), treat them as important visual aids. Copy the file from `raw/…/assets/` to `wiki/assets/` and embed it in the relevant wiki page with descriptive alt text.
 
 ### Cross-referencing rules
 

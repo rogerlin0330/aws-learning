@@ -8,7 +8,7 @@ updated: 2026-05-01
 
 # AWS Solutions Architect Associate (SAA-C03)
 
-A running collection of exam tips, gotchas, and comparison tables. Deep-dive pages: [IAM](../services/iam.md) · [VPC](../services/vpc.md) · [EC2](../services/ec2.md) · [Networking](../concepts/networking.md) · [Identity & Access](../concepts/identity-and-access.md).
+A running collection of exam tips, gotchas, and comparison tables. Deep-dive pages: [IAM](../services/iam.md) · [VPC](../services/vpc.md) · [EC2](../services/ec2.md) · [Route 53](../services/route53.md) · [Networking](../concepts/networking.md) · [Identity & Access](../concepts/identity-and-access.md) · [DNS](../concepts/dns.md) · [TLS/HTTPS](../concepts/tls-https.md).
 
 ## IAM
 
@@ -72,6 +72,51 @@ See [VPC](../services/vpc.md) and [Networking Concepts](../concepts/networking.m
 - 5 reserved IPs per subnet: network, router (+1), DNS (+2), reserved (+3), broadcast (last)
 - `enableDnsHostnames` = false by default on custom VPCs; set to true to get public DNS names
 
+## DNS and Route 53
+
+See [Route 53](../services/route53.md) and [DNS Concepts](../concepts/dns.md) for full details.
+
+- Route 53 is an **authoritative DNS** service — **globally resilient**, name servers span multiple regions
+- Each hosted zone gets **4 public name servers**; NS records at the registrar must point to them
+- **Alias record**: Route 53-specific; works at the zone apex (`example.com`); CNAME cannot; **no query charge** to AWS resources
+- CNAME only works for **subdomains** — never for the root domain
+- Alias type must **match the target resource's record type** (e.g. ELB returns A → create A Alias)
+- **Private Hosted Zone**: resolves only within a VPC; requires `enableDnsSupport` and `enableDnsHostnames` on the VPC
+- **Cross-account private hosted zone association**: CLI/API only — not available in console
+- **Split-View DNS**: same domain name, public + private zone → different answers based on query origin
+- TTL = how long resolvers cache a record; **lower TTL before migrations**, raise after
+
+### Route 53 Routing Policies
+
+| Policy | When to use |
+| --- | --- |
+| Simple | Single endpoint, no health checks |
+| Weighted | A/B testing, gradual traffic shifts |
+| Latency | Route to lowest-latency AWS region |
+| Failover | Active/passive HA; requires health check on primary |
+| Geolocation | Route by user's country/continent |
+| Multi-value | Return multiple IPs; basic load distribution |
+
+> [!tip] Exam Tip
+> **Failover routing** requires a Route 53 **health check** on the primary record. If the primary fails the health check, Route 53 automatically returns the secondary record.
+
+## TLS, HTTPS, and ACM
+
+See [TLS/HTTPS Concepts](../concepts/tls-https.md) for full details.
+
+- **ACM** (AWS Certificate Manager): free, auto-renewed certs for ALB, CloudFront, API GW
+- ACM certificates **cannot be exported** — private key never leaves AWS
+- **CloudFront + ACM**: the certificate **must be in `us-east-1`** (N. Virginia), regardless of distribution origin regions
+- **ALB + ACM**: certificate must be in the **same region as the ALB**
+- ACM domain validation via **DNS** (add TXT record to Route 53) is fully automated if hosted zone is in the same AWS account
+- **ACM Private CA**: issues private (non-publicly-trusted) certs for internal services
+
+> [!warning] Gotcha
+> **TLS termination at ALB** means ALB → EC2 traffic is plaintext by default. For end-to-end encryption, configure HTTPS on the target group and install a cert (can be self-signed) on the instances.
+
+> [!tip] Exam Tip
+> The TLS handshake uses **asymmetric encryption (RSA/ECDH) only for key exchange** — the actual data is encrypted with symmetric AES, which is far faster. The server's public key (from the cert) is used to securely establish a shared secret; after that, RSA is done.
+
 ## Key Service Properties to Memorize
 
 | Service | Resilience level |
@@ -99,3 +144,6 @@ See [VPC](../services/vpc.md) and [Networking Concepts](../concepts/networking.m
 - [EC2](../services/ec2.md)
 - [Networking Concepts](../concepts/networking.md)
 - [Identity and Access Concepts](../concepts/identity-and-access.md)
+- [Route 53](../services/route53.md)
+- [DNS Concepts](../concepts/dns.md)
+- [TLS/HTTPS Concepts](../concepts/tls-https.md)

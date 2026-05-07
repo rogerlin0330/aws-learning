@@ -7,7 +7,7 @@ updated: 2026-05-01
 
 # Networking Concepts
 
-Cross-cutting networking ideas that span multiple AWS services. The foundational service is [VPC](../services/vpc.md); [EC2](../services/ec2.md) instances (and other resources) run inside it.
+Cross-cutting networking ideas that span multiple AWS services. The foundational service is [VPC](../services/vpc.md); [EC2](../services/ec2.md) instances (and other resources) run inside it. For name resolution see [DNS](dns.md); for encrypted transport see [TLS/HTTPS](tls-https.md).
 
 ## OSI Layers of AWS Network Controls
 
@@ -85,3 +85,5 @@ When a client connects to a server, the OS assigns a random **ephemeral (source)
 - [VPC](../services/vpc.md)
 - [EC2](../services/ec2.md)
 - [Identity and Access Concepts](identity-and-access.md)
+- [DNS](dns.md)
+- [TLS/HTTPS](tls-https.md)
