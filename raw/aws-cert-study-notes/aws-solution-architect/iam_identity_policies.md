@@ -46,7 +46,3 @@
     - AWS managed policies
     - Customer managed policies
 
-## IAM Users and ARNs
-
-- IAM Users are an identity used for anything requiring **long-term** AWS access, e.g., Humans, Applications or Service Accounts.
-- ARN uniquely identifies resources within any AWS account

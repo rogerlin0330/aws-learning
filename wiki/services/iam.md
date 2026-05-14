@@ -2,7 +2,7 @@
 title: IAM — Identity and Access Management
 type: service
 certs: [aws-saa, aws-aip]
-updated: 2026-05-01
+updated: 2026-05-14
 ---
 
 # IAM — Identity and Access Management
@@ -30,7 +30,135 @@ IAM is AWS's **Identity Provider (IDP)**: it handles [authentication and authori
   ```
 
 > [!tip] Users vs Roles
-> IAM Users = long-term credentials (humans, service accounts). IAM Roles = short-lived temporary credentials — the right choice for [EC2](ec2.md) instances, Lambda functions, and cross-account access. Prefer roles over embedding access keys in code.
+> IAM Users = long-term credentials (humans, service accounts). IAM Roles = short-lived temporary credentials — the right choice for [EC2](ec2.md) instances, Lambda functions, and cross-account access. Prefer roles over embedding access keys in code. See [IAM Roles](#iam-roles) below for the full model.
+
+## IAM Groups
+
+An **IAM Group** is a **container of IAM users** that exists purely to simplify permission management — attach a policy once to the group and every member inherits it. A group is **not an identity**: it has no credentials, cannot be logged into, and cannot be referenced by [resource-based policies](#policy-evaluation--priority) (only users and roles can).
+
+![IAM Groups overview: groups are organizational containers, users inherit group policies cumulatively with their own, limits and exam pitfalls](../assets/iam-groups-infographic.png)
+
+### Effective Permissions
+
+A user's effective permissions are the **union** of:
+
+- The user's own attached policies (managed + inline)
+- Every policy attached to **every group** the user belongs to
+- Any applicable resource-based policies
+
+All of these go through the same [evaluation order](#policy-evaluation--priority) — any explicit Deny still wins.
+
+### Limits and Rules
+
+| Limit / Rule | Value |
+| --- | --- |
+| IAM users per account | **5,000** (hard limit) |
+| Groups a user can belong to | **10** (hard limit) |
+| Users per group | No limit |
+| Groups per account | Default **300**, increase via support ticket |
+| Nesting (groups inside groups) | **Not allowed** |
+| Built-in "all users" group | **Does not exist** — create one yourself if needed |
+| Resource policy can reference a group? | **No** — only IAM users and roles |
+| Group can be logged into? | **No** — groups have no credentials |
+
+> [!warning] Gotcha
+> Common exam traps: (1) "Add the group to the S3 bucket policy" — **impossible**, resource policies cannot name a group. (2) "Nest the Admins group inside the Engineering group" — **not supported**. (3) "Log in as the DevOps group" — groups have no credentials. (4) Hitting the 10-group-per-user ceiling on accounts with many fine-grained groups.
+
+> [!tip] Exam Tip
+> Groups solve **user-management** scale, not identity scale. When the question describes thousands of external users, federation with [roles](#iam-roles) is the answer — groups still don't help past the 5,000-user limit, since each member must be a real IAM user.
+
+## IAM Roles
+
+An **IAM Role** is an AWS identity designed to be **assumed temporarily** by one or more **unknown or numerous principals** — humans, applications, AWS services, or external identities. Roles do not represent a specific person; they represent a *level of access* that a principal can borrow for a limited time.
+
+![Overview of IAM Roles: Users vs Roles, how roles work via STS, the two core policies, when to use roles](../assets/iam-roles-infographic.png)
+
+### Roles vs Users
+
+| | IAM User | IAM Role |
+| --- | --- | --- |
+| Intended principal | Single, identifiable | Multiple or unknown |
+| Lifetime | Long-term (persistent) | Short-term (temporary STS credentials) |
+| Credentials | Password / access keys | Generated on assume — expire automatically |
+| Scale ceiling | Hard limit of **5,000 users per account** | No equivalent per-account ceiling — fits federation, large user bases |
+| Mental model | "This is *me*" | "I am *borrowing* this access right now" |
+
+When you assume a role, you **become** that role for the credential's lifetime — you do not log in as a user with the role's permissions attached. After the credentials expire, the principal must re-assume the role to get new ones.
+
+### Trust Policy vs Permissions Policy
+
+A role is governed by **two distinct policies**:
+
+| Policy | Question it answers | Examples of what it lists |
+| --- | --- | --- |
+| **Trust policy** | *Who* is allowed to assume this role? | IAM users, other roles, AWS services (e.g. `lambda.amazonaws.com`, `ec2.amazonaws.com`), other AWS accounts, federated identity providers (SAML, OIDC, Google/Facebook/Twitter) |
+| **Permissions policy** | *What* can the role do once assumed? | Standard IAM policy: `Action`, `Resource`, `Effect`. Same evaluation rules as for users — see [Policy Evaluation & Priority](#policy-evaluation--priority). |
+
+A principal not listed in the trust policy is denied at the **AssumeRole** step — they never get credentials at all, regardless of what the permissions policy says.
+
+### How AssumeRole Works (STS)
+
+When a role is assumed, AWS's **Security Token Service (STS)** issues short-lived credentials via the `sts:AssumeRole` API:
+
+1. Principal calls `sts:AssumeRole` (or a variant: `AssumeRoleWithSAML`, `AssumeRoleWithWebIdentity`).
+2. STS evaluates the role's **trust policy** — is this principal allowed?
+3. If allowed, STS returns three values: **Access Key ID**, **Secret Access Key**, and **Session Token**.
+4. The principal uses those credentials to call AWS APIs. Every request is authorized against the role's **permissions policy** at call time — so permission changes take effect immediately on in-flight sessions.
+5. Credentials expire (typically 15 min – 12 h). To continue, re-assume the role.
+
+Because roles are identities, they can also be referenced in **resource policies** (e.g. an S3 bucket policy that grants access to a specific role ARN). Both the role's permissions policy and the resource's policy are evaluated together.
+
+### When to Use Roles
+
+![Five canonical IAM Role use cases: AWS service access, break-glass, identity federation, mobile/cross-account](../assets/iam-roles-infographic-cont.png)
+
+#### AWS service access (e.g. Lambda execution role)
+
+AWS services like Lambda and [EC2](ec2.md) are **not IAM identities** — they have no default permissions of their own. To act on your behalf, the service assumes a role you create:
+
+- The role's **trust policy** trusts the service principal (e.g. `lambda.amazonaws.com`).
+- The role's **permissions policy** grants the AWS API actions the workload needs.
+- At runtime, the service calls `sts:AssumeRole`, gets temporary credentials, and the workload uses them — no static access keys in code.
+
+This pattern handles unknown-number-of-principals naturally: Lambda might spin up thousands of concurrent execution environments, each assuming the same role independently.
+
+> [!warning] Gotcha
+> Never bake long-term IAM user access keys into Lambda code, EC2 user-data, or container images. Use a role instead — temporary credentials, automatic rotation, no secret leakage if code is exposed.
+
+#### Break-glass / emergency access
+
+A **break-glass role** grants elevated permissions for rare emergency situations (3 a.m. incident, service-desk escalation). The principal's day-to-day identity stays read-only or low-privilege; in an emergency they assume the role, the act is logged in CloudTrail, and credentials expire automatically.
+
+This is far safer than granting permanent admin: privilege escalation becomes a deliberate, auditable event rather than the default state.
+
+#### Identity Federation — corporate IdP
+
+Organizations with an existing identity provider (e.g. Microsoft Active Directory, Okta) integrate it with AWS via roles. Staff log in with their corporate credentials; the IdP issues a SAML assertion; the user (or the console) calls `sts:AssumeRoleWithSAML` to get AWS credentials for a mapped role.
+
+This is essential at scale: the **5,000 IAM users per account** hard limit makes per-employee IAM users impractical for large organizations. With federation, a handful of roles serves an arbitrarily large workforce.
+
+#### Web Identity Federation — mobile/web apps
+
+Apps with millions of end users (ride-share, photo apps) cannot create an IAM user per customer. Instead:
+
+- Users authenticate against Google / Facebook / Apple / Cognito.
+- The app exchanges that token for AWS credentials via `sts:AssumeRoleWithWebIdentity`.
+- The role's permissions are typically narrow (e.g. read/write only the user's own DynamoDB rows or S3 prefix).
+
+No AWS credentials are ever stored in the app, and the design scales beyond the 5,000-user limit.
+
+#### Cross-account access
+
+Roles are the canonical mechanism for granting access between AWS accounts:
+
+- An IAM role lives in account B with a trust policy that trusts account A.
+- A user in account A calls `sts:AssumeRole` against the account B role.
+- They get credentials that act as identities **inside account B** — resource ownership and billing stay with account B.
+
+This is also how **AWS Organizations** moves users between accounts (the management account assumes an `OrganizationAccountAccessRole` in each member account) — a single sign-in covers many accounts without per-account IAM users.
+
+> [!tip] Exam Tip
+> External identities — Active Directory users, Google/Facebook accounts, users in other AWS accounts — **cannot directly access AWS resources**. They must assume a role to obtain temporary credentials. Pattern-match this in exam questions: "company has existing AD" or "millions of mobile users" → IAM role + federation, not IAM users.
 
 ## ARNs (Amazon Resource Names)
 
@@ -117,5 +245,11 @@ IAM controls *what* you can do (API-level authorization). [VPC](vpc.md) security
 - [VPC — Security Groups & NACLs](vpc.md)
 - [EC2 — IAM Roles for instances](ec2.md)
 - [AWS IAM Documentation](https://docs.aws.amazon.com/iam/)
+- [AWS Well-Architected: Break-glass procedures](https://docs.aws.amazon.com/wellarchitected/latest/devops-guidance/ag.sad.5-implement-break-glass-procedures.html)
+- [AWS cross-account break-glass example](https://github.com/aws-samples/aws-cross-account-break-glass-example#the-break-glass-user)
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/iam.md`
+- Source: `raw/aws-cert-study-notes/aws-solution-architect/iam_users_and_arns.md`
+- Source: `raw/aws-cert-study-notes/aws-solution-architect/iam_groups.md`
+- Source: `raw/aws-cert-study-notes/aws-solution-architect/iam_identity_policies.md`
+- Source: `raw/aws-cert-study-notes/aws-solution-architect/iam_roles.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/fundamentals.md`

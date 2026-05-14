@@ -3,7 +3,7 @@ title: AWS Solutions Architect Associate — Exam Notes
 type: certification
 tags: [iam, vpc, networking, ec2, route53]
 certs: [aws-saa]
-updated: 2026-05-13
+updated: 2026-05-14
 ---
 
 # AWS Solutions Architect Associate (SAA-C03)
@@ -16,8 +16,37 @@ See [IAM](../services/iam.md) and [Identity and Access Concepts](../concepts/ide
 
 - **Deny overrides Allow**: explicit Deny in any policy wins over any Allow — across all policy sources
 - Managed policies > inline policies: prefer managed for reusability and lower overhead
-- IAM Users = long-term credentials; [IAM Roles](../services/iam.md#iam-users) = temporary credentials — always use roles for [EC2](../services/ec2.md), Lambda, cross-account access
+- IAM Users = long-term credentials; [IAM Roles](../services/iam.md#iam-roles) = temporary credentials — always use roles for [EC2](../services/ec2.md), Lambda, cross-account access
 - IAM is **global** — not region-specific
+- Hard limit: **5,000 IAM users per account** — for larger user bases use roles + federation
+- **IAM Groups** are containers, **not identities**: no credentials, no nesting, cannot be referenced by [resource policies](../services/iam.md#policy-evaluation--priority) (only users/roles can). Limits: **10 groups per user**, default **300 groups per account**, no "all users" built-in group. Effective permissions = user policies ∪ all group policies (same Deny-wins evaluation)
+
+### IAM Roles
+
+See [IAM Roles](../services/iam.md#iam-roles) for full details.
+
+- A role has **two policies**: **trust policy** (who can assume it) and **permissions policy** (what it can do)
+- A principal denied by the trust policy never gets credentials — `sts:AssumeRole` fails before permissions are checked
+- Assuming a role returns a **triplet**: Access Key ID + Secret Access Key + **Session Token** — the session token is the marker of temporary credentials
+- Permissions changes apply to **in-flight sessions immediately** — STS does not re-issue credentials, AWS re-checks the permissions policy on every API call
+- Roles can be referenced in **resource policies** (e.g. S3 bucket policy granting a role ARN) — both the role policy and the resource policy are evaluated together
+- **External identities cannot directly access AWS** — Active Directory users, Google/Facebook users, and users in other AWS accounts must all assume a role first
+
+#### When the answer is "use a role"
+
+| Scenario | Mechanism |
+| --- | --- |
+| AWS service acting on your behalf (Lambda, EC2 → S3) | **Service role** — trust policy trusts the service principal (e.g. `lambda.amazonaws.com`) |
+| Emergency / rare elevated access | **Break-glass role** — assume only on demand, CloudTrail logged |
+| Existing corporate IdP (Active Directory, Okta) | **SAML federation** — `sts:AssumeRoleWithSAML` |
+| Mobile/web app with millions of users (Google/Facebook login) | **Web identity federation** — `sts:AssumeRoleWithWebIdentity` |
+| Access to another AWS account / AWS Organizations | **Cross-account role** — `sts:AssumeRole` |
+
+> [!tip] Exam Tip
+> Pattern-match: "company has existing AD" or "millions of mobile users" → IAM **role + federation**, not IAM users. "Lambda needs to write to S3" → **execution role**, never embedded access keys. "Two AWS accounts" → cross-account **role assumption**, not a duplicate IAM user.
+
+> [!warning] Gotcha
+> Never bake long-term IAM user access keys into Lambda code, EC2 user-data, or container images. Use a role — exam questions describing "access keys in code" are usually pointing at this anti-pattern.
 
 ## VPC & Networking
 
