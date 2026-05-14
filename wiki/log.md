@@ -44,6 +44,10 @@ Ingested three study notes from `raw/aws-cert-study-notes/aws-solution-architect
 
 Ingested two web clippings from `raw/web-clippings/`. Created `concepts/dns.md` (resolution chain, TTL, record types, Route 53 routing policies) and `concepts/tls-https.md` (CA issuance flows, certificate chain of trust, TLS 1.2/1.3 handshake, ACM). Corrected a source inaccuracy: the SSL article labeled its handshake diagram "TLS 1.3" but depicted the TLS 1.2 ClientKeyExchange flow; wiki documents both accurately. Added Route 53 and ACM exam tips to aws-saa.md. Updated networking.md cross-references and index.md.
 
+## [2026-05-13] ingest | Route 53 health checks
+
+Ingested `raw/aws-cert-study-notes/aws-solution-architect/route53_health_check.md` and copied 2 images (R53_health_check_infographic, R53-health-checkers) into `wiki/assets/`. Added a new "Health Checks" section to `services/route53.md` covering: independence from DNS records, global checker fleet + firewall-allowance gotcha, 18% quorum rule, probe types (TCP / HTTP / HTTPS + string match) with timing, health check categories (Endpoint / CloudWatch Alarm / Calculated), console options, SNS integration, and architectural role alongside ELB / Auto Scaling health checks. Updated `certifications/aws-saa.md` with a Route 53 Health Checks subsection (string-matching = most accurate, 18% rule, health-checker IP ranges must be allowed, lives outside hosted zones). Updated `wiki/index.md` Route 53 description.
+
 ## [2026-05-01] ingest | raw/random-thoughts/2026-05-01.md
 
 Processed three thoughts. Corrections made: (1) NACL and SG both operate at L3/4, not L3 and L7 respectively — ports are a L4 (TCP/UDP) concept, not L7; L7 is AWS WAF. (2) Route tables are L3 only. (3) SG mental model corrected from "server/instance" heuristic to "attaches to ENIs" — Lambda in VPC has SG, Lambda without VPC does not; Fargate has SG. Updated vpc.md, networking.md, and aws-saa.md.

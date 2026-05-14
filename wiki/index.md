@@ -9,7 +9,7 @@
 - [IAM](services/iam.md) — Identity & access management; policies, users, roles, ARNs
 - [VPC](services/vpc.md) — Virtual network; subnets, routing, IGW, NACL, SG, NAT GW, PrivateLink
 - [EC2](services/ec2.md) — Virtual compute; AMIs (stub, pending expansion)
-- [Route 53](services/route53.md) — Authoritative DNS; hosted zones, routing policies, Alias records, Resolver
+- [Route 53](services/route53.md) — Authoritative DNS; hosted zones, routing policies, Alias records, health checks, Resolver
 
 ## Concepts
 

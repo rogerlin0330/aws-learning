@@ -1,9 +1,9 @@
 ---
 title: Route 53
 type: service
-tags: [dns, route53, networking]
+tags: [dns, route53, networking, health-checks]
 certs: [aws-saa]
-updated: 2026-05-07
+updated: 2026-05-13
 ---
 
 # Route 53
@@ -101,7 +101,83 @@ Route 53 can make routing decisions based on health, geography, and load — goi
 | Multi-value | Return multiple IPs; basic load distribution (not a true load balancer) |
 
 > [!tip] Exam Tip
-> **Failover** requires a Route 53 **health check** on the primary record. Health checks can monitor an endpoint (HTTP/HTTPS/TCP), a CloudWatch alarm, or other health checks (calculated health check).
+> **Failover** requires a Route 53 **health check** on the primary record. Health checks can monitor an endpoint (HTTP/HTTPS/TCP), a CloudWatch alarm, or other health checks (calculated health check). See [Health Checks](#health-checks) below.
+
+## Health Checks
+
+Route 53 health checks monitor the availability of endpoints and feed the result back into DNS routing decisions. They are the engine behind **Failover** routing and a useful filter for **Multi-value** and **Weighted** policies, where unhealthy records are excluded from query responses.
+
+![Route 53 health checks infographic: core principles, types (endpoint/CloudWatch/calculated), verification methods (TCP/HTTP/string), and operational control (intervals/notifications/failover)](../assets/R53_health_check_infographic.png)
+
+### Key properties
+
+- **Independent objects**: health checks are created in the Route 53 console under **Health Checks**, *not* inside a hosted zone. A single health check can be referenced by many DNS records.
+- **Not limited to AWS**: any publicly reachable IP or DNS name can be monitored — useful for hybrid or multi-cloud setups.
+- **Globally distributed checkers**: AWS runs a fleet of health checkers across many regions. Each checker probes the target independently and reports back.
+- **Default interval 30 s; fast mode 10 s** (extra cost). **Failure threshold** = number of consecutive failed probes before status flips.
+
+> [!warning] Gotcha
+> Your firewall ([Security Group](vpc.md#security-groups-sg)/[NACL](vpc.md#network-acl-nacl)) must **allow inbound traffic from Route 53 health checker IP ranges**. Blocking them by accident causes false alarms — endpoints look unhealthy even though real traffic is fine. AWS publishes the IP ranges and lets you scope checks to specific checker regions.
+
+### Quorum: the 18 % rule
+
+![Route 53 distributed health checkers — if 18%+ report healthy, the check is healthy; unhealthy records are normally removed from query responses](../assets/R53-health-checkers.png)
+
+Each checker probes the endpoint independently. Route 53 aggregates the results:
+
+- If **more than 18 %** of checkers report **healthy** → overall status is **healthy**
+- Otherwise → **unhealthy**, and the record is normally excluded from DNS responses
+
+> [!tip] Exam Tip
+> The 18 % aggregation makes Route 53 health checks resilient to localised network failures — a checker in one region failing to reach your endpoint will not, on its own, mark you down.
+
+### Endpoint check types
+
+A single endpoint health check uses one of three probe types:
+
+| Probe | What passes | Timing | Notes |
+| --- | --- | --- | --- |
+| **TCP** | TCP handshake completes | within 10 s | Basic L4 reachability — does not validate application |
+| **HTTP / HTTPS** | TCP within 4 s, then HTTP status `200–399` within 2 s | 4 s + 2 s | Validates that the web server actually responds |
+| **HTTP/HTTPS + string match** | Above, plus a specified string appears in the **first 5,120 bytes** of the response body, matched within 2 s | 4 s + 2 s + 2 s | Most accurate — confirms the app is returning real content |
+
+> [!tip] Exam Tip
+> **String matching** is the most accurate signal of application health: it catches the case where the web server returns 200 OK but the app behind it is broken (e.g. database down → error page rendered with HTTP 200). Use string matching whenever the question describes verifying that the application is *actually working*, not just reachable.
+
+### Health check categories (by input source)
+
+Endpoint checks are only one of three types — the others compose existing signals:
+
+| Category | Input | Use case |
+| --- | --- | --- |
+| **Endpoint** | IP / domain probed directly with TCP / HTTP / HTTPS | Most common — monitor a web endpoint |
+| **CloudWatch Alarm** | An existing CloudWatch alarm state | Use any metric or in-app signal the CloudWatch agent can collect (CPU, queue depth, custom metric) |
+| **Calculated** | Boolean of multiple other health checks | Aggregate component checks into an overall application health status |
+
+A **calculated** health check is the building block for monitoring multi-component apps — e.g. "healthy only if both `web` and `db` checks pass."
+
+### Console options worth knowing
+
+- **Host header** — needed when one IP serves multiple virtual hosts
+- **Request path** — point HTTP checks at `/health` rather than `/` to avoid scraping homepages
+- **Invert status** — flips healthy/unhealthy (rarely useful; mostly for inverse failover patterns)
+- **Disable** — pause a check during planned maintenance instead of deleting it
+- **Checker regions** — restrict to a subset of regions (cost / compliance / locality)
+- **Latency graph** — Route 53 records and graphs probe latency from each checker region
+
+### Integration with SNS
+
+Health checks can publish state changes to an **SNS topic** — fan them out to email, SMS, Lambda, or downstream incident systems for alerting. This is independent of how DNS routing uses the same check.
+
+### Architectural role
+
+Health checks are the link between *monitoring* and *traffic steering*:
+
+- **Failover routing** uses them to flip from primary to secondary
+- **Multi-value / Weighted** policies use them to drop unhealthy records from responses
+- **CloudWatch + calculated** checks let DNS respond to *application-level* signals, not just network reachability
+
+Combined with **ELB target group health checks** (load-balancer-level — exclude bad targets) and **Auto Scaling health checks** (instance replacement), Route 53 health checks form the **outermost layer** of AWS availability monitoring — the one that decides what IP a client even gets in its DNS answer.
 
 ## Route 53 Resolver
 
@@ -121,3 +197,4 @@ For hybrid environments, **Resolver Endpoints** (inbound/outbound) allow on-prem
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/route53_public_hosted_zone.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/route53_private_hosted_zone.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/route53_alias_vs_cname.md`
+- Source: `raw/aws-cert-study-notes/aws-solution-architect/route53_health_check.md`

@@ -1,9 +1,9 @@
 ---
 title: AWS Solutions Architect Associate — Exam Notes
 type: certification
-tags: [iam, vpc, networking, ec2]
+tags: [iam, vpc, networking, ec2, route53]
 certs: [aws-saa]
-updated: 2026-05-01
+updated: 2026-05-13
 ---
 
 # AWS Solutions Architect Associate (SAA-C03)
@@ -99,6 +99,27 @@ See [Route 53](../services/route53.md) and [DNS Concepts](../concepts/dns.md) fo
 
 > [!tip] Exam Tip
 > **Failover routing** requires a Route 53 **health check** on the primary record. If the primary fails the health check, Route 53 automatically returns the secondary record.
+
+### Route 53 Health Checks
+
+See [Route 53 Health Checks](../services/route53.md#health-checks) for full details.
+
+- Health checks are **separate objects** from DNS records — created under Route 53 → Health Checks, then attached to records
+- Can monitor **any public endpoint** by IP or domain — not just AWS resources
+- Three categories: **Endpoint** (direct probe), **CloudWatch Alarm** (any metric), **Calculated** (boolean of other checks)
+- Endpoint probe types: **TCP** (handshake in 10 s), **HTTP/HTTPS** (status 200–399), **HTTP/HTTPS + string match** (matches first 5,120 bytes of body)
+- **String matching is the most accurate** application health signal — catches "200 OK but app is broken" cases
+- Default interval **30 s**; fast mode **10 s** at extra cost
+- **18 % rule**: if more than 18 % of distributed checkers report healthy → overall healthy; otherwise unhealthy
+- Firewalls ([SG](../services/vpc.md#security-groups-sg)/[NACL](../services/vpc.md#network-acl-nacl)) must **allow Route 53 health checker IP ranges** or checks will false-fail
+- Unhealthy records are normally **excluded from DNS responses**
+- **SNS integration** for alerting on state change — independent of routing behaviour
+
+> [!tip] Exam Tip
+> When a question describes verifying that an app is **actually working** (not just reachable), the answer is **HTTP/HTTPS with string matching**. TCP only proves the port is open; plain HTTP only proves the web server responds; string matching proves the response body is correct.
+
+> [!warning] Gotcha
+> Health checks live **outside hosted zones**. Look for them under Route 53 → Health Checks in the console, not inside the record set.
 
 ## TLS, HTTPS, and ACM
 
