@@ -48,6 +48,10 @@ Ingested two web clippings from `raw/web-clippings/`. Created `concepts/dns.md` 
 
 Ingested `raw/aws-cert-study-notes/aws-solution-architect/route53_health_check.md` and copied 2 images (R53_health_check_infographic, R53-health-checkers) into `wiki/assets/`. Added a new "Health Checks" section to `services/route53.md` covering: independence from DNS records, global checker fleet + firewall-allowance gotcha, 18% quorum rule, probe types (TCP / HTTP / HTTPS + string match) with timing, health check categories (Endpoint / CloudWatch Alarm / Calculated), console options, SNS integration, and architectural role alongside ELB / Auto Scaling health checks. Updated `certifications/aws-saa.md` with a Route 53 Health Checks subsection (string-matching = most accurate, 18% rule, health-checker IP ranges must be allowed, lives outside hosted zones). Updated `wiki/index.md` Route 53 description.
 
+## [2026-05-15] update | Embed IAM-policy ∩ SCP Venn diagram
+
+User added `iam-policy-scp-replationship.png` (filename typo preserved) to the raw SCP note. Copied to `wiki/assets/` and embedded in the "Cardinal Rule" subsection of `services/organizations.md` immediately after the intersection-rule paragraph, with descriptive alt text and a two-bullet recap of the two failure modes (identity-allow-SCP-block vs SCP-allow-no-identity-grant).
+
 ## [2026-05-15] update | Tighten cost-optimization.md scope
 
 Removed off-topic governance phrasing from `patterns/cost-optimization.md`: condensed the Scope note and rewrote the pooling section so it stays on the cost-pooling mechanic instead of contrasting with SCPs/governance use cases (which belong on `services/organizations.md`). Renamed the pooling H2 to drop redundant "AWS Organizations" wording and link directly to the consolidated-billing section instead.

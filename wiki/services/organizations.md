@@ -90,6 +90,13 @@ This is the single most-tested SCP fact:
 
 A user with `AdministratorAccess` in an account whose SCP forbids `s3:*` cannot use S3. The SCP ceiling wins.
 
+![Venn diagram of identity policies (left) and SCPs (right) — effective permissions exist only in the overlap. Left-only region: identity policy allows but is beyond what the SCP allows → denied. Right-only region: SCP allows but no identity policy grants it → denied.](../assets/iam-policy-scp-replationship.png)
+
+The two failure modes the diagram makes explicit:
+
+- **Identity policy allows, SCP doesn't** → denied (the SCP ceiling).
+- **SCP allows, no identity policy grants it** → denied (SCPs never grant).
+
 ### Attachment Hierarchy and Inheritance
 
 SCPs can attach at three levels and **inherit downward**:

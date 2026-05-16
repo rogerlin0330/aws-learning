@@ -102,6 +102,8 @@
 - Permissions allowed by identity policies but restricted by SCPs are denied.  
 - Permissions allowed by SCPs but not granted by identity policies have no effect.
 
+![[iam-policy-scp-replationship.png]]
+
 [00:12:00] **Exam-Level Understanding of SCPs**  
 - For certification, it is critical to grasp that **effective permissions = intersection of identity policies and SCPs**.  
 - This concept highlights that SCPs act as a **permission boundary** on the maximum allowed actions within an account.
@@ -125,13 +127,13 @@
 
 ### **Key Concepts and Definitions**
 
-| Term                     | Definition                                                                                       |
-|--------------------------|------------------------------------------------------------------------------------------------|
+| Term                         | Definition                                                                                                                      |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
 | Service Control Policy (SCP) | A JSON policy attached at organization, OU, or account level that defines permission boundaries but does not grant permissions. |
-| Identity Policy          | IAM policies attached to users, groups, or roles that grant permissions within an AWS account.  |
-| Management Account       | The AWS account that manages the organization; cannot be restricted by SCPs.                   |
-| Deny List SCP Model      | Default SCP mode where all permissions are allowed unless explicitly denied.                    |
-| Allow List SCP Model     | SCP model where no permissions are granted unless explicitly allowed; higher security and overhead. |
+| Identity Policy              | IAM policies attached to users, groups, or roles that grant permissions within an AWS account.                                  |
+| Management Account           | The AWS account that manages the organization; cannot be restricted by SCPs.                                                    |
+| Deny List SCP Model          | Default SCP mode where all permissions are allowed unless explicitly denied.                                                    |
+| Allow List SCP Model         | SCP model where no permissions are granted unless explicitly allowed; higher security and overhead.                             |
 
 ![[organization-scp-infographic.png]]
 
