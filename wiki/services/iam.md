@@ -155,7 +155,7 @@ Roles are the canonical mechanism for granting access between AWS accounts:
 - A user in account A calls `sts:AssumeRole` against the account B role.
 - They get credentials that act as identities **inside account B** — resource ownership and billing stay with account B.
 
-This is also how **AWS Organizations** moves users between accounts (the management account assumes an `OrganizationAccountAccessRole` in each member account) — a single sign-in covers many accounts without per-account IAM users.
+This is also how [AWS Organizations](organizations.md) moves users between accounts (the management account assumes an `OrganizationAccountAccessRole` in each member account) — a single sign-in covers many accounts without per-account IAM users.
 
 > [!tip] Exam Tip
 > External identities — Active Directory users, Google/Facebook accounts, users in other AWS accounts — **cannot directly access AWS resources**. They must assume a role to obtain temporary credentials. Pattern-match this in exam questions: "company has existing AD" or "millions of mobile users" → IAM role + federation, not IAM users.

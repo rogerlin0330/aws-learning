@@ -10,6 +10,7 @@
 - [VPC](services/vpc.md) — Virtual network; subnets, routing, IGW, NACL, SG, NAT GW, PrivateLink
 - [EC2](services/ec2.md) — Virtual compute; AMIs (stub, pending expansion)
 - [Route 53](services/route53.md) — Authoritative DNS; hosted zones, routing policies, Alias records, health checks, Resolver
+- [Organizations](services/organizations.md) — Multi-account management; OUs, consolidated billing, SCPs, cross-account role-switching
 
 ## Concepts
 
@@ -20,7 +21,7 @@
 
 ## Patterns
 
-None yet — add pages here as architecture patterns are documented.
+- [Cost Optimization](patterns/cost-optimization.md) — Savings Plans (Compute / EC2 Instance), Reserved Instances, Spot; decision tree; pooling via Organizations
 
 ## Certifications
 

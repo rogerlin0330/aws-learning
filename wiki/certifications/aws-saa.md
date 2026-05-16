@@ -1,14 +1,14 @@
 ---
 title: AWS Solutions Architect Associate — Exam Notes
 type: certification
-tags: [iam, vpc, networking, ec2, route53]
+tags: [iam, vpc, networking, ec2, route53, organizations, cost]
 certs: [aws-saa]
 updated: 2026-05-14
 ---
 
 # AWS Solutions Architect Associate (SAA-C03)
 
-A running collection of exam tips, gotchas, and comparison tables. Deep-dive pages: [IAM](../services/iam.md) · [VPC](../services/vpc.md) · [EC2](../services/ec2.md) · [Route 53](../services/route53.md) · [Networking](../concepts/networking.md) · [Identity & Access](../concepts/identity-and-access.md) · [DNS](../concepts/dns.md) · [TLS/HTTPS](../concepts/tls-https.md).
+A running collection of exam tips, gotchas, and comparison tables. Deep-dive pages: [IAM](../services/iam.md) · [VPC](../services/vpc.md) · [EC2](../services/ec2.md) · [Route 53](../services/route53.md) · [Organizations](../services/organizations.md) · [Networking](../concepts/networking.md) · [Identity & Access](../concepts/identity-and-access.md) · [DNS](../concepts/dns.md) · [TLS/HTTPS](../concepts/tls-https.md) · [Cost Optimization](../patterns/cost-optimization.md).
 
 ## IAM
 
@@ -150,6 +150,54 @@ See [Route 53 Health Checks](../services/route53.md#health-checks) for full deta
 > [!warning] Gotcha
 > Health checks live **outside hosted zones**. Look for them under Route 53 → Health Checks in the console, not inside the record set.
 
+## AWS Organizations
+
+See [Organizations](../services/organizations.md) for full details.
+
+- **Management account** (formerly master) creates the org and is the **payer** for all member accounts
+- **Member accounts** lose their individual billing — single consolidated bill
+- **OUs** allow nested grouping (root → OU → sub-OU → account); SCPs attach at root/OU/account and inherit downward
+- **Volume discounts + RI/SP benefits pool org-wide by default** — bought-in-account-A floats to account-B's matching usage
+- New accounts created inside the org get an automatic **`OrganizationAccountAccessRole`** trusting the management account → one-click Switch Role
+
+### SCPs
+
+See [Service Control Policies](../services/organizations.md#service-control-policies-scps) for full details.
+
+- **SCPs are guardrails, not grants** — they set the **maximum** permissions; a principal still needs an IAM identity policy that *allows* the action
+- **Effective permissions = SCP allows ∩ IAM identity policy allows** — the intersection. Anything outside the overlap is denied
+- **SCPs do NOT apply to the management account** — even `Deny *` is ignored. Keep workloads in member accounts so SCPs actually take effect
+- SCPs **can** indirectly restrict the **account root user** — one of the few mechanisms in AWS that bounds root
+- Default model is **deny list**: AWS attaches a `FullAWSAccess` SCP everywhere; you add explicit `Deny` statements for what you don't want. Low overhead, new AWS services are automatically permitted
+- **Allow list** model = remove `FullAWSAccess`, add explicit `Allow`s. More secure, much higher admin overhead — every service must be added
+
+> [!tip] Exam Tip
+> "Many accounts, want one bill" / "maximize RI utilization across accounts" → consolidated billing via **Organizations**. "Prevent accounts from using region X" / "block disabling CloudTrail" / "restrict EC2 instance sizes" → **SCP** at the right OU.
+
+> [!warning] Gotcha
+> A `Deny *` SCP attached to the management account does nothing — SCPs are skipped for the management account by design. If the question asks how to restrict the management account, the trick answer is "you can't with SCPs — move workloads to a member account."
+
+## Cost Optimization
+
+See [Cost Optimization](../patterns/cost-optimization.md) for the decision tree and pooling rules.
+
+### Purchase Plans
+
+| Plan | Term | Discount | What it covers |
+| --- | --- | --- | --- |
+| **Compute Savings Plan** | 1 / 3 yr | up to ~66 % | EC2 (any family/region/OS), Fargate, Lambda |
+| **EC2 Instance Savings Plan** | 1 / 3 yr | up to ~72 % | Specific family in a specific region (size+OS flex) |
+| **Standard RI** | 1 / 3 yr | up to ~72 % | Family/OS/region locked; size flexibility only |
+| **Convertible RI** | 1 / 3 yr | up to ~54 % | Exchangeable for different family/OS/tenancy |
+| **Reserved Capacity** (RDS / ElastiCache / Redshift / OpenSearch / DynamoDB) | 1 / 3 yr | up to ~72 % | The only purchase plan for these services |
+| **Spot** | None | up to ~90 % | Spare EC2 capacity, 2-minute interruption warning |
+
+> [!warning] Gotcha
+> **Savings Plans do NOT cover RDS, ElastiCache, Redshift, OpenSearch, or DynamoDB.** For long-running databases, the answer is a **Reserved Instance / Reserved Capacity**, not a Savings Plan.
+
+> [!tip] Exam Tip
+> Pattern-match purchase plans: workload moves between EC2/Fargate/Lambda → **Compute SP**. Pinned `m5` in `us-east-1` → **EC2 Instance SP** (deeper discount). Long-running RDS → **Reserved DB Instance**. Batch / CI / checkpointable → **Spot**. Many accounts → consolidate via **Organizations** so SPs/RIs pool automatically.
+
 ## TLS, HTTPS, and ACM
 
 See [TLS/HTTPS Concepts](../concepts/tls-https.md) for full details.
@@ -197,3 +245,5 @@ See [TLS/HTTPS Concepts](../concepts/tls-https.md) for full details.
 - [Route 53](../services/route53.md)
 - [DNS Concepts](../concepts/dns.md)
 - [TLS/HTTPS Concepts](../concepts/tls-https.md)
+- [Organizations](../services/organizations.md)
+- [Cost Optimization](../patterns/cost-optimization.md)

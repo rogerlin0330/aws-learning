@@ -56,16 +56,25 @@ In every case the user authenticates *somewhere else*, then exchanges that proof
 
 ## Policy Evaluation Order
 
-All applicable policies are evaluated together. Resolution:
+All applicable policies are evaluated together. Resolution within any policy set:
 
 1. **Explicit Deny** wins always
 2. **Explicit Allow** grants access
 3. **Implicit Deny** — default if nothing allows
 
-This applies across user policies, group policies, resource-based policies, and SCPs (Service Control Policies in AWS Organizations). See [IAM](../services/iam.md#policy-evaluation--priority) for the full breakdown with examples.
+This applies across user policies, group policies, resource-based policies, and [SCPs](../services/organizations.md#service-control-policies-scps) (Service Control Policies in AWS Organizations). See [IAM](../services/iam.md#policy-evaluation--priority) for the full breakdown with examples.
 
 > [!tip] Exam Tip
 > The presence of an explicit Deny anywhere in the policy evaluation chain blocks the request — even if another policy has an explicit Allow for the same action.
+
+### SCPs as a Permission Boundary
+
+[Service Control Policies](../services/organizations.md#service-control-policies-scps) sit **above** identity policies and act as a ceiling on the entire account:
+
+- SCPs **never grant** permissions — only IAM identity policies grant.
+- An action is effective only when **both** the SCP allows it **and** the identity policy allows it — i.e. the **intersection** of the two.
+- SCPs **do not apply to the management account** of an AWS Organization.
+- SCPs are one of the few mechanisms that can indirectly restrict the **account root user**, which is otherwise immune to IAM identity policies.
 
 ## IAM vs Network Security
 

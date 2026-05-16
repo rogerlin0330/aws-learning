@@ -1,8 +1,8 @@
 ---
 title: AWS Learning — Overview
 type: overview
-tags: [aws, architecture, iam, vpc]
-updated: 2026-05-01
+tags: [aws, architecture, iam, vpc, organizations, cost]
+updated: 2026-05-14
 ---
 
 # AWS Learning Overview
@@ -71,24 +71,35 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 
 ### Services
 
-- [IAM](services/iam.md) — policies, users, roles, ARNs, managed vs inline
+- [IAM](services/iam.md) — users, groups, roles (STS / federation), policies, ARNs
 - [VPC](services/vpc.md) — subnets, routing, IGW, NACL, SG, NAT GW, PrivateLink
 - [EC2](services/ec2.md) — instances, AMIs, ENIs (expanding)
+- [Route 53](services/route53.md) — hosted zones, routing policies, health checks
+- [Organizations](services/organizations.md) — multi-account management, consolidated billing, SCPs
 
 ### Concepts
 
 - [Networking](concepts/networking.md) — OSI layers, firewall layers, routing, internet connectivity patterns
-- [Identity and Access](concepts/identity-and-access.md) — auth vs authz, identity types, policy evaluation
+- [Identity and Access](concepts/identity-and-access.md) — auth vs authz, identity types, role assumption, federation
+- [DNS](concepts/dns.md) — resolution, record types, TTL
+- [TLS/HTTPS](concepts/tls-https.md) — certificate trust, TLS handshake, ACM
+
+### Patterns
+
+- [Cost Optimization](patterns/cost-optimization.md) — Savings Plans, RIs, Spot, decision tree, pooling via Organizations
 
 ### Certifications
 
 - [AWS Solutions Architect Associate](certifications/aws-saa.md) — exam tips, comparison tables, common traps
 
+## Multi-Account Architecture
+
+Most real-world AWS deployments use **many accounts** — a per-team / per-environment / per-business-unit split provides hard blast-radius isolation that VPCs alone cannot. [AWS Organizations](services/organizations.md) is the glue: one bill, OU-based grouping, [SCP](services/organizations.md#service-control-policies-scps) guardrails, and a single login point that uses [cross-account IAM roles](services/iam.md#cross-account-access) to move between accounts. The cost-side benefit is that [Savings Plans and Reserved Instances pool org-wide](patterns/cost-optimization.md#pooling-across-accounts--aws-organizations) — so multi-account doesn't multiply purchase commitments.
+
 ## Topics To Cover Next
 
-- EC2: instance types, purchasing models, AMIs, EBS volumes
+- EC2: instance types, AMIs, EBS volumes
 - S3: storage classes, lifecycle policies, bucket policies vs ACLs
-- Route 53: routing policies (simple, weighted, latency, failover, geolocation)
 - ELB / Auto Scaling: ALB vs NLB, target groups, scaling policies
 - AWS AI services (for AI Practitioner cert)
 - Architecture patterns: HA, multi-AZ, disaster recovery tiers
