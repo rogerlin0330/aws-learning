@@ -1,14 +1,14 @@
 ---
 title: AWS Solutions Architect Associate — Exam Notes
 type: certification
-tags: [iam, vpc, networking, ec2, route53, organizations, cost]
+tags: [iam, vpc, networking, ec2, route53, organizations, cost, s3]
 certs: [aws-saa]
-updated: 2026-05-14
+updated: 2026-05-16
 ---
 
 # AWS Solutions Architect Associate (SAA-C03)
 
-A running collection of exam tips, gotchas, and comparison tables. Deep-dive pages: [IAM](../services/iam.md) · [VPC](../services/vpc.md) · [EC2](../services/ec2.md) · [Route 53](../services/route53.md) · [Organizations](../services/organizations.md) · [Networking](../concepts/networking.md) · [Identity & Access](../concepts/identity-and-access.md) · [DNS](../concepts/dns.md) · [TLS/HTTPS](../concepts/tls-https.md) · [Cost Optimization](../patterns/cost-optimization.md).
+A running collection of exam tips, gotchas, and comparison tables. Deep-dive pages: [IAM](../services/iam.md) · [VPC](../services/vpc.md) · [EC2](../services/ec2.md) · [S3](../services/s3.md) · [Route 53](../services/route53.md) · [Organizations](../services/organizations.md) · [Networking](../concepts/networking.md) · [Identity & Access](../concepts/identity-and-access.md) · [Resource vs Identity Policies](../concepts/resource-vs-identity-policies.md) · [DNS](../concepts/dns.md) · [TLS/HTTPS](../concepts/tls-https.md) · [Cost Optimization](../patterns/cost-optimization.md).
 
 ## IAM
 
@@ -47,6 +47,48 @@ See [IAM Roles](../services/iam.md#iam-roles) for full details.
 
 > [!warning] Gotcha
 > Never bake long-term IAM user access keys into Lambda code, EC2 user-data, or container images. Use a role — exam questions describing "access keys in code" are usually pointing at this anti-pattern.
+
+## Resource Policies vs Identity Policies
+
+See [Resource Policies vs Identity Policies](../concepts/resource-vs-identity-policies.md) for full details.
+
+- **Identity policy** attaches to a user/group/role; **no `Principal` field** (identity is implicit). **Resource policy** attaches to a resource (bucket, KMS key, queue, …) and **must** have a `Principal`
+- **Only resource policies can grant**: (a) **cross-account** access, (b) **anonymous / public** access (`Principal: "*"`)
+- **Same-account access**: Allow in **either** the identity policy **or** the resource policy is sufficient (it's a **union**, modulo Deny)
+- **Cross-account access**: **both sides must Allow** (genuine **intersection**) — bucket policy names the principal *and* their home account's admin grants them the action via identity policy
+- **IAM Groups cannot be principals** in resource policies — only IAM users and roles
+- An IAM **role's trust policy** is a resource policy in disguise (lives on the role, names who can assume it)
+
+> [!tip] Exam Tip
+> Pattern-match by what's controlled: *"What can this user do?"* → identity policy. *"Who can access this bucket / key / queue?"* → resource policy. *"Grant anonymous read"* → resource policy (only option). *"Grant another AWS account"* → resource policy on this side + identity policy on theirs.
+
+> [!warning] Gotcha
+> Same-account behaviour is NOT an intersection — that's only true cross-account. A bucket policy in your own account that grants `s3:GetObject` to your IAM user is sufficient even if the user's identity policy says nothing about that bucket.
+
+## S3 Security
+
+See [S3](../services/s3.md) for full details.
+
+- S3 buckets are **private by default** — only the **account root** user of the owning account has initial access
+- **Bucket policies** (resource policies) are how S3 implements: cross-account access, anonymous access, and conditional access — none of which identity policies can fully express
+- Bucket ARNs: `arn:aws:s3:::name` (bucket itself, for list ops) vs `arn:aws:s3:::name/*` (objects). Most real policies need both
+- **ACLs are legacy** — 5 permission types (READ, WRITE, READ_ACP, WRITE_ACP, FULL_CONTROL), no conditions, no Deny semantics. New buckets default to **ACLs disabled** (Object Ownership = Bucket owner enforced)
+- **Block Public Access** is an **override**, not a grant: it blocks *anonymous* exposure regardless of bucket policy or ACL. Authenticated cross-account access is unaffected. New buckets get all four switches on by default
+- **Explicit Deny wins** — bucket policy `Deny + Condition` is the standard way to enforce IP allow-lists or MFA-required prefixes
+
+### Common condition patterns
+
+| Goal | Condition |
+| --- | --- |
+| Lock to corporate IP | `"NotIpAddress": {"aws:SourceIp": "1.3.3.7/32"}` with `Deny` |
+| Require MFA on a prefix | `"Null": {"aws:MultiFactorAuthAge": true}` with `Deny` (matches *no MFA*) |
+| Restrict to a VPC endpoint | `"StringNotEquals": {"aws:SourceVpce": "vpce-…"}` with `Deny` |
+
+> [!tip] Exam Tip
+> *"Bucket policy says public-read but anonymous requests get 403"* → **Block Public Access** is on. *"Want to keep accidental public-policy mistakes from leaking data"* → leave Block Public Access on at the **account** level. *"Need a public website bucket"* → must explicitly disable the relevant Block Public Access switches.
+
+> [!warning] Gotcha
+> Enabling ACLs on a new bucket is almost always the **wrong** exam answer. Modern S3 design uses bucket policies + IAM + Object Ownership (Bucket owner enforced) and skips ACLs entirely.
 
 ## VPC & Networking
 
@@ -225,6 +267,7 @@ See [TLS/HTTPS Concepts](../concepts/tls-https.md) for full details.
 | Subnet | AZ-specific |
 | NAT GW | Zonal (need one per AZ for HA) |
 | [EC2](../services/ec2.md) instance | AZ-specific |
+| [S3](../services/s3.md) bucket | Regional (globally unique name) |
 
 ## Common Exam Traps
 
@@ -240,8 +283,10 @@ See [TLS/HTTPS Concepts](../concepts/tls-https.md) for full details.
 - [IAM](../services/iam.md)
 - [VPC](../services/vpc.md)
 - [EC2](../services/ec2.md)
+- [S3](../services/s3.md)
 - [Networking Concepts](../concepts/networking.md)
 - [Identity and Access Concepts](../concepts/identity-and-access.md)
+- [Resource Policies vs Identity Policies](../concepts/resource-vs-identity-policies.md)
 - [Route 53](../services/route53.md)
 - [DNS Concepts](../concepts/dns.md)
 - [TLS/HTTPS Concepts](../concepts/tls-https.md)

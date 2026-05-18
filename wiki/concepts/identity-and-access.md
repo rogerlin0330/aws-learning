@@ -2,7 +2,7 @@
 title: Identity and Access Concepts
 type: concept
 certs: [aws-saa, aws-aip]
-updated: 2026-05-14
+updated: 2026-05-16
 ---
 
 # Identity and Access Concepts
@@ -62,7 +62,10 @@ All applicable policies are evaluated together. Resolution within any policy set
 2. **Explicit Allow** grants access
 3. **Implicit Deny** — default if nothing allows
 
-This applies across user policies, group policies, resource-based policies, and [SCPs](../services/organizations.md#service-control-policies-scps) (Service Control Policies in AWS Organizations). See [IAM](../services/iam.md#policy-evaluation--priority) for the full breakdown with examples.
+This applies across user policies, group policies, [resource-based policies](resource-vs-identity-policies.md), and [SCPs](../services/organizations.md#service-control-policies-scps) (Service Control Policies in AWS Organizations). See [IAM](../services/iam.md#policy-evaluation--priority) for the full breakdown with examples.
+
+> [!warning] Gotcha
+> Same-account vs cross-account access combine the two policy families differently. Within one account, an Allow in **either** the identity policy or the resource policy is enough (subject to no Deny). Across accounts, **both** sides must explicitly Allow — see [Resource Policies vs Identity Policies — How the two combine](resource-vs-identity-policies.md#how-the-two-combine).
 
 > [!tip] Exam Tip
 > The presence of an explicit Deny anywhere in the policy evaluation chain blocks the request — even if another policy has an explicit Allow for the same action.
@@ -101,5 +104,6 @@ Temporary STS credentials are always a **triplet** including a session token —
 
 - [IAM](../services/iam.md)
 - [IAM Roles](../services/iam.md#iam-roles)
+- [Resource Policies vs Identity Policies](resource-vs-identity-policies.md)
 - [VPC — Security Groups & NACLs](../services/vpc.md)
 - [Networking Concepts](networking.md)

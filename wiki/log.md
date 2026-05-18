@@ -72,6 +72,23 @@ Ingested `raw/aws-cert-study-notes/aws-solution-architect/iam_groups.md` and cop
 
 Ingested `raw/aws-cert-study-notes/aws-solution-architect/iam_roles.md` and copied 2 images (iam-roles-infographic, iam-roles-infographic-cont) into `wiki/assets/`. Added a comprehensive **IAM Roles** section to `services/iam.md` covering: roles vs users (5,000-user limit), trust policy vs permissions policy, the STS `AssumeRole` flow (credential triplet, expiration, real-time permission enforcement), and the five canonical use cases — AWS service roles (Lambda execution role), break-glass / emergency access, SAML federation with corporate IdP, web identity federation for mobile apps, and cross-account access incl. AWS Organizations. Updated `concepts/identity-and-access.md` with new sections on Principals & Role Assumption and Identity Federation (SAML / Web Identity / Cross-account); refined credential-types table to highlight the session token. Added an "IAM Roles" subsection to `certifications/aws-saa.md` with a use-case lookup table and pattern-match exam tips. Updated `index.md` IAM description.
 
+## [2026-05-16] ingest | S3 resource policies and ACL + resource-vs-identity policies concept
+
+Ingested `raw/aws-cert-study-notes/aws-solution-architect/s3_resource_policies_and_acl.md` and copied `s3-resource-policies-and-acl-infographic.png` to `wiki/assets/`. Created two new pages:
+
+- `concepts/resource-vs-identity-policies.md` — generalised the perspective split (identity = "what can this identity do?", resource = "who can access this resource?"), the `Principal` element as the syntactic marker, and the combination rules. Corrected a source inaccuracy: same-account access is a **union** (Allow in either policy is sufficient, subject to Deny), not an intersection — the intersection model is cross-account-only. Documented anonymous-only-via-resource-policy, IAM groups can't be principals, and trust-policy-is-a-resource-policy.
+- `services/s3.md` — S3 service page focused on access control: private-by-default baseline, bucket-policy anatomy + ARN bucket-vs-objects distinction, advanced `Condition` patterns (NotIpAddress, Null/aws:MultiFactorAuthAge), ACLs (legacy, 5-permission table, new buckets default to ACLs-disabled / Object Ownership = Bucket owner enforced), Block Public Access as an override with the four switches, and a decision table.
+
+Cross-references: `concepts/identity-and-access.md` Policy Evaluation section now warns about same-account union vs cross-account intersection; `services/iam.md` Identity Policies section now opens by contrasting against resource policies and links to the new concept page and S3. Updated `certifications/aws-saa.md` with new "Resource Policies vs Identity Policies" and "S3 Security" sections (pattern-match tips, condition table, Block Public Access exam traps, "enabling ACLs is the wrong answer" warning). Updated `index.md` (added S3 + the new concept) and `overview.md` (services list, resilience tier table now links to S3, topic-to-cover-next updated).
+
 ## [2026-05-01] ingest | raw/random-thoughts/2026-05-01.md
 
 Processed three thoughts. Corrections made: (1) NACL and SG both operate at L3/4, not L3 and L7 respectively — ports are a L4 (TCP/UDP) concept, not L7; L7 is AWS WAF. (2) Route tables are L3 only. (3) SG mental model corrected from "server/instance" heuristic to "attaches to ENIs" — Lambda in VPC has SG, Lambda without VPC does not; Fargate has SG. Updated vpc.md, networking.md, and aws-saa.md.
+
+## [2026-05-17] update | s3.md — clarify Block Public Access semantics
+
+Added a warning callout in the Block Public Access section emphasizing that disabling BPA is not equivalent to making a bucket public. The two switches are independent: a bucket stays private by default, and turning BPA off merely removes the failsafe — public access still requires a bucket policy (or ACL) granting `Principal: "*"`. Conversely, leaving BPA on while attaching a public policy yields 403. Both a grant and the absence of the override must line up.
+
+## [2026-05-17] update | Document IAM policy JSON case-sensitivity rules
+
+Added "Policy JSON — Case Sensitivity" subsection to `services/iam.md` covering case-sensitive elements (top-level keys, Effect values, Principal sub-keys, condition operators), case-insensitive elements (action names, condition-key names), and value rules (StringEquals vs StringEqualsIgnoreCase, ARNs, tags). Added an exam tip. Added a cross-referencing summary on `concepts/resource-vs-identity-policies.md` pointing to the canonical IAM section. Updated index.

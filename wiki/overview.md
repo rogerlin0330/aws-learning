@@ -1,8 +1,8 @@
 ---
 title: AWS Learning — Overview
 type: overview
-tags: [aws, architecture, iam, vpc, organizations, cost]
-updated: 2026-05-14
+tags: [aws, architecture, iam, vpc, organizations, cost, s3]
+updated: 2026-05-16
 ---
 
 # AWS Learning Overview
@@ -60,7 +60,7 @@ Every AWS service operates at a specific resilience scope. Knowing this is criti
 | Tier | Examples |
 | --- | --- |
 | Global | [IAM](services/iam.md), Route 53 |
-| Regional | [VPC](services/vpc.md), IGW, S3 |
+| Regional | [VPC](services/vpc.md), IGW, [S3](services/s3.md) |
 | AZ | Subnet, NAT GW, [EC2](services/ec2.md) instance |
 
 ### The ENI is the Networking Atom
@@ -74,6 +74,7 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 - [IAM](services/iam.md) — users, groups, roles (STS / federation), policies, ARNs
 - [VPC](services/vpc.md) — subnets, routing, IGW, NACL, SG, NAT GW, PrivateLink
 - [EC2](services/ec2.md) — instances, AMIs, ENIs (expanding)
+- [S3](services/s3.md) — buckets, bucket policies, ACLs (legacy), Block Public Access
 - [Route 53](services/route53.md) — hosted zones, routing policies, health checks
 - [Organizations](services/organizations.md) — multi-account management, consolidated billing, SCPs
 
@@ -81,6 +82,7 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 
 - [Networking](concepts/networking.md) — OSI layers, firewall layers, routing, internet connectivity patterns
 - [Identity and Access](concepts/identity-and-access.md) — auth vs authz, identity types, role assumption, federation
+- [Resource Policies vs Identity Policies](concepts/resource-vs-identity-policies.md) — the two policy families; cross-account & anonymous access
 - [DNS](concepts/dns.md) — resolution, record types, TTL
 - [TLS/HTTPS](concepts/tls-https.md) — certificate trust, TLS handshake, ACM
 
@@ -99,7 +101,7 @@ Most real-world AWS deployments use **many accounts** — a per-team / per-envir
 ## Topics To Cover Next
 
 - EC2: instance types, AMIs, EBS volumes
-- S3: storage classes, lifecycle policies, bucket policies vs ACLs
+- S3: storage classes, lifecycle policies, encryption, versioning, replication (security covered)
 - ELB / Auto Scaling: ALB vs NLB, target groups, scaling policies
 - AWS AI services (for AI Practitioner cert)
 - Architecture patterns: HA, multi-AZ, disaster recovery tiers

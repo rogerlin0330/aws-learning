@@ -2,7 +2,7 @@
 title: IAM — Identity and Access Management
 type: service
 certs: [aws-saa, aws-aip]
-updated: 2026-05-14
+updated: 2026-05-17
 ---
 
 # IAM — Identity and Access Management
@@ -171,6 +171,8 @@ This is also how [AWS Organizations](organizations.md) moves users between accou
 
 ## IAM Identity Policies
 
+An **identity policy** attaches to an IAM user, group, or role and answers *"what can this identity do?"*. It has no `Principal` element — the identity *is* the implicit principal. AWS's other major policy family — **resource policies** like [S3 bucket policies](s3.md#bucket-policies) and [role trust policies](#trust-policy-vs-permissions-policy) — attach to the *resource* and name the principal explicitly. See [Resource Policies vs Identity Policies](../concepts/resource-vs-identity-policies.md) for how the two combine, including the same-account-union / cross-account-intersection rule.
+
 Every policy is a **JSON document** with one or more statements:
 
 ```json
@@ -202,6 +204,39 @@ Every policy is a **JSON document** with one or more statements:
 | `Action` | Single string or array of actions (e.g. `s3:GetObject`) |
 | `Resource` | ARN(s) the action applies to |
 
+### Policy JSON — Case Sensitivity
+
+Identity policies and [resource policies](../concepts/resource-vs-identity-policies.md) share the same JSON grammar, so these rules apply to both. Different parts of a policy follow different rules — it is **not** uniformly case-sensitive.
+
+**Case-sensitive — must match exactly:**
+
+| Element | Required casing | Examples |
+| --- | --- | --- |
+| Top-level policy keys | PascalCase | `Version`, `Statement`, `Sid`, `Effect`, `Principal`, `NotPrincipal`, `Action`, `NotAction`, `Resource`, `NotResource`, `Condition` |
+| `Effect` **values** | PascalCase | `Allow`, `Deny` — `"allow"` is rejected |
+| `Principal` sub-keys | Specific casing | `AWS`, `Service`, `Federated`, `CanonicalUser` |
+| Condition **operators** | PascalCase | `StringEquals`, `StringEqualsIgnoreCase`, `IpAddress`, `DateGreaterThan`, `Bool`, `ArnLike`, … |
+
+If you write `"effect": "allow"` or `"stringequals": …`, IAM rejects the policy as malformed.
+
+**Case-insensitive at evaluation time, but write in documented casing:**
+
+| Element | Behaviour |
+| --- | --- |
+| **Action names** (`s3:GetObject`) | Matching is case-insensitive — `s3:getobject` evaluates the same — but always write the documented `service:ActionName` form |
+| **Condition key names** (`aws:SourceIp`, `s3:prefix`) | The *name* of the key matches case-insensitively; stick to the documented casing |
+
+**Depends on the operator / value:**
+
+| Element | Behaviour |
+| --- | --- |
+| **Condition values** | `StringEquals` is case-sensitive; `StringEqualsIgnoreCase` is not. Choose the operator that matches your intent. |
+| **ARNs and resource names** | Mostly case-sensitive — S3 bucket names are lowercase-only anyway, but object keys, IAM user/role names, KMS aliases, etc. are case-sensitive in the ARN |
+| **Tag keys / values in conditions** | Tags are case-sensitive in AWS; pair them with `StringEquals` vs `StringEqualsIgnoreCase` deliberately |
+
+> [!tip] Exam Tip
+> If you see a policy snippet in a question with lowercase `effect`, `allow`, or `stringequals`, the policy is invalid — IAM will not accept it. Element keys and condition operators are PascalCase. Action names and condition-key names *match* case-insensitively, but follow the documented casing in real policies.
+
 ## Policy Evaluation & Priority
 
 When multiple statements or policies apply, AWS evaluates them all together:
@@ -212,7 +247,7 @@ When multiple statements or policies apply, AWS evaluates them all together:
 
 ![Policy evaluation priority: Explicit Deny → Explicit Allow → Default Deny (Implicit), shown with a JSON policy example where FullAccess Allow and DenyCatBucket Deny coexist](../assets/iam-policy-rule-priority.png)
 
-This applies across all policy sources: user policies, group policies, resource-based policies. When a user (e.g. Sally) has multiple policies attached — directly, via a group, or via a resource-based policy — AWS collects all of them and applies the same priority rules across the combined set.
+This applies across all policy sources: user policies, group policies, [resource-based policies](../concepts/resource-vs-identity-policies.md). When a user (e.g. Sally) has multiple policies attached — directly, via a group, or via a resource-based policy — AWS collects all of them and applies the same priority rules across the combined set.
 
 ![Multiple IAM policies evaluated together: Sally has Policy 1 and Policy 2 attached directly, belongs to Developers group with Policy 3, and the target resource has its own Resource Policy — all evaluated together](../assets/iam-multiple-policies.png)
 
@@ -242,6 +277,8 @@ IAM controls *what* you can do (API-level authorization). [VPC](vpc.md) security
 ## References
 
 - [Identity and Access Concepts](../concepts/identity-and-access.md)
+- [Resource Policies vs Identity Policies](../concepts/resource-vs-identity-policies.md)
+- [S3 — Bucket Policies](s3.md)
 - [VPC — Security Groups & NACLs](vpc.md)
 - [EC2 — IAM Roles for instances](ec2.md)
 - [AWS IAM Documentation](https://docs.aws.amazon.com/iam/)
