@@ -1,5 +1,9 @@
 # Wiki Log
 
+## [2026-05-19] ingest | CloudWatch Logs
+
+Created `wiki/services/cloudwatch.md` from `raw/aws-cert-study-notes/aws-solution-architect/cloudwatch.md`. Covers: public-endpoint regional service, log group → stream → event hierarchy, ingestion methods (native integrations, Unified CloudWatch Agent, SDK), metric filters and alarms. Copied architecture diagram to `wiki/assets/`. Added CloudWatch exam tips section to `certifications/aws-saa.md`. Updated index.
+
 ## [2026-05-01] seed | Initial wiki setup
 
 Seeded wiki from existing study notes in `raw/aws-cert-study-notes/aws-solution-architect/`. Created pages: IAM, VPC, EC2 (stub), Networking concepts, Identity and Access concepts, AWS SAA cert notes, Overview. Wrote CLAUDE.md schema.

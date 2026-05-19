@@ -1,14 +1,14 @@
 ---
 title: AWS Solutions Architect Associate — Exam Notes
 type: certification
-tags: [iam, vpc, networking, ec2, route53, organizations, cost, s3]
+tags: [iam, vpc, networking, ec2, route53, organizations, cost, s3, cloudwatch]
 certs: [aws-saa]
-updated: 2026-05-16
+updated: 2026-05-19
 ---
 
 # AWS Solutions Architect Associate (SAA-C03)
 
-A running collection of exam tips, gotchas, and comparison tables. Deep-dive pages: [IAM](../services/iam.md) · [VPC](../services/vpc.md) · [EC2](../services/ec2.md) · [S3](../services/s3.md) · [Route 53](../services/route53.md) · [Organizations](../services/organizations.md) · [Networking](../concepts/networking.md) · [Identity & Access](../concepts/identity-and-access.md) · [Resource vs Identity Policies](../concepts/resource-vs-identity-policies.md) · [DNS](../concepts/dns.md) · [TLS/HTTPS](../concepts/tls-https.md) · [Cost Optimization](../patterns/cost-optimization.md).
+A running collection of exam tips, gotchas, and comparison tables. Deep-dive pages: [IAM](../services/iam.md) · [VPC](../services/vpc.md) · [EC2](../services/ec2.md) · [S3](../services/s3.md) · [Route 53](../services/route53.md) · [Organizations](../services/organizations.md) · [CloudWatch](../services/cloudwatch.md) · [Networking](../concepts/networking.md) · [Identity & Access](../concepts/identity-and-access.md) · [Resource vs Identity Policies](../concepts/resource-vs-identity-policies.md) · [DNS](../concepts/dns.md) · [TLS/HTTPS](../concepts/tls-https.md) · [Cost Optimization](../patterns/cost-optimization.md).
 
 ## IAM
 
@@ -256,6 +256,23 @@ See [TLS/HTTPS Concepts](../concepts/tls-https.md) for full details.
 
 > [!tip] Exam Tip
 > The TLS handshake uses **asymmetric encryption (RSA/ECDH) only for key exchange** — the actual data is encrypted with symmetric AES, which is far faster. The server's public key (from the cert) is used to securely establish a shared secret; after that, RSA is done.
+
+## CloudWatch Logs
+
+See [CloudWatch](../services/cloudwatch.md) for full details.
+
+- CloudWatch Logs is a **regional, public-endpoint** service — reachable from VPCs, on-prem, and other clouds (given network + IAM access)
+- Hierarchy: **Log Group → Log Stream → Log Event**; configuration (retention, permissions, metric filters) lives at the **log group** level
+- **Log event** = timestamp + raw message block; CloudWatch Logs does not parse or interpret the content
+- Native AWS services (Lambda, VPC Flow Logs, CloudTrail, Route 53) send logs automatically via IAM service roles
+- **Unified CloudWatch Agent** is required for OS-level logs from EC2 and on-prem servers — EC2 does **not** auto-send logs, only basic metrics
+- **Metric filters** scan log content for patterns → increment a CloudWatch Metric → optionally trigger an alarm
+
+> [!tip] Exam Tip
+> Pattern-match: *"detect failed SSH attempts and alert"* → **metric filter on a log group + CloudWatch Alarm + SNS**. *"EC2 instance logs not appearing in CloudWatch"* → **CloudWatch Agent not installed or IAM role missing**.
+
+> [!warning] Gotcha
+> Log **streams** have no configuration of their own — retention, permissions, and metric filters all attach to the **log group**. If a question asks where to set retention, the answer is the log group.
 
 ## Key Service Properties to Memorize
 
