@@ -9,7 +9,7 @@
 - [IAM](services/iam.md) — Identity & access management; users, roles (trust + permissions policies, STS), policies (JSON syntax & case sensitivity), ARNs, federation
 - [VPC](services/vpc.md) — Virtual network; subnets, routing, IGW, NACL, SG, NAT GW, PrivateLink
 - [EC2](services/ec2.md) — Virtual compute; AMIs (stub, pending expansion)
-- [S3](services/s3.md) — Object storage; bucket policies, ACLs (legacy), Block Public Access, cross-account & anonymous access
+- [S3](services/s3.md) — Object storage; bucket policies, ACLs (legacy), Block Public Access, cross-account & anonymous access, versioning + MFA Delete
 - [Route 53](services/route53.md) — Authoritative DNS; hosted zones, routing policies, Alias records, health checks, Resolver
 - [Organizations](services/organizations.md) — Multi-account management; OUs, consolidated billing, SCPs, cross-account role-switching
 - [CloudWatch](services/cloudwatch.md) — Monitoring & observability; CloudWatch Logs hierarchy (log group → stream → event), metric filters, alarms, agent

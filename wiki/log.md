@@ -1,5 +1,9 @@
 # Wiki Log
 
+## [2026-05-19] ingest | S3 Object Versioning + MFA Delete
+
+Ingested `raw/aws-cert-study-notes/aws-solution-architect/s3_bucket_versioning.md`. Copied 4 images into `wiki/assets/` (`s3-bucket-versioning-state`, `s3-object-versioning`, `s3-object-delete-marker` — renamed from the doubly-extensioned `.png.png` source — and `s3-object-deletion-if-versioning-enabled`). Added a new **Versioning and MFA Delete** section to `services/s3.md` covering: the Disabled → Enabled → Suspended state machine and the one-way-door asymmetry, version IDs and current-version read semantics, the two delete operations (soft delete via delete marker vs permanent versioned delete), storage-cost implications and the lifecycle remedy, and MFA Delete (versioning prerequisite, the two gated operations, root-only enable via CLI/API, `x-amz-mfa` header). Updated the page intro to reflect the broader scope (access control + data protection) and added References for the AWS versioning + MFA Delete docs. Added a new **S3 Versioning & MFA Delete** subsection to `certifications/aws-saa.md` with pattern-match tips (versioning alone vs versioning + MFA Delete) and the "can't disable to reclaim storage" trap. Updated `index.md` S3 description.
+
 ## [2026-05-19] ingest | CloudWatch Logs
 
 Created `wiki/services/cloudwatch.md` from `raw/aws-cert-study-notes/aws-solution-architect/cloudwatch.md`. Covers: public-endpoint regional service, log group → stream → event hierarchy, ingestion methods (native integrations, Unified CloudWatch Agent, SDK), metric filters and alarms. Copied architecture diagram to `wiki/assets/`. Added CloudWatch exam tips section to `certifications/aws-saa.md`. Updated index.

@@ -90,6 +90,24 @@ See [S3](../services/s3.md) for full details.
 > [!warning] Gotcha
 > Enabling ACLs on a new bucket is almost always the **wrong** exam answer. Modern S3 design uses bucket policies + IAM + Object Ownership (Bucket owner enforced) and skips ACLs entirely.
 
+### S3 Versioning & MFA Delete
+
+See [S3 — Versioning and MFA Delete](../services/s3.md#versioning-and-mfa-delete) for full details.
+
+- Versioning is configured at the **bucket** level; new buckets start **Disabled**
+- State machine: Disabled → Enabled → Suspended ↔ Enabled. **Enabled → Disabled is impossible** — once on, the only "off-ish" state is Suspended (existing versions are kept)
+- Each write to a versioned bucket creates a new **version ID**; a `GetObject` without a `versionId` returns the current (latest) version
+- `DELETE object` without a `versionId` adds a **delete marker** (soft delete — reversible by deleting the marker). `DELETE object?versionId=…` permanently removes that version (irreversible)
+- **Storage cost trap**: every version is billed at full size — 5 × 5 GB = **25 GB**. Suspending versioning **does not** delete existing versions; use a lifecycle policy on noncurrent versions
+- **MFA Delete** requires versioning to be enabled and gates exactly two operations: **changing the versioning state** and **permanently deleting a specific version**. Ordinary (soft) deletes and reads/writes are unaffected
+- MFA Delete can only be **enabled/disabled by the bucket owner's root user**, via CLI/API (not the console). API calls must carry the MFA device serial + current code
+
+> [!tip] Exam Tip
+> Pattern-match: *"protect against accidental object deletion"* → **versioning** (sufficient on its own). *"protect against accidental **and** malicious permanent deletion, including by a compromised IAM admin"* → **versioning + MFA Delete**. *"object deleted but the team wants it back"* → if versioning was on, delete the delete marker (or `GetObject` with the previous `versionId`); if versioning was off, the data is gone.
+
+> [!warning] Gotcha
+> If a question describes "disabling versioning to reclaim storage cost", that's a trap — there's no Disable state, and Suspend doesn't drop existing versions. The right answer is lifecycle-expire noncurrent versions, or recreate the bucket.
+
 ## VPC & Networking
 
 See [VPC](../services/vpc.md) and [Networking Concepts](../concepts/networking.md) for full details.
