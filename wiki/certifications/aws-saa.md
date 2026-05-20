@@ -1,9 +1,9 @@
 ---
 title: AWS Solutions Architect Associate — Exam Notes
 type: certification
-tags: [iam, vpc, networking, ec2, route53, organizations, cost, s3, cloudwatch]
+tags: [iam, vpc, networking, ec2, route53, organizations, cost, s3, cloudwatch, multipart, transfer-acceleration]
 certs: [aws-saa]
-updated: 2026-05-19
+updated: 2026-05-20
 ---
 
 # AWS Solutions Architect Associate (SAA-C03)
@@ -107,6 +107,33 @@ See [S3 — Versioning and MFA Delete](../services/s3.md#versioning-and-mfa-dele
 
 > [!warning] Gotcha
 > If a question describes "disabling versioning to reclaim storage cost", that's a trap — there's no Disable state, and Suspend doesn't drop existing versions. The right answer is lifecycle-expire noncurrent versions, or recreate the bucket.
+
+### S3 Upload Performance — Multipart + Transfer Acceleration
+
+See [S3 — Upload Performance](../services/s3.md#upload-performance) for full details.
+
+- **Single `PutObject` is capped at 5 GB** — anything larger **requires** multipart upload (not optional)
+- AWS recommends multipart for objects **≥ 100 MB**; the SDK / CLI transfer manager auto-picks multipart above ~8 MB, so this is usually handled for you
+- Multipart parts: **5 MiB–5 GiB each** (last part can be smaller), **max 10,000 parts** → max object size ~5 TB
+- Failed multipart parts **retry individually** — single PUT failures restart from byte 0
+- **Incomplete multipart uploads still incur storage costs.** Standard fix: lifecycle rule with **`AbortIncompleteMultipartUpload`** after N days
+- **Transfer Acceleration** uses **CloudFront edge locations** + the **AWS global backbone** to bypass the public-internet long-haul. Bucket-level opt-in (off by default), separate endpoint `<bucket>.s3-accelerate.amazonaws.com`
+- TA bucket-name requirement: **DNS-compatible, no periods** (the dotted hostname would break TLS hostname matching)
+- TA costs **extra per GB** transferred; AWS provides a Speed Comparison tool to verify benefit before enabling
+- Multipart and TA are **orthogonal and combinable** — multipart parallelizes the bytes, TA shortens the network path
+
+| Goal | Mechanism |
+| --- | --- |
+| Upload a 50 GB file (reliability, throughput) | **Multipart upload** (required — > 5 GB) |
+| Globally distributed clients uploading to one bucket | **Transfer Acceleration** |
+| Large files **and** geographically far clients | **Both** — multipart over the TA endpoint |
+| Bulk transfer of petabytes from on-prem | **Snowball / DataSync** (beyond TA's domain) |
+
+> [!tip] Exam Tip
+> Pattern-match: *"large object, unreliable connection, want to resume on failure"* → **multipart upload**. *"users on multiple continents uploading to one bucket"* → **Transfer Acceleration**. *"file > 5 GB"* → multipart is **required**, not a choice. *"reduce orphaned-upload storage charges"* → lifecycle rule with `AbortIncompleteMultipartUpload`.
+
+> [!warning] Gotcha
+> Transfer Acceleration cannot be enabled on a bucket whose name contains **a period** (`.`). If a question mentions a bucket like `my.company.data` and asks why TA isn't working, the answer is **the bucket name must be DNS-compatible and dotless**.
 
 ## VPC & Networking
 
