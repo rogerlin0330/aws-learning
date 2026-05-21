@@ -74,7 +74,7 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 - [IAM](services/iam.md) — users, groups, roles (STS / federation), policies, ARNs
 - [VPC](services/vpc.md) — subnets, routing, IGW, NACL, SG, NAT GW, PrivateLink
 - [EC2](services/ec2.md) — instances, AMIs, ENIs (expanding)
-- [S3](services/s3.md) — buckets, bucket policies, ACLs (legacy), Block Public Access, versioning, SSE/CSE encryption, multipart upload + Transfer Acceleration
+- [S3](services/s3.md) — buckets, bucket policies, ACLs (legacy), Block Public Access, versioning, SSE/CSE encryption, multipart upload + Transfer Acceleration, storage classes + lifecycle
 - [Route 53](services/route53.md) — hosted zones, routing policies, health checks
 - [Organizations](services/organizations.md) — multi-account management, consolidated billing, SCPs
 - [CloudWatch](services/cloudwatch.md) — monitoring & observability; log groups, metric filters, alarms
@@ -103,7 +103,7 @@ Most real-world AWS deployments use **many accounts** — a per-team / per-envir
 ## Topics To Cover Next
 
 - EC2: instance types, AMIs, EBS volumes
-- S3: storage classes, lifecycle policies, replication (security, versioning, encryption, upload performance covered)
+- S3: replication (security, versioning, encryption, upload performance, storage classes + lifecycle covered)
 - ELB / Auto Scaling: ALB vs NLB, target groups, scaling policies
 - AWS AI services (for AI Practitioner cert)
 - Architecture patterns: HA, multi-AZ, disaster recovery tiers

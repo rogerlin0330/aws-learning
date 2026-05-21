@@ -1,9 +1,9 @@
 ---
 title: AWS Solutions Architect Associate — Exam Notes
 type: certification
-tags: [iam, vpc, networking, ec2, route53, organizations, cost, s3, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse]
+tags: [iam, vpc, networking, ec2, route53, organizations, cost, s3, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle]
 certs: [aws-saa]
-updated: 2026-05-20
+updated: 2026-05-21
 ---
 
 # AWS Solutions Architect Associate (SAA-C03)
@@ -134,6 +134,66 @@ See [S3 — Upload Performance](../services/s3.md#upload-performance) for full d
 
 > [!warning] Gotcha
 > Transfer Acceleration cannot be enabled on a bucket whose name contains **a period** (`.`). If a question mentions a bucket like `my.company.data` and asks why TA isn't working, the answer is **the bucket name must be DNS-compatible and dotless**.
+
+### S3 Storage Classes
+
+See [S3 — Storage Classes](../services/s3.md#storage-classes) for full details.
+
+- **Default to S3 Standard** — only move off it when the question explicitly mentions infrequent access, archival, or a replaceable/regenerable copy
+- Every class **except One Zone-IA** is designed for **11 nines durability** across **≥ 3 AZs**. One Zone-IA's 11 nines is **conditional on the single AZ not failing**
+- **Durability ≠ availability.** Standard = 11 nines durability + 4 nines (99.99%) availability. Standard-IA availability drops to 99.9%; One Zone-IA to 99.5%
+- **S3 Standard is the only class with no retrieval fee, no minimum size, and no minimum duration** — every other class adds at least one
+- **Public access requires hot tiers**: Standard, IA, One Zone-IA, GIR, accessible IT tiers. Glacier Flexible and Glacier Deep Archive **cannot be made public** — there's no way to serve an object when reading it requires a multi-hour job
+- **Restoring a Glacier object** stages a temporary copy in Standard-IA storage for the requested availability window — the **original Glacier object isn't moved**. Costs: retrieval fee + temporary IA storage. To permanently un-Glacier, change class via `CopyObject` after restore
+
+#### Class-by-class anchor table
+
+| Class | First-byte latency | Min. duration | Min. size | Retrieval fee | Key trade-off |
+| --- | --- | --- | --- | --- | --- |
+| **Standard** | ms | None | None | None | The default — baseline cost |
+| **Standard-IA** | ms | 30 days | 128 KB | $0.01/GB | ~½× storage cost; retrieval + minimums |
+| **One Zone-IA** | ms | 30 days | 128 KB | $0.01/GB | ~20% cheaper than IA; **single AZ** |
+| **Glacier Instant Retrieval** | ms | 90 days | 128 KB | $0.03/GB | Cheap storage + instant access; per-GET fee |
+| **Glacier Flexible Retrieval** | minutes–hours | 90 days | 40 KB | Expedited $0.03 / Std $0.01 / **Bulk free** | Archival; retrieval job required |
+| **Glacier Deep Archive** | hours | 180 days | 40 KB | Std $0.02 / Bulk $0.0025 | Cheapest tier; **no Expedited** option |
+| **Intelligent-Tiering** | varies by tier | None (90d archive-instant) | None | None (monitoring fee) | Auto-moves objects; useful only for **unknown** access patterns |
+
+#### Glacier retrieval-tier timing
+
+| Tier | Restore time | Per-GB fee |
+| --- | --- | --- |
+| Glacier Flexible — Expedited | 1–5 min | $0.03/GB |
+| Glacier Flexible — Standard | 3–5 hr | $0.01/GB |
+| Glacier Flexible — Bulk | 5–12 hr | **Free** |
+| Deep Archive — Standard | within 12 hr | $0.02/GB |
+| Deep Archive — Bulk | up to 48 hr | $0.0025/GB |
+
+#### Lifecycle transitions
+
+- Storage class is a **per-object** property set at upload or transitioned later by **lifecycle rules**
+- Lifecycle is **one-way down the cost ladder** — to move *back up* to a warmer class, use `CopyObject`, not a lifecycle rule
+- **30-day minimum** between upload and any lifecycle transition out of Standard
+- **Destination-class minimums apply** — a lifecycle move into Standard-IA still triggers IA's 30-day minimum charge
+
+> [!tip] Exam Tip
+> Pattern-match by **access frequency + retrieval tolerance**:
+>
+> - *"frequently accessed, important"* → **Standard**
+> - *"accessed monthly, important"* → **Standard-IA**
+> - *"replica / regenerable / derived data"* → **One Zone-IA**
+> - *"accessed quarterly but must be instant"* → **Glacier Instant Retrieval**
+> - *"archived, hours OK to retrieve"* → **Glacier Flexible Retrieval**
+> - *"compliance archive, up-to-48 hours OK"* → **Glacier Deep Archive**
+> - *"access pattern unknown or shifting over time"* → **Intelligent-Tiering** (and *only* then — for static patterns, the monitoring fee eats the savings)
+
+> [!warning] Gotcha — "Glacier" doesn't mean public
+> Glacier Flexible Retrieval and Glacier Deep Archive **cannot be made publicly accessible** and don't work with static website hosting. If a question describes *"archival storage that must remain publicly downloadable"*, the answer is **Glacier Instant Retrieval**, not Flexible or Deep.
+
+> [!warning] Gotcha — One Zone-IA's 11 nines is conditional
+> Marketing says 11 nines across all classes. For One Zone-IA, that math **assumes the single AZ doesn't fail** — an AZ-level loss event takes the data with it. Never use One Zone-IA for the only copy of critical data.
+
+> [!warning] Gotcha — Intelligent-Tiering isn't free
+> IT replaces retrieval fees with a **monitoring/automation fee per 1,000 objects**. For static, predictable access patterns, IT costs *more* than the right manual class. The right answer is IT only when the prompt explicitly says access patterns are **unknown or changing**.
 
 ## VPC & Networking
 
