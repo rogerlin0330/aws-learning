@@ -1,14 +1,14 @@
 ---
 title: AWS Solutions Architect Associate — Exam Notes
 type: certification
-tags: [iam, vpc, networking, ec2, route53, organizations, cost, s3, cloudwatch, multipart, transfer-acceleration]
+tags: [iam, vpc, networking, ec2, route53, organizations, cost, s3, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse]
 certs: [aws-saa]
 updated: 2026-05-20
 ---
 
 # AWS Solutions Architect Associate (SAA-C03)
 
-A running collection of exam tips, gotchas, and comparison tables. Deep-dive pages: [IAM](../services/iam.md) · [VPC](../services/vpc.md) · [EC2](../services/ec2.md) · [S3](../services/s3.md) · [Route 53](../services/route53.md) · [Organizations](../services/organizations.md) · [CloudWatch](../services/cloudwatch.md) · [Networking](../concepts/networking.md) · [Identity & Access](../concepts/identity-and-access.md) · [Resource vs Identity Policies](../concepts/resource-vs-identity-policies.md) · [DNS](../concepts/dns.md) · [TLS/HTTPS](../concepts/tls-https.md) · [Cost Optimization](../patterns/cost-optimization.md).
+A running collection of exam tips, gotchas, and comparison tables. Deep-dive pages: [IAM](../services/iam.md) · [VPC](../services/vpc.md) · [EC2](../services/ec2.md) · [S3](../services/s3.md) · [Route 53](../services/route53.md) · [Organizations](../services/organizations.md) · [CloudWatch](../services/cloudwatch.md) · [KMS](../services/kms.md) · [Networking](../concepts/networking.md) · [Identity & Access](../concepts/identity-and-access.md) · [Resource vs Identity Policies](../concepts/resource-vs-identity-policies.md) · [DNS](../concepts/dns.md) · [TLS/HTTPS](../concepts/tls-https.md) · [Cost Optimization](../patterns/cost-optimization.md).
 
 ## IAM
 
@@ -319,6 +319,78 @@ See [CloudWatch](../services/cloudwatch.md) for full details.
 > [!warning] Gotcha
 > Log **streams** have no configuration of their own — retention, permissions, and metric filters all attach to the **log group**. If a question asks where to set retention, the answer is the log group.
 
+## KMS
+
+See [KMS](../services/kms.md) for full details.
+
+- KMS is **regional + public-endpoint**; keys are scoped to a region and **never leave** the service (FIPS 140-2 Level 2)
+- Direct `Encrypt` / `Decrypt` is capped at **4 KB** per call — for larger payloads use **`GenerateDataKey`** + envelope encryption
+- `GenerateDataKey` returns **two copies of the same DEK**: a **plaintext** version (use immediately, then discard) and a **ciphertext** version (store alongside the encrypted data). KMS does **not** store DEKs
+- For **symmetric** `Decrypt`, you do **not** pass `--key-id` — KMS reads it from metadata embedded in the ciphertext blob
+- **Three key ownership tiers**: **AWS Owned** (invisible, no control), **AWS Managed** (visible like `aws/s3`, AWS controls policy & rotation), **Customer Managed** (full control — required if you need custom policy, rotation control, grants, or deletion)
+- Rotation creates **new backing key material** but keeps the **same logical Key ID**; previous backing keys are retained so old ciphertexts stay decryptable
+- **Aliases** (`alias/...`) decouple callers from the underlying Key UUID — repoint an alias to switch keys without touching code
+- **Every KMS key has a key policy, and it is required.** Unlike S3, **IAM alone cannot grant access** — the key policy must explicitly trust the account root first
+- Three access-control layers compose: **Key Policy + IAM Policies + Grants**. Grants are temporary, programmatic delegations used by AWS services (EBS attaching an encrypted volume, Auto Scaling launching from an encrypted AMI, …)
+- **Cross-account KMS access**: Allow on the key policy (key's account) **and** Allow on the caller's IAM identity (calling account) — identical intersection rule to cross-account S3
+
+> [!tip] Exam Tip
+> Pattern-match: *"encrypt a 5 GB file with KMS"* → **`GenerateDataKey` + envelope encryption** (direct `Encrypt` would exceed 4 KB). *"need to edit the key policy / disable rotation / share with another account"* → **Customer Managed** key, not AWS Managed. *"S3 SSE-KMS / EBS encryption uses KMS — but how does KMS handle a 100 MB object?"* → the **service** does envelope encryption; KMS only wraps the DEK.
+
+> [!warning] Gotcha
+> Granting `kms:*` in an IAM policy is **not** enough — without a key policy statement trusting the account root, the call still fails. This is the opposite default from S3, where IAM permissions alone work within the same account.
+
+> [!warning] Gotcha
+> KMS Keys are **region-scoped**. Encrypting in `us-east-1` and trying to decrypt in `us-west-2` with the same Key ID fails — the key doesn't exist there. Use **multi-region keys** if cross-region decrypt is required.
+
+### S3 Object Encryption — SSE & CSE
+
+See [S3 — Object Encryption](../services/s3.md#object-encryption--sse-and-cse) for full details.
+
+- **Buckets aren't encrypted — objects are.** "Bucket default encryption" only sets the default SSE flavour for new uploads; two objects in the same bucket can use different SSE methods
+- **SSE is mandatory** on S3 (no opt-out since 2023) — the question is only *which* SSE method, not whether to encrypt
+- **In transit (HTTPS)** is automatic and orthogonal to **at rest (SSE/CSE)** — both happen
+- **CSE ≠ SSE-C.** SSE-C is still **server-side** — S3 does the crypto; you just provide the key per request. CSE means S3 never touches plaintext
+
+| Method | Key management | Encryption | Notable property |
+| --- | --- | --- | --- |
+| **CSE** | YOU | YOU | S3 never sees plaintext |
+| **SSE-C** | YOU | S3 | Key supplied per request; S3 stores only a one-way hash |
+| **SSE-S3** | S3 (invisible) | S3 | AES-256; no key control; **no role separation** |
+| **SSE-KMS** | You + [KMS](../services/kms.md) | S3 | Rotation control + **role separation** + CloudTrail audit |
+
+- **SSE-S3** = the default low-overhead option. S3 generates a per-object DEK, encrypts with **AES-256**, and wraps the DEK with an invisible internal master key. You give up key control, rotation control, and role separation
+- **SSE-KMS** = uses [`GenerateDataKey`](../services/kms.md#data-encryption-keys-deks) against a Customer Managed KMS key. The encrypted DEK is stored in object metadata. This is the only SSE flavour that supports **role separation**, **rotation control**, and **CloudTrail-audited key usage**
+- **SSE-C** = client supplies key on every PUT/GET. S3 keeps a hash to verify but destroys the key. Lose the key and the data is gone — by design
+
+> [!tip] Exam Tip
+> Pattern-match: *"AES-256"* → **SSE-S3**. *"Role separation / S3 admin must not be able to read object data"* → **SSE-KMS**. *"Audit who decrypts what / control rotation"* → **SSE-KMS**. *"Customer provides key per request, S3 stores only a hash"* → **SSE-C**. *"AWS must never see plaintext, ever"* → **CSE** (encrypt before upload).
+
+> [!warning] Gotcha
+> "Buckets are encrypted" is a trap framing. Encryption is **per-object**. If a question implies you can flip a bucket-level switch and have all existing objects re-encrypted, that's wrong — bucket default encryption only affects **new** objects from that point on.
+
+> [!warning] Gotcha
+> SSE-KMS uses [KMS DEKs](../services/kms.md#data-encryption-keys-deks) because KMS itself can only directly encrypt **≤ 4 KB**. Don't fall for *"how does KMS encrypt a 1 GB object?"* — it doesn't; S3 does the bulk encryption with a DEK that KMS generated.
+
+#### S3 Bucket Keys — SSE-KMS cost optimization
+
+See [S3 Bucket Keys](../services/s3.md#s3-bucket-keys--sse-kms-cost-optimization) for full details.
+
+- **What it solves**: at scale (millions/billions of objects), SSE-KMS calls KMS once per PUT and once per GET — those request charges add up. **S3 Bucket Keys** can reduce KMS request charges by **up to 99%**
+- **How it works**: S3 fetches a short-lived **bucket-level key** from KMS, caches it in memory, and uses it to derive **per-object DEKs locally** — no KMS round trip per object. The bucket key is still fetched **at least once per requester** so access is captured in CloudTrail
+- **SSE-KMS only** — Bucket Keys don't apply to SSE-S3 (no KMS calls anyway), SSE-C (you supply the key), CSE (S3 doesn't encrypt), or DSSE-KMS (unsupported)
+- **Only affects new objects** after enabling — to migrate existing objects, `CopyObject` re-encrypts them
+- **Trust model unchanged**: bucket key is short-lived, never persisted, still derived from your KMS key
+
+> [!warning] Gotcha — encryption context flips from object ARN to bucket ARN
+> If you have a [KMS key policy](../services/kms.md#key-policies) or IAM policy with `kms:EncryptionContext:aws:s3:arn` conditions scoped to specific **object ARNs**, those conditions stop matching once Bucket Keys are on — S3 passes the **bucket ARN** instead. Update the policy conditions to use bucket ARN **before** enabling, or decrypts fail.
+
+> [!warning] Gotcha — replication ETag drift
+> Replicating an **unencrypted source object** into a destination bucket that has Bucket Keys + SSE-KMS as its default encryption re-encrypts the object on arrival — and the replica's **`ETag` differs from the source's**. Applications that compare source/replica ETags will break.
+
+> [!tip] Exam Tip
+> Pattern-match: *"SSE-KMS works but the KMS bill is huge on a bucket with millions of objects"* → **enable S3 Bucket Keys**. *"Cheaper than SSE-KMS"* on the same data is a misleading framing — Bucket Keys reduce **KMS request charges**, not the price per byte stored.
+
 ## Key Service Properties to Memorize
 
 | Service | Resilience level |
@@ -330,6 +402,7 @@ See [CloudWatch](../services/cloudwatch.md) for full details.
 | NAT GW | Zonal (need one per AZ for HA) |
 | [EC2](../services/ec2.md) instance | AZ-specific |
 | [S3](../services/s3.md) bucket | Regional (globally unique name) |
+| [KMS](../services/kms.md) key | Regional (single-region by default; multi-region keys are a separate feature) |
 
 ## Common Exam Traps
 
@@ -354,3 +427,4 @@ See [CloudWatch](../services/cloudwatch.md) for full details.
 - [TLS/HTTPS Concepts](../concepts/tls-https.md)
 - [Organizations](../services/organizations.md)
 - [Cost Optimization](../patterns/cost-optimization.md)
+- [KMS](../services/kms.md)
