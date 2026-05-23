@@ -1,7 +1,7 @@
 ---
 title: AWS Solutions Architect Associate — Exam Notes
 type: certification
-tags: [iam, vpc, networking, ec2, route53, organizations, cost, s3, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena]
+tags: [iam, vpc, networking, ec2, route53, organizations, cost, s3, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger]
 certs: [aws-saa]
 updated: 2026-05-23
 ---
@@ -339,6 +339,37 @@ See [S3 — Server-Side Filtering](../services/s3.md#server-side-filtering--s3-s
 
 > [!warning] Gotcha — S3 Select is not a query engine
 > The exam likes to dangle S3 Select as a tempting answer to multi-object query scenarios. Don't bite. **One object per call** is the hard boundary. Joins, aggregations across objects, schema catalog → **Athena**. Format outside CSV / JSON / Parquet → **not S3 Select** either.
+
+### S3 Event Notifications
+
+See [S3 — Event Notifications](../services/s3.md#event-notifications) for full details.
+
+- S3 emits notifications when objects are **created, deleted, restored (from Glacier), or replicated** — the trigger for event-driven workflows around the bucket
+- **Three native destinations only**: **Lambda**, **SQS**, **SNS** — nothing else. (EventBridge is a separate, broader integration.)
+- The destination needs a **resource policy** trusting the **`s3.amazonaws.com`** service principal — Lambda function policy / SQS queue policy / SNS topic policy. Without it, **delivery silently fails**
+- Events are delivered as **JSON**; Lambda receives it inside the `event` argument
+- **Object Created** fires on `PUT`, `POST`, `COPY`, **completed multipart upload**
+- **Object Removed** fires on standard deletes + **delete-marker creation** (on versioned buckets)
+- **Object Restore** fires when Glacier restore **starts** AND **completes**
+- **Object Replication** fires on **missed 15-min RTC SLA**, replicated-after-threshold, no-longer-tracked, and **failed** replication
+- **Filtering**: native event notifications support only **prefix/suffix** on the object key — anything richer needs EventBridge
+
+#### Native S3 Events vs EventBridge
+
+| Need | Pick |
+| --- | --- |
+| Trigger Lambda on object upload, simple bucket-local config | **S3 Event Notifications** (or EventBridge) |
+| Destinations beyond Lambda/SQS/SNS (Step Functions, Kinesis, custom buses, SaaS) | **EventBridge** |
+| Rich event-pattern filtering (any field, not just key prefix/suffix) | **EventBridge** |
+| Lifecycle / intelligent-tiering / fine-grained replication events | **EventBridge** |
+| Cross-account fan-out | **EventBridge** |
+| Default for new workflows | **EventBridge** unless a specific reason to use the native feature |
+
+> [!tip] Exam Tip
+> Pattern-match: *"trigger Lambda when a file lands in S3"* → **S3 Event Notifications → Lambda** (also acceptable: EventBridge → Lambda). *"three destinations / Lambda, SQS, SNS only"* → native S3 Event Notifications. *"events delivered as JSON"* → yes. *"what permits S3 to invoke / send / publish"* → **resource policy on the destination** trusting **`s3.amazonaws.com`**. *"notify when Glacier restore completes"* → `s3:ObjectRestore:Completed`. *"detect failed cross-region replication"* → `s3:ObjectReplication:*` (or EventBridge). *"events not arriving, no error in CloudTrail on the bucket side"* → check the **destination's resource policy** — bucket isn't the requester, so IAM errors surface on the destination, not the bucket.
+
+> [!warning] Gotcha — silent failure mode
+> S3 Events fail silently if the destination's resource policy is missing or wrong. The S3 console wires up Lambda permissions for you when you add the destination, but if you build the configuration via CloudFormation / Terraform / CLI, the function/queue/topic policy is a **separate resource you must declare**. EventBridge has the same constraint on its targets.
 
 ## VPC & Networking
 
