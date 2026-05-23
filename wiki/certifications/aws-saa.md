@@ -1,7 +1,7 @@
 ---
 title: AWS Solutions Architect Associate — Exam Notes
 type: certification
-tags: [iam, vpc, networking, ec2, route53, organizations, cost, s3, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls]
+tags: [iam, vpc, networking, ec2, route53, organizations, cost, s3, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena]
 certs: [aws-saa]
 updated: 2026-05-23
 ---
@@ -312,6 +312,33 @@ See [S3 — Replication](../services/s3.md#replication) for full details.
 
 > [!warning] Gotcha — Cross-account ownership
 > The most common cross-account exam trap: replication succeeds, the bytes arrive in the destination, but the destination account's IAM users get **403** trying to read them — because the source account still owns the objects. The fix is the **"Change object ownership to destination bucket owner"** option in the replication rule, set at configuration time.
+
+### S3 Select & Glacier Select
+
+See [S3 — Server-Side Filtering](../services/s3.md#server-side-filtering--s3-select--glacier-select) for full details.
+
+- **S3 Select** and **Glacier Select** push a SQL-like filter **into the storage service** so the application only retrieves the rows/columns it actually needs — not the whole object
+- The architectural win: filtering moves **from the application to S3**, so the network only carries the bytes the app uses. Up to **400% faster**, up to **80% cheaper** on data transfer
+- **Supported formats**: **CSV**, **JSON**, **Parquet** (S3 Select); **BZIP2** compression for CSV and JSON
+- **One object at a time** — no joins, no aggregations across objects. Multi-object queries belong on **Athena**, not S3 Select
+- **S3 Select** = synchronous, against any hot tier (Standard / IA / One Zone-IA / GIR), millisecond latency
+- **Glacier Select** = a **retrieval job** against Glacier Flexible / Deep Archive — inherits the source class's [retrieval tier](../services/s3.md#retrieval-tiers) (Expedited / Standard / Bulk). Not an instant query
+
+#### Decision lookup
+
+| Scenario | Answer |
+| --- | --- |
+| "Retrieve only specific rows/columns from a large CSV/JSON/Parquet object" | **S3 Select** |
+| Same scenario but the object is in Glacier Flexible / Deep Archive | **Glacier Select** (still a retrieval job) |
+| "Query across many S3 objects, with joins or aggregations" | **Athena**, not S3 Select |
+| "App downloads the whole object then filters in memory" | The **anti-pattern** S3 Select fixes |
+| Source object is an image / video / binary archive | **Plain GetObject** — S3 Select doesn't apply |
+
+> [!tip] Exam Tip
+> Pattern-match: *"reduce data transferred from S3 / filter at the source"* → **S3 Select**. *"SQL-like expression on one object"* → **S3 Select**. *"400% faster / 80% cheaper"* → S3 Select / Glacier Select. *"object lives in Glacier and we need to filter on restore"* → **Glacier Select** (still a retrieval job — Expedited / Standard / Bulk choice still applies). *"query across thousands of files / joins / aggregations"* → **Athena**.
+
+> [!warning] Gotcha — S3 Select is not a query engine
+> The exam likes to dangle S3 Select as a tempting answer to multi-object query scenarios. Don't bite. **One object per call** is the hard boundary. Joins, aggregations across objects, schema catalog → **Athena**. Format outside CSV / JSON / Parquet → **not S3 Select** either.
 
 ## VPC & Networking
 
