@@ -74,7 +74,7 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 - [IAM](services/iam.md) — users, groups, roles (STS / federation), policies, ARNs
 - [VPC](services/vpc.md) — subnets, routing, IGW, NACL, SG, NAT GW, PrivateLink
 - [EC2](services/ec2.md) — instances, AMIs, ENIs (expanding)
-- [S3](services/s3.md) — buckets, bucket policies, ACLs (legacy), Block Public Access, pre-signed URLs, versioning, SSE/CSE encryption, multipart upload + Transfer Acceleration, storage classes + lifecycle, replication (CRR/SRR)
+- [S3](services/s3.md) — buckets, bucket policies, ACLs (legacy), Block Public Access, pre-signed URLs, versioning, SSE/CSE encryption, multipart upload + Transfer Acceleration, storage classes + lifecycle, replication (CRR/SRR), S3 Select / Glacier Select, event notifications + EventBridge, access logging
 - [Route 53](services/route53.md) — hosted zones, routing policies, health checks
 - [Organizations](services/organizations.md) — multi-account management, consolidated billing, SCPs
 - [CloudWatch](services/cloudwatch.md) — monitoring & observability; log groups, metric filters, alarms

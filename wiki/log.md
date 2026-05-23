@@ -1,5 +1,33 @@
 # Wiki Log
 
+## [2026-05-23] ingest | S3 Access Logs
+
+Ingested `raw/aws-cert-study-notes/aws-solution-architect/s3_access_logs.md` and copied `s3-access-logs.png` to `wiki/assets/`. Added a new **Access Logging** H2 section to `services/s3.md`, placed **between Event Notifications and Choosing the Right Mechanism** — the natural slot because access logs and event notifications form a conceptual pair on the page's "integration mechanisms" cluster: Event Notifications are push-on-change near-real-time triggers; Access Logging is async best-effort batch logging of *every* request. Same direction (S3 emits to elsewhere), opposite timeliness/granularity profile.
+
+The new section covers: the source-bucket-vs-target-bucket model with same-region requirement, the XML logging configuration with `TargetBucket` + `TargetPrefix`, the AWS-managed **S3 Log Delivery Group** as the principal that performs the writes, the **ACL** grant on the target bucket (explicitly flagged as one of the few legitimate uses of S3 ACLs in modern accounts — cross-linked to the ACLs section), best-efforts delivery with hours of latency, log file format (newline-delimited records, space-delimited attributes, Apache-style), "no built-in retention" as a generalized pattern shared with ELB/CloudFront/VPC Flow Logs, an **Access Logs vs CloudTrail data events** comparison table, a key-takeaway summary, and a pattern-match exam tip covering 10 scenarios.
+
+Synthesis choices over straight-copy:
+
+1. **Framed access logs as the async/batch counterpart to Event Notifications** in the intro: "Event Notifications push when something changes. Access Logging does the opposite — it asynchronously records every request." The raw note presents access logs in isolation; the explicit pairing reuses the page's existing "integration mechanism" framing and gives the section a clean conceptual home.
+2. **Cross-linked the ACL grant back to the ACL section** as "one of the few legitimate uses of S3 ACLs in modern accounts" — the raw note flags this in a single inline callout; promoting it to a `[!tip]` callout makes the relationship to the earlier ACL-legacy framing bidirectional and reinforces the "ACLs disabled is the modern default, but this is the exception" thread that runs through the page.
+3. **Cross-linked the Log Delivery Group as another instance of the service-principal grant pattern** — Event Notifications already established this pattern (S3 is the principal; destination grants delivery rights via resource policy / `s3.amazonaws.com`). Access Logging is the older, ACL-vocabulary expression of the same idea (`logging.s3.amazonaws.com` granted via ACL). Calling this out explicitly turns two seemingly-unrelated facts into one reusable mental model.
+4. **Promoted the CloudTrail data events comparison from a bottom-of-page section to a focused subsection** with a 6-row capability table and an explicit "in modern accounts, CloudTrail data events are typically the right answer for security workflows" recommendation. The raw note had the table but buried; the exam-relevant framing is the choice between the two, so it deserves promotion.
+5. **Generalized the "no built-in retention" point** into a wider pattern — same applies to ELB access logs, CloudFront access logs, VPC Flow Logs landing in S3. Set the lifecycle rule when you set up logging, or you'll discover a multi-TB log bucket years later. Cross-linked to Lifecycle Configuration.
+6. **Added a "bucket is the audit boundary, not the object" gotcha** that's not in the raw note — access logs record request-level activity (HTTP-level view), not actual object decrypts. For "did this principal actually read the bytes when SSE-KMS gates the path?" you need the corresponding KMS CloudTrail events. Cross-linked back to SSE-KMS role separation.
+7. **Acknowledged CloudTrail as an existing gap** — there's no CloudTrail wiki page yet. Referenced it inline by name (no link) so future ingest of CloudTrail material has an obvious target to backfill. Same pattern used earlier for Athena, Lambda, SQS, SNS, EventBridge.
+
+Added a row to the **Choosing the Right Mechanism** decision table at the bottom of `services/s3.md`:
+
+```text
+| Async, best-effort request-level audit log of every operation against a bucket | Access Logging (or CloudTrail data events for near-real-time, structured, IAM-rich event stream) |
+```
+
+Updated `services/s3.md` page intro to add the new orthogonal concern ("**Access Logging**, the async, best-effort request-level audit log delivered as Apache-style records into a target bucket") and tags (added `access-logs, audit, observability, log-delivery-group`). Added two References (AWS S3 server access logging docs; the broader S3 logging options docs page) and the source path in the Sources list.
+
+Added a new **S3 Access Logging** subsection to `certifications/aws-saa.md` under the S3 area, between **S3 Event Notifications** and **VPC & Networking**, with: an 8-bullet quick-reference summary, an **Access Logs vs CloudTrail Data Events** decision-lookup table (4 scenarios), a pattern-match exam tip (10 scenarios including the silently-failing ACL-disabled trap), and a gotcha warning about the ACL-disabled-on-target-bucket failure mode (an exam-relevant scenario because the modern S3 default is ACLs disabled). Updated SAA tags (added `access-logs, audit, observability`).
+
+Updated `index.md` S3 description to mention access logging with the four exam-relevant angles (async best-effort; source → target bucket; Apache-style records; ACL grant to the S3 Log Delivery Group; CloudTrail data events as the real-time / structured alternative).
+
 ## [2026-05-23] ingest | S3 Event Notifications
 
 Ingested `raw/aws-cert-study-notes/aws-solution-architect/s3_events.md` and copied `s3-events-notification.png` to `wiki/assets/`. Added a new **Event Notifications** H2 section to `services/s3.md`, placed **between Server-Side Filtering and Choosing the Right Mechanism** — the natural slot because S3 Events is the read/integration-side counterpart to S3 Select: Select lets the app *pull* a subset of data; Events lets S3 *push* notifications when data changes. Both belong in the "integration mechanisms" cluster at the end of the page, before the decision summary.

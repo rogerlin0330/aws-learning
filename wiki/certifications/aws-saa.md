@@ -1,7 +1,7 @@
 ---
 title: AWS Solutions Architect Associate — Exam Notes
 type: certification
-tags: [iam, vpc, networking, ec2, route53, organizations, cost, s3, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger]
+tags: [iam, vpc, networking, ec2, route53, organizations, cost, s3, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability]
 certs: [aws-saa]
 updated: 2026-05-23
 ---
@@ -370,6 +370,34 @@ See [S3 — Event Notifications](../services/s3.md#event-notifications) for full
 
 > [!warning] Gotcha — silent failure mode
 > S3 Events fail silently if the destination's resource policy is missing or wrong. The S3 console wires up Lambda permissions for you when you add the destination, but if you build the configuration via CloudFormation / Terraform / CLI, the function/queue/topic policy is a **separate resource you must declare**. EventBridge has the same constraint on its targets.
+
+### S3 Access Logging
+
+See [S3 — Access Logging](../services/s3.md#access-logging) for full details.
+
+- Async, best-effort request-level audit log of every operation against a **source bucket**, delivered as **Apache-style** text files into a **target bucket** (same region)
+- Configured on the **source bucket** via the console or **`PUT Bucket logging`** API; the XML config names the target bucket and an optional `TargetPrefix`
+- Log delivery is performed by the AWS-managed **S3 Log Delivery Group** — *not* the source-bucket owner or the requester
+- The Log Delivery Group needs **write access to the target bucket**, granted via an **ACL** on the target bucket (one of the few legitimate uses of S3 ACLs left). **Not** a bucket policy
+- **Best-efforts, hours of latency** — enabling logging or changing config can take a few hours; delivery is not guaranteed real-time. Don't build alerting on top of it
+- **Format**: log files contain many records; **records are newline-delimited**, **attributes within a record are space-delimited**. Conceptually identical to an Apache access log
+- **One target bucket, many sources** — use distinct `TargetPrefix` values per source bucket
+- **No built-in retention** — attach a **Lifecycle rule** to the target bucket (transition to Glacier, expire after retention window) or logs accumulate forever
+
+#### Access Logs vs CloudTrail Data Events
+
+| Need | Pick |
+| --- | --- |
+| Bulk, cheap, request-level audit log; no per-event charge | **S3 Access Logs** |
+| Near-real-time, structured JSON, full IAM context (principal, session, MFA, source IP) | **CloudTrail data events** |
+| Native integration with CloudWatch / EventBridge / Detective for alerting | **CloudTrail data events** |
+| Compliance evidence of every read/write at minimal cost | **S3 Access Logs** + lifecycle to Glacier |
+
+> [!tip] Exam Tip
+> Pattern-match: *"who accessed which objects in my bucket, cheapest option"* → **S3 Access Logs**. *"where do I enable logging / where do logs go"* → enable on **source bucket**, delivered to **target bucket**. *"how does S3 get permission to write into the target bucket"* → **ACL** granting the **S3 Log Delivery Group** WRITE permission (not a bucket policy). *"why is logging not showing up immediately"* → **best-efforts; can take hours**. *"record / attribute delimiter"* → **newline / space**. *"log retention"* → **your responsibility — use Lifecycle**. *"need real-time / structured / IAM-context-rich logs for security automation"* → **CloudTrail data events**, not access logs. *"need to trigger Lambda on object upload"* → **Event Notifications**, not access logs (access logs are batch/delayed).
+
+> [!warning] Gotcha — access logs are the rare legitimate ACL use case
+> Modern S3 defaults to ACLs disabled (Object Ownership = Bucket owner enforced). The target bucket for access logging must keep ACLs enabled, because the S3 Log Delivery Group is granted via the ACL grantee model. If a question describes "ACLs disabled on the target bucket / log delivery failing", re-enabling ACLs (or using a different target bucket) is the fix.
 
 ## VPC & Networking
 
