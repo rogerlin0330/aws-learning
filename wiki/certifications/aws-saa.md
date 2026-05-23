@@ -1,7 +1,7 @@
 ---
 title: AWS Solutions Architect Associate — Exam Notes
 type: certification
-tags: [iam, vpc, networking, ec2, route53, organizations, cost, s3, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability]
+tags: [iam, vpc, networking, ec2, route53, organizations, cost, s3, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability]
 certs: [aws-saa]
 updated: 2026-05-23
 ---
@@ -145,6 +145,46 @@ See [S3 — Versioning and MFA Delete](../services/s3.md#versioning-and-mfa-dele
 
 > [!warning] Gotcha
 > If a question describes "disabling versioning to reclaim storage cost", that's a trap — there's no Disable state, and Suspend doesn't drop existing versions. The right answer is lifecycle-expire noncurrent versions, or recreate the bucket.
+
+### S3 Object Lock
+
+See [S3 — Object Lock](../services/s3.md#object-lock) for full details.
+
+- **Object Lock = WORM (Write-Once-Read-Many)** layered on top of [versioning](../services/s3.md#versioning-and-mfa-delete). Protects object **versions** from delete/overwrite for a defined retention period
+- **Must be enabled at bucket creation** by default; to enable on an **existing bucket**, **contact AWS Support**
+- Enabling Object Lock **auto-enables versioning**; once enabled, neither Object Lock nor the auto-enabled versioning can be disabled — both are **one-way doors**
+- **Two retention methods** that compose as an OR (either restriction blocks the action):
+  - **Retention period** (days and/or years) with one of two modes — **Governance** or **Compliance**
+  - **Legal Hold** — binary ON/OFF flag, no time bound
+- Can be set per object version **or** as a **bucket default** (same pattern as default encryption)
+
+#### Compliance vs Governance vs Legal Hold
+
+| Mode | Time-bound? | Bypass possible? | Use when |
+| --- | --- | --- | --- |
+| **Compliance retention** | Yes (days/years) | **No — not even by root** | Regulatory mandate to retain unmodified for N years (SEC 17a-4, HIPAA, FINRA) |
+| **Governance retention** | Yes (days/years) | Yes — `s3:BypassGovernanceRetention` + `x-amz-bypass-governance-retention: true` header | Internal anti-tampering with an authorized admin escape hatch |
+| **Legal Hold** | No (binary flag) | Yes — `s3:PutObjectLegalHold` to toggle OFF | Active legal case / indefinite preservation with no predefined end date |
+
+#### Required permissions
+
+| Action | Permission |
+| --- | --- |
+| Configure Object Lock on a bucket | `s3:PutBucketObjectLockConfiguration` |
+| Set/change retention on a version | `s3:PutObjectRetention` |
+| Bypass Governance mode | `s3:BypassGovernanceRetention` + `x-amz-bypass-governance-retention: true` header |
+| Add or remove a legal hold | `s3:PutObjectLegalHold` |
+
+> [!tip] Exam Tip
+> Pattern-match: *"WORM" / "immutable storage" / "regulatory retention"* → **Object Lock**. *"no one, including the root user, can delete or modify for N years"* → **Compliance mode** (the "even root" wording is the giveaway — MFA Delete won't satisfy this; only Compliance does). *"admins must be able to override the lock for emergencies"* → **Governance mode** + scoped `s3:BypassGovernanceRetention`. *"indefinite hold with no defined end date — active legal case"* → **Legal Hold**. *"enable Object Lock on an existing bucket"* → **Contact AWS Support**. *"Object Lock applies to objects or to versions?"* → **versions**. *"object lock + MFA Delete"* — these solve different problems: MFA Delete gates the bucket-versioning toggle and per-version permanent delete with a second factor (compromised-IAM-admin scenario); Object Lock is the WORM/regulatory-retention answer (no-one-can-touch-this-version-period scenario).
+
+> [!warning] Common Object Lock Gotchas
+>
+> - **Compliance mode is irreversible.** Misconfigured retention of 10 years means 10 years of storage cost; AWS Support cannot override it
+> - **Locks are on versions, not keys.** A new PUT to the same key creates a fresh, unlocked version unless the bucket-default Object Lock config catches it
+> - **Retention and legal hold are independent** — removing one does not unlock the other
+> - **The bypass header is default in the AWS Console** — console users with `s3:BypassGovernanceRetention` can override Governance locks without manually adding any header. Scope this permission tightly
+> - **Versioning cannot be suspended** on an Object-Lock-enabled bucket — versioning is permanent for the life of the bucket
 
 ### S3 Upload Performance — Multipart + Transfer Acceleration
 

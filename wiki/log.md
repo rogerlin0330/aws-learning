@@ -1,5 +1,33 @@
 # Wiki Log
 
+## [2026-05-23] ingest | S3 Object Lock
+
+Ingested `raw/aws-cert-study-notes/aws-solution-architect/s3_object_lock.md` and copied `s3-object-lock-comparison.png` to `wiki/assets/`. Added a new **Object Lock** H2 section to `services/s3.md`, placed **immediately after Versioning and MFA Delete** — the natural slot because Object Lock is the next rung on the **immutability ladder** (Versioning → Versioning + MFA Delete → Object Lock Governance → Object Lock Compliance) and is mechanically built on top of versioning (auto-enables it; cannot suspend versioning while Object Lock is on).
+
+The new section covers: the immutability-ladder framing as a 5-row table showing what each rung protects against and who can reverse it; the bucket-level enablement rules (must be set at bucket creation or via AWS Support for existing buckets; one-way doors for both Object Lock and the auto-enabled versioning); the two retention methods (retention period + legal hold) and how they compose as an OR; the Compliance-vs-Governance side-by-side table showing the only operational difference is the bypass escape hatch (`s3:BypassGovernanceRetention` + the `x-amz-bypass-governance-retention: true` header, with a callout that the header is default in the console); Compliance mode's "no override, not even root" property as a one-way door; Legal Hold as a time-unbounded binary flag for active-case scenarios; the required-permissions table; a decision guide mapping situations to recommended modes; a quick-reference Q&A table; a pattern-match exam tip covering 6 scenarios; and a common-gotchas warning list.
+
+Synthesis choices over straight-copy:
+
+1. **Promoted the "immutability ladder" framing to the top of the section** as a 5-row table (Versioning → Versioning+MFA Delete → Governance → Compliance → Legal Hold). The raw note presents the three Object Lock modes in isolation; the ladder framing connects Object Lock back to the page's existing Versioning + MFA Delete material and gives readers a single mental model that spans all three data-protection layers. Cross-references both back into the Versioning section and forward into each Object Lock mode.
+2. **Cross-linked the existing MFA Delete exam tip to point forward to Object Lock Compliance** for the "regulatory retention, even root cannot delete" scenario — turning what would be two isolated tips into a coherent "MFA Delete handles compromised-admin, Object Lock Compliance handles regulator" narrative. The raw note doesn't explicitly distinguish these scenarios; the wiki framing makes them exam-pattern-matchable.
+3. **Pulled Compliance vs Governance into a single comparison table** with rows for delete/overwrite/shorten-retention/change-mode/bypass — instead of two separate tables. The raw note had this as two side-by-side mode descriptions; collapsing to one table makes the "they're identical except for the bypass row" point structurally obvious.
+4. **Made the bypass-header-default-in-the-console gotcha its own `[!warning]` callout** (not just a parenthetical as in the raw note) — it's the highest-impact operational gotcha on this whole feature and warrants visual prominence.
+5. **Added "one-way door" framing for both Compliance mode and the bucket-level Object Lock enablement** — same phrasing used elsewhere on the page (Versioning's Enabled-state, Glacier-class transitions, lifecycle waterfall) to reinforce that S3 has a small family of permanent-decision features. Calling them all "one-way doors" makes the pattern discoverable.
+6. **Reframed retention + legal hold as composing via OR** (not "both can coexist" as in the raw note) — the OR vocabulary makes the semantics precise and matches how IAM Deny semantics, replication filters, etc. are talked about elsewhere in the wiki.
+7. **Added a row to the page intro's orthogonal-concerns paragraph** — added Object Lock as a sibling under "data protection" alongside Versioning + MFA Delete. The raw note treats Object Lock as a standalone feature; the page's existing "five orthogonal concerns" framing makes more sense if data-protection is a single category covering everything from soft-delete to WORM.
+
+Added a row to the **Choosing the Right Mechanism** decision table at the bottom of `services/s3.md`:
+
+```text
+| Write-Once-Read-Many / regulatory immutability for object versions | Object Lock — Compliance mode (no override, not even root), Governance mode (bypassable with scoped IAM permission), or Legal Hold (binary, no time bound) |
+```
+
+Updated `services/s3.md` page intro to add Object Lock under the data-protection concern, and updated tags (added `object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability`). Added two References (AWS S3 Object Lock + Object Lock overview docs) and the source path in the Sources list.
+
+Added a new **S3 Object Lock** subsection to `certifications/aws-saa.md` under the S3 area, between **S3 Versioning & MFA Delete** and **S3 Upload Performance**, with: a 5-bullet quick-reference summary, a Compliance-vs-Governance-vs-Legal-Hold decision-lookup table, a required-permissions table, a pattern-match exam tip covering 6 scenarios (including the explicit MFA-Delete-vs-Object-Lock-Compliance disambiguation), and a 5-bullet gotcha warning. Updated SAA tags (added `object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability`).
+
+Updated `index.md` S3 description to mention Object Lock with the four exam-relevant angles (WORM immutability for object versions; Compliance vs Governance retention; Legal Hold; bucket-level permanence — auto-enables versioning and cannot be disabled).
+
 ## [2026-05-23] ingest | S3 Access Logs
 
 Ingested `raw/aws-cert-study-notes/aws-solution-architect/s3_access_logs.md` and copied `s3-access-logs.png` to `wiki/assets/`. Added a new **Access Logging** H2 section to `services/s3.md`, placed **between Event Notifications and Choosing the Right Mechanism** — the natural slot because access logs and event notifications form a conceptual pair on the page's "integration mechanisms" cluster: Event Notifications are push-on-change near-real-time triggers; Access Logging is async best-effort batch logging of *every* request. Same direction (S3 emits to elsewhere), opposite timeliness/granularity profile.
