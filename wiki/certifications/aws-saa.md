@@ -1,7 +1,7 @@
 ---
 title: AWS Solutions Architect Associate — Exam Notes
 type: certification
-tags: [iam, vpc, networking, ec2, route53, organizations, cost, s3, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle]
+tags: [iam, vpc, networking, ec2, route53, organizations, cost, s3, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc]
 certs: [aws-saa]
 updated: 2026-05-21
 ---
@@ -168,12 +168,39 @@ See [S3 — Storage Classes](../services/s3.md#storage-classes) for full details
 | Deep Archive — Standard | within 12 hr | $0.02/GB |
 | Deep Archive — Bulk | up to 48 hr | $0.0025/GB |
 
-#### Lifecycle transitions
+#### Lifecycle Configuration
 
-- Storage class is a **per-object** property set at upload or transitioned later by **lifecycle rules**
-- Lifecycle is **one-way down the cost ladder** — to move *back up* to a warmer class, use `CopyObject`, not a lifecycle rule
-- **30-day minimum** between upload and any lifecycle transition out of Standard
+See [S3 — Lifecycle Configuration](../services/s3.md#lifecycle-configuration) for full details.
+
+- **Two action types**: **Transition** (change storage class) and **Expiration** (delete object or version). Rule scope: whole bucket, prefix filter, tag filter, object size filter, or — on versioned buckets — object versions
+- **Lifecycle is time-based, not access-based.** *"Move when frequently/rarely accessed"* → that's **Intelligent-Tiering**, not lifecycle
+- **Transitions are one-way down the cost ladder** — to move *back up* to a warmer class, use `CopyObject`, not a lifecycle rule
+- **30-day Standard minimum** between upload and any lifecycle transition to Standard-IA or One Zone-IA (direct PUT into IA at upload time is fine; only the lifecycle path is gated). **Same rule applies to noncurrent versions** — they must be at least 30 days noncurrent before transitioning to Standard-IA / One Zone-IA
+- **Single-rule minimum-duration gap**: within one rule, consecutive transitions must respect the **destination class's minimum storage duration**. The IA-to-Glacier case (30-day IA minimum) is the most common, but the rule generalizes — e.g. a rule that says GIR @ 4 days then Deep Archive @ 20 days is rejected (GIR's 90-day minimum means Deep Archive can't fire before day 94). **Workaround: use two separate rules** — the constraint doesn't apply across rules (you still pay the destination's minimum-duration charges)
 - **Destination-class minimums apply** — a lifecycle move into Standard-IA still triggers IA's 30-day minimum charge
+- **Objects < 128 KB don't transition by default** (since September 2024). Override with an `ObjectSizeGreaterThan` filter on the rule, or set the `x-amz-transition-default-minimum-object-size` header on `PutBucketLifecycleConfiguration`. Pre-Sept-2024 configurations retain the old behavior until edited
+- **Pending / Failed replication objects are skipped** by lifecycle on versioning-enabled / versioning-suspended buckets — fix replication before expecting transitions to fire
+- **Lifecycle is the same engine** behind `AbortIncompleteMultipartUpload`, noncurrent-version expiration, and storage-class transitions — different actions, same machinery
+
+##### The transition waterfall
+
+Every class can transition down to a colder class, with **one exception**: **One Zone-IA cannot transition to Glacier Instant Retrieval**. Every other source class (Standard, Standard-IA, Intelligent-Tiering, even Glacier Instant Retrieval itself) can target GIR. Memorize this single asymmetry.
+
+| From | Can transition to |
+| --- | --- |
+| Standard | All other classes |
+| Standard-IA | Intelligent-Tiering, One Zone-IA, GIR, Glacier Flexible, Glacier Deep Archive |
+| Intelligent-Tiering | Varies by IT access tier — narrows as the source tier gets colder (Frequent/Infrequent → One Zone-IA + Glacier classes; Archive Instant Access → GIR + Glacier classes only; Archive Access → Glacier Flexible/Deep only; Deep Archive Access → Deep Archive only) |
+| One Zone-IA | Glacier Flexible, Glacier Deep Archive ⚠️ (**not** GIR) |
+| Glacier Instant Retrieval | Glacier Flexible, Glacier Deep Archive |
+| Glacier Flexible Retrieval | Glacier Deep Archive |
+| Glacier Deep Archive | (terminal) |
+
+> [!tip] Exam Tip
+> Pattern-match: *"transition objects to a cheaper tier automatically as they age"* → **lifecycle transition**. *"delete objects after N days"* → **lifecycle expiration**. *"move data based on access pattern"* → **Intelligent-Tiering**, not lifecycle. *"Standard → Glacier on day 5"* → blocked by the **30-day Standard minimum**. *"single rule: GIR day 4 → Deep Archive day 20"* → blocked by the **single-rule minimum-duration gap** (GIR's 90-day minimum); the Deep Archive transition must be on day 94 or later, or split into two rules. *"One Zone-IA → Glacier Instant Retrieval"* → **not allowed**; route via a hot tier with `CopyObject` first. *"my lifecycle rule isn't moving any of my small log files"* → since Sept 2024, **objects < 128 KB don't transition by default** — add `ObjectSizeGreaterThan`.
+
+> [!warning] Gotcha — small objects don't transition by default, and archive overhead makes them worse
+> Two compounding factors make small-object archival a trap: **(1)** since September 2024, lifecycle skips objects < 128 KB by default unless you explicitly override the size filter, and **(2)** every object archived to Glacier Flexible / Deep Archive carries **8 KB at Standard rates + 32 KB at Glacier rates** of fixed metadata overhead. For tiny files the overhead alone can exceed the object itself — aggregate into larger objects (tarballs, columnar blobs) before archiving.
 
 > [!tip] Exam Tip
 > Pattern-match by **access frequency + retrieval tolerance**:
@@ -194,6 +221,59 @@ See [S3 — Storage Classes](../services/s3.md#storage-classes) for full details
 
 > [!warning] Gotcha — Intelligent-Tiering isn't free
 > IT replaces retrieval fees with a **monitoring/automation fee per 1,000 objects**. For static, predictable access patterns, IT costs *more* than the right manual class. The right answer is IT only when the prompt explicitly says access patterns are **unknown or changing**.
+
+### S3 Replication
+
+See [S3 — Replication](../services/s3.md#replication) for full details.
+
+- **CRR** (Cross-Region) vs **SRR** (Same-Region) differ only in *where* the destination lives. Both work **same-account** or **cross-account**
+- Replication is configured on the **source bucket** + an IAM role (S3 service trust policy; permissions on source `Get*` + destination `Replicate*`)
+- **Same-account**: IAM role is enough. **Cross-account**: also need a **bucket policy on the destination** allowing the source-account role
+- **Versioning is required on both buckets** — non-negotiable
+- **Not retroactive** — only new objects from configuration time onward. To backfill existing objects, use **S3 Batch Replication** (a separate, explicit job)
+- **One-way by default** — bidirectional requires two configurations (one on each bucket)
+- **Replication Time Control (RTC)**: adds a **15-minute SLA** + per-object replication metrics. *"15 minutes"* → **RTC**
+- **Object ownership**: by default replicated objects stay owned by the **source account** — in cross-account setups, **override** so the destination account owns them, otherwise the destination's IAM users can't read their own bucket
+- **Storage class**: same as source by default; can be overridden (often **One Zone-IA** for the secondary copy)
+
+#### What is NOT replicated
+
+| Not replicated | Why / detail |
+| --- | --- |
+| **Pre-existing objects** | Configure **S3 Batch Replication** to backfill |
+| **Lifecycle transitions / expirations** | System events aren't replicated; user-driven events are. Configure the same lifecycle rule on **both** buckets if you want symmetric behaviour |
+| **Glacier Flexible Retrieval and Deep Archive objects** | Treat those classes as a separate product. (Glacier *Instant* Retrieval **is** replicable) |
+| **Delete markers** (by default) | Can be opted in per rule |
+| **Versioned (permanent) deletes** | **Never** replicated, by design — replication is for survival, not synchronized destruction |
+| **Objects not owned by the source account** | Replication requires source-account ownership. Cross-account writes with third-party ownership are silently skipped |
+
+#### Encryption support
+
+| Method | Replication |
+| --- | --- |
+| Unencrypted | ✅ Default |
+| **SSE-S3** | ✅ Default |
+| **SSE-KMS** | ✅ Requires extra config — KMS key permissions on both sides, destination key named in the replication rule |
+| **SSE-C** | ⚠️ Only recently supported — historically blocked |
+
+#### Use-case lookup
+
+| Scenario | CRR or SRR? |
+| --- | --- |
+| DR / survive region failure | **CRR** |
+| Read latency reduction for global users | **CRR** |
+| Centralize logs from many buckets | **SRR** |
+| Prod ↔ test data sync | **SRR** |
+| Sovereignty-bound resilience (data must stay in region, isolated audit account) | **SRR** cross-account |
+
+> [!tip] Exam Tip
+> Pattern-match: *"replicate to another region for DR"* → **CRR**. *"15-minute SLA"* → **RTC**. *"backfill existing objects after enabling replication"* → **S3 Batch Replication**. *"destination account can't read replicated objects in its own bucket"* → **object-ownership override** wasn't set on the rule. *"replication doesn't propagate deletes"* → **default behaviour** — delete markers can be opted in; permanent versioned deletes never replicate. *"lifecycle expirations don't propagate"* → by design — system events aren't replicated.
+
+> [!warning] Gotcha — Versioning prerequisite vs the one-way door
+> Replication requires versioning on both buckets. Once enabled, [versioning can only be Suspended, never Disabled](../services/s3.md#state-machine--one-way-door). Turning on replication is therefore a partial one-way door for the destination bucket — you can stop replication later, but the destination is permanently a versioned bucket.
+
+> [!warning] Gotcha — Cross-account ownership
+> The most common cross-account exam trap: replication succeeds, the bytes arrive in the destination, but the destination account's IAM users get **403** trying to read them — because the source account still owns the objects. The fix is the **"Change object ownership to destination bucket owner"** option in the replication rule, set at configuration time.
 
 ## VPC & Networking
 
