@@ -1,7 +1,7 @@
 ---
 title: AWS Solutions Architect Associate — Exam Notes
 type: certification
-tags: [iam, vpc, networking, ec2, route53, organizations, cost, s3, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability]
+tags: [iam, vpc, networking, ec2, route53, organizations, cost, s3, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr]
 certs: [aws-saa]
 updated: 2026-05-23
 ---
@@ -438,6 +438,71 @@ See [S3 — Access Logging](../services/s3.md#access-logging) for full details.
 
 > [!warning] Gotcha — access logs are the rare legitimate ACL use case
 > Modern S3 defaults to ACLs disabled (Object Ownership = Bucket owner enforced). The target bucket for access logging must keep ACLs enabled, because the S3 Log Delivery Group is granted via the ACL grantee model. If a question describes "ACLs disabled on the target bucket / log delivery failing", re-enabling ACLs (or using a different target bucket) is the fix.
+
+### S3 Access Points & Multi-Region Access Points
+
+See [S3 — Access Points and MRAP](../services/s3.md#access-points-and-multi-region-access-points) for full details.
+
+- **Regular access points** are named DNS endpoints attached to a **single** bucket — each with its own resource policy (≤ 20 KB), network origin (`Internet` or `VPC`), and BPA settings. Solve the "one bucket policy is too small / too complex for many teams" problem
+- **Multi-Region Access Points (MRAP)** are a **single global endpoint** over **2+ buckets in different regions**, with latency-based routing — solve the "single endpoint for multi-region S3" and "automatic regional failover" problems
+- Both are **naming/routing layers, not permissions systems** — like a DNS CNAME with a policy attached. The underlying **bucket policy must still allow** the request
+- Both live in the **`aws s3control`** CLI namespace (not `aws s3` / `aws s3api`)
+- Both have **account-unique** names (not globally unique like bucket names)
+- **Two-layer permissions rule**: matching permissions in both policies, **or** delegation pattern (recommended) — bucket policy uses `s3:DataAccessPointAccount` to allow any AP in the account; AP policies hold the real granularity
+- AP-specific condition keys: `s3:DataAccessPointArn`, `s3:DataAccessPointAccount`, `s3:AccessPointNetworkOrigin` (`Internet` or `VPC`)
+
+#### Regular Access Points — quick recall
+
+- **Network origin** (`Internet` / `VPC`) and **BPA settings** are **immutable** after creation
+- **Bucket association** is immutable — recreate the AP to change it
+- AP must be in the **same region as the bucket**; regional ARN format `arn:aws:s3:<region>:<account>:accesspoint/<name>`
+- **VPC-origin pattern** requires three pieces to line up: VPC-origin AP, VPC endpoint policy naming **both** the bucket ARN **and** the AP ARN, and (typically) a bucket policy denying any request whose `s3:AccessPointNetworkOrigin != VPC`
+- **SCP guardrail** for org-wide VPC-only enforcement: `Deny s3:CreateAccessPoint` when `s3:AccessPointNetworkOrigin != VPC`
+- **Cannot be a [Replication](../services/s3.md#replication) destination** — beware when locking a bucket to VPC-only APs (replication writes directly to the bucket, not through an AP)
+- **Limit**: 10,000 access points per account per region (soft); 20 KB AP policy size
+
+#### MRAP — quick recall
+
+- Backing buckets are **fixed at creation** — cannot be added or removed later; recreate the MRAP to change
+- **Versioning** must be enabled on every backing bucket (CRR requires it)
+- **Replication is separate** — configure mesh **CRR** between the backing buckets, typically via the "Replicate among all specified buckets" template
+- ARN format `arn:aws:s3::<account>:accesspoint/<alias>` — note the **empty region segment** (regionless)
+- **Internet origin only** — MRAP does **not** support VPC origin (regular APs do)
+- **Failover mode**: `active–active` (default; any active bucket can be picked) or `active–passive` (passives only used when no actives are healthy) — the active/passive variant is the **DR** pattern
+- **Creation latency** — typically 10–30 minutes, AWS quotes up to **24 hours** worst-case
+- **Consistency lag** — MRAP routing is regional/latency-based, async CRR replicates *after* the write. A read from a different region than the write *can* return `NoSuchKey` before replication finishes. **Mitigate** with [Replication Time Control (RTC)](../services/s3.md#replication-time-control-rtc) (99.9% within 15 min) or read-from-write-region in the app
+- **Cost** — per-GB data routing fee on top of S3 storage, CRR transfer, and (optional) RTC
+
+#### Access Points & MRAP — decision lookup
+
+| Keyword in question | Answer |
+| --- | --- |
+| "Bucket policy too large / too complex / 20 KB limit" | **Regular S3 Access Points** |
+| "Many teams need scoped views into one bucket" | **Regular Access Points** + **delegation** (`s3:DataAccessPointAccount`) |
+| "Restrict bucket access to one specific VPC" | **VPC-origin Access Point** + VPC endpoint policy naming both ARNs |
+| "Single global S3 endpoint" / "lowest-latency S3 bucket from anywhere" | **MRAP** |
+| "Active/active S3 in multiple regions behind one endpoint" | **MRAP** + **mesh CRR** |
+| "Automatic regional failover for S3" | **MRAP** with **active/passive** failover configuration |
+| "Add another bucket to the MRAP later" | **Not supported** — backing buckets fixed at creation; recreate the MRAP |
+| "Object not found right after writing through the MRAP" | **Consistency lag** — async CRR hasn't propagated; mitigate with **RTC** or read-from-write-region |
+| "Guaranteed 15-minute replication SLA" | **[Replication Time Control (RTC)](../services/s3.md#replication-time-control-rtc)** |
+| "MRAP / AP name uniqueness" | **Account-scoped** (bucket names are globally unique; APs and MRAPs are not) |
+| "CLI to use an MRAP" | `s3://<MRAP-ARN>/key` — **ARN**, not bucket name |
+| "Access point cannot be a…" | **[Replication](../services/s3.md#replication) destination** |
+| "SCP to force VPC-only access points" | `Deny s3:CreateAccessPoint` when `s3:AccessPointNetworkOrigin != VPC` |
+| "Bucket policy delegation to access points" | Use `s3:DataAccessPointAccount` to grant `*` to any AP in the account |
+
+> [!tip] Exam Tip
+> Pattern-match: *"bucket policy too large / many teams"* → **regular Access Points** with delegation. *"VPC-only S3"* → **VPC-origin AP** + VPC endpoint policy + (optionally) deny-non-VPC bucket policy. *"single global S3 endpoint / latency-route to closest bucket / multi-region S3 DR"* → **MRAP** + **mesh CRR** (+ **RTC** if the question stresses consistency or 15-minute SLA). *"object not found right after writing through MRAP"* → **consistency lag**; RTC narrows but doesn't eliminate it. *"can I add a bucket to the MRAP later?"* → **No** — fixed at creation. *"who grants the permission in a cross-account access point?"* → the **bucket owner** (the AP is just a doorway; the bucket policy is the real authority).
+
+> [!warning] Common Gotchas
+>
+> - **Access points are not a permissions system.** The bucket policy is still the final authority. Forgetting this is the most common AP exam trap.
+> - **Access points cannot be replication destinations.** A "VPC-only access points" bucket policy will silently break [Replication](../services/s3.md#replication) unless the replication role is allow-listed as an exception.
+> - **MRAP gives up strong read-after-write consistency.** Regular S3 has it; MRAP does not. RTC narrows the window; only same-region read-from-write eliminates it.
+> - **MRAP backing buckets are fixed.** Plan the bucket set up front — there's no add/remove API.
+> - **MRAP has no VPC origin.** Only regular APs do. If you need both VPC scoping and multi-region routing, you must layer it at the application level.
+> - **CLI namespace is `aws s3control`** for both AP types — not `aws s3` or `aws s3api`. Console wizards hide this distinction.
 
 ## VPC & Networking
 
