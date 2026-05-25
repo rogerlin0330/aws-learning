@@ -1,9 +1,9 @@
 ---
 title: AWS Solutions Architect Associate — Exam Notes
 type: certification
-tags: [iam, vpc, networking, ec2, route53, organizations, cost, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr]
+tags: [iam, vpc, networking, ec2, ami, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, route53, organizations, cost, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr]
 certs: [aws-saa]
-updated: 2026-05-24
+updated: 2026-05-25
 ---
 
 # AWS Solutions Architect Associate (SAA-C03)
@@ -598,6 +598,62 @@ See [VPC](../services/vpc.md) and [Networking Concepts](../concepts/networking.m
 - Default VPC CIDR: `172.31.0.0/16` — avoid in production
 - 5 reserved IPs per subnet: network, router (+1), DNS (+2), reserved (+3), broadcast (last)
 - `enableDnsHostnames` = false by default on custom VPCs; set to true to get public DNS names
+
+## EC2
+
+See [EC2](../services/ec2.md) for full details.
+
+- **EC2 = IaaS.** You manage OS + above; AWS manages hypervisor + below. Patching the guest OS is **your** responsibility — managed compute (Lambda, Fargate) is what shifts that line
+- **EC2 is the default compute service** in AWS — pattern-match "general-purpose VM / I want an OS" → EC2
+- **Private by default.** An instance launches into one [VPC](../services/vpc.md) subnet; public reachability needs public subnet + [IGW](../services/vpc.md#internet-gateway-igw) + public IP + [SG](../services/vpc.md#security-groups-sg) rule. The **default VPC** wires this up automatically; **custom VPCs** require it explicitly
+- **AZ-resilient, not AZ-fault-tolerant.** Instance lives in a subnet → subnet lives in an AZ → AZ failure kills the instance. HA = **fleet across multiple AZs + load balancer**, not "more durable instance"
+- **State machine: Running ↔ Stopped → Terminated.** Stop ↔ Start is bidirectional; **Terminate is one-way** and irreversible
+- **Billing granularity:** per second (Linux + most Windows AMIs, 60-second minimum) or per hour (some commercial-license AMIs)
+- **AMI is region-specific** — to use it in another region, you must **copy** it (and pay the snapshot data-transfer cost). Backed by EBS snapshots in S3
+- **AMI permission modes:** Public (everyone), Owner (implicit), Explicit (specific account IDs granted launch permission)
+- **AMI mandatory content:** ≥ 1 volume (the boot volume), permissions, and the block-device mapping (volume → OS device ID like `/dev/sda1`)
+- **Linux access: SSH/22 + private key** (direct public-key auth, no password). **Windows access: RDP/3389 + private key to decrypt the Administrator password**, then RDP with that password — the SSH key never touches the RDP session itself
+- **Private key downloads once.** Lose it → create a new key pair (no recovery from AWS)
+
+### EC2 state-based costs
+
+| Component | Running | Stopped | Terminated |
+| --- | :-: | :-: | :-: |
+| CPU / Memory / Network | 💰 Charged | ✅ Free | ✅ Free |
+| **EBS volumes** | 💰 Charged | 💰 **Still charged** | ✅ Free (deleted) |
+| Public IPv4 (auto-assigned) | Held | Released | Released |
+| Instance-store volumes | Present | **Lost** | Lost |
+| Elastic IP (attached) | Free | Small hourly charge while idle | Charge continues until **released** |
+
+### EC2 cheat sheet
+
+| Keyword in the question | Answer |
+| --- | --- |
+| "Stopped the instance to save money, still being billed" | **[EBS](../services/ec2.md#storage-options) storage** still charged — only **Terminate** ends all costs |
+| "Restore terminated instance" | ❌ Not possible — Terminate is irreversible; snapshot/AMI **before** terminating |
+| "Single instance survives AZ failure" | ❌ Impossible — instance is AZ-scoped; need multi-AZ fleet |
+| "Use the same AMI in another region" | **Copy AMI** to the destination region first |
+| "Instance has no internet despite being in public subnet" | Check public IP assignment, SG inbound, route to [IGW](../services/vpc.md#internet-gateway-igw), NACL ephemeral return |
+| "Connect to Windows EC2" | RDP/3389 + use **private key to decrypt admin password** |
+| "Connect to Linux EC2" | SSH/22 + private key (direct auth, no password) |
+| "Lost the SSH key" | Create a new key pair; detach root volume → attach to recovery instance to re-key (no AWS recovery) |
+| "Launch many instances from a configured image" | Create an **AMI** from the configured instance, then launch from it |
+| "Share an AMI with another AWS account" | Set permission to **Explicit** with that account's ID |
+| "Instance-level firewall" | [Security Group](../services/vpc.md#security-groups-sg) on the [ENI](../concepts/networking.md) — not a subnet-level control |
+| "Service role for EC2 to call S3 / KMS / etc." | [IAM role](../services/iam.md#iam-roles) attached to the instance — **never embed access keys** |
+| "Per-second vs per-hour billing" | Per-second (60s minimum) on most Linux + Windows; per-hour on certain commercial AMIs |
+
+> [!tip] Exam Tip
+> Pattern-match: *"reduce cost of an idle instance overnight"* → **stop** it (saves compute) — but note **storage still bills**. *"reduce cost permanently"* → **terminate** + snapshot first if data matters. *"instance fails, AZ failed"* → expected behaviour; HA is a **multi-AZ fleet** concern, not an instance property. *"AMI not available in region X"* → **copy** AMI from source region. *"cannot SSH but security group + route are correct"* → check **NACL ephemeral return ports** (NACLs are stateless).
+
+> [!warning] Common EC2 Gotchas
+>
+> - **Stopped ≠ free.** EBS volumes keep billing while stopped — the most-tested cost trap
+> - **Terminate deletes EBS root volume by default** (`DeleteOnTermination=true`). Snapshot first if you need the data
+> - **Instance-store data is ephemeral** — lost on stop, lost on terminate, lost on host failure. Don't use it for anything you can't lose
+> - **AMI ≠ snapshot.** An AMI references one or more EBS snapshots plus metadata (permissions, block-device mapping); deleting just the underlying snapshots breaks the AMI
+> - **Region-locked AMIs.** Multi-region launch requires `aws ec2 copy-image` first; otherwise the AMI ID won't exist in the target region
+> - **Private key is download-once.** A lost private key on a single-key-pair instance means a painful recovery via root-volume detach
 
 ## DNS and Route 53
 
