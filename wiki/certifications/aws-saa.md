@@ -1,9 +1,9 @@
 ---
 title: AWS Solutions Architect Associate — Exam Notes
 type: certification
-tags: [iam, vpc, networking, ec2, route53, organizations, cost, s3, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr]
+tags: [iam, vpc, networking, ec2, route53, organizations, cost, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr]
 certs: [aws-saa]
-updated: 2026-05-23
+updated: 2026-05-24
 ---
 
 # AWS Solutions Architect Associate (SAA-C03)
@@ -64,6 +64,48 @@ See [Resource Policies vs Identity Policies](../concepts/resource-vs-identity-po
 
 > [!warning] Gotcha
 > Same-account behaviour is NOT an intersection — that's only true cross-account. A bucket policy in your own account that grants `s3:GetObject` to your IAM user is sufficient even if the user's identity policy says nothing about that bucket.
+
+## S3 Foundations
+
+See [S3 — Foundations](../services/s3.md#foundations) for full details.
+
+- S3 is **object storage** — distinct from **file** (EFS / FSx) and **block** ([EBS](../services/ec2.md)). The access verb in the question picks the family: *mount* / *drive* / *volume* → not S3; *shared file share between EC2s* → EFS or FSx; *whole-object HTTP* / *data lake* / *land service output* → S3
+- Buckets are **regional** but bucket names are **globally unique** across all AWS accounts and all regions
+- Bucket name rules: **3–63 chars**, lowercase letters + digits + hyphens only, must start with a letter or digit, **cannot be IP-address-shaped** (`10.0.0.1` is invalid), **no underscores**
+- **Object size: 0 B – 5 TB.** Single PUT cap is 5 GB → use [multipart upload](../services/s3.md#upload-performance) above that
+- **Bucket count is per account, not per region:** soft limit **100**, hard limit **1,000** via Support. This is why "one bucket per user" doesn't scale — use **one bucket + per-user prefixes** instead
+- **Objects per bucket: unlimited.** Object count is never a reason to need more buckets
+- **Flat namespace.** What looks like a folder in the console is a **prefix** on the object key. There is no rename-a-directory; "moving a folder" rewrites every key
+- **Regional resilience.** S3 replicates across **AZs within the home region** automatically; an AZ failure is transparent. A **region-wide failure is not** — that's what [CRR](../services/s3.md#replication) and [MRAP](../services/s3.md#multi-region-access-points-mrap--single-global-endpoint-over-a-replicated-bucket-fleet) are for
+- **Data never leaves the home region** unless you explicitly configure replication. Region choice = data-sovereignty decision
+
+### S3 foundations cheat sheet
+
+| Keyword in the question | Answer |
+| --- | --- |
+| "Globally unique" bucket name | ✅ S3 — names collide across **all accounts and regions** |
+| Bucket name with `_`, uppercase, or `1.1.1.1` shape | ❌ Invalid bucket name |
+| Max object size | **5 TB** (multipart above 5 GB) |
+| Min object size | **0 bytes** |
+| Max objects per bucket | **Unlimited** |
+| Default bucket limit per account | **100** (soft) |
+| Hard bucket limit per account | **1,000** (via Support) |
+| "Thousands of users, one bucket each" | ❌ Use **one bucket + per-user prefix** |
+| "Mount as a drive / volume" | ❌ Not S3 — use **EBS** (block) or **EFS / FSx** (file) |
+| "Network file share for Windows / Linux" | ❌ Not S3 — use **FSx** or **EFS** |
+| "Default destination for an AWS service's output" | ✅ S3 |
+| "Large-scale distribution to many users" | ✅ S3 |
+| "Offload static assets from EC2" | ✅ S3 |
+| "Folder" in S3 | Actually a **prefix** — flat structure underneath |
+| Data leaves the home region automatically? | ❌ No — only via explicit **Replication** or **MRAP** |
+| Blast radius of an S3 bucket | **The region** it was created in |
+| Resilience model | Replicated **across AZs within the region** |
+
+> [!tip] Exam Tip
+> When multiple storage options appear next to each other (S3, EBS, EFS, FSx), **the access verb is the discriminator**, not the data type. *"Mount", "format", "drive letter", "block device"* → not S3. *"Shared file share between EC2 instances"* → EFS (Linux) / FSx (Windows). *"Whole-object HTTP", "static asset hosting", "data lake", "service input/output"* → S3.
+
+> [!warning] Gotcha
+> The bucket limit is **per account**, not per region — moving buckets between regions does not free up headroom. If a scenario describes "needs millions of isolated stores per tenant", **bucket-per-tenant is the wrong design**: use prefixes (and optionally [access points](../services/s3.md#access-points-and-multi-region-access-points)) for tenant isolation.
 
 ## S3 Security
 
