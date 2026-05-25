@@ -1,5 +1,22 @@
 # Wiki Log
 
+## [2026-05-25] ingest | S3 Bucket Keys — "without Bucket Keys" lecture diagram
+
+Copied `raw/aws-cert-study-notes/aws-solution-architect/assets/s3-bucket-keys.png` → `wiki/assets/s3-without-bucket-keys.png` (renamed for clarity — the file's content is specifically the *problem state*, vanilla SSE-KMS without Bucket Keys enabled, not Bucket Keys themselves). The diagram visualises three problems on one canvas: (1) each `PutObject` with `sse-kms` generates a unique per-object DEK, (2) each DEK is an independent KMS API call billed per request, (3) the regional KMS RPS quota (**5,500 / 10,000 / 50,000** depending on region tier) caps PUT throughput on the same KMS key — exactly the two ceilings already enumerated in the existing Bucket Keys section's two-bullet problem statement.
+
+Embedded the image in `services/s3.md` **between the two-problem-bullets and the "S3 Bucket Keys are an opt-in feature that addresses both problems" paragraph** (immediately before the existing `s3-bucket-key-infographic.png` before-vs-after diagram). This placement gives the problem its own dedicated visual anchor before the solution is introduced; the existing combined before-vs-after infographic then shows the contrast on the next line. Used a descriptive multi-clause alt text that names each of the three problems the diagram illustrates so readers who view the rendered page or rely on screen readers get the same teaching value as the visual.
+
+No body-text changes were needed — the two-bullet problem statement and the throttling/cost narrative were already in place from the earlier SSE-KMS ingest. This is a pure-illustration update: the diagram reinforces an explanation that previously stood on prose alone.
+
+Synthesis choices:
+
+1. **Renamed the file** from `s3-bucket-keys.png` → `s3-without-bucket-keys.png`. The raw filename is ambiguous (could mean "the Bucket Keys feature" or "what happens without it"); the content is specifically the without-Bucket-Keys problem state. Disambiguation matters because the wiki already has `s3-bucket-key-infographic.png` (the before-vs-after view) and `S3-Bucket-Keys.png` (the mechanism diagram) — three files with similar names would be confusing.
+2. **Did not duplicate the existing before-vs-after infographic.** The new diagram is *just* the "before" side, with more visual detail than the existing infographic's left panel. Both diagrams now coexist with complementary roles: this one zooms in on the problem; the next one shows the resolution.
+3. **Did not add or change any prose.** Bringing in a new image to illustrate existing content does not need a section rewrite — the problem narrative was already strong; the diagram now anchors it visually.
+4. **Bumped `updated:` in `services/s3.md`** to today.
+
+No `index.md` or tag changes — this is an asset-only addition reinforcing an existing section.
+
 ## [2026-05-24] ingest | S3 101 — Foundations
 
 Ingested `raw/aws-cert-study-notes/aws-solution-architect/s3_101.md` (Cantrill SAA Simple Storage Service Basics) and copied `s3-101.png` → `wiki/assets/s3-flat-namespace.png` with a descriptive name. Added a new **Foundations** H2 section at the top of `services/s3.md`, placed **immediately before the "Private by Default" Baseline** — the natural slot because (a) the existing page jumps straight from a one-paragraph intro into the security model, leaving readers without the platform-level framing that every subsequent topic depends on, and (b) the basics (object/bucket primitives, naming, limits, prefixes, object-vs-file-vs-block) are the lens through which the rest of the page makes sense. Confirmed no significant overlap with the existing 1,990+ line page: the only previously-mentioned basics were "5 TB" in passing under multipart upload and "globally unique" in the intro paragraph; everything else (resilience model, region blast radius, naming rules, bucket limits, flat namespace, object vs file vs block, decision guidance) is net-new.
