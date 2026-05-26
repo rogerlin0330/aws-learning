@@ -1,5 +1,17 @@
 # Wiki Log
 
+## [2026-05-26] ingest | EC2 Instance Types — categories, name anatomy, family reference, decision guide
+
+Ingested `raw/aws-cert-study-notes/aws-solution-architect/ec2_instance_type.md` (Cantrill SAA "EC2 Instance Types" lecture).
+
+Added `## Instance Types` H2 section to `services/ec2.md` covering: (1) the five categories table (General Purpose / Compute Optimized / Memory Optimized / Accelerated Computing / Storage Optimized); (2) instance type name anatomy with embedded image (`R5dn.8xlarge` breakdown — family, generation, capability letters `a/d/n/e/g`, size); (3) family reference diagram; (4) letter mnemonics table (T/M/C/R/I/D/G/P); (5) selection decision guide with the burstable-T3 vs steady-state-M5 gotcha and newest-generation rule. Also extended Key Takeaways point 13 and References.
+
+Added `### EC2 Instance Types` subsection to `certifications/aws-saa.md` with category quick-pick table, exam pattern-matches, and the T3-credit-exhaustion gotcha.
+
+Copied two images from raw assets to `wiki/assets/`: `ec2-instance-type-code-explanation.png` and `ec2-typical-instance-types.png`.
+
+Updated `wiki/index.md` EC2 entry to include instance types content summary.
+
 ## [2026-05-25] ingest | EC2 Architecture & Resilience — hosts, tenancy, AZ-scoping, stop/start vs restart, when-to-use
 
 Ingested `raw/aws-cert-study-notes/aws-solution-architect/ec2_architecture_and_resilience.md` (Cantrill SAA "EC2 Architecture and Resilience" lecture). Builds on the existing `services/ec2.md` foundations page (ingested earlier the same day) by drilling into the **physical layer (hosts)**, the **comprehensive AZ-scoping rule that follows from it**, the **stop/start vs restart distinction**, and **when EC2 is the right answer** in the first place. The previous page covered the instance side well but treated the host as implicit; this ingest makes it explicit and surfaces the consequences. No new image was referenced in the raw note (prose + one Markdown comparison table); no assets copied.

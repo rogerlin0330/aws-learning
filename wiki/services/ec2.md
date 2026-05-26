@@ -1,9 +1,9 @@
 ---
 title: EC2 — Elastic Compute Cloud
 type: service
-tags: [ec2, compute, iaas, ami, ssh, rdp, instance-lifecycle, shared-responsibility, ebs, key-pair, host, tenancy, dedicated-host, dedicated-instance, instance-store, az-resilience, restart-vs-stop-start]
+tags: [ec2, compute, iaas, ami, ssh, rdp, instance-lifecycle, shared-responsibility, ebs, key-pair, host, tenancy, dedicated-host, dedicated-instance, instance-store, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga]
 certs: [aws-saa]
-updated: 2026-05-25
+updated: 2026-05-26
 ---
 
 # EC2 — Elastic Compute Cloud
@@ -258,6 +258,75 @@ Move *away from* EC2 when a niche requirement clearly favours another service:
 > [!tip] Exam framing
 > When a question lists a generic "VM / OS / runtime / per-socket license / long-running server" requirement, the answer is almost always **EC2**. The question shifts to a managed compute service only when it explicitly names an event-driven, container, or no-OS-management constraint. Justify deviations; don't volunteer them.
 
+## Instance Types
+
+Every EC2 instance has an **instance type** — a code like `R5dn.8xlarge` — that determines its vCPU count, memory, local storage presence, network bandwidth, and any specialised hardware (GPUs, FPGAs). Picking the right type is the difference between a well-tuned workload and a performance problem.
+
+### The Five Categories
+
+| Category | Family examples | Best for |
+| --- | --- | --- |
+| **General Purpose** | T3, T3a, M5, M5a, M5n, A1, M6g | Default starting point — even CPU-to-memory ratio |
+| **Compute Optimized** | C5, C5n | More CPU than memory per dollar — media encoding, HPC, scientific modelling, ML training, gaming servers |
+| **Memory Optimized** | R5, R5a, X1, X1e, High Memory (u-Xtb1), z1d | Large memory per dollar — in-memory databases, caches, real-time analytics |
+| **Accelerated Computing** | P3, G4, F1, Inf1 | GPUs (ML training/inference, graphics) or FPGAs (genomics, financial analysis) |
+| **Storage Optimized** | I3/I3en, D2, H1 | Fast local storage — NoSQL, data warehousing, Elasticsearch, Hadoop |
+
+### Decoding an Instance Type Name
+
+Instance type names follow a strict pattern. The **full string** is the instance type — use it in full when communicating with operations teams.
+
+![Anatomy of an EC2 instance type name: family letter, generation number, optional capability letters, and size](../assets/ec2-instance-type-code-explanation.png)
+
+**Example: `R5dn.8xlarge`**
+
+| Component | Example | Meaning |
+| --- | --- | --- |
+| **Family** | `R` | Letter identifying the family — `R` = RAM / memory |
+| **Generation** | `5` | Higher = newer. Pick the newest generation available |
+| **Additional capabilities** | `dn` | Optional letters between generation and size: `a` = AMD CPUs, `d` = NVMe local storage, `n` = network optimised, `e` = extra capacity (RAM/storage), `g` = Graviton (ARM) |
+| **Size** | `8xlarge` | Scales CPU and memory: nano → micro → small → medium → large → xlarge → 2xlarge → 4xlarge → 8xlarge → … |
+| **Full type string** | `R5dn.8xlarge` | The precise, unambiguous identifier |
+
+### Family Reference
+
+![Common EC2 instance types organized by category — T, M, C, R, I, D, G, P families with use cases](../assets/ec2-typical-instance-types.png)
+
+### Letter Mnemonics
+
+| Letter | Mnemonic |
+| --- | --- |
+| **T** | **T**urbo / burstable — cheap for mostly-idle with occasional peaks |
+| **M** | "**M**ain" — general purpose steady state |
+| **C** | **C**ompute |
+| **R** | **R**AM / memory |
+| **I** | **I**/O (local NVMe SSD) |
+| **D** | **D**ense storage (high-throughput HDD) |
+| **G** | **G**PU |
+| **P** | **P**arallel processing (larger GPU configurations) |
+
+### Instance Type Selection Guide
+
+Start in **General Purpose (T3/M5)**. Only move out when there is a clear workload bottleneck:
+
+- Bottleneck is **CPU** → Compute Optimized (C5, C5n)
+- Bottleneck is **memory / large in-memory dataset** → Memory Optimized (R5, X1, High Memory, z1d)
+- Workload needs **GPUs, FPGAs, or ML accelerators** → Accelerated Computing (P3, G4, F1, Inf1)
+- Workload needs **fast local storage or very high local IOPS** → Storage Optimized (I3/I3en, D2, H1)
+- Workload is **mostly idle with occasional bursts** → T3 / T3a (burstable) — cheaper per hour, limited by CPU credit balance
+- Workload is **sustained steady-state** → M5 / M5a / M5n (non-burstable)
+- Workload runs **ARM-compatible code** and you want cost efficiency → A1 or M6g (Graviton)
+- Workload is **EBS-heavy** → verify the instance has sufficient storage network bandwidth — the **instance**, not just the EBS volume, can be the limiting factor. See [EBS and storage options](#storage-options)
+
+> [!tip] Exam Tip
+> SAA instance-type questions typically describe a performance symptom: high CPU, high memory, I/O saturation, or GPU requirement. The core skill is **category selection**: C = more CPU per dollar, R = more RAM per dollar, I/D = more local storage throughput. Specific family generation numbers matter less than getting the letter right.
+
+> [!warning] Gotcha — burstable T3 under sustained load
+> **T3** instances earn CPU credits at idle and spend them during bursts. Under sustained high CPU load, credits are exhausted and the instance throttles to its baseline rate (often well below peak). The exam trap: *"T3 performance degraded over time under consistent load"* → CPU credit exhaustion. Move to **M5** for sustained CPU workloads.
+
+> [!warning] Gotcha — prefer newer generations
+> Within a family, higher generation number = better price-to-performance. Reasons to stay on an older generation: it is not yet available in your region, or internal testing/approval processes still require it. These are the only legitimate exceptions.
+
 ## Key Takeaways
 
 1. **EC2 = IaaS** — you manage OS and above; AWS manages everything below
@@ -272,6 +341,7 @@ Move *away from* EC2 when a niche requirement clearly favours another service:
 10. **AMI = launch template** — carries permissions, boot + data volumes, and the block-device mapping; region-specific
 11. **Linux: SSH on 22**; **Windows: RDP on 3389** (private key decrypts the admin password, then RDP)
 12. **Private key downloads once** — lose it and you've lost the easy path back in
+13. **Instance types:** five categories (General Purpose / Compute / Memory / Accelerated / Storage). Start in General Purpose; deviate when a bottleneck is clear. **T3 is burstable** (credit-based); **M5 is steady-state**. Full type string = family + generation + optional capability letters + size
 
 ## Quick Reference
 
@@ -306,3 +376,6 @@ Move *away from* EC2 when a niche requirement clearly favours another service:
 - [AWS SAA Exam Notes — EC2](../certifications/aws-saa.md#ec2)
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_101.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_architecture_and_resilience.md`
+- Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_instance_type.md`
+- [EC2 Instance Types — official AWS docs](https://aws.amazon.com/ec2/instance-types/)
+- [ec2instances.info (Vantage)](https://instances.vantage.sh/) — sortable reference with pricing

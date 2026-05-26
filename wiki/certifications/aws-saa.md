@@ -1,9 +1,9 @@
 ---
 title: AWS Solutions Architect Associate — Exam Notes
 type: certification
-tags: [iam, vpc, networking, ec2, ami, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, az-resilience, restart-vs-stop-start, route53, organizations, cost, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr]
+tags: [iam, vpc, networking, ec2, ami, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, route53, organizations, cost, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr]
 certs: [aws-saa]
-updated: 2026-05-25
+updated: 2026-05-26
 ---
 
 # AWS Solutions Architect Associate (SAA-C03)
@@ -669,6 +669,32 @@ See [EC2](../services/ec2.md) for full details.
 > - **AMI ≠ snapshot.** An AMI references one or more EBS snapshots plus metadata (permissions, block-device mapping); deleting just the underlying snapshots breaks the AMI
 > - **Region-locked AMIs.** Multi-region launch requires `aws ec2 copy-image` first; otherwise the AMI ID won't exist in the target region
 > - **Private key is download-once.** A lost private key on a single-key-pair instance means a painful recovery via root-volume detach
+
+### EC2 Instance Types
+
+See [EC2 — Instance Types](../services/ec2.md#instance-types) for full details.
+
+- The whole string (e.g. `R5dn.8xlarge`) is the **instance type** — use it in full; sub-components: family letter + generation + optional capability letters + size
+- **Category = workload bottleneck**: C = CPU, R = RAM, I/D = local storage throughput, G/P = GPU/parallel processing, T/M = general purpose (burstable vs steady-state)
+- **Additional capability letters** between the generation and size: `a` = AMD, `d` = NVMe local disk, `n` = network optimised, `e` = extra RAM/storage, `g` = Graviton (ARM)
+- **Prefer the newest generation** within a family — better price-to-performance. Only deviate if the region lacks it or approvals require otherwise
+- EBS-heavy workloads: the **instance's storage network bandwidth cap** is an independent ceiling from the EBS volume's provisioned IOPS — check both
+
+#### Instance category quick-pick
+
+| Category | Keyword in the question | Typical families |
+| --- | --- | --- |
+| **General Purpose** | "default", "balanced", "burst", "low average load" | T3, T3a, M5, M5a, M5n, A1, M6g |
+| **Compute Optimized** | "CPU-intensive", "HPC", "media encoding", "gaming server", "scientific modelling" | C5, C5n |
+| **Memory Optimized** | "in-memory database", "cache", "Redis", "real-time analytics", "large dataset in RAM" | R5, R5a, X1, z1d, High Memory |
+| **Accelerated Computing** | "GPU", "ML training/inference", "FPGA", "parallel processing", "genomics" | P3, G4, F1, Inf1 |
+| **Storage Optimized** | "NoSQL", "Elasticsearch", "data warehouse", "high IOPS local storage", "Hadoop/HDFS" | I3/I3en, D2, H1 |
+
+> [!tip] Exam Tip
+> Pattern-match: *"T3 performance degraded over time under consistent load"* → **CPU credit exhaustion** — switch to **M5** for sustained CPU workloads. *"max RAM per dollar / in-memory workload"* → **R5 / X1**. *"GPU / ML training"* → **P3 / G4**. *"programmable hardware / genomics / financial analysis"* → **F1 (FPGA)**. *"large NVMe SSD, NoSQL or analytics"* → **I3/I3en**. *"Hadoop / HDD-heavy throughput"* → **D2 / H1**. *"ARM-native, cost-optimised"* → **A1 / M6g (Graviton)**.
+
+> [!warning] Gotcha — T3 burstable vs M5 steady-state
+> **T3** instances accrue CPU credits at idle and spend them under load. Once credits run out, CPU is throttled to baseline. The trap: a T3 performs well initially then slows down. This is **not** an infrastructure failure — it is the burstable billing model working as designed. **M5** (non-burstable) is the correct fix for sustained steady-state CPU workloads.
 
 ## DNS and Route 53
 
