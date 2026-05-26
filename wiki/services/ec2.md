@@ -1,16 +1,16 @@
 ---
 title: EC2 — Elastic Compute Cloud
 type: service
-tags: [ec2, compute, iaas, ami, ssh, rdp, instance-lifecycle, shared-responsibility, ebs, key-pair]
+tags: [ec2, compute, iaas, ami, ssh, rdp, instance-lifecycle, shared-responsibility, ebs, key-pair, host, tenancy, dedicated-host, dedicated-instance, instance-store, az-resilience, restart-vs-stop-start]
 certs: [aws-saa]
 updated: 2026-05-25
 ---
 
 # EC2 — Elastic Compute Cloud
 
-EC2 is AWS's default and most essential compute service. It provides virtual machines — **instances** — and is the starting point for almost any compute requirement in AWS. Every EC2 instance runs inside a [VPC](vpc.md) subnet and is associated with at least one [ENI](../concepts/networking.md) (Elastic Network Interface).
+EC2 is AWS's default and most essential compute service. It provides virtual machines — **instances** — running on AWS-managed physical servers called **hosts**, and is the starting point for almost any compute requirement in AWS. Every EC2 instance runs inside a [VPC](vpc.md) subnet and is associated with at least one [ENI](../concepts/networking.md) (Elastic Network Interface).
 
-This page covers the foundations — what an instance is, how it's billed, the lifecycle state machine, AMIs, and how you connect to running instances. Deeper topics (instance types, EBS volumes, Auto Scaling, ELB) will follow as separate sections or pages.
+This page covers the foundations — what an instance is, the host vs. instance distinction and its AZ implications, how it's billed, the lifecycle state machine, AMIs, when to choose EC2, and how you connect to running instances. Deeper topics (instance types, EBS volumes, Auto Scaling, ELB) will follow as separate sections or pages.
 
 ## EC2 at a Glance
 
@@ -52,6 +52,54 @@ EC2 sits on the **IaaS** side of the shared responsibility model. AWS is respons
 - **Identity:** instances access other AWS services via [IAM roles](iam.md#iam-roles) — never embed access keys directly in an instance
 - **Internet access:** public instances route through an [IGW](vpc.md#internet-gateway-igw); private instances route through a [NAT Gateway](vpc.md#nat--nat-gateway)
 - **Storage:** the boot volume is typically [EBS](#storage-options) (a separate AWS service exposing network-attached block volumes); some instance types also offer **instance store** volumes physically on the host
+
+## Hosts vs Instances
+
+EC2 separates the **physical layer** (hosts) from the **virtual layer** (instances). The distinction is the conceptual core of the service — easy to gloss over and frequently tested.
+
+| Aspect | **EC2 Host** | **EC2 Instance** |
+| --- | --- | --- |
+| What it is | Physical server hardware owned and maintained by AWS | Virtual machine running on a host |
+| Manages | AWS (hardware, firmware, hypervisor) | Customer (OS and above — see [Shared responsibility](#shared-responsibility-iaas-line)) |
+| Tenancy options | **Shared** (default — multiple AWS customers' instances coexist, hypervisor-isolated) **or Dedicated** (entire host reserved to one account) | Always single-tenant *inside* the OS; runs on a shared or dedicated host |
+| Billing model | Billed per host (full hardware) on a **Dedicated Host**; transparent under Shared tenancy | Per-instance, based on runtime + allocated resources — see [Billing Model](#billing-model) |
+| Local resources | Provides CPU, memory, **instance store** (host-local NVMe/SSD), storage networking, data networking | Consumes a slice of the host's resources |
+| Lifecycle | Long-lived hardware; AWS retires, repairs, or takes down for maintenance | Customer creates, stops, starts, terminates |
+| Location | One specific [Availability Zone](../concepts/networking.md) | Same AZ as its host — cannot natively cross AZs |
+| Movement | Doesn't move | Stays on its host through restarts; **moves to a new host on stop-then-start, or if the host fails / is retired** — always within the same AZ |
+| Co-tenants | Typically many instances from many customers (Shared), or many of your own instances (Dedicated) | Multiple instances coexist; same instance family/generation usually co-locates on hardware built for that profile |
+
+> [!tip] Mental model
+> A **host** is an apartment building AWS owns; an **instance** is a tenant's apartment unit. **Restart** = the tenant sleeping and waking up in the same apartment. **Stop/Start** = moving out and being re-housed — usually in a different unit, always in the same neighbourhood (AZ).
+
+### Tenancy: Shared vs Dedicated
+
+| Mode | Hardware sharing | Billing | Typical use case |
+| --- | --- | --- | --- |
+| **Shared** (default) | Many customers' instances coexist on the same host, isolated by the hypervisor | Per-instance (see [Billing Model](#billing-model)) | Almost everything |
+| **Dedicated Instance** | Hardware not shared with other customers, but you cannot address or target the host itself | Per-instance, with a small dedicated-tenancy premium | Compliance scenarios that forbid hardware co-tenancy but don't require host targeting |
+| **Dedicated Host** | One account allocates the entire host; you can see and target it | **Per host**, regardless of how many instances run on it | Hardware-bound BYOL licensing (per-socket / per-core Windows, Oracle, SQL Server), strict isolation, host-affinity workloads |
+
+> [!warning] Gotcha — "Dedicated" is two things
+> AWS uses *Dedicated* in two adjacent ways: **Dedicated Instance** (no hardware co-tenancy, host opaque) vs **Dedicated Host** (you allocate and target the host, pay per host). They look similar in question stems — the Dedicated Host adds **per-socket licensing**, **host affinity**, and **per-host billing**.
+
+### AZ Resilience — everything is AZ-bound
+
+Almost every component an instance depends on is locked to a single AZ:
+
+- **Host** lives in one AZ
+- **Subnet** belongs to one AZ ([VPC](vpc.md) primitive)
+- The instance's primary [ENI](../concepts/networking.md) is provisioned in that subnet
+- **Additional ENIs** can attach in *different subnets*, but **only if those subnets are in the same AZ**
+- **[EBS](#storage-options) volumes** are AZ-scoped — they can only attach to instances in the **same AZ**
+- **Instance store** is host-local, so by definition AZ-scoped
+
+**Consequence:** if an AZ fails, **assume all instances, ENIs, and EBS volumes in that AZ are impacted**. You cannot attach an EBS volume or ENI from one AZ to an instance in another AZ to mitigate.
+
+The only path to relocate a workload across AZs is to **snapshot the EBS volume(s) or capture an [AMI](#ami--amazon-machine-image), then launch a new instance in the target AZ** — see [Moving an instance across AZs](#moving-an-instance-across-azs) below.
+
+> [!tip] Why this is a strength, not a limitation
+> Because the blast radius of a failure is always one AZ, you can design AZ-fault-tolerance predictably: deploy across multiple AZs, put a load balancer in front, fail over deterministically. **Predictable isolation = controllable design.** See [Overview — Resilience Tiers](../overview.md#resilience-tiers).
 
 ## Billing Model
 
@@ -100,6 +148,32 @@ Intermediate states exist (`pending`, `stopping`, `shutting-down`) but rarely ap
 
 > [!warning] Gotcha — "Terminate is permanent"
 > Termination is **non-reversible**. Root EBS volumes are deleted by default; instance-store data is lost; the instance ID is gone. There is no undelete. If the data matters, snapshot the EBS volume(s) **before** terminating, or detach them first and re-attach to a new instance.
+
+### Stop/Start vs Restart — these are not the same
+
+Both preserve the instance ID, the EBS root-volume contents, the private IPv4, and the security configuration. The difference is **what happens to the underlying host** — which is the source of several exam traps.
+
+| Operation | Host | Instance store | Auto-assigned public IPv4 | EBS bill |
+| --- | --- | --- | --- | --- |
+| **Restart (reboot)** | **Same host** — quick OS reboot, no host swap | Preserved | Preserved (same IP) | No change |
+| **Stop → Start** | **May land on a new host** in the same AZ | **Lost** (host changed) | **Released; new IP on start** | Same |
+
+> [!warning] Gotcha — "I rebooted and lost my instance-store data"
+> A **restart** preserves instance-store contents because the instance never leaves its host. A **stop/start** does *not*, because the instance can land on a new host — the old host's local disks belong to whoever lands there next. If a scenario describes losing scratch data after a "reboot", check whether the action was really a **stop/start** in disguise.
+
+> [!warning] Gotcha — "Why did my public IP change?"
+> The auto-assigned public IPv4 is released on **Stop** and a new one is assigned on **Start**. A plain **Restart** keeps the same public IP. If a stable public address is required across stop/start cycles, attach an **Elastic IP** (and remember it bills hourly while not attached to a running instance — see the cost table above).
+
+### Moving an instance across AZs
+
+Instances **cannot natively cross AZ boundaries** — they're tied to their host, which is tied to its AZ. To relocate:
+
+1. Stop the instance, or take a live [EBS](#storage-options) snapshot
+2. Capture an [AMI](#ami--amazon-machine-image) from the instance, or snapshot the EBS volume(s) directly
+3. Launch a new instance in the target AZ from the AMI / from a new volume created from the snapshot in the target AZ
+4. Update any DNS, load balancer, or [Security Group](vpc.md#security-groups-sg) references to point at the new instance
+
+This is the only path. For multi-AZ high availability the architectural answer is not "make one instance cross AZs"; it is "**run a fleet across multiple AZs and load-balance**" — see [Overview — Resilience Tiers](../overview.md#resilience-tiers).
 
 ## AMI — Amazon Machine Image
 
@@ -160,29 +234,61 @@ When you create an EC2 key pair, AWS generates two halves:
 > [!warning] Gotcha
 > The **private key is downloadable once**. Re-launching the wizard for the same key pair does **not** let you re-download it. If you lose it, create a new key pair; you cannot recover the original.
 
+## When to Use EC2
+
+EC2 is the **default compute service** in AWS. Reach for it first; deviate only when a specific requirement clearly favours a managed alternative.
+
+| Pattern | Why EC2 fits |
+| --- | --- |
+| **Traditional OS + application stack** | You need a specific OS, vendor-supported runtime, or per-host licensing — Lambda / Fargate can't host these |
+| **Long-running compute (24/7/365)** | EC2 has no runtime cap, unlike Lambda's 15-minute limit |
+| **Server-style applications** waiting for inbound connections inside an OS | Web servers, databases, application servers, queue workers |
+| **Burst or steady-state CPU/memory workloads** | Burstable (`t` family), compute-optimised (`c`), memory-optimised (`r` / `x`), and many specialised instance types cover both shapes |
+| **Monolithic application stacks** (app + DB + middleware on one host) | A single OS hosts everything; no need to decompose first |
+| **Workload migrations from on-prem VMs** | Lift-and-shift maps naturally — same OS, same boot artefacts (via [AMI](#ami--amazon-machine-image)) |
+| **Disaster-recovery environments** for traditional server-based systems | Cold/warm DR instances + EBS snapshots + cross-region AMI copy give a familiar restoration shape |
+
+Move *away from* EC2 when a niche requirement clearly favours another service:
+
+- **Event-driven, short-lived, sporadic** → Lambda
+- **Containerised microservices without OS management** → ECS / EKS (with Fargate for the no-host case)
+- **Fully managed runtime / PaaS** → Elastic Beanstalk, App Runner
+- **Specialised workload primitives** (queues, streams, data warehouses) → use the managed primitive, not a VM hosting it
+
+> [!tip] Exam framing
+> When a question lists a generic "VM / OS / runtime / per-socket license / long-running server" requirement, the answer is almost always **EC2**. The question shifts to a managed compute service only when it explicitly names an event-driven, container, or no-OS-management constraint. Justify deviations; don't volunteer them.
+
 ## Key Takeaways
 
 1. **EC2 = IaaS** — you manage OS and above; AWS manages everything below
 2. **EC2 is the default compute service** in AWS — start here unless a managed option (Lambda, Fargate, Beanstalk) fits better
-3. **Private by default** — public access is explicit (public subnet + IGW + public IP + SG rule)
-4. **AZ resilient, not fault-tolerant** — an instance dies with its AZ; HA needs multiple AZs and a load balancer
-5. **Three key states:** Running, Stopped, Terminated
-6. **Stopped ≠ free** — you still pay for attached [EBS](#storage-options) storage; only **Terminated** ends all charges
-7. **Terminated is permanent** — root volumes deleted by default, instance-store data lost, no undelete
-8. **AMI = launch template** — carries permissions, boot + data volumes, and the block-device mapping; region-specific
-9. **Linux: SSH on 22**; **Windows: RDP on 3389** (private key decrypts the admin password, then RDP)
-10. **Private key downloads once** — lose it and you've lost the easy path back in
+3. **Host = physical, AZ-bound; instance = virtual, AZ-bound through its host.** Hosts, subnets, ENIs, and EBS are all AZ-scoped — no cross-AZ attachment
+4. **Tenancy: Shared (default) vs Dedicated Host (per-host billing, host targeting, BYOL licensing) vs Dedicated Instance (no co-tenancy, host opaque)**
+5. **Private by default** — public access is explicit (public subnet + IGW + public IP + SG rule)
+6. **AZ resilient, not fault-tolerant** — an instance dies with its AZ; HA needs multiple AZs and a load balancer; cross-AZ moves require snapshot/AMI
+7. **Three key states:** Running, Stopped, Terminated. **Stop/Start ≠ Restart** — Stop/Start can move the instance to a new host (losing instance-store data and auto-public-IP); Restart cannot
+8. **Stopped ≠ free** — you still pay for attached [EBS](#storage-options) storage; only **Terminated** ends all charges
+9. **Terminated is permanent** — root volumes deleted by default, instance-store data lost, no undelete
+10. **AMI = launch template** — carries permissions, boot + data volumes, and the block-device mapping; region-specific
+11. **Linux: SSH on 22**; **Windows: RDP on 3389** (private key decrypts the admin password, then RDP)
+12. **Private key downloads once** — lose it and you've lost the easy path back in
 
 ## Quick Reference
 
 | Concept | Detail |
 | --- | --- |
 | Service category | IaaS — Infrastructure as a Service |
+| Physical layer | **Host** — AWS-managed physical server, lives in one AZ |
+| Virtual layer | **Instance** — VM on a host, AZ-bound through that host |
+| Tenancy modes | Shared (default) / Dedicated Instance / Dedicated Host |
 | Resilience tier | AZ-specific (single-AZ failure = instance failure) |
+| AZ-scoped components | Host, subnet, ENI, EBS volume, instance store |
+| Cross-AZ movement | Not native — requires snapshot or [AMI](#ami--amazon-machine-image) launch in target AZ |
 | Default network posture | Private (in a [VPC](vpc.md) subnet) |
 | Billing granularity | Per second (most) or per hour (some commercial licenses) |
 | Free state | **Terminated only** (volumes deleted, instance gone) |
 | Hidden cost trap | **Stopped** instances still pay for [EBS](#storage-options) |
+| Restart vs Stop/Start | Restart = same host (IP + instance store preserved); Stop/Start = may land on a new host (auto public IP + instance store **lost**) |
 | Template object | AMI (Amazon Machine Image) — region-specific |
 | AMI permission modes | Public / Owner / Explicit |
 | Linux access | SSH on port 22 + private key |
@@ -199,3 +305,4 @@ When you create an EC2 key pair, AWS generates two halves:
 - [Cost Optimization — Savings Plans, RIs, Spot](../patterns/cost-optimization.md)
 - [AWS SAA Exam Notes — EC2](../certifications/aws-saa.md#ec2)
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_101.md`
+- Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_architecture_and_resilience.md`

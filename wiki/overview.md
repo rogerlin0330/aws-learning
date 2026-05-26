@@ -61,7 +61,7 @@ Every AWS service operates at a specific resilience scope. Knowing this is criti
 | --- | --- |
 | Global | [IAM](services/iam.md), Route 53 |
 | Regional | [VPC](services/vpc.md), IGW, [S3](services/s3.md) |
-| AZ | Subnet, NAT GW, [EC2](services/ec2.md) instance |
+| AZ | Subnet, NAT GW, [EC2](services/ec2.md) instance (and its host, ENI, EBS volume, instance store) |
 
 ### The ENI is the Networking Atom
 
@@ -73,7 +73,7 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 
 - [IAM](services/iam.md) — users, groups, roles (STS / federation), policies, ARNs
 - [VPC](services/vpc.md) — subnets, routing, IGW, NACL, SG, NAT GW, PrivateLink
-- [EC2](services/ec2.md) — IaaS foundations, instance lifecycle & state-based costs, AMIs, SSH/RDP access
+- [EC2](services/ec2.md) — IaaS foundations, hosts vs instances (tenancy + AZ-resilience), instance lifecycle & state-based costs (incl. stop/start vs restart), AMIs, SSH/RDP access, when-to-use-EC2 decision framing
 - [S3](services/s3.md) — buckets, bucket policies, ACLs (legacy), Block Public Access, pre-signed URLs, versioning, SSE/CSE encryption, multipart upload + Transfer Acceleration, storage classes + lifecycle, replication (CRR/SRR), S3 Select / Glacier Select, event notifications + EventBridge, access logging
 - [Route 53](services/route53.md) — hosted zones, routing policies, health checks
 - [Organizations](services/organizations.md) — multi-account management, consolidated billing, SCPs

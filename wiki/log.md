@@ -1,5 +1,55 @@
 # Wiki Log
 
+## [2026-05-25] ingest | EC2 Architecture & Resilience — hosts, tenancy, AZ-scoping, stop/start vs restart, when-to-use
+
+Ingested `raw/aws-cert-study-notes/aws-solution-architect/ec2_architecture_and_resilience.md` (Cantrill SAA "EC2 Architecture and Resilience" lecture). Builds on the existing `services/ec2.md` foundations page (ingested earlier the same day) by drilling into the **physical layer (hosts)**, the **comprehensive AZ-scoping rule that follows from it**, the **stop/start vs restart distinction**, and **when EC2 is the right answer** in the first place. The previous page covered the instance side well but treated the host as implicit; this ingest makes it explicit and surfaces the consequences. No new image was referenced in the raw note (prose + one Markdown comparison table); no assets copied.
+
+Net additions to `services/ec2.md`:
+
+1. **New `## Hosts vs Instances` H2 section** inserted **between "How EC2 Fits Into the AWS Architecture" and "Billing Model"** — natural slot because the section deepens the architectural-fit picture by drilling from "instances are in VPC subnets" down to "instances run on hosts that AWS manages". Contains: a 9-row comparison table (what it is / who manages / tenancy options / billing / local resources / lifecycle / location / movement / co-tenants); the apartment-building/unit `[!tip]` mental-model callout preserved from the raw note; a **Tenancy: Shared vs Dedicated** subsection with a three-row table distinguishing Shared / Dedicated Instance / Dedicated Host (the raw note only names Shared and Dedicated Host — I added Dedicated Instance because the "Dedicated is two things" exam trap is real); a `[!warning]` gotcha explicitly calling out the Dedicated Instance vs Dedicated Host confusion; an **AZ Resilience — everything is AZ-bound** subsection with a 6-bullet list of every AZ-scoped component (host, subnet, primary ENI, additional ENIs same-AZ-only, EBS, instance store) plus the "you cannot attach across AZs" consequence; a `[!tip]` "why this is a strength" callout reframing AZ-scoping as a predictable blast radius rather than a limitation.
+
+2. **New `### Stop/Start vs Restart` subsection** inside `## Instance Lifecycle and State-Based Costs`, placed immediately after the two existing `[!warning]` callouts ("Stopped is not free" and "Terminate is permanent") so the lifecycle section reads cost → permanence → host-move semantics in one continuous narrative. Contains: a 4-row comparison table (host / instance store / auto public IPv4 / EBS bill); two new `[!warning]` callouts — "I rebooted and lost my instance-store data" (clarifying the action was probably a stop/start) and "Why did my public IP change?" (auto IPv4 released on Stop; use Elastic IP for stability). The raw note's #4 ("Instance Behavior on a Host") section is fully covered by this subsection plus the existing state-cost table — no duplicate content was added.
+
+3. **New `### Moving an instance across AZs` subsection** added immediately after Stop/Start vs Restart — a 4-step procedure (stop or snapshot → AMI or volume snapshot → launch in target AZ → update DNS/LB/SG references). Closes the loop opened by the AZ Resilience subsection above and links to the HA "fleet across multiple AZs + load balancer" framing in the overview's resilience tiers.
+
+4. **New `## When to Use EC2` H2 section** inserted between "Connecting to Instances" and "Key Takeaways". Contains: a 7-row "Pattern → Why EC2 fits" table covering the raw note's 7 EC2 use cases (traditional OS + app, long-running 24/7, server-style, burst/steady-state, monolithic stacks, on-prem migrations, traditional DR) — each row gets a one-line justification rather than just the pattern name; a "Move *away from* EC2 when…" bullet list naming the four canonical alternatives (Lambda for event-driven; ECS/EKS with Fargate for containers; Beanstalk/App Runner for managed runtime/PaaS; specialised primitives for queues/streams/data warehouses) — the raw note doesn't list these explicitly; a pattern-match `[!tip]` closing with "Justify deviations; don't volunteer them."
+
+5. **Page intro paragraph** updated to mention hosts vs instances as orientation, and the section list updated to include the new content. **Frontmatter tags** expanded with `host, tenancy, dedicated-host, dedicated-instance, instance-store, az-resilience, restart-vs-stop-start`.
+
+6. **Key Takeaways** went from 10 to 12 bullets — added: Host = physical, AZ-bound; instance = virtual, AZ-bound through its host. Tenancy (Shared/Dedicated Instance/Dedicated Host). Also enriched the existing state-machine takeaway with Stop/Start ≠ Restart and the AZ takeaway with cross-AZ-moves-require-snapshot/AMI.
+
+7. **Quick Reference** table expanded from 12 to 18 rows — added: Physical layer / Virtual layer / Tenancy modes / AZ-scoped components / Cross-AZ movement / Restart vs Stop/Start.
+
+8. **References** — added the new raw source path as a second `Source:` entry alongside the existing `ec2_101.md`.
+
+Cross-references added in the other wiki pages:
+
+- **`certifications/aws-saa.md` `## EC2` section**: added five new bullets to the principles list (Host vs Instance + AZ-scoped rule; Tenancy three-way; Cross-AZ relocation requires snapshot/AMI; Stop/Start ≠ Restart; long-running OS-specific → EC2). The EC2 cheat-sheet table grew from 13 to 21 rows, adding pattern-match rows for: move instance to another AZ, attach EBS across AZs (impossible), multi-ENI same-AZ rule, "rebooted but lost scratch disk" diagnostic, "public IP changed after cycling" diagnostic, BYOL per-socket → Dedicated Host, no-co-tenancy-but-don't-care-about-host → Dedicated Instance, long-running 24/7 server with a specific OS → EC2. Exam-Tip block enriched with two new pattern-match scenarios (stop/start vs restart scratch-disk loss; BYOL per-socket → Dedicated Host). Common-Gotchas block grew by three bullets (Stop/Start ≠ Restart host-move; everything-is-AZ-scoped; Dedicated Instance vs Dedicated Host confusion). SAA frontmatter tags updated to mirror the services-page additions.
+
+- **`wiki/overview.md`**: EC2 line under Services updated to mention hosts vs instances (tenancy + AZ-resilience), stop/start vs restart, and when-to-use-EC2 framing. Resilience Tiers table's AZ row updated to mention that for EC2 the AZ-bound entity is also the host, ENI, EBS volume, and instance store.
+
+- **`wiki/index.md`**: EC2 description rewritten to cover hosts vs instances + tenancy + stop/start vs restart + when-to-use-EC2 alongside the prior text. Same density as the IAM and S3 entries.
+
+Synthesis choices over straight-copy:
+
+1. **Promoted "Dedicated Instance" to a first-class row in the tenancy table** even though the raw note only names Shared and Dedicated Host. The Dedicated-vs-Dedicated-Host conflation is a real exam trap; the wiki's tenancy table distinguishes all three modes with their billing models and use cases, and a `[!warning]` callout explicitly names what's the same and what's different (per-socket licensing, host affinity, per-host billing).
+
+2. **Made Stop/Start vs Restart its own subsection with two diagnostic-style `[!warning]` callouts** rather than burying it in the existing state-cost table. The raw note has the host-move point as a single bullet — but it's pedagogically the highest-leverage point in the whole note because it explains *why* instance-store contents and auto public IPs behave the way they do. Promoting it makes the consequences exam-pattern-matchable instead of just stated.
+
+3. **Captured "instances cannot natively cross AZs" as its own labeled subsection** with a numbered procedure (stop / capture AMI / launch in target AZ / update DNS-LB-SG references). The raw note covers this in one paragraph; making it a four-step recipe turns it into a runnable mental model.
+
+4. **Reframed the When-to-Use list with concrete "Move away to X" alternatives**. The raw note ends with abstract guidance; the wiki names the four canonical alternatives (Lambda / ECS-EKS-Fargate / Beanstalk-App-Runner / specialised primitives) with a one-line "this is when each fits" framing, then closes with the `[!tip]` "Justify deviations; don't volunteer them."
+
+5. **Did NOT add a new H2 for "AZ Resilience"** — kept it as a subsection of "Hosts vs Instances" because the AZ-bound rule is a direct consequence of the host being AZ-bound. The raw note splits §2 (Hosts vs Instances) and §3 (AZ Resilience) as siblings; the wiki structure makes the dependency relationship explicit by nesting AZ Resilience under Hosts vs Instances.
+
+6. **Did NOT duplicate cost-table content.** The raw note's "instance store lost when instance moves to a different host" overlaps with the existing state-cost table's "Instance store: present / lost / lost" row. Kept the existing row and added the host-move *reason* for the loss in the new Stop/Start vs Restart subsection — table tells you *what* happens; subsection tells you *why*.
+
+7. **Cross-linked aggressively**: the new sections collectively add inline links to `vpc.md`, `vpc.md#security-groups-sg`, `vpc.md#internet-gateway-igw`, `iam.md#iam-roles`, `../concepts/networking.md`, `#storage-options`, `#ami--amazon-machine-image`, `#shared-responsibility-iaas-line`, `#billing-model`, and `../overview.md#resilience-tiers`. Every adjacent topic is reachable from the new content.
+
+8. **The raw note's "Exam Tips" footer** (8 bullets) was distributed rather than collected: most points are now woven into the relevant sections (AZ-scoping rule, host vs instance distinction, stop/start vs restart, shared vs dedicated billing, EBS/ENIs AZ-scoped), and the remaining few (snapshots/AMIs to move across AZs/regions, EC2 default compute, justify deviations) surface as the `[!tip]` callout closing the When-to-Use-EC2 section and as the cross-AZ-relocation procedure.
+
+No content from the raw note was discarded. Everything in §1–§6 is now in the wiki — either as new prose, table rows, callouts, or via cross-link to existing material. The infographic from the earlier EC2 101 ingest still serves as the page's visual table-of-contents; this ingest is prose-and-structure work, not a new visual.
+
 ## [2026-05-25] ingest | EC2 101 — Elastic Compute Cloud foundations
 
 Ingested `raw/aws-cert-study-notes/aws-solution-architect/ec2_101.md` (Cantrill SAA "EC2 Basics" lecture). The previous `services/ec2.md` was a 29-line stub (intro + one-paragraph "How EC2 Fits Into the AWS Architecture" + a one-paragraph AMI placeholder marked "Stub — content to be added"); replaced with a full foundations page (~140 lines of substantive content) covering all four pillars from the lecture infographic.

@@ -1,7 +1,7 @@
 ---
 title: AWS Solutions Architect Associate — Exam Notes
 type: certification
-tags: [iam, vpc, networking, ec2, ami, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, route53, organizations, cost, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr]
+tags: [iam, vpc, networking, ec2, ami, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, az-resilience, restart-vs-stop-start, route53, organizations, cost, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr]
 certs: [aws-saa]
 updated: 2026-05-25
 ---
@@ -604,10 +604,14 @@ See [VPC](../services/vpc.md) and [Networking Concepts](../concepts/networking.m
 See [EC2](../services/ec2.md) for full details.
 
 - **EC2 = IaaS.** You manage OS + above; AWS manages hypervisor + below. Patching the guest OS is **your** responsibility — managed compute (Lambda, Fargate) is what shifts that line
-- **EC2 is the default compute service** in AWS — pattern-match "general-purpose VM / I want an OS" → EC2
+- **EC2 is the default compute service** in AWS — pattern-match "general-purpose VM / I want an OS / long-running server" → EC2
+- **Host vs Instance.** Host = physical AWS-managed hardware in one AZ. Instance = VM on a host, AZ-bound through it. Host, subnet, [ENI](../concepts/networking.md), [EBS](../services/ec2.md#storage-options) volume, and instance store are **all AZ-scoped** — no cross-AZ attachment
+- **Tenancy:** **Shared** (default, hypervisor-isolated) / **Dedicated Instance** (no hardware co-tenancy, host opaque) / **Dedicated Host** (per-host allocation + per-host billing + host targeting + BYOL per-socket licensing)
 - **Private by default.** An instance launches into one [VPC](../services/vpc.md) subnet; public reachability needs public subnet + [IGW](../services/vpc.md#internet-gateway-igw) + public IP + [SG](../services/vpc.md#security-groups-sg) rule. The **default VPC** wires this up automatically; **custom VPCs** require it explicitly
 - **AZ-resilient, not AZ-fault-tolerant.** Instance lives in a subnet → subnet lives in an AZ → AZ failure kills the instance. HA = **fleet across multiple AZs + load balancer**, not "more durable instance"
+- **Cross-AZ relocation is not native** — snapshot the EBS volume(s) or capture an AMI, then launch in the target AZ
 - **State machine: Running ↔ Stopped → Terminated.** Stop ↔ Start is bidirectional; **Terminate is one-way** and irreversible
+- **Stop/Start ≠ Restart.** Restart stays on the **same host** (instance store + auto public IP preserved). Stop/Start can **land on a new host** in the same AZ — instance-store data is **lost** and the auto-public-IPv4 is **released**
 - **Billing granularity:** per second (Linux + most Windows AMIs, 60-second minimum) or per hour (some commercial-license AMIs)
 - **AMI is region-specific** — to use it in another region, you must **copy** it (and pay the snapshot data-transfer cost). Backed by EBS snapshots in S3
 - **AMI permission modes:** Public (everyone), Owner (implicit), Explicit (specific account IDs granted launch permission)
@@ -632,7 +636,14 @@ See [EC2](../services/ec2.md) for full details.
 | "Stopped the instance to save money, still being billed" | **[EBS](../services/ec2.md#storage-options) storage** still charged — only **Terminate** ends all costs |
 | "Restore terminated instance" | ❌ Not possible — Terminate is irreversible; snapshot/AMI **before** terminating |
 | "Single instance survives AZ failure" | ❌ Impossible — instance is AZ-scoped; need multi-AZ fleet |
+| "Move instance to another AZ" | Snapshot EBS / capture AMI → launch new instance in target AZ; instances don't natively cross AZs |
+| "Attach EBS volume from another AZ" | ❌ Impossible — EBS is AZ-scoped; snapshot → create volume in target AZ |
+| "Multiple ENIs on different subnets" | OK only if the subnets are in the **same AZ** |
+| "Rebooted, lost scratch disk" | Was it really a reboot? **Stop/Start** can land on a new host → **instance-store lost**. Restart keeps the same host |
+| "Public IP changed after I cycled the instance" | Stop/Start releases auto public IPv4; use an **Elastic IP** for stability |
 | "Use the same AMI in another region" | **Copy AMI** to the destination region first |
+| "Per-socket Windows / Oracle / SQL Server licensing" | **Dedicated Host** — pay per host, target the host, satisfy BYOL per-socket licensing |
+| "No hardware co-tenancy but I don't care about the host" | **Dedicated Instance** — single-tenant hardware, host stays opaque |
 | "Instance has no internet despite being in public subnet" | Check public IP assignment, SG inbound, route to [IGW](../services/vpc.md#internet-gateway-igw), NACL ephemeral return |
 | "Connect to Windows EC2" | RDP/3389 + use **private key to decrypt admin password** |
 | "Connect to Linux EC2" | SSH/22 + private key (direct auth, no password) |
@@ -642,15 +653,19 @@ See [EC2](../services/ec2.md) for full details.
 | "Instance-level firewall" | [Security Group](../services/vpc.md#security-groups-sg) on the [ENI](../concepts/networking.md) — not a subnet-level control |
 | "Service role for EC2 to call S3 / KMS / etc." | [IAM role](../services/iam.md#iam-roles) attached to the instance — **never embed access keys** |
 | "Per-second vs per-hour billing" | Per-second (60s minimum) on most Linux + Windows; per-hour on certain commercial AMIs |
+| "Long-running 24/7 server with a specific OS" | **EC2** (Lambda has a 15-min runtime cap; containers / Beanstalk are deviations that require a reason) |
 
 > [!tip] Exam Tip
-> Pattern-match: *"reduce cost of an idle instance overnight"* → **stop** it (saves compute) — but note **storage still bills**. *"reduce cost permanently"* → **terminate** + snapshot first if data matters. *"instance fails, AZ failed"* → expected behaviour; HA is a **multi-AZ fleet** concern, not an instance property. *"AMI not available in region X"* → **copy** AMI from source region. *"cannot SSH but security group + route are correct"* → check **NACL ephemeral return ports** (NACLs are stateless).
+> Pattern-match: *"reduce cost of an idle instance overnight"* → **stop** it (saves compute) — but note **storage still bills**. *"reduce cost permanently"* → **terminate** + snapshot first if data matters. *"instance fails, AZ failed"* → expected behaviour; HA is a **multi-AZ fleet** concern, not an instance property. *"AMI not available in region X"* → **copy** AMI from source region. *"cannot SSH but security group + route are correct"* → check **NACL ephemeral return ports** (NACLs are stateless). *"scratch disk gone after cycling the instance"* → it was a **stop/start**, not a restart; the instance may have moved to a new host. *"BYOL with per-socket licensing"* → **Dedicated Host**.
 
 > [!warning] Common EC2 Gotchas
 >
 > - **Stopped ≠ free.** EBS volumes keep billing while stopped — the most-tested cost trap
 > - **Terminate deletes EBS root volume by default** (`DeleteOnTermination=true`). Snapshot first if you need the data
 > - **Instance-store data is ephemeral** — lost on stop, lost on terminate, lost on host failure. Don't use it for anything you can't lose
+> - **Stop/Start ≠ Restart.** Stop/Start can move the instance to a new host (same AZ) → loses instance-store data and releases the auto public IPv4. Restart keeps the same host
+> - **Everything is AZ-scoped** — host, subnet, ENI, EBS, instance store. You cannot attach an EBS volume or ENI from one AZ to an instance in another AZ
+> - **Dedicated Instance vs Dedicated Host** look similar but are not the same: Dedicated Host adds **per-host billing**, **host targeting**, and **BYOL per-socket licensing**; Dedicated Instance only guarantees no hardware co-tenancy
 > - **AMI ≠ snapshot.** An AMI references one or more EBS snapshots plus metadata (permissions, block-device mapping); deleting just the underlying snapshots breaks the AMI
 > - **Region-locked AMIs.** Multi-region launch requires `aws ec2 copy-image` first; otherwise the AMI ID won't exist in the target region
 > - **Private key is download-once.** A lost private key on a single-key-pair instance means a painful recovery via root-volume detach
