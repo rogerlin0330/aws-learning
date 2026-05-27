@@ -1,9 +1,9 @@
 ---
 title: AWS Solutions Architect Associate — Exam Notes
 type: certification
-tags: [iam, vpc, networking, ec2, ami, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, route53, organizations, cost, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr]
+tags: [iam, vpc, networking, ec2, ami, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, route53, organizations, cost, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr]
 certs: [aws-saa]
-updated: 2026-05-26
+updated: 2026-05-27
 ---
 
 # AWS Solutions Architect Associate (SAA-C03)
@@ -695,6 +695,70 @@ See [EC2 — Instance Types](../services/ec2.md#instance-types) for full details
 
 > [!warning] Gotcha — T3 burstable vs M5 steady-state
 > **T3** instances accrue CPU credits at idle and spend them under load. Once credits run out, CPU is throttled to baseline. The trap: a T3 performs well initially then slows down. This is **not** an infrastructure failure — it is the burstable billing model working as designed. **M5** (non-burstable) is the correct fix for sustained steady-state CPU workloads.
+
+### EBS Volume Types — GP2 vs GP3
+
+See [EBS — Elastic Block Store](../services/ebs.md) for full details.
+
+**The single biggest conceptual difference:** GP2 is credit-based (performance depends on volume size); GP3 is flat-rate (same baseline regardless of size).
+
+**GP2 key numbers:**
+
+- Baseline: **3 IOPS/GB**, minimum floor **100 IOPS**, ceiling **16,000 IOPS**
+- Crossover points: **33.33 GB** (formula beats floor) → **1 TB** (baseline = burst; credit system irrelevant) → **5.33 TB** (max IOPS reached)
+- Burst: **3,000 IOPS** via a **5.4 million credit bucket** — new volumes start full (30 min @ 3,000 IOPS)
+- Max throughput: **250 MB/s**
+
+**GP3 key numbers:**
+
+- Standard baseline (every volume, every size): **3,000 IOPS + 125 MB/s** — no formula, no bucket
+- Provisioned extras (extra cost, independently configurable): up to **16,000 IOPS** + up to **1,000 MB/s**
+- Base price: **~20% cheaper than GP2**
+- **4× the max throughput** of GP2
+
+**Migration:** use **Elastic Volumes** to switch GP2 ↔ GP3 with no downtime — but after moving to GP3, explicitly provision the IOPS/throughput you need above the 3,000/125 MB/s standard; GP3 does not auto-scale with volume size.
+
+> [!tip] Exam Tip
+> Pattern-match: *"small EBS volume has inconsistent, degrading IOPS over time"* → **GP2 credit exhaustion** — switch to GP3 or size the volume larger for a higher baseline. *"need to set IOPS independently of volume size"* → **GP3** (or Provisioned IOPS). *"cost-optimise existing GP2 volumes"* → migrate to GP3 (~20% cheaper base). *"4× throughput compared to GP2"* → GP3 max is 1,000 MB/s vs GP2's 250 MB/s. *"boot volume / general workload / no special requirement"* → GP3 (current AWS default).
+
+> [!warning] Gotcha — GP2 credit trap
+> A workload that **consistently exceeds the GP2 baseline** (e.g. 3,000 IOPS on a 100 GB volume whose baseline is only 300 IOPS) will eventually drain the credit bucket to zero. Once empty, performance collapses to the 300 IOPS baseline — not the 3,000 burst rate — and stays there until credits rebuild. Monitor `BurstBalance` CloudWatch metric for GP2 volumes.
+
+> [!warning] Gotcha — GP2 → GP3 migration
+> After migrating from GP2 to GP3, you lose the automatic size-based IOPS scaling. A 1 TB GP2 volume had a 3,000 IOPS baseline by formula; a 1 TB GP3 volume has a 3,000 IOPS baseline by standard — but a 2 TB GP3 volume is still only 3,000 IOPS unless you explicitly provision more. Always confirm IOPS requirements before migrating large volumes.
+
+### EBS Volume Types — Provisioned IOPS SSD (IO1, IO2, IO2 Block Express)
+
+See [EBS — Provisioned IOPS SSD](../services/ebs.md#provisioned-iops-ssd--io1-io2-io2-block-express) for full details.
+
+The Provisioned IOPS SSD family is for workloads that need **extreme, consistent, low-jitter performance** — I/O-intensive relational and NoSQL databases where average latency isn't enough; you need it *predictable*.
+
+**Key numbers to know:**
+
+| Attribute | IO1 | IO2 | IO2 Block Express |
+| --- | --- | --- | --- |
+| Max IOPS per volume | 64,000 | 64,000 | **256,000** |
+| Max throughput per volume | 1,000 MB/s | 1,000 MB/s | **4,000 MB/s** |
+| Max IOPS/GB ratio | 50 | 500 | 1,000 |
+| Per-instance max IOPS | 260,000 | 160,000 | 260,000 |
+| Size range | 4 GB – 16 TB | 4 GB – 16 TB | 4 GB – **64 TB** |
+
+**The two-ceiling rule (most exam-tested concept):**
+
+- **Per-volume ceiling**: what a single volume can deliver (IO1/IO2 = 64,000 IOPS).
+- **Per-instance ceiling**: what can flow into one EC2 instance from all attached volumes combined (IO1 = 260,000 IOPS). These are separate ceilings — to saturate the per-instance ceiling you need multiple volumes in parallel.
+- The per-instance ceiling is further capped by **EC2 instance type and size** — only the newest, largest instances reach these peaks. **All three must align: volume type + instance type + instance size.**
+
+**IOPS/GB ratio caps:** IOPS are decoupled from size, but bounded by the ratio. Example: a 10 GB IO2 volume caps at 5,000 IOPS (500 × 10), not 64,000. To reach 64,000 IOPS you need at least 128 GB.
+
+> [!tip] Exam Tip
+> Pattern-match: *"need more than 16,000 IOPS"* → **IO1/IO2** (or Block Express). *"consistent, predictable sub-millisecond latency for a database"* → **IO1/IO2** (GP2/GP3 burst model doesn't guarantee consistency). *"high IOPS on a small volume"* → **IO2** (500 IOPS/GB ratio vs GP2's 3 IOPS/GB). *"per-instance performance ceiling"* → remember it exists separately from per-volume; multiple volumes needed to saturate it. *"256,000 IOPS / 64 TB volume"* → **IO2 Block Express**. *"extreme performance but I don't need persistence"* → [**Instance Store**](../services/ec2.md#storage-options) beats even Block Express, but data is ephemeral.
+
+> [!warning] Gotcha — IO2 per-instance ceiling is lower than IO1
+> IO2's per-instance ceiling is **160,000 IOPS** — lower than IO1's **260,000 IOPS**. This seems counterintuitive (IO2 is the newer type). AWS split the headroom: IO2 standard sits at 160k, while the premium capability went into Block Express (which matches IO1's 260k). Don't assume "newer = higher per-instance ceiling" for IO1 vs IO2 standard.
+
+> [!warning] Gotcha — minimum size is 4 GB, not 1 GB
+> GP2 and GP3 start at **1 GB**. IO1, IO2, and Block Express all start at **4 GB**. A question about a very small volume with extreme IOPS requirements needs both the ratio math and the 4 GB floor check.
 
 ## DNS and Route 53
 

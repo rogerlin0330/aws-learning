@@ -115,8 +115,10 @@ For multi-year predictable workloads, EC2 is the canonical target of the [Cost O
 
 ### Storage options
 
+For the general storage vocabulary (direct-attached vs network-attached, ephemeral vs persistent, block vs file vs object, IOPS / throughput / block size), see [Storage Fundamentals](../concepts/storage.md).
+
 - **Instance store (local host storage)** — ephemeral block volumes physically on the EC2 host. Fast, free with the instance, **lost on stop or terminate**. Available only on certain instance types
-- **EBS (Elastic Block Store)** — network-attached block storage, a separate AWS service. Volumes persist independently of the instance and survive stop/start. Charged by provisioned size (and IOPS/throughput on some types), not by usage. EBS is the source of the "stopped instance still costs money" trap below
+- **EBS (Elastic Block Store)** — network-attached block storage, a separate AWS service. Volumes persist independently of the instance and survive stop/start. Charged by provisioned size (and IOPS/throughput on some types), not by usage. EBS is the source of the "stopped instance still costs money" trap below. See [EBS](../services/ebs.md) for volume type details (GP2 vs GP3, Provisioned IOPS, HDD types)
 
 ## Instance Lifecycle and State-Based Costs
 

@@ -1,5 +1,27 @@
 # Wiki Log
 
+## [2026-05-27] ingest | EBS — Provisioned IOPS SSD (IO1, IO2, IO2 Block Express)
+
+Ingested `raw/aws-cert-study-notes/aws-solution-architect/eb2_io1_and_io2.md`. Copied `ebs-io1-and-io2.png` to `wiki/assets/`. Extended `wiki/services/ebs.md` with a new **Provisioned IOPS SSD** section covering: IO1/IO2/Block Express variant table (size ranges, per-volume IOPS/throughput ceilings, IOPS/GB ratio caps, per-instance ceilings); the two-ceiling rule (per-volume vs per-instance as separate independent limits requiring multiple volumes to saturate the instance ceiling); the three-things-must-align rule (volume type + instance type + instance size); EBS volume type selection guide (GP3 → IO1/IO2 → Block Express → Instance Store ladder); use cases (OLTP databases, NoSQL, jitter-sensitive workloads). Updated volume types overview table to include io2 Block Express. Updated `certifications/aws-saa.md` with a new IO1/IO2 section (key numbers table, two-ceiling rule explanation, exam tips, and two Gotcha callouts — IO2 per-instance ceiling lower than IO1; minimum 4 GB size floor). Updated `index.md` EBS entry. Updated `aws-saa.md` frontmatter tags and date.
+
+## [2026-05-27] ingest | EBS — GP2 and GP3 General Purpose SSD volume types
+
+Ingested `raw/aws-cert-study-notes/aws-solution-architect/ebs_gp2_and_gp3.md`. Copied `ebs-gp2.png` and `ebs-gp3.png` to `wiki/assets/`. Created `wiki/services/ebs.md` covering: GP2 credit-bucket model (3 IOPS/GB baseline, 3,000 IOPS burst, 5.4 M credit bucket starting full, crossover points at 33.33 GB / 1 TB / 5.33 TB, 250 MB/s throughput ceiling); GP3 flat-rate model (3,000 IOPS + 125 MB/s standard for all volumes, up to 16,000 IOPS + 1,000 MB/s provisioned, ~20% cheaper than GP2, 4× max throughput); GP2 vs GP3 comparison table; Elastic Volumes migration caveat (GP3 does not auto-scale IOPS with size). Updated `services/ec2.md` (EBS entry now links to ebs.md), `concepts/storage.md` (block storage entry links to ebs.md for volume types), `certifications/aws-saa.md` (new GP2/GP3 section with exam tips and two Gotcha callouts). Updated `index.md`.
+
+## [2026-05-26] ingest | Storage Fundamentals — delivery modes, categories, performance mechanics
+
+Ingested `raw/aws-cert-study-notes/aws-solution-architect/general_storage_concepts.md` (Cantrill SAA storage concepts lecture).
+
+Created new `wiki/concepts/storage.md` covering: (1) **delivery modes** — direct-attached (fast but ephemeral; AWS: instance store) vs network-attached (resilient; AWS: EBS) and the ephemeral/persistent distinction with an exam-tip table; (2) **the three storage categories** — Block (bootable, mountable; EBS/instance store), File (network share, mountable but not bootable; EFS/FSx), Object (flat key-value, API-only; S3) with a quick decision guide table and the "access verb picks the category" exam tip; (3) **storage performance** — IOPS, block size, throughput (formula: `Throughput = Block Size × IOPS`), the race-car analogy, the performance chain from application through drive, and the two-ceiling EBS bottleneck (instance storage network bandwidth vs volume provisioned IOPS/throughput); (4) key takeaways mapping the chain instance store → EBS → EFS/FSx → S3.
+
+Cross-references added:
+
+- `services/ec2.md` `### Storage options` — added a forward link to `concepts/storage.md` for the general storage vocabulary.
+- `services/s3.md` `### Object vs file vs block storage` — added a forward link to `concepts/storage.md` for the full category treatment.
+- `wiki/index.md` — added Storage Fundamentals entry under Concepts.
+
+Synthesis choices: (1) Kept the race-car IOPS/block-size/throughput analogy from the raw note as a mental model but led with the algebraic relationship (`Throughput = Block Size × IOPS`) because that's what makes the analogy precise. (2) Extended the performance section with the "two EBS ceilings" point (volume provisioned IOPS/throughput vs instance storage network bandwidth) — not in the raw note but a direct consequence of the network-attached delivery model covered in the same page and a real exam-tested trap. (3) Did not duplicate S3's "object vs file vs block" section or EC2's "storage options" section — cross-linked to both instead. The concept page is the canonical home for the general vocabulary; service pages are the canonical home for service-specific detail.
+
 ## [2026-05-26] ingest | EC2 Instance Types — categories, name anatomy, family reference, decision guide
 
 Ingested `raw/aws-cert-study-notes/aws-solution-architect/ec2_instance_type.md` (Cantrill SAA "EC2 Instance Types" lecture).
