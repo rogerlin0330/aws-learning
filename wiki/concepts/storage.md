@@ -96,8 +96,10 @@ Three metrics define storage performance — they are interconnected, not indepe
 
 ### Core Relationship
 
+![[wiki/assets/storage-performance.png]]
+
 ```text
-Throughput  =  Block Size  ×  IOPS
+Throughput  = IO (Block) Size  ×  IOPS
 ```
 
 Example: 16 KB block size × 100 IOPS = **1.6 MB/s throughput**.
