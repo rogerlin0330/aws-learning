@@ -1,7 +1,7 @@
 ---
 title: EBS — Elastic Block Store
 type: service
-tags: [ebs, block-storage, storage, gp2, gp3, io1, io2, block-express, volume-types, iops, throughput, elastic-volumes, credit-bucket, ssd, general-purpose, provisioned-iops, latency, per-instance-ceiling, az-boundary, snapshot, lifecycle, multi-attach, billing, resilience, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd]
+tags: [ebs, block-storage, storage, gp2, gp3, io1, io2, block-express, volume-types, iops, throughput, elastic-volumes, credit-bucket, ssd, general-purpose, provisioned-iops, latency, per-instance-ceiling, az-boundary, snapshot, incremental-backup, fsr, fast-snapshot-restore, lazy-restore, lifecycle, multi-attach, billing, resilience, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd]
 certs: [aws-saa]
 updated: 2026-05-28
 ---
@@ -63,11 +63,70 @@ EBS volumes exist independently of any EC2 instance.
 
 ### Snapshots — Crossing the AZ and Region Boundaries
 
-Because EBS cannot cross AZs directly, **snapshots** are the bridge:
+Because EBS cannot cross AZs directly, **snapshots** are the bridge. A snapshot is stored in an **AWS-managed area of S3** — regionally resilient (replicated across 3+ AZs automatically) — lifting the data's resilience scope from AZ to region.
 
-- A snapshot is stored in an **AWS-managed area of S3** — regionally resilient (replicated across 3+ AZs automatically).
-- A snapshot from AZ-A can restore a new volume in **AZ-B** → cross-AZ data migration and recovery.
-- A snapshot can be **copied to another region**, then restored there → cross-region DR.
+![EBS snapshot architecture: a volume in AZ-A produces a Full snapshot then an incremental Incr snapshot in S3, with restore paths to the same AZ, a different AZ (cross-AZ), and a different region (cross-region DR)](../assets/ebs-snapshot-architecture.png)
+
+From S3, a snapshot can restore a new volume into:
+
+- The **same AZ** as the original
+- A **different AZ in the same region** → cross-AZ data migration
+- A **different region** (after copying the snapshot there) → cross-region DR
+
+#### Incremental Storage
+
+| Snapshot | What is physically stored |
+| --- | --- |
+| **First** | Full copy of **used data only** — not the allocated volume size |
+| **2nd onward** | Only the data **changed since the previous snapshot** |
+
+- A 40 GB volume with 10 GB written → the first snapshot stores and bills for **10 GB**, not 40 GB
+- Later snapshots **reference** earlier ones for unchanged blocks instead of re-storing them
+- The first snapshot can take time (copying all used data to S3 in the background); **EBS performance is unaffected** during this
+
+> [!warning] Gotcha — Incrementals are self-sufficient
+> With traditional backup software, deleting an incremental breaks every backup after it. **EBS does not work this way.** Deleting any snapshot causes AWS to automatically relocate the referenced data — all later snapshots remain fully restorable. You can safely delete any individual snapshot.
+
+#### Snapshot Billing
+
+![EBS snapshot billing diagram tracking Vol. 1 through three snapshots — Snap A stores 10 GiB (full), Snap B stores 4 GiB (changed, references 6 GiB from A), Snap C stores 2 GiB (new, references 6 GiB from A and 4 GiB from B)](../assets/ebs-snapshot-consumption-and-billing.png)
+
+Three billing rules:
+
+1. **Unit: GB-month.** Size × duration — 10 GB for 1 month = 20 GB for half a month (same charge).
+2. **Billed on used data, not allocated size.** The volume itself bills for all 40 GB (reserved capacity); the snapshot bills only for the data actually written.
+3. **Incremental storage keeps frequent snapshots cheap.** Each snapshot after the first stores only new/changed data — the total bill converges on "original used data + net changes" regardless of how many snapshots you slice it into.
+
+**Worked example (the diagram):**
+
+| Snapshot | Volume | Data stored | References | Billed |
+| --- | --- | --- | --- | --- |
+| **Snap A** | 10 GiB | 10 GiB (full) | — | **10 GiB** |
+| **Snap B** | 10 GiB | 4 GiB (changed) | 6 GiB → Snap A | **4 GiB** |
+| **Snap C** | 12 GiB | 2 GiB (new) | 6 GiB → A, 4 GiB → B | **2 GiB** |
+
+Total physical storage: **16 GiB** — not 10 + 10 + 12 = 32 GiB.
+
+#### Restore Performance
+
+| Scenario | Performance |
+| --- | --- |
+| **New blank volume** | Full performance immediately |
+| **Volume restored from snapshot** | **Lazy restore** — blocks pulled from S3 on first access; unrestored blocks are slower |
+
+Two ways to force full performance immediately after restoring from a snapshot:
+
+- **`dd` (manual, free):** Read every block sequentially to force EBS to pull all data from S3 into the volume before production use.
+- **Fast Snapshot Restore (FSR):** Enable on a snapshot so restores are instant — no lazy load. Costs extra.
+  - Enabled **per snapshot + AZ combination** — one snapshot enabled across 4 AZs = 4 FSR sets consumed
+  - **Limit: 50 FSR sets per region**
+  - Use only when warm-up latency **and** `dd` admin overhead are both unacceptable — FSR incurs additional cost, so default to `dd` if either tradeoff is tolerable
+
+> [!tip] Exam Tip
+> Degraded I/O immediately after restoring a volume from a snapshot = **lazy restore** behavior, not hardware failure. Fix with `dd` (free) or FSR (instant, extra cost).
+
+> [!warning] Gotcha — FSR limit counts per snapshot + AZ, not per snapshot
+> One snapshot enabled across 4 AZs consumes **4** of your 50 FSR sets per region, not 1. Enabling FSR broadly across many snapshots and AZs can exhaust the limit quickly.
 
 ### Resilience Hierarchy
 
@@ -580,5 +639,6 @@ Multiple EBS volumes can be striped into a **RAID 0 set** to sum their IOPS:
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/eb2_io1_and_io2.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ebs_hdd_based_volumes.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_instance_store_vs_ebs.md`
+- Source: `raw/aws-cert-study-notes/aws-solution-architect/ebs_snapshots.md`
 - [EC2 — Instance Store](../services/ec2.md#instance-store)
 - [Storage Fundamentals](../concepts/storage.md)

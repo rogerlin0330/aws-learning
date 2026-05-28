@@ -749,6 +749,28 @@ See [EBS — Service Architecture](../services/ebs.md#service-architecture) for 
 > [!warning] Gotcha — EBS replication is within an AZ only
 > EBS replicates data across multiple physical disks *inside* the AZ — protecting against single-disk failure. It does **not** protect against an AZ-wide failure. The only protection against AZ failure is to snapshot the volume (which lands in S3 across 3+ AZs) and be prepared to restore in a different AZ.
 
+### EBS Snapshots
+
+See [EBS — Snapshots](../services/ebs.md#snapshots--crossing-the-az-and-region-boundaries) for full details.
+
+- **First snapshot = full copy of used data only** (not allocated size). A 40 GB volume with 10 GB written → first snapshot bills for 10 GB.
+- **Subsequent snapshots = incremental** — only changed/new data since the previous snapshot.
+- **Incrementals are self-sufficient** — deleting any snapshot is safe; AWS relocates referenced data so later snapshots remain restorable.
+- **Billing: GB-month on used data**, not allocated size. Frequent snapshots stay cheap because only deltas accumulate.
+- **Restore is lazy** — blocks pulled from S3 on first access; unrestored blocks read at lower performance until warmed.
+- **`dd`**: reads every block to force EBS to pull all data from S3. Free, manual warm-up.
+- **FSR (Fast Snapshot Restore)**: makes restores instant. Extra cost. **Limit: 50 sets per region**, counted **per snapshot + AZ combination** (one snapshot × 4 AZs = 4 sets used).
+
+> [!tip] Exam Tip
+> Pattern-match: *"first snapshot size"* → **used data, not allocated volume size**. *"delete an incremental snapshot"* → **safe** — AWS preserves later snapshots automatically. *"slow I/O right after restoring from a snapshot"* → **lazy restore** — pre-warm with `dd` (free) or enable FSR (instant, costs extra). *"FSR limit"* → **50 per region**, counted per **snapshot + AZ**. *"billing for frequent snapshots"* → cheap — only deltas are stored; aggressive schedules don't scale cost the way you'd expect.
+
+> [!warning] Common Snapshot Gotchas
+>
+> - **Volume bills on allocated size; snapshot bills on used data.** Same 40 GB volume, two different billing bases.
+> - **FSR limit is per snapshot + AZ.** 1 snapshot × 4 AZs = 4 FSR sets consumed from your 50-set budget.
+> - **Restore creates a new volume — not an in-place recovery.** The original volume and the restored copy coexist until you delete one.
+> - **Snapshot copy is needed before cross-region restore.** You cannot restore a snapshot directly into a different region — copy it first.
+
 ### EBS Volume Types — GP2 vs GP3
 
 See [EBS — Elastic Block Store](../services/ebs.md) for full details.

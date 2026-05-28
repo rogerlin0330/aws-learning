@@ -1,5 +1,9 @@
 # Wiki Log
 
+## [2026-05-28] update | EBS Snapshots — incremental mechanics, billing, restore, FSR
+
+Expanded `### Snapshots` section in `wiki/services/ebs.md`. Copied `ebs-snapshot-architecture.png` and `ebs-snapshot-consumption-and-billing.png` to `wiki/assets/` and embedded both with descriptive alt text. Added: snapshot architecture diagram (same-AZ / cross-AZ / cross-region restore paths); incremental storage table (first = full used data; subsequent = delta only); self-sufficient-increments gotcha (safe to delete any snapshot); snapshot billing diagram with worked Snap A/B/C walkthrough (three billing rules: GB-month, used data not allocated size, frequent snapshots stay cheap); restore performance section (lazy restore vs `dd` pre-warm vs FSR; FSR limit: 50 sets/region counted per snapshot+AZ). Added `### EBS Snapshots` subsection to `certifications/aws-saa.md` with exam tips and four gotcha callouts. Updated frontmatter tags and source references. Source: `raw/aws-cert-study-notes/aws-solution-architect/ebs_snapshots.md`.
+
 ## [2026-05-28] ingest | EC2 Instance Store Volumes + EBS vs Instance Store Decision Framework
 
 Ingested `raw/aws-cert-study-notes/aws-solution-architect/ec2_instance_store_volumes.md` and `raw/aws-cert-study-notes/aws-solution-architect/ec2_instance_store_vs_ebs.md`.
