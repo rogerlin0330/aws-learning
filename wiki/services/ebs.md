@@ -1,9 +1,9 @@
 ---
 title: EBS — Elastic Block Store
 type: service
-tags: [ebs, block-storage, storage, gp2, gp3, io1, io2, block-express, volume-types, iops, throughput, elastic-volumes, credit-bucket, ssd, general-purpose, provisioned-iops, latency, per-instance-ceiling, az-boundary, snapshot, lifecycle, multi-attach, billing, resilience]
+tags: [ebs, block-storage, storage, gp2, gp3, io1, io2, block-express, volume-types, iops, throughput, elastic-volumes, credit-bucket, ssd, general-purpose, provisioned-iops, latency, per-instance-ceiling, az-boundary, snapshot, lifecycle, multi-attach, billing, resilience, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd]
 certs: [aws-saa]
-updated: 2026-05-27
+updated: 2026-05-28
 ---
 
 # EBS — Elastic Block Store
@@ -103,7 +103,7 @@ EBS offers multiple volume types across two media families:
 | **Throughput Optimised HDD** | st1 | Big data, log processing; sequential reads |
 | **Cold HDD** | sc1 | Archival; infrequent access |
 
-This page covers the **General Purpose SSD** types and the **Provisioned IOPS SSD** types in depth.
+This page covers the **General Purpose SSD** types, the **Provisioned IOPS SSD** types, and the **HDD-based** types in depth.
 
 ## GP2 — General Purpose SSD (Credit-Bucket Model)
 
@@ -404,6 +404,8 @@ To reach the per-instance ceiling you almost always need multiple volumes workin
 | Up to 64,000 IOPS, consistent low latency | **IO1** or **IO2** |
 | Small volume with extreme IOPS (size-independent dial) | **IO1/IO2** |
 | Up to 256,000 IOPS, up to 64 TB | **IO2 Block Express** |
+| Frequent sequential access, big data / logs / data warehouses | **ST1** |
+| Infrequent / cold access, lowest cost | **SC1** |
 | Maximum possible performance, persistence not required | [Instance Store](../services/ec2.md#storage-options) |
 
 > [!tip] Exam Tip
@@ -426,10 +428,78 @@ To reach the per-instance ceiling you almost always need multiple volumes workin
 - Pay for **size** and **provisioned IOPS** as separate line items.
 - Three things must align for maximum performance: **volume type**, **instance type**, **instance size**.
 
+## HDD-Based Volumes — ST1 and SC1
+
+![EBS HDD-based volumes infographic comparing ST1 (Throughput Optimized HDD) on the left and SC1 (Cold HDD) on the right, showing size ranges, use cases, and performance numbers for each type](../assets/ebs-hdd-based-volumes.png)
+
+HDD volumes use physical spinning platters — moving parts mean lower performance ceilings than SSD, but also lower cost per GB. There are two in general use: **ST1** (Throughput Optimized HDD) and **SC1** (Cold HDD). A third, legacy HDD type exists but is not in scope.
+
+### Reading the HDD Diagram
+
+The diagram is split down the middle into **ST1 on the left, SC1 on the right** — reading them as a pair makes the trade-off obvious: SC1 is a cheaper, slower version of ST1. Each half has the same layout: header icons (a train indicates ST1's sequential-throughput identity; an iceberg and penguin for SC1's "cold" positioning), a size range, a use-case description, and performance numbers. The most important detail is the **"(1MB)"** label next to the IOPS figures on both sides — it signals that one I/O operation on HDD moves a 1 MB block (vs 16 KB on SSD), which is why the IOPS and MB/s numbers are always equal. The centre bars (red and denser for ST1, blue and sparser for SC1) visually reinforce the relative throughput difference.
+
+### The 1 MB I/O Block — the Key HDD Mechanic
+
+On SSD volumes, 1 IOPS = one **16 KB** operation. On HDD volumes, 1 IOPS = one **1 MB** operation. This single fact explains why HDD IOPS ceilings and MB/s ceilings are the same number:
+
+- **ST1**: 500 IOPS × 1 MB = **500 MB/s**
+- **SC1**: 250 IOPS × 1 MB = **250 MB/s**
+
+Large I/O blocks play to a spinning disk's strength — sequential reads of big contiguous chunks. Random small reads (where SSDs excel) expose a spinning disk's weakness (head seeks).
+
+### ST1 vs SC1 — Comparison
+
+| Attribute | ST1 (Throughput Optimized) | SC1 (Cold HDD) |
+| --- | --- | --- |
+| Relative cost | Cheap (less than any SSD) | **Cheapest EBS storage of all** |
+| Size range | 125 GB – 16 TB | 125 GB – 16 TB |
+| I/O block size | 1 MB | 1 MB |
+| Max IOPS | 500 | 250 |
+| Max throughput | 500 MB/s | 250 MB/s |
+| Baseline performance | 40 MB/s per TB | 12 MB/s per TB |
+| Burst performance | 250 MB/s per TB | 80 MB/s per TB |
+| Access pattern | Frequent, sequential, throughput | Infrequent, cold, archival |
+| Typical use cases | Big data, data warehouses, log processing | Cold data, archives, few scans/day |
+
+### Credit Bucket on HDD vs GP2
+
+ST1 and SC1 reuse the same **credit-bucket concept** from [GP2](#gp2--general-purpose-ssd-credit-bucket-model), with one key difference: the unit is **MB/s** (1 MB I/O blocks), not IOPS (16 KB credits). Baseline and burst performance both scale **per TB of volume size** — a larger volume earns proportionally more baseline throughput and burst headroom, just as a larger GP2 volume earns more IOPS.
+
+| Volume type | Credit unit | Baseline refill rate |
+| --- | --- | --- |
+| GP2 | IOPS (16 KB I/O credits) | 3 IOPS/GB (min 100) |
+| ST1 | MB/s (1 MB I/O blocks) | 40 MB/s per TB |
+| SC1 | MB/s (1 MB I/O blocks) | 12 MB/s per TB |
+
+### When to Choose HDD
+
+1. **Need IOPS / random access / high performance?** → Avoid both HDD types. Use SSD (GP3, or IO1/IO2 for extreme needs).
+2. **Access data infrequently (a few scans per day)?** → **SC1** — the cheapest EBS storage available, full stop.
+3. **Frequently access data sequentially?** → **ST1** — still cheap, with enough throughput for big data, warehouses, and log processing.
+
+> [!tip] Exam Tip
+> HDD = economy of *storage capacity*, not performance. The two discriminators: (1) **random vs sequential** — HDD is only appropriate for sequential; any IOPS or random-access requirement rules it out. (2) **frequent vs infrequent** — ST1 for frequently accessed sequential data, SC1 for cold/rarely touched archival data.
+
+> [!warning] Gotcha — Minimum size is 125 GB
+> Both ST1 and SC1 have a **125 GB minimum** — much larger than GP2/GP3's 1 GB minimum. A question about a small volume with a sequential workload still cannot use HDD. Also, neither type supports boot volumes.
+
+### HDD Key Takeaways
+
+- **Two HDD types in use: ST1 (Throughput Optimized) and SC1 (Cold).** A legacy third type is out of scope.
+- **HDD I/O is measured in 1 MB blocks** (vs 16 KB on SSD) — so IOPS and MB/s ceilings are the same number.
+- **ST1: max 500 IOPS / 500 MB/s**, baseline **40 MB/s per TB**, burst **250 MB/s per TB**.
+- **SC1: max 250 IOPS / 250 MB/s**, baseline **12 MB/s per TB**, burst **80 MB/s per TB**.
+- **Both range 125 GB – 16 TB** (minimum is 125 GB — much larger than SSD's 1 GB floor).
+- **Credit bucket measured in MB/s per TB**, not IOPS — same bucket mechanism as GP2, different unit.
+- **ST1 = frequent, sequential, throughput-heavy** (big data, warehouses, log processing).
+- **SC1 = infrequent, cold, archival** — the **lowest-cost EBS storage of all**.
+- **Neither type is suitable for IOPS-heavy or random-access workloads** — use SSD instead.
+
 ## References
 
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ebs_service_architecture.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ebs_gp2_and_gp3.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/eb2_io1_and_io2.md`
+- Source: `raw/aws-cert-study-notes/aws-solution-architect/ebs_hdd_based_volumes.md`
 - [EC2 — Storage Options](../services/ec2.md#storage-options)
 - [Storage Fundamentals](../concepts/storage.md)

@@ -1,9 +1,9 @@
 ---
 title: AWS Solutions Architect Associate — Exam Notes
 type: certification
-tags: [iam, vpc, networking, ec2, ami, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, route53, organizations, cost, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr]
+tags: [iam, vpc, networking, ec2, ami, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, route53, organizations, cost, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr]
 certs: [aws-saa]
-updated: 2026-05-27
+updated: 2026-05-28
 ---
 
 # AWS Solutions Architect Associate (SAA-C03)
@@ -775,6 +775,34 @@ The Provisioned IOPS SSD family is for workloads that need **extreme, consistent
 
 > [!warning] Gotcha — minimum size is 4 GB, not 1 GB
 > GP2 and GP3 start at **1 GB**. IO1, IO2, and Block Express all start at **4 GB**. A question about a very small volume with extreme IOPS requirements needs both the ratio math and the 4 GB floor check.
+
+### EBS Volume Types — HDD (ST1, SC1)
+
+See [EBS — HDD-Based Volumes](../services/ebs.md#hdd-based-volumes--st1-and-sc1) for full details.
+
+The HDD family is for **sequential, throughput-oriented workloads where cost matters more than IOPS**. HDDs have physical moving parts — appropriate only when access patterns play to their strength (large sequential I/O).
+
+**Key numbers:**
+
+| Attribute | ST1 (Throughput Optimized) | SC1 (Cold HDD) |
+| --- | --- | --- |
+| Relative cost | Cheap | **Cheapest EBS storage of all** |
+| Size range | 125 GB – 16 TB | 125 GB – 16 TB |
+| I/O block size | **1 MB** (vs 16 KB on SSD) | **1 MB** |
+| Max IOPS | 500 | 250 |
+| Max throughput | 500 MB/s | 250 MB/s |
+| Baseline | 40 MB/s per TB | 12 MB/s per TB |
+| Burst | 250 MB/s per TB | 80 MB/s per TB |
+| Access pattern | Frequent, sequential | Infrequent, cold, archival |
+| Typical workloads | Big data, data warehouses, log processing | Cold data, archives, few scans/day |
+
+**1 MB I/O block rule:** on HDD, 1 IOPS = 1 MB — so the IOPS and MB/s ceilings are always the same number (500 IOPS = 500 MB/s). The credit bucket scales in **MB/s per TB** (not IOPS per GB like GP2).
+
+> [!tip] Exam Tip
+> Two HDD discriminators: (1) **random vs sequential** — the moment the question mentions IOPS, random access, databases, or low latency, HDD is ruled out. (2) **frequent vs infrequent** — ST1 for frequently accessed sequential data (big data, logs, warehouses); SC1 for cold/rarely accessed archival data. SC1 = the lowest-cost EBS storage overall.
+
+> [!warning] Gotcha — 125 GB minimum and no boot volumes
+> Both ST1 and SC1 have a **125 GB minimum** — much larger than GP2/GP3's 1 GB minimum. Neither can be used as a boot volume. A question describing a small volume, a boot volume, or a random-access workload cannot use HDD even if cost is the primary driver.
 
 ## DNS and Route 53
 
