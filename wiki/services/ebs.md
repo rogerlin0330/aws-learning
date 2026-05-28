@@ -14,8 +14,8 @@ For the broader vocabulary (direct-attached vs network-attached, ephemeral vs pe
 
 ## Service Architecture
 
-![EBS service architecture showing two regions, two AZs with EC2 instances attached to EBS volumes, snapshot flow to S3, and cross-region snapshot copy](../assets/ebs-service-architecture.png)
-
+![EBS service architecture showing two regions, two AZs with EC2 instances attached to EBS volumes, snapshot flow to S3, and cross-region snapshot copy|697](../assets/ebs-service-architecture.png)
+![[wiki/assets/ec2-host-vs-instance-icon-legend.png]]
 ### What EBS Volumes Are
 
 EBS takes allocations of physical disks and presents them to EC2 as **raw block devices** — indistinguishable from a locally attached disk. The EC2 instance's OS is then responsible for putting a **file system** on top:
