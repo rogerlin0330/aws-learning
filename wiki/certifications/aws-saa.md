@@ -696,6 +696,22 @@ See [EC2 — Instance Types](../services/ec2.md#instance-types) for full details
 > [!warning] Gotcha — T3 burstable vs M5 steady-state
 > **T3** instances accrue CPU credits at idle and spend them under load. Once credits run out, CPU is throttled to baseline. The trap: a T3 performs well initially then slows down. This is **not** an infrastructure failure — it is the burstable billing model working as designed. **M5** (non-burstable) is the correct fix for sustained steady-state CPU workloads.
 
+### EBS Service Architecture
+
+See [EBS — Service Architecture](../services/ebs.md#service-architecture) for full details.
+
+- **EBS is AZ-scoped.** A volume lives in exactly one AZ; an instance must be in the same AZ to attach it.
+- **File system comes from the OS.** EBS provides the raw block device; the EC2 instance's OS (Linux/Windows) formats and mounts it. EBS has no concept of EXT4 or NTFS — that's entirely the instance's responsibility.
+- **Snapshots are stored in S3** (AWS-managed, regionally resilient — 3+ AZs). They are the only way to move volume data across AZs or regions.
+- **Cross-region DR path:** snapshot the volume → copy snapshot to target region → restore volume there.
+- **Multi-attach conditions (all three must hold):** (1) supported volume type, (2) same AZ for all instances, (3) cluster-aware application that coordinates writes.
+
+> [!tip] Exam Tip
+> Pattern-match: *"instance needs access to a volume in another AZ"* → **snapshot → restore in target AZ** (direct cross-AZ attachment is impossible). *"cross-region disaster recovery for EBS data"* → **snapshot → copy snapshot to target region → create volume from copy**. *"two instances share an EBS volume"* → **multi-attach**, but only with supported volume types, same AZ, and cluster-aware software. *"where does the EXT4 / NTFS file system on an EBS volume come from?"* → **the EC2 instance's OS** — EBS only provides the raw block device.
+
+> [!warning] Gotcha — EBS replication is within an AZ only
+> EBS replicates data across multiple physical disks *inside* the AZ — protecting against single-disk failure. It does **not** protect against an AZ-wide failure. The only protection against AZ failure is to snapshot the volume (which lands in S3 across 3+ AZs) and be prepared to restore in a different AZ.
+
 ### EBS Volume Types — GP2 vs GP3
 
 See [EBS — Elastic Block Store](../services/ebs.md) for full details.

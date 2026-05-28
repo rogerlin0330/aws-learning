@@ -1,7 +1,7 @@
 ---
 title: EBS — Elastic Block Store
 type: service
-tags: [ebs, block-storage, storage, gp2, gp3, io1, io2, block-express, volume-types, iops, throughput, elastic-volumes, credit-bucket, ssd, general-purpose, provisioned-iops, latency, per-instance-ceiling]
+tags: [ebs, block-storage, storage, gp2, gp3, io1, io2, block-express, volume-types, iops, throughput, elastic-volumes, credit-bucket, ssd, general-purpose, provisioned-iops, latency, per-instance-ceiling, az-boundary, snapshot, lifecycle, multi-attach, billing, resilience]
 certs: [aws-saa]
 updated: 2026-05-27
 ---
@@ -11,6 +11,86 @@ updated: 2026-05-27
 EBS provides **network-attached block storage** for EC2. Volumes are created independently of any instance and persist independently — surviving stop/start cycles, instance replacement, and even instance termination (unless `DeleteOnTermination` is set). Every EBS volume is **AZ-scoped**: it can only attach to instances in the same AZ.
 
 For the broader vocabulary (direct-attached vs network-attached, ephemeral vs persistent, block vs file vs object, the IOPS/throughput/block-size triangle) see [Storage Fundamentals](../concepts/storage.md). For instance store (the ephemeral alternative) and when to choose EBS see [EC2 — Storage Options](../services/ec2.md#storage-options).
+
+## Service Architecture
+
+![EBS service architecture showing two regions, two AZs with EC2 instances attached to EBS volumes, snapshot flow to S3, and cross-region snapshot copy](../assets/ebs-service-architecture.png)
+
+### What EBS Volumes Are
+
+EBS takes allocations of physical disks and presents them to EC2 as **raw block devices** — indistinguishable from a locally attached disk. The EC2 instance's OS is then responsible for putting a **file system** on top:
+
+| OS | Common file systems |
+| --- | --- |
+| Linux | EXT3, EXT4, XFS |
+| Windows | NTFS |
+
+> [!warning] Gotcha
+> EBS provides the *raw disk*. The file system (EXT4, NTFS) comes from the **instance's OS**, not from EBS.
+
+### AZ Boundary — The Central Constraint
+
+**EBS is an Availability Zone–scoped service.** Every architectural decision about EBS follows from this single fact.
+
+- A volume lives in **exactly one AZ** and cannot be moved directly.
+- EBS in AZ-A and EBS in AZ-B are **completely separate deployments** — and both are separate from any other region.
+- Within its AZ, EBS **replicates data across multiple physical devices** — a single disk failure does not destroy the volume.
+- If the **entire AZ fails**, volumes in that AZ fail with it.
+
+**Attachment rules:**
+
+- A volume can normally be **attached to one EC2 instance at a time**.
+- It can be detached from one instance and **reattached to another — but only within the same AZ**.
+- An instance in AZ-B **cannot attach to a volume in AZ-A**. No exceptions.
+
+> [!tip] Exam Tip
+> If a question asks how to give an instance access to data in a volume in a different AZ, the answer is always: **snapshot the volume → restore in the target AZ**. Direct cross-AZ attachment is impossible.
+
+### Volume Lifecycle — Persistence Independent of Instances
+
+EBS volumes exist independently of any EC2 instance.
+
+| EC2 instance event | Effect on attached EBS volume |
+| --- | --- |
+| Stop & start | Volume persists, stays attached |
+| Restart (reboot) | Volume persists, stays attached |
+| Move to another host (after stop/start) | Volume follows the instance |
+| Terminated | Volume persists **unless** `DeleteOnTermination` was set |
+| Detached | Volume persists; can be reattached to another instance in the same AZ |
+
+> [!tip] Exam Tip
+> EBS volumes **keep billing** even when the EC2 instance is stopped. Storage charges accrue against the volume, not the instance state.
+
+### Snapshots — Crossing the AZ and Region Boundaries
+
+Because EBS cannot cross AZs directly, **snapshots** are the bridge:
+
+- A snapshot is stored in an **AWS-managed area of S3** — regionally resilient (replicated across 3+ AZs automatically).
+- A snapshot from AZ-A can restore a new volume in **AZ-B** → cross-AZ data migration and recovery.
+- A snapshot can be **copied to another region**, then restored there → cross-region DR.
+
+### Resilience Hierarchy
+
+| Tier | Mechanism | Protects against |
+| --- | --- | --- |
+| 1 | EBS internal replication within the AZ | Individual disk failure |
+| 2 | Snapshot to S3 | AZ-level failure → restore to another AZ |
+| 3 | Snapshot copy across regions | Region-level failure → restore in another region |
+
+### Multi-Attach
+
+Certain volume types support **multi-attach** — simultaneous attachment to multiple instances within the same AZ.
+
+- Requires **cluster-aware application software** to coordinate writes; without it, concurrent writes can corrupt the volume.
+- Not a default behavior — must be explicitly enabled on the volume.
+
+### Billing Model
+
+EBS bills by **GB-per-month**:
+
+- Billing is continuous: it doesn't matter whether an instance is running, stopped, or the volume is detached.
+- 1 GB for 1 month = 2 GB for half a month — same charge.
+- High-performance volume types (Provisioned IOPS) add **separate line items** for provisioned IOPS.
 
 ## Volume Types Overview
 
@@ -348,6 +428,7 @@ To reach the per-instance ceiling you almost always need multiple volumes workin
 
 ## References
 
+- Source: `raw/aws-cert-study-notes/aws-solution-architect/ebs_service_architecture.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ebs_gp2_and_gp3.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/eb2_io1_and_io2.md`
 - [EC2 — Storage Options](../services/ec2.md#storage-options)
