@@ -3,7 +3,7 @@ title: EC2 — Elastic Compute Cloud
 type: service
 tags: [ec2, compute, iaas, ami, ssh, rdp, instance-lifecycle, shared-responsibility, ebs, key-pair, host, tenancy, dedicated-host, dedicated-instance, instance-store, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga]
 certs: [aws-saa]
-updated: 2026-05-26
+updated: 2026-05-28
 ---
 
 # EC2 — Elastic Compute Cloud
@@ -117,7 +117,7 @@ For multi-year predictable workloads, EC2 is the canonical target of the [Cost O
 
 For the general storage vocabulary (direct-attached vs network-attached, ephemeral vs persistent, block vs file vs object, IOPS / throughput / block size), see [Storage Fundamentals](../concepts/storage.md).
 
-- **Instance store (local host storage)** — ephemeral block volumes physically on the EC2 host. Fast, free with the instance, **lost on stop or terminate**. Available only on certain instance types
+- **Instance store (local host storage)** — ephemeral block volumes physically on the EC2 host. Fast, free with the instance, **lost when the instance moves to a new host** (stop/start, resize, host failure). A reboot preserves data. Available only on certain instance types. See [Instance Store](#instance-store) below for full details
 - **EBS (Elastic Block Store)** — network-attached block storage, a separate AWS service. Volumes persist independently of the instance and survive stop/start. Charged by provisioned size (and IOPS/throughput on some types), not by usage. EBS is the source of the "stopped instance still costs money" trap below. See [EBS](../services/ebs.md) for volume type details (GP2 vs GP3, Provisioned IOPS, HDD types)
 
 ## Instance Lifecycle and State-Based Costs
@@ -329,6 +329,77 @@ Start in **General Purpose (T3/M5)**. Only move out when there is a clear worklo
 > [!warning] Gotcha — prefer newer generations
 > Within a family, higher generation number = better price-to-performance. Reasons to stay on an older generation: it is not yet available in your region, or internal testing/approval processes still require it. These are the only legitimate exceptions.
 
+## Instance Store
+
+Instance store provides **block storage physically attached to the EC2 host** — functionally similar to EBS but local rather than network-based. It is the highest-performing storage option in AWS, and the most constrained.
+
+For the decision framework (when to choose instance store vs EBS), see [EBS vs Instance Store](../services/ebs.md#ebs-vs-instance-store--decision-framework).
+
+### The Three Essentials
+
+#### 1. Ephemeral — Not Persistent
+
+Instance store is temporary. Data is **lost** whenever the instance moves to a new host:
+
+- **Stop/Start** — forces a host migration (the instance may land on a different host in the same AZ)
+- **Resize / instance type change** — forces a host migration
+- **Host failure or maintenance** — the instance relocates to a new host
+- **Volume hardware failure** — the physical disk itself fails
+
+When an instance migrates, it receives **new, blank** ephemeral volumes — old data is gone.
+
+> [!warning] Gotcha — Reboot is not a host move
+> A **restart (reboot)** keeps the instance on the same host — instance store data **survives**. Only events that *move the instance to a new host* wipe the data. A common exam trap describes losing scratch data "after a reboot" — check whether the action was actually a **stop/start** in disguise.
+
+#### 2. Local to the Host (vs EBS = Network-Based)
+
+- Instance store volumes are **physically connected to one EC2 host** — no network hop
+- Only instances on that host can access them
+- Because there is no network latency, they deliver **the highest storage performance in AWS**
+
+#### 3. Attach at Launch Time Only
+
+- Instance store volumes **cannot be added after an instance launches**. Unlike EBS, you cannot attach more later
+- You may choose not to use the allocated volumes, but you cannot gain more post-launch
+
+> [!tip] Exam Tip
+> Any question about attaching instance store volumes *after* launch — the answer is always **no, launch time only**.
+
+### Architecture Details
+
+- Each EC2 host has a set of instance store volumes backed by **physical devices on that host**
+- Volumes are named `ephemeral0`, `ephemeral1`, `ephemeral2`, …
+- Multiple instances on one host divide the host's volumes among themselves — e.g. Instance A uses `ephemeral0`; Instance B uses `ephemeral1` and `ephemeral2`
+- When an instance migrates to a new host, it still gets an `ephemeral0`, but it is a **new, blank** physical volume on the new host
+
+### Cost
+
+- Instance store is **included in the instance price** — you pay for it whether you use it or not
+- Different instance types come with different numbers and sizes of instance store volumes
+- Since you are already paying for it, there is **no advantage to leaving allocated volumes unused**
+
+### Performance
+
+The whole point of instance store is accepting tight restrictions in exchange for the highest data performance in AWS.
+
+| Instance Family | Media | Peak Throughput | Notes |
+| --- | --- | --- | --- |
+| **D3** (storage-optimized) | HDD | ~4.6 GB/s | High value for large sequential workloads |
+| **i3** (storage-optimized) | NVMe SSD | up to ~16 GB/s | Far exceeds even the highest-performance EBS |
+
+- Certain i3 instances reach **~2 million read IOPS** and **~1.6 million write IOPS** — compare to EBS's maximum of 256,000 IOPS per volume or ~260,000 IOPS per instance via RAID 0
+- Volume size and count **vary by instance type and size** — larger sizes generally include more and larger volumes
+- **Some instance types have no instance store** — verify the instance type's specification before assuming
+
+### Instance Store Key Takeaways
+
+- **Local to the host** → any host migration destroys the data
+- **Launch time only** → cannot add instance store volumes after launch
+- **Reboot = data survives; Stop/Start = data may be lost** — stop/start can land on a new host
+- **Highest performance in AWS** — the trade-off for accepting all restrictions
+- **Included in instance price** → no benefit to leaving allocated volumes unused
+- **Never use for persistent or irreplaceable data**
+
 ## Key Takeaways
 
 1. **EC2 = IaaS** — you manage OS and above; AWS manages everything below
@@ -344,6 +415,7 @@ Start in **General Purpose (T3/M5)**. Only move out when there is a clear worklo
 11. **Linux: SSH on 22**; **Windows: RDP on 3389** (private key decrypts the admin password, then RDP)
 12. **Private key downloads once** — lose it and you've lost the easy path back in
 13. **Instance types:** five categories (General Purpose / Compute / Memory / Accelerated / Storage). Start in General Purpose; deviate when a bottleneck is clear. **T3 is burstable** (credit-based); **M5 is steady-state**. Full type string = family + generation + optional capability letters + size
+14. **Instance store** — physically local to the host; highest performance in AWS; launch-time only; **lost on any host move** (stop/start, resize, host failure); reboot preserves data; included in instance price. See [Instance Store](#instance-store)
 
 ## Quick Reference
 
@@ -361,6 +433,7 @@ Start in **General Purpose (T3/M5)**. Only move out when there is a clear worklo
 | Free state | **Terminated only** (volumes deleted, instance gone) |
 | Hidden cost trap | **Stopped** instances still pay for [EBS](#storage-options) |
 | Restart vs Stop/Start | Restart = same host (IP + instance store preserved); Stop/Start = may land on a new host (auto public IP + instance store **lost**) |
+| Instance store | Ephemeral; local to host; launch-time only; lost on any host move; **highest performance in AWS** — see [Instance Store](#instance-store) |
 | Template object | AMI (Amazon Machine Image) — region-specific |
 | AMI permission modes | Public / Owner / Explicit |
 | Linux access | SSH on port 22 + private key |
@@ -379,5 +452,7 @@ Start in **General Purpose (T3/M5)**. Only move out when there is a clear worklo
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_101.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_architecture_and_resilience.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_instance_type.md`
+- Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_instance_store_volumes.md`
+- Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_instance_store_vs_ebs.md`
 - [EC2 Instance Types — official AWS docs](https://aws.amazon.com/ec2/instance-types/)
 - [ec2instances.info (Vantage)](https://instances.vantage.sh/) — sortable reference with pricing

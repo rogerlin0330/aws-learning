@@ -1,5 +1,17 @@
 # Wiki Log
 
+## [2026-05-28] ingest | EC2 Instance Store Volumes + EBS vs Instance Store Decision Framework
+
+Ingested `raw/aws-cert-study-notes/aws-solution-architect/ec2_instance_store_volumes.md` and `raw/aws-cert-study-notes/aws-solution-architect/ec2_instance_store_vs_ebs.md`.
+
+Added new `## Instance Store` section to `wiki/services/ec2.md` covering: the three essentials (ephemeral/not-persistent, local-to-host vs EBS network-based, launch-time-only attachment); architecture details (ephemeral0/1/2 naming, host volume division); cost model (included in instance price, no benefit to leaving volumes unused); performance numbers (D3 ~4.6 GB/s HDD, i3 ~16 GB/s NVMe SSD, ~2M read / ~1.6M write IOPS). Updated instance store bullet in Storage Options section to clarify data loss is on host moves (not just stop/terminate) and that reboot preserves data. Added item 14 to Key Takeaways; added instance store row to Quick Reference table.
+
+Added new `## EBS vs Instance Store — Decision Framework` section to `wiki/services/ebs.md` covering: default rule (EBS for persistence); clear-cut EBS cases (persistence, resilience, lifecycle isolation); "it depends" scenarios (app-level replication, super-high performance, cost); HDD type selection (ST1/SC1 tradeoffs, neither can boot); RAID 0 and the ~260K IOPS per-instance ceiling; the "beyond 260K → instance store" decision with an IOPS ladder table; quick decision cheat-sheet. Added RAID 0 row to EBS Volume Type Selection Guide. Fixed the instance store cross-link (was pointing to `#storage-options`, now `#instance-store`).
+
+Corrected a transcript inaccuracy: the source note flags that the lecture lists "reboot" as a cause of instance store data loss — this is wrong. A reboot keeps the instance on the same host; data loss only occurs when the instance moves to a new host (stop/start, resize, host failure, hardware failure). The corrected version is filed everywhere.
+
+Added `### Instance Store` subsection to `certifications/aws-saa.md` with decision table, exam tips, and four gotcha callouts. Updated `index.md` EC2 and EBS entries.
+
 ## [2026-05-28] ingest | EBS — HDD-Based Volumes (ST1 and SC1)
 
 Ingested `raw/aws-cert-study-notes/aws-solution-architect/ebs_hdd_based_volumes.md`. Copied `ebs-hdd-based-volumes.png` to `wiki/assets/`. Added a new **HDD-Based Volumes — ST1 and SC1** H2 section to `wiki/services/ebs.md` covering: the 1 MB I/O block mechanic (HDD IOPS = MB/s because 1 IOPS = 1 MB, vs 16 KB on SSD); ST1 vs SC1 comparison table (size range, max IOPS/throughput, baseline/burst per TB, access patterns, use cases); credit bucket on HDD (measured in MB/s per TB vs GP2's IOPS per GB — same mechanism, different unit and scale); decision flow (IOPS/random → avoid HDD; infrequent/cold → SC1; frequent sequential → ST1); HDD Key Takeaways. Added ST1 and SC1 rows to the EBS Volume Type Selection Guide. Added `hdd, st1, sc1, throughput-optimized-hdd, cold-hdd` to frontmatter tags and updated date to 2026-05-28.

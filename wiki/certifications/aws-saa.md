@@ -1,7 +1,7 @@
 ---
 title: AWS Solutions Architect Associate — Exam Notes
 type: certification
-tags: [iam, vpc, networking, ec2, ami, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, route53, organizations, cost, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr]
+tags: [iam, vpc, networking, ec2, ami, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, ephemeral, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, route53, organizations, cost, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, raid0, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr]
 certs: [aws-saa]
 updated: 2026-05-28
 ---
@@ -695,6 +695,43 @@ See [EC2 — Instance Types](../services/ec2.md#instance-types) for full details
 
 > [!warning] Gotcha — T3 burstable vs M5 steady-state
 > **T3** instances accrue CPU credits at idle and spend them under load. Once credits run out, CPU is throttled to baseline. The trap: a T3 performs well initially then slows down. This is **not** an infrastructure failure — it is the burstable billing model working as designed. **M5** (non-burstable) is the correct fix for sustained steady-state CPU workloads.
+
+### Instance Store
+
+See [EC2 — Instance Store](../services/ec2.md#instance-store) and [EBS vs Instance Store](../services/ebs.md#ebs-vs-instance-store--decision-framework) for full details.
+
+- Instance store volumes are **physically attached to the EC2 host** — no network hop → **highest storage performance in AWS**
+- **Ephemeral** — data is lost when the instance moves to a new host: stop/start, resize, host failure, or volume hardware failure
+- **Reboot preserves instance store data** — a restart stays on the same host. The trap: *"rebooted and lost scratch data"* is almost always a **stop/start in disguise**
+- **Launch time only** — instance store cannot be added after the instance is running
+- **Included in instance price** — no cost reason to avoid using already-allocated volumes
+- **Best-in-class performance**: D3 → ~4.6 GB/s HDD; i3 → ~16 GB/s NVMe SSD, ~2 million read IOPS
+
+#### Instance store vs EBS — decision table
+
+| If the question emphasizes… | Pick |
+| --- | --- |
+| Persistence / durability | **EBS** |
+| Resilience within an AZ + snapshots | **EBS** |
+| Detach & reattach to another instance | **EBS** |
+| Resilience **with** app-level replication | **Instance store** (across many instances) |
+| Lowest cost HDD | **ST1 / SC1** |
+| Throughput / streaming | **ST1** |
+| Boot volume | **Not ST1/SC1** |
+| 16,000–64,000 IOPS per volume | **IO1 / IO2** |
+| Up to 256,000 IOPS per volume | **IO2 Block Express** |
+| Max per instance (RAID 0 over EBS) | **~260,000 IOPS** |
+| More than 260,000 IOPS, non-persistent OK | **Instance store** (i3: ~2 million IOPS) |
+
+> [!tip] Exam Tip
+> Pattern-match: *"highest possible storage performance, data loss acceptable"* → **instance store**. *"app replicates its own data (Cassandra, HDFS)"* → **instance store** across many instances — let the app provide durability, keep the speed and the cost saving. *"need more than ~260,000 IOPS per instance"* → **instance store** (RAID 0 over EBS is capped at ~260,000; i3 reaches millions). *"add volumes after launch"* → only **EBS** — instance store is **launch-time only**. *"D3 for sequential throughput"* → instance store (~4.6 GB/s) beats any EBS HDD. *"i3 for NVMe IOPS"* → instance store (~2 million IOPS) vs IO2 Block Express (256,000/volume, ~260,000/instance).
+
+> [!warning] Common Instance Store Gotchas
+>
+> - **Reboot preserves, stop/start does not.** "Lost scratch data after a reboot" = almost always a stop/start; the instance landed on a new host
+> - **Launch time only** — cannot attach instance store after launch; any question about adding post-launch is testing this
+> - **Not all instance types include instance store** — verify instance type specs before assuming
+> - **Included in price** — no reason to leave allocated volumes unused; the cost is already sunk
 
 ### EBS Service Architecture
 

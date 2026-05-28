@@ -10,7 +10,7 @@ updated: 2026-05-28
 
 EBS provides **network-attached block storage** for EC2. Volumes are created independently of any instance and persist independently — surviving stop/start cycles, instance replacement, and even instance termination (unless `DeleteOnTermination` is set). Every EBS volume is **AZ-scoped**: it can only attach to instances in the same AZ.
 
-For the broader vocabulary (direct-attached vs network-attached, ephemeral vs persistent, block vs file vs object, the IOPS/throughput/block-size triangle) see [Storage Fundamentals](../concepts/storage.md). For instance store (the ephemeral alternative) and when to choose EBS see [EC2 — Storage Options](../services/ec2.md#storage-options).
+For the broader vocabulary (direct-attached vs network-attached, ephemeral vs persistent, block vs file vs object, the IOPS/throughput/block-size triangle) see [Storage Fundamentals](../concepts/storage.md). For instance store architecture and the decision between EBS and instance store, see [EC2 — Instance Store](../services/ec2.md#instance-store) and [EBS vs Instance Store](#ebs-vs-instance-store--decision-framework).
 
 ## Service Architecture
 
@@ -404,9 +404,10 @@ To reach the per-instance ceiling you almost always need multiple volumes workin
 | Up to 64,000 IOPS, consistent low latency | **IO1** or **IO2** |
 | Small volume with extreme IOPS (size-independent dial) | **IO1/IO2** |
 | Up to 256,000 IOPS, up to 64 TB | **IO2 Block Express** |
+| RAID 0 for combined IOPS (per-instance ceiling ~260,000 IOPS) | Multiple **IO2 Block Express** volumes + large instance — see [RAID 0 and the Per-Instance Ceiling](#raid-0-and-the-per-instance-ceiling) |
 | Frequent sequential access, big data / logs / data warehouses | **ST1** |
 | Infrequent / cold access, lowest cost | **SC1** |
-| Maximum possible performance, persistence not required | [Instance Store](../services/ec2.md#storage-options) |
+| Maximum possible performance, persistence not required | [Instance Store](../services/ec2.md#instance-store) |
 
 > [!tip] Exam Tip
 > Instance store can exceed even Block Express performance numbers, but the storage is **ephemeral** — it lives and dies with the instance. Provisioned IOPS SSD is the top choice when you need both extreme performance **and** durability.
@@ -495,11 +496,89 @@ ST1 and SC1 reuse the same **credit-bucket concept** from [GP2](#gp2--general-pu
 - **SC1 = infrequent, cold, archival** — the **lowest-cost EBS storage of all**.
 - **Neither type is suitable for IOPS-heavy or random-access workloads** — use SSD instead.
 
+## EBS vs Instance Store — Decision Framework
+
+For instance store architecture details (physical attachment, ephemeral behaviour, naming, performance numbers), see [EC2 — Instance Store](../services/ec2.md#instance-store).
+
+### Default Rule
+
+> **If you need persistent storage → use EBS.** Instance store is not persistent, so it is the wrong starting point whenever durability matters.
+
+### Clear-Cut: Choose EBS
+
+| Requirement | Why instance store does not fit |
+| --- | --- |
+| **Persistence** | Instance store data is lost on stop/start, resize, host failure, or volume hardware failure |
+| **Resilience without application-level help** | EBS replicates across multiple physical disks within the AZ; snapshots bridge AZs and regions. Instance store has neither |
+| **Lifecycle isolation** | Need to detach a volume and reattach to a different instance? Only EBS supports this |
+
+> [!warning] Accuracy note — reboot does not lose instance store data
+> A **restart (reboot)** keeps the instance on the same host — instance store data survives. Data is lost only when the instance **moves to a new host** (stop/start, resize, host failure, volume hardware failure). "Reboot" and "stop/start" are not the same operation; don't conflate them.
+
+### "It Depends" — When Instance Store May Win
+
+| Scenario | Choice | Reason |
+| --- | --- | --- |
+| App has **built-in replication** (e.g. Cassandra, HDFS, distributed NoSQL) | **Instance store** across many instances | The app handles durability; you keep performance and skip EBS cost |
+| Need **super-high performance** (> ~260,000 IOPS per instance) | **Instance store** | i3 instances reach ~2 million IOPS — EBS tops out at ~260,000 per instance |
+| **Cost** is primary and the instance type already includes instance store | **Instance store** | Already included in the instance price — no reason not to use it |
+
+### EBS HDD Type Selection
+
+When EBS is right but cost or throughput matters more than IOPS:
+
+| Need | Type |
+| --- | --- |
+| Cheapest storage per GB | **SC1** — the lowest-cost EBS storage overall |
+| Throughput / streaming / sequential access | **ST1** |
+| Boot volume | **Neither ST1 nor SC1** — HDD types cannot be used as boot volumes |
+
+### RAID 0 and the Per-Instance Ceiling
+
+Multiple EBS volumes can be striped into a **RAID 0 set** to sum their IOPS:
+
+- A RAID 0 set over IO2 Block Express volumes can approach very high combined IOPS
+- But there is a **hard per-instance ceiling: ~260,000 IOPS** — no matter how many volumes you stripe, the EC2 instance cannot consume more than this from EBS
+- Reaching ~260,000 IOPS requires a **large, newer instance type** plus enough volumes to saturate it
+
+> [!tip] Exam Tip
+> The per-instance ceiling (~260,000 IOPS) is separate from, and independent of, the per-volume ceiling. See [The Two-Ceiling Rule](#the-two-ceiling-rule) above. Adding more EBS volumes beyond what saturates the per-instance ceiling yields nothing.
+
+### Beyond 260,000 IOPS
+
+| IOPS requirement | Storage |
+| --- | --- |
+| Up to 16,000 per volume | GP2 / GP3 |
+| 16,000–64,000 per volume | IO1 / IO2 |
+| Up to 256,000 per volume | IO2 Block Express |
+| Up to ~260,000 per instance (RAID 0) | IO2 Block Express + large instance |
+| **> 260,000 per instance, non-persistent acceptable** | **[Instance Store](../services/ec2.md#instance-store)** (i3: ~2 million IOPS) |
+
+> [!warning] Gotcha — trade persistence for performance
+> Instance store can far exceed EBS's per-instance ceiling, but the data is **ephemeral**. An i3 instance store reaches millions of IOPS; IO2 Block Express (EBS's maximum) reaches 256,000 per volume and ~260,000 per instance. Choose instance store only when the workload can tolerate total data loss on any host-change event.
+
+### Quick Decision Cheat-Sheet
+
+| If the question emphasizes… | Pick |
+| --- | --- |
+| Persistence / durability | **EBS** |
+| Resilience within an AZ + snapshots | **EBS** |
+| Detach & reattach to another instance | **EBS** |
+| Resilience **with** app-level replication | **Instance store** (spread across many instances) |
+| Lowest cost HDD | **ST1 / SC1** |
+| Throughput / streaming | **ST1** |
+| Boot volume | **Not ST1/SC1** |
+| 16,000–64,000 IOPS per volume | **IO1 / IO2** |
+| Up to 256,000 IOPS per volume | **IO2 Block Express** |
+| Max per instance (RAID 0) | **~260,000 IOPS** |
+| More than 260,000 IOPS, non-persistent OK | **Instance store** (millions of IOPS) |
+
 ## References
 
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ebs_service_architecture.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ebs_gp2_and_gp3.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/eb2_io1_and_io2.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ebs_hdd_based_volumes.md`
-- [EC2 — Storage Options](../services/ec2.md#storage-options)
+- Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_instance_store_vs_ebs.md`
+- [EC2 — Instance Store](../services/ec2.md#instance-store)
 - [Storage Fundamentals](../concepts/storage.md)
