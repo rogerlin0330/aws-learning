@@ -12,12 +12,19 @@ A VPC is a **private, isolated network** within AWS. It lives within **1 account
 ## VPC Basics
 
 - Two types: **Default VPC** and **Custom VPC**
-- 1 default VPC per account per region; unlimited custom VPCs
+- A region can have at most 1 default VPC and unlimited custom VPCs
 - Custom VPCs are **private by default** (no internet access until you configure it)
 - Default VPC: CIDR `172.31.0.0/16`, a `/20` subnet in each AZ, with a default IGW and NACL attached
+- **Valid VPC CIDR sizes: `/16` (largest — 65,536 IPs) to `/28` (smallest — 16 IPs)** ([AWS docs: VPC CIDR blocks](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-cidr-blocks.html))
+- **Default VPC = fixed scheme; custom VPC = flexible configuration.** The default VPC's CIDR, subnet layout, IGW, NACL, and SG are all pre-set by AWS; custom VPCs let you choose every aspect (CIDR, subnet count, AZ placement, routing, gateways). ([AWS docs: Default VPCs](https://docs.aws.amazon.com/vpc/latest/userguide/default-vpc.html))
+- **The default VPC can be deleted and recreated** — but only via the VPC console's "Create default VPC" action (or `CreateDefaultVpc` API). A deleted default VPC cannot be restored to its original state, and an existing custom VPC cannot be promoted to "default". ([AWS docs: Work with your default VPC](https://docs.aws.amazon.com/vpc/latest/userguide/work-with-default-vpc.html) — direct quote: *"You cannot restore a previous default VPC that you deleted, and you cannot mark an existing nondefault VPC as a default VPC."*)
+- **Some AWS services behave oddly or fail if no default VPC exists** in the region. Historical examples: certain SDK/CLI calls that omit a subnet ID assume a default VPC, and some legacy services (EC2-Classic-aware APIs, older RDS/ElastiCache/Redshift launch flows) expect one. If you delete the default VPC, recreate it before relying on those flows. ([AWS re:Post: No Default VPC in my Account](https://repost.aws/questions/QUxzdux0ntQTat1v68CLgdnQ/no-default-vpc-in-my-account))
 
 > [!warning] Gotcha
 > Avoid the default VPC in production — its `172.31.0.0/16` range can overlap with Azure's default VPC and on-premises networks.
+
+> [!tip] Exam Tip
+> Memorize these default-vs-custom facts: 1 default VPC max per region; unlimited custom VPCs; default has a fixed scheme; custom is flexible; default VPCs can be recreated; some services behave oddly without one.
 
 ### Designing VPC IP Ranges
 
@@ -45,7 +52,8 @@ A VPC is a **private, isolated network** within AWS. It lives within **1 account
 - A subnet lives in **exactly 1 AZ** — if the AZ fails, the subnet fails
 - 1 AZ can have 0 or more subnets; 1 subnet belongs to exactly 1 AZ
 - Subnet CIDR must be a subset of the VPC CIDR and must not overlap other subnets
-- **5 reserved IPs** in every subnet (e.g. `10.16.16.0/20`):
+- **Valid subnet CIDR sizes: `/16` (largest) to `/28` (smallest — 16 IPs, 11 usable after the 5 AWS-reserved addresses)** ([AWS docs: Subnet CIDR blocks](https://docs.aws.amazon.com/vpc/latest/userguide/subnet-sizing.html))
+- **5 reserved IPs** in every subnet (e.g. `10.16.16.0/20`) ([AWS docs: Subnet CIDR blocks](https://docs.aws.amazon.com/vpc/latest/userguide/subnet-sizing.html)):
 
 | Address | Purpose |
 | --- | --- |
@@ -64,6 +72,16 @@ A typical VPC subnet design uses tiers (WEB, APP, DB, Spare) across AZs, each ti
 - Every subnet is associated with a route table that controls where traffic is directed.
 - The VPC router (at `network + 1`) handles inter-subnet and egress routing.
 - Route tables operate at **Layer 3 only** — they deal purely with IP destinations and next hops; no awareness of ports or protocols.
+- **A subnet can only be associated with 1 route table at a time, but you can associate multiple subnets with the same subnet route table.** ([AWS docs: Subnet route tables](https://docs.aws.amazon.com/vpc/latest/userguide/subnet-route-tables.html))
+
+### Main Route Table vs Custom Route Tables
+
+- Every VPC is created with exactly 1 **main route table** automatically — you don't create it. It starts with a single **local route** that allows intra-VPC traffic between all subnets. ([AWS docs: Configure route tables](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Route_Tables.html))
+- A **custom route table** is any route table you create yourself in addition to the main one. You can have multiple custom route tables per VPC.
+- **Fallback rule:** if a subnet is not explicitly associated with any route table, it implicitly uses the main route table. This makes the main route table the "default" for every unassociated subnet.
+- **The main route table cannot be deleted.** To get rid of it, first promote a custom route table to be the new main one via the **Set main route table** action — the displaced table becomes a regular custom route table that you can then delete. ([AWS docs: Replace the main route table](https://docs.aws.amazon.com/vpc/latest/userguide/Route_Replacing_Main_Table.html))
+- **Changing the main route table also changes the default for all subnets** that have no explicit association — they immediately start using the new main route table.
+- **Best practice:** leave the main route table in its default state (local route only), and explicitly associate every subnet with a custom route table. This way no subnet accidentally inherits unintended routes. ([AWS docs: Configure route tables](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Route_Tables.html))
 
 ## Internet Gateway (IGW)
 
@@ -289,6 +307,12 @@ An **endpoint** is an object within your VPC that connects to AWS services or ot
 
 - [IGW vs NAT Gateway](https://medium.com/awesome-cloud/aws-vpc-difference-between-internet-gateway-and-nat-gateway-c9177e710af6)
 - [Regional NAT Gateway Overview](https://medium.com/awesome-cloud/aws-amazon-vpc-regional-nat-gateway-rnat-overview-what-is-rnat-introduction-features-use-cases-benefits-fd978309c43a)
+- [Default VPCs — Amazon VPC User Guide](https://docs.aws.amazon.com/vpc/latest/userguide/default-vpc.html)
+- [Work with your default VPC and default subnets — Amazon VPC](https://docs.aws.amazon.com/vpc/latest/userguide/work-with-default-vpc.html)
+- [Delete your VPC — Amazon VPC](https://docs.aws.amazon.com/vpc/latest/userguide/delete-vpc.html)
+- [No Default VPC in my Account — AWS re:Post](https://repost.aws/questions/QUxzdux0ntQTat1v68CLgdnQ/no-default-vpc-in-my-account)
+- [Subnet route tables — Amazon VPC](https://docs.aws.amazon.com/vpc/latest/userguide/subnet-route-tables.html)
+- [Configure route tables — Amazon VPC](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Route_Tables.html)
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/vpc.md`
 - Source: `raw/web-clippings/Introducing Amazon VPC Regional NAT Gateway.md` (AWS blog, Nov 2025)
 - Source: `raw/web-clippings/Regional NAT gateways for automatic multi-AZ expansion - Amazon Virtual Private Cloud.md` (AWS docs)

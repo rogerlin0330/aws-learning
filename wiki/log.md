@@ -1,5 +1,48 @@
 # Wiki Log
 
+## [2026-05-29] update | VPC — default vs custom VPC facts
+
+Added missing default/custom VPC distinctions to `wiki/services/vpc.md`:
+fixed scheme vs flexible config, default VPC can be deleted and
+recreated (only via Create default VPC action; previous state can't be
+restored; custom VPC can't be promoted to default), some AWS services
+behave oddly without a default VPC. Verified against AWS docs (VPC user
+guide: Default VPCs, Work with your default VPC, repost answers on
+service dependencies). Added an exam-tip callout summarizing the
+default-vs-custom must-knows. Updated index entry to surface the new
+facts.
+
+## [2026-05-29] update | VPC — main vs custom route tables subsection
+
+Added a new `### Main Route Table vs Custom Route Tables` subsection
+under Route Tables in `wiki/services/vpc.md`. Covers: every VPC has 1
+auto-created main route table seeded with the local route; custom route
+tables are user-created; subnets without explicit association fall back
+to main; main route table cannot be deleted directly (must promote a
+custom table to main first via the Set main route table action);
+changing main also changes the default for all unassociated subnets;
+best-practice recommendation to leave main untouched and explicitly
+associate every subnet. Sources cited inline (AWS Configure route tables,
+Replace the main route table).
+
+## [2026-05-29] update | VPC — inline source citations on newly added facts
+
+Added inline AWS doc links next to each newly added VPC/subnet/route
+table statement in `wiki/services/vpc.md` so sources sit next to the
+claim, not just at the bottom. Covers VPC CIDR sizing, subnet CIDR
+sizing + 5 reserved IPs, default vs custom VPC (fixed/flexible),
+default VPC delete/recreate (with direct quote), services that
+misbehave without a default VPC, route table cardinality, and main
+route table fallback.
+
+## [2026-05-29] update | VPC — route table / subnet cardinality and main route table
+
+Added explicit cardinality rule (1 subnet → 1 route table; 1 route table → many subnets) and the main route table fallback to `wiki/services/vpc.md`. Verified against AWS docs.
+
+## [2026-05-29] update | VPC — valid CIDR sizes for VPC and subnets
+
+Added explicit CIDR size constraints to `wiki/services/vpc.md`: VPC valid range `/16`–`/28`; subnet valid range `/16`–`/28` with a note that `/28` yields only 11 usable IPs after the 5 AWS-reserved addresses.
+
 ## [2026-05-29] ingest | EC2 ENI & Instance DNS — primary/secondary ENIs, split-horizon DNS, EIP gotcha
 
 Ingested `raw/aws-cert-study-notes/aws-solution-architect/ec2_eni_and_dns.md`. Copied `ec2-network-interface-and-dns-architecture.png` from raw assets to `wiki/assets/` and embedded with a long descriptive alt text that names each box in the diagram (AZ-A boundary, instance chip, Primary/Secondary ENI icons, the attribute list with example IPs, both DNS-name examples, the split-horizon callout, and the EIP-replaces-public-IP callout) — done because the alt text doubles as the diagram's reading guide for screen-reader users and for grep.
