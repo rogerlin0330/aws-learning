@@ -1,9 +1,9 @@
 ---
 title: AWS Solutions Architect Associate — Exam Notes
 type: certification
-tags: [iam, vpc, networking, ec2, ami, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, ephemeral, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, route53, organizations, cost, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, raid0, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr]
+tags: [iam, vpc, networking, ec2, ami, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, ephemeral, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, route53, organizations, cost, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, raid0, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, ebs-encryption, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr]
 certs: [aws-saa]
-updated: 2026-05-28
+updated: 2026-05-29
 ---
 
 # AWS Solutions Architect Associate (SAA-C03)
@@ -862,6 +862,40 @@ The HDD family is for **sequential, throughput-oriented workloads where cost mat
 
 > [!warning] Gotcha — 125 GB minimum and no boot volumes
 > Both ST1 and SC1 have a **125 GB minimum** — much larger than GP2/GP3's 1 GB minimum. Neither can be used as a boot volume. A question describing a small volume, a boot volume, or a random-access workload cannot use HDD even if cost is the primary driver.
+
+### EBS Encryption
+
+See [EBS — Encryption](../services/ebs.md#ebs-encryption) for full details.
+
+- **EBS encryption is envelope encryption built on [KMS](../services/kms.md)** — the KMS key wraps a per-volume DEK; the DEK does the bulk crypto on the EC2 host with **AES-256**. The KMS key itself **never encrypts volume data**
+- **API used at volume create**: **`GenerateDataKeyWithoutPlaintext`** — EBS receives only the encrypted DEK and stores it in the volume's metadata. The plaintext DEK is fetched via a separate **`Decrypt`** call at first attach and lives **only in EC2 host memory**, never on disk
+- **Transparent to the guest OS** — the file system sees plaintext bytes. If a question requires the **OS to hold the keys**, that's **software disk encryption** (LUKS / BitLocker), not EBS encryption
+- **No cost for encryption itself, no measurable performance penalty** — enable by default. Only [KMS request charges](../services/kms.md) for the create-time and attach-time API calls
+- **AWS-managed default key** `aws/ebs` works for most cases; a **[Customer Managed Key](../services/kms.md#key-ownership-and-management)** is required for custom key policy, rotation control, [grants](../services/kms.md#key-policy--grants), or cross-account sharing of encrypted snapshots
+- **Account-level default encryption** is a per-region switch — turn it on in every region to enforce "no unencrypted EBS volumes"
+- **Encryption is irreversible** — no console / CLI / API removes it. Going *from* encrypted *to* unencrypted requires an OS-level copy onto a separate unencrypted volume. Going the other direction (encrypting an existing unencrypted volume) uses **`CopySnapshot` with encryption enabled**
+
+#### DEK reuse — the chain rule
+
+| Resource | DEK |
+| --- | --- |
+| Two volumes created **from scratch** | **Different** DEKs |
+| Snapshot of an encrypted volume | **Same DEK** as source |
+| Volume restored from that snapshot | **Same DEK** as snapshot (and source) |
+
+A single DEK threads through: **original volume → its snapshots → restored volumes**. Re-keying requires `CopySnapshot` with a different KMS key.
+
+> [!tip] Exam Tip
+> Pattern-match: *"how does KMS encrypt a 1 TB volume given the 4 KB ceiling"* → **it doesn't** — EBS does envelope encryption with a DEK; KMS only wraps the DEK. *"encrypt all new volumes in an account"* → **account-level default encryption** (per region). *"add encryption to an existing volume"* → snapshot → `CopySnapshot` with KMS key → restore. *"remove encryption"* → only via OS-level data copy onto an unencrypted volume — there is no API for it. *"OS must hold the keys / hypervisor not trusted"* → **software disk encryption** (LUKS/BitLocker) inside the guest, *not* EBS encryption. *"how many DEKs after N snapshots + M restored volumes of one source"* → **one**.
+
+> [!warning] Gotcha — the KMS key does not encrypt the data
+> Common exam confusion: the KMS key encrypts the **per-volume DEK**, not the volume contents. AES-256 happens on the EC2 host using the DEK. This is exactly why the [4 KB direct-encrypt limit](../services/kms.md#direct-encrypt--decrypt--4-kb) doesn't apply to multi-TB EBS volumes.
+
+> [!warning] Gotcha — irreversibility
+> Encryption is a **one-way door** like [versioning enable](../services/s3.md#state-machine--one-way-door) and [Object Lock](../services/s3.md#object-lock). Once on, no `DisableEncryption` API exists. Confirm KMS key choice and account-level defaults before creating production volumes.
+
+> [!warning] Gotcha — KMS key region scope flows to EBS encryption
+> KMS keys are **regional**. The account-level default-encryption setting and any customer-managed key referenced by EBS must exist in **every region** where you want encrypted volumes. Copying an encrypted snapshot to another region requires the destination region to have access to a KMS key (the source key's region won't decrypt it).
 
 ## DNS and Route 53
 

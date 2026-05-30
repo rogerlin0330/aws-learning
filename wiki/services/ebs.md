@@ -1,9 +1,9 @@
 ---
 title: EBS — Elastic Block Store
 type: service
-tags: [ebs, block-storage, storage, gp2, gp3, io1, io2, block-express, volume-types, iops, throughput, elastic-volumes, credit-bucket, ssd, general-purpose, provisioned-iops, latency, per-instance-ceiling, az-boundary, snapshot, incremental-backup, fsr, fast-snapshot-restore, lazy-restore, lifecycle, multi-attach, billing, resilience, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd]
+tags: [ebs, block-storage, storage, gp2, gp3, io1, io2, block-express, volume-types, iops, throughput, elastic-volumes, credit-bucket, ssd, general-purpose, provisioned-iops, latency, per-instance-ceiling, az-boundary, snapshot, incremental-backup, fsr, fast-snapshot-restore, lazy-restore, lifecycle, multi-attach, billing, resilience, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, encryption, kms, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption]
 certs: [aws-saa]
-updated: 2026-05-28
+updated: 2026-05-29
 ---
 
 # EBS — Elastic Block Store
@@ -72,6 +72,8 @@ From S3, a snapshot can restore a new volume into:
 - The **same AZ** as the original
 - A **different AZ in the same region** → cross-AZ data migration
 - A **different region** (after copying the snapshot there) → cross-region DR
+
+**Encryption inheritance:** if the source volume is encrypted, the snapshot and any volume restored from it inherit the same DEK and stay encrypted. `CopySnapshot` is the place to re-key (or to *add* encryption to a snapshot of an unencrypted volume) — see [EBS Encryption — DEK Reuse](#dek-reuse--volume--snapshot--restored-volume).
 
 #### Incremental Storage
 
@@ -632,6 +634,95 @@ Multiple EBS volumes can be striped into a **RAID 0 set** to sum their IOPS:
 | Max per instance (RAID 0) | **~260,000 IOPS** |
 | More than 260,000 IOPS, non-persistent OK | **Instance store** (millions of IOPS) |
 
+## EBS Encryption
+
+EBS volumes and snapshots are stored on physical disks. **By default, no encryption is applied** — the OS writes data straight to the raw storage in plaintext, leaving a physical-access attack vector. **EBS encryption** is the at-rest protection layer built on top of [KMS](kms.md): it encrypts both volumes and snapshots, costs nothing, has no measurable performance penalty, and is invisible to the guest OS. There's no good reason to leave it off — enable it by default.
+
+![EBS encryption architecture: KMS GenerateDataKeyWithoutPlaintext produces an encrypted DEK stored alongside the volume on raw storage, then on first use the EC2 host asks KMS to decrypt the DEK into host memory so the hypervisor can encrypt/decrypt blocks; plaintext data exists only in host memory while raw storage holds ciphertext](../assets/ebs-encryption.png)
+
+### Reading the Diagram
+
+The diagram has three horizontal bars representing the actors, and coloured arrows representing the DEK and data flows.
+
+- **Top bar — KMS:** the source of authority. A KMS key (either the AWS-managed `aws/ebs` or a [customer-managed key](kms.md#key-ownership-and-management)) lives here and never leaves.
+- **Middle bar — EC2 Host:** the hypervisor doing the actual crypto. Plaintext DEK and plaintext data only exist here, in memory.
+- **Bottom bar — Raw Storage:** where the volume's bytes physically live. Encrypted DEK + ciphertext blocks reside here.
+
+The arrows tell the story:
+
+- **Red arrow** (KMS down to the storage bar) — the **encrypted DEK** produced by `GenerateDataKeyWithoutPlaintext` at volume creation. EBS receives **only the ciphertext form** of the DEK; it stores this in the volume's metadata on raw storage.
+- **Blue arrow** (host up to KMS) — at first use (mount / instance launch), the host sends the encrypted DEK to KMS asking it to **decrypt**.
+- **Yellow arrow** (KMS down to the green key icon on the host bar) — KMS returns the **plaintext DEK** into the EC2 host's memory. This is the only place plaintext key material ever lives.
+- **Host ↔ storage I/O** — the host uses the plaintext DEK to encrypt every write and decrypt every read. What crosses to and from raw storage is always ciphertext.
+
+When the instance moves to another host (stop/start, host failure, etc.), the plaintext DEK is discarded with the old host. The new host must re-decrypt the encrypted DEK from disk via KMS — which gives the platform a clean place to revoke access (revoke the [grant](kms.md#key-policy--grants); the next host can't decrypt).
+
+### How EBS Encryption Works
+
+EBS encryption follows the standard [envelope encryption](kms.md#data-encryption-keys-deks) pattern AWS services use to encrypt bulk data:
+
+1. **Volume creation** — EBS calls **`GenerateDataKeyWithoutPlaintext`** against a [KMS key](kms.md#kms-keys). The key is either:
+   - the **AWS-managed default key** (`aws/ebs`), or
+   - a **customer-managed KMS key** you control (required if you need policy / rotation / grant / cross-account control — see [key ownership tiers](kms.md#key-ownership-and-management)).
+2. KMS returns **only the encrypted form of the per-volume DEK** — never the plaintext. EBS stores the encrypted DEK in the volume's metadata on raw storage. It can only be unwrapped by KMS, and only by a principal with `kms:Decrypt` against the wrapping key.
+3. **First use** (mount / instance launch) — EBS asks KMS to decrypt the DEK. The **plaintext DEK is loaded into the EC2 host's memory** and used by the hypervisor to encrypt/decrypt blocks as they flow between the instance and raw storage. **Plaintext key material never lands on disk**.
+4. **Raw storage always holds ciphertext.** Data only exists in plaintext in host memory.
+5. **Host migration discards the plaintext DEK** — every host-move forces a re-decrypt against KMS, which makes grant revocation a true off-switch.
+
+> [!warning] Gotcha — the KMS key never encrypts volume data
+> The KMS key only **wraps the per-volume DEK**. The DEK does the bulk crypto on the EC2 host using AES-256. This indirection is the whole reason KMS's [4 KB direct-encrypt ceiling](kms.md#direct-encrypt--decrypt--4-kb) doesn't apply to multi-TB volumes — KMS never sees the data, only the key that protects it.
+
+### DEK Reuse — Volume → Snapshot → Restored Volume
+
+This is the single most exam-tested EBS encryption fact:
+
+| Resource | DEK |
+| --- | --- |
+| Two volumes created **from scratch** | **Different** DEKs |
+| Snapshot of an encrypted volume | **Same DEK** as the source volume |
+| Volume created from that snapshot | **Same DEK** as the snapshot (and the original volume) |
+
+A single DEK threads through: **original volume → its snapshots → volumes restored from those snapshots**. To get a *different* DEK, you either create a fresh volume or re-encrypt during a `CopySnapshot` operation with a different KMS key.
+
+> [!tip] Exam Tip
+> If a question asks how many DEKs are in play after taking three snapshots of one encrypted volume and restoring two of them into new volumes, the answer is **one**. The DEK chains through the whole family.
+
+### Account-Level Default Encryption
+
+An AWS account can be configured to **encrypt EBS volumes by default**, with either a chosen default KMS key or a key picked manually at each volume creation. This is the cleanest way to enforce a "no unencrypted EBS volumes" policy across an account — turn the switch on once and every new volume inherits encryption automatically. The setting is **regional** (KMS keys are regional), so it must be enabled in every region you use.
+
+### Encryption Is Irreversible
+
+There is **no way to remove encryption** from a volume or snapshot via the console, CLI, or API. **Once encrypted, always encrypted.**
+
+The only workaround is to **clone the data from inside the guest OS** onto a separate unencrypted volume — possible only because the OS sees plaintext (encryption is transparent to it). This is rarely the right answer.
+
+The mirror direction — **adding encryption to an existing unencrypted volume** — has a documented path: take a snapshot → **`CopySnapshot` with encryption enabled** (specifying a KMS key) → restore a new volume from the encrypted copy.
+
+### The OS Is Unaware of Encryption
+
+To the guest operating system, an encrypted EBS volume is **plaintext**. Encryption happens transparently **between the EC2 host's hypervisor and raw storage**, using **AES-256**. The OS sees a normal block device; the file system, applications, and tools see plain bytes.
+
+If you specifically need the **OS itself to hold the keys and perform encryption** — for example because the threat model includes the AWS hypervisor — that's a separate construct called **software disk encryption** (LUKS on Linux, BitLocker on Windows), configured inside the guest. It can be layered on top of EBS encryption simultaneously, but doing so is rarely necessary.
+
+### Why Enable It
+
+- **Free** — no separate charge for EBS encryption itself. Standard KMS request charges apply for `GenerateDataKeyWithoutPlaintext` and `Decrypt` calls, which fire at volume create and first-attach time (not per I/O).
+- **No measurable performance penalty** — AES-256 is hardware-accelerated on every modern EC2 instance type.
+- **No key management overhead** — the AWS-managed `aws/ebs` key works for most cases. Switch to a customer-managed key only when policy / rotation / cross-account / grant control is needed.
+- **Satisfies most at-rest-encryption compliance requirements** without bringing your own crypto stack.
+
+### Encryption Key Takeaways
+
+- **Built on [KMS](kms.md) and envelope encryption** — the KMS key wraps a per-volume DEK; the DEK does the bulk crypto on the EC2 host with AES-256.
+- **Transparent to the guest OS** — the file system sees plaintext; encryption happens at the hypervisor boundary.
+- **DEK reuse chain**: original volume = its snapshots = volumes restored from those snapshots. From-scratch volumes always get unique DEKs.
+- **Account-level default encryption** (per region) is the cleanest enforcement mechanism for "encrypt all new volumes".
+- **Irreversible**: once encrypted, always encrypted. Decrypting requires copying data out from inside the OS.
+- **Adding encryption to an existing volume**: snapshot → `CopySnapshot` with encryption + KMS key → restore.
+- **Plaintext DEKs live only in host memory** — never on disk, never on the network in plaintext.
+- **Free, no performance penalty, no operational overhead** — enable by default.
+
 ## References
 
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ebs_service_architecture.md`
@@ -640,5 +731,7 @@ Multiple EBS volumes can be striped into a **RAID 0 set** to sum their IOPS:
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ebs_hdd_based_volumes.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_instance_store_vs_ebs.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ebs_snapshots.md`
+- Source: `raw/aws-cert-study-notes/aws-solution-architect/ebs-encryption.md`
 - [EC2 — Instance Store](../services/ec2.md#instance-store)
 - [Storage Fundamentals](../concepts/storage.md)
+- [KMS — envelope encryption / DEKs](../services/kms.md#data-encryption-keys-deks)

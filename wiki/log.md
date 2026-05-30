@@ -1,5 +1,41 @@
 # Wiki Log
 
+## [2026-05-29] ingest | EBS Encryption — envelope encryption flow, DEK reuse chain, irreversibility
+
+Ingested `raw/aws-cert-study-notes/aws-solution-architect/ebs-encryption.md`. Copied `ebs-encryption.png` from raw assets to `wiki/assets/` and embedded with a multi-clause descriptive alt text naming each actor (KMS, EC2 host, raw storage) and the create-time vs first-use flow.
+
+Added a new `## EBS Encryption` H2 section to `wiki/services/ebs.md`, placed **between Service Architecture and Volume Types Overview** — the natural slot because encryption is a service-level concern that applies uniformly to every volume type, so it belongs alongside snapshots / multi-attach / billing rather than threaded into per-type sections. The new section covers: a diagram reading guide (three-bar layout, red/blue/yellow arrow story); the end-to-end envelope-encryption flow (`GenerateDataKeyWithoutPlaintext` at create → encrypted DEK on disk → `Decrypt` round-trip at first attach → plaintext DEK lives only in EC2 host memory); the **"KMS key never encrypts volume data"** gotcha; the **DEK reuse chain table** (from-scratch → unique DEK; snapshot/restored-volume → inherited DEK); **account-level default encryption** as a per-region switch; **irreversibility** (no `DisableEncryption` API; `CopySnapshot` with encryption is the way *in*, OS-level data copy is the only way *out*); **OS-transparency** (AES-256 at the hypervisor; LUKS/BitLocker if you need OS-held keys instead); the why-enable bullet list (free, no measurable perf hit, no key-management overhead); and an 8-bullet Key Takeaways summary.
+
+Added a brief **encryption inheritance** note in the existing Snapshots subsection cross-linking forward to the DEK-reuse table — captures the "snapshots of encrypted volumes carry the same DEK" rule at the place readers landing on snapshots will first ask the question.
+
+Updated `wiki/services/kms.md`: the previously imprecise EBS bullet ("calls `GenerateDataKey`") now specifies **`GenerateDataKeyWithoutPlaintext`** at volume-create time and **`Decrypt`** at first attach, names AES-256 at the hypervisor, mentions DEK inheritance through snapshots, and links forward to the new EBS Encryption section. This is a correctness fix — EBS doesn't ever need the plaintext DEK at create time, so it uses the without-plaintext variant; the previous wording would have confused readers comparing the wiki against AWS docs or CloudTrail.
+
+Added a new `### EBS Encryption` subsection to `certifications/aws-saa.md`, placed **after EBS Volume Types — HDD (ST1, SC1)** and before DNS & Route 53 — keeps all EBS-related cert content together. The subsection has: 7 bullet-form principles (envelope encryption / API choice / OS transparency / cost / key choice / account-level default / irreversibility); a **DEK reuse chain table** (same 3-row table as the service page, optimized for keyword recall); a pattern-match `[!tip]` Exam Tip covering 6 canonical scenarios; and three `[!warning]` gotchas — the "KMS key doesn't encrypt the data" confusion, the one-way-door framing (matches versioning + Object Lock irreversibility), and the per-region key scope (KMS keys are regional, so account-level default encryption must be enabled per region; cross-region snapshot copy needs a destination-region key).
+
+Updated `wiki/index.md` EBS entry with a new clause covering encryption (envelope encryption, `GenerateDataKeyWithoutPlaintext` + AES-256, DEK reuse chain, account-level default, irreversibility).
+
+Updated frontmatter tags on both `wiki/services/ebs.md` and `wiki/certifications/aws-saa.md` (added: `encryption, kms, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption` to ebs.md; `ebs-encryption, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption` to aws-saa.md). Bumped `updated:` to 2026-05-29 on both.
+
+Synthesis choices over straight-copy:
+
+1. **Placed encryption as a sibling H2 to Service Architecture rather than a subsection of it.** The raw note is substantial (architecture flow + 5 exam-summary points); making it a subsection would have buried the DEK reuse table and irreversibility rule below volume-types content. As a sibling H2 it ranks alongside Volume Types Overview and the Decision Framework — encryption is exam-tested with the same weight as those topics.
+
+2. **Promoted the DEK reuse chain to its own subsection with a 3-row table.** The raw note has it as bullet points; the table form makes the "from-scratch = different / inherited via snapshot = same" rule pattern-matchable at a glance, which is exactly the shape the exam asks for ("how many DEKs after N operations").
+
+3. **Surfaced the "KMS key does not encrypt volume data" point as a `[!warning]` gotcha** rather than a one-line aside in the raw note. This is the single most common confusion in the entire EBS-KMS interaction, and it explains *why* KMS's 4 KB ceiling doesn't constrain EBS — a connection the raw note doesn't make explicitly.
+
+4. **Added the `CopySnapshot`-with-encryption pattern** for both directions (adding encryption, and the "no path back" caveat). The raw note covers irreversibility but doesn't name the canonical workflow for going unencrypted-to-encrypted; the wiki names it because it's directly exam-tested.
+
+5. **Cross-linked aggressively to the KMS page** — the new section names envelope encryption, KMS keys, key ownership tiers, grants, and the 4 KB direct-encrypt ceiling. Encryption is the place where the EBS-KMS bridge gets exam-tested, so the section should make every conceptual hand-off visible.
+
+6. **Corrected the KMS-page imprecision about EBS using `GenerateDataKey`.** The raw note is specific that EBS uses `GenerateDataKeyWithoutPlaintext`, and AWS docs confirm this. The KMS page now uses the correct API name and notes the separate `Decrypt` call at attach time. This is the second precision fix this ingest delivers (the first being the new DEK-reuse-chain table in ebs.md).
+
+7. **Made the irreversibility rule into a "one-way door"** in the SAA notes to align with the existing "one-way door" framing used for versioning-enable and Object Lock. The cert page now has three consistent one-way-door references the reader can pattern-match against.
+
+8. **Added a region-scope `[!warning]`** in the SAA notes about KMS keys being regional. The raw note doesn't mention this explicitly, but it's a direct consequence of KMS's regional nature combined with the account-level default-encryption switch and is a common cross-region exam trap.
+
+No content from the raw note was discarded. The note's five exam summary points map cleanly to: (1) Where KMS key fits → "KMS key never encrypts volume data" gotcha + first paragraph of How EBS Encryption Works; (2) DEK reuse rules → dedicated subsection + table; (3) Encryption is irreversible → dedicated subsection + cert-page one-way-door framing; (4) OS unaware → dedicated subsection + software-disk-encryption distinction in cert tip; (5) Why use it → dedicated "Why Enable It" subsection + Key Takeaways.
+
 ## [2026-05-28] update | EBS Snapshots — incremental mechanics, billing, restore, FSR
 
 Expanded `### Snapshots` section in `wiki/services/ebs.md`. Copied `ebs-snapshot-architecture.png` and `ebs-snapshot-consumption-and-billing.png` to `wiki/assets/` and embedded both with descriptive alt text. Added: snapshot architecture diagram (same-AZ / cross-AZ / cross-region restore paths); incremental storage table (first = full used data; subsequent = delta only); self-sufficient-increments gotcha (safe to delete any snapshot); snapshot billing diagram with worked Snap A/B/C walkthrough (three billing rules: GB-month, used data not allocated size, frequent snapshots stay cheap); restore performance section (lazy restore vs `dd` pre-warm vs FSR; FSR limit: 50 sets/region counted per snapshot+AZ). Added `### EBS Snapshots` subsection to `certifications/aws-saa.md` with exam tips and four gotcha callouts. Updated frontmatter tags and source references. Source: `raw/aws-cert-study-notes/aws-solution-architect/ebs_snapshots.md`.
