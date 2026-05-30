@@ -1,8 +1,8 @@
 ---
 title: DNS — Domain Name System
 type: concept
-tags: [dns, networking]
-updated: 2026-05-07
+tags: [dns, networking, split-horizon-dns, split-view-dns, ttl, cname, alias]
+updated: 2026-05-29
 ---
 
 # DNS — Domain Name System
@@ -66,6 +66,25 @@ Lowering TTL before a migration gives you faster propagation (stale records expi
 
 > [!warning] Gotcha
 > A **CNAME cannot be used at the zone apex** (`example.com` itself, also called the naked domain) — DNS standards forbid it. Only subdomains (e.g. `www.example.com`) can have CNAMEs. [Route 53](../services/route53.md) solves this with its proprietary **Alias record**.
+
+## Split-Horizon DNS
+
+**Split-horizon DNS** (also called *split-view DNS*) is the practice of returning **different answers for the same DNS name** depending on where the query originates — typically *inside* a private network vs *outside* on the public internet. One hostname works everywhere, but resolves to the appropriate address for the caller's network context.
+
+This avoids two common problems:
+
+- **Hairpin routing** — without split-horizon, internal callers resolve to a public IP and traffic leaves the private network only to come back in
+- **Hostname duplication** — applications don't need separate "internal" and "external" hostnames; the same name works from both sides
+
+### Where you see it in AWS
+
+| Mechanism | Behaviour |
+| --- | --- |
+| **EC2 public DNS name** (e.g. `ec2-3-89-7-136.compute-1.amazonaws.com`) | Inside the VPC → resolves to the **private IPv4**; outside → resolves to the **public IPv4**. Built-in; no configuration required. See [EC2 — Network Interfaces (ENIs)](../services/ec2.md#split-horizon-dns--the-public-dns-name-resolves-differently-inside-vs-outside-the-vpc) |
+| **Route 53 split-view hosted zones** | Same domain registered as both a **public hosted zone** *and* a **private hosted zone** associated with a VPC — VPC queries hit the private zone, internet queries hit the public zone. See [Route 53](../services/route53.md) |
+
+> [!tip] Exam Tip
+> When a question mentions *"connect via the public DNS name"* alongside *"VPC peering"*, *"hybrid network"*, or *"keep traffic off the internet gateway"*, the answer leans on split-horizon DNS — internal callers automatically resolve to the private address.
 
 ## Authoritative DNS and Redundancy
 

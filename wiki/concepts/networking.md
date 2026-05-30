@@ -1,13 +1,24 @@
 ---
 title: Networking Concepts
 type: concept
+tags: [networking, eni, elastic-network-interface, osi, firewall, ephemeral-ports, ip-addresses, routing]
 certs: [aws-saa]
-updated: 2026-05-01
+updated: 2026-05-29
 ---
 
 # Networking Concepts
 
 Cross-cutting networking ideas that span multiple AWS services. The foundational service is [VPC](../services/vpc.md); [EC2](../services/ec2.md) instances (and other resources) run inside it. For name resolution see [DNS](dns.md); for encrypted transport see [TLS/HTTPS](tls-https.md).
+
+## Elastic Network Interfaces (ENIs)
+
+An **Elastic Network Interface (ENI)** is the AWS-native equivalent of a virtual NIC. It is the **unit of network identity** in a VPC — IP addresses, DNS names, MAC address, [Security Groups](../services/vpc.md#security-groups-sg), and the source/destination check flag all attach to the ENI, *not* to whatever resource owns it.
+
+- Almost every VPC-attached resource owns one or more ENIs: [EC2 instances](../services/ec2.md), RDS, ALB / NLB, ECS Fargate tasks, in-VPC Lambdas, MSK brokers
+- Each ENI lives in **exactly one subnet** (and therefore one AZ); a single owner can have ENIs in different subnets *of the same AZ*
+- An ENI's attributes survive being detached and re-attached to a different owner — that's how patterns like "float a service IP between instances" or "preserve a MAC-locked licence across replacement" work
+
+For the per-attribute breakdown (primary vs secondary ENIs, MAC, private/public IPv4 + DNS, EIP, IPv6, SGs, source/dest check, split-horizon DNS), see [EC2 — Network Interfaces (ENIs)](../services/ec2.md#network-interfaces-enis) — EC2 is the canonical consumer and the diagrammed example.
 
 ## OSI Layers of AWS Network Controls
 

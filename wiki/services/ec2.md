@@ -1,14 +1,14 @@
 ---
 title: EC2 — Elastic Compute Cloud
 type: service
-tags: [ec2, compute, iaas, ami, ssh, rdp, instance-lifecycle, shared-responsibility, ebs, key-pair, host, tenancy, dedicated-host, dedicated-instance, instance-store, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga]
+tags: [ec2, compute, iaas, ami, ssh, rdp, instance-lifecycle, shared-responsibility, ebs, key-pair, host, tenancy, dedicated-host, dedicated-instance, instance-store, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, security-group]
 certs: [aws-saa]
-updated: 2026-05-28
+updated: 2026-05-29
 ---
 
 # EC2 — Elastic Compute Cloud
 
-EC2 is AWS's default and most essential compute service. It provides virtual machines — **instances** — running on AWS-managed physical servers called **hosts**, and is the starting point for almost any compute requirement in AWS. Every EC2 instance runs inside a [VPC](vpc.md) subnet and is associated with at least one [ENI](../concepts/networking.md) (Elastic Network Interface).
+EC2 is AWS's default and most essential compute service. It provides virtual machines — **instances** — running on AWS-managed physical servers called **hosts**, and is the starting point for almost any compute requirement in AWS. Every EC2 instance runs inside a [VPC](vpc.md) subnet and is associated with at least one [Elastic Network Interface (ENI)](#network-interfaces-enis) — the per-interface attachment that holds the instance's IPs, DNS names, MAC address, and Security Groups.
 
 This page covers the foundations — what an instance is, the host vs. instance distinction and its AZ implications, how it's billed, the lifecycle state machine, AMIs, when to choose EC2, and how you connect to running instances. Deeper topics (instance types, EBS volumes, Auto Scaling, ELB) will follow as separate sections or pages.
 
@@ -48,7 +48,7 @@ EC2 sits on the **IaaS** side of the shared responsibility model. AWS is respons
 
 ## How EC2 Fits Into the AWS Architecture
 
-- **Networking:** instances live in [VPC](vpc.md) subnets; traffic is controlled by [Security Groups](vpc.md#security-groups-sg) (attached to the ENI) and [NACLs](vpc.md#network-acl-nacl) (attached to the subnet)
+- **Networking:** instances live in [VPC](vpc.md) subnets; traffic is controlled by [Security Groups](vpc.md#security-groups-sg) (attached to the [ENI](#network-interfaces-enis)) and [NACLs](vpc.md#network-acl-nacl) (attached to the subnet)
 - **Identity:** instances access other AWS services via [IAM roles](iam.md#iam-roles) — never embed access keys directly in an instance
 - **Internet access:** public instances route through an [IGW](vpc.md#internet-gateway-igw); private instances route through a [NAT Gateway](vpc.md#nat--nat-gateway)
 - **Storage:** the boot volume is typically [EBS](#storage-options) (a separate AWS service exposing network-attached block volumes); some instance types also offer **instance store** volumes physically on the host
@@ -89,7 +89,7 @@ Almost every component an instance depends on is locked to a single AZ:
 
 - **Host** lives in one AZ
 - **Subnet** belongs to one AZ ([VPC](vpc.md) primitive)
-- The instance's primary [ENI](../concepts/networking.md) is provisioned in that subnet
+- The instance's primary [ENI](#network-interfaces-enis) is provisioned in that subnet
 - **Additional ENIs** can attach in *different subnets*, but **only if those subnets are in the same AZ**
 - **[EBS](#storage-options) volumes** are AZ-scoped — they can only attach to instances in the **same AZ**
 - **Instance store** is host-local, so by definition AZ-scoped
@@ -100,6 +100,141 @@ The only path to relocate a workload across AZs is to **snapshot the EBS volume(
 
 > [!tip] Why this is a strength, not a limitation
 > Because the blast radius of a failure is always one AZ, you can design AZ-fault-tolerance predictably: deploy across multiple AZs, put a load balancer in front, fail over deterministically. **Predictable isolation = controllable design.** See [Overview — Resilience Tiers](../overview.md#resilience-tiers).
+
+## Network Interfaces (ENIs)
+
+Every EC2 instance reaches the network through one or more **Elastic Network Interfaces (ENIs)**. The ENI — *not the instance* — is what holds the IP addresses, DNS names, MAC address, [Security Groups](vpc.md#security-groups-sg), and the source/destination check flag. When the console shows IPs and SGs "on the instance," they're really attached to its **primary ENI**. See [Networking Concepts — ENI](../concepts/networking.md#elastic-network-interfaces-enis) for the cross-service framing.
+
+![EC2 network architecture diagram: AZ-A boundary containing an instance (chip icon) connected to a Primary ENI and a Secondary ENI; a red arrow leads from the Primary ENI to a vertical attribute list — MAC address 00:0d:83:b1:c0:8e, Primary IPv4 Private IP 10.16.0.10 mapped to private DNS ip-10-16-0-10.ec2.internal, 0 or more secondary IPs, 0 or 1 Public IPv4 Address 3.89.7.136 mapped to public DNS ec2-3-89-7-136.compute-1.amazonaws.com with the split-horizon callout "VPC = Private IP / Elsewhere = Public IP", 1 Elastic IP per private IPv4 with "Removes the Public IPv4 / Replaces with the Elastic IP" callout, 0 or more IPv6 addresses, Security Groups, Source/Destination Check; the Secondary ENI is labelled "As Above" meaning it carries the same attribute set](../assets/ec2-network-interface-and-dns-architecture.png)
+
+### Primary vs Secondary ENIs
+
+| Aspect | **Primary ENI** | **Secondary ENI** |
+| --- | --- | --- |
+| Count per instance | **Exactly 1** — always | **0 or more** (max depends on instance type) |
+| Created with the instance? | Yes — at launch | At launch *or* attached later |
+| Detach from the instance? | **No** — bound for life | **Yes** — can be detached and re-attached to another instance |
+| Subnet | The instance's launch subnet | **Any subnet in the same AZ** (can differ from primary) |
+| Attribute set | MAC + IPv4 primary + secondaries + optional public IPv4/DNS + EIPs + IPv6 + SGs + source/dest check | Same set as primary |
+
+**Key consequence: ENIs are AZ-scoped.** An instance and all of its ENIs must live in the **same Availability Zone**, even though they can sit in different subnets. There is no cross-AZ ENI. See [AZ Resilience — everything is AZ-bound](#az-resilience--everything-is-az-bound).
+
+> [!tip] Mental model
+> The ENI is the "network card"; the instance is the chassis. Moving an ENI between instances is like unplugging a NIC and plugging it into a different box — its MAC, private/public IPs, EIP, DNS names, and SGs all travel with it. The *primary* NIC is soldered to the board; secondary NICs are removable.
+
+### What Lives on an ENI
+
+Every attribute below is per-ENI. **Per-instance** is a console abstraction — the underlying data sits on an ENI.
+
+#### MAC address
+
+A fixed hardware-style address visible inside the guest OS. Because it doesn't change for the life of the ENI, **MAC-locked software licensing** is a recognised use case for ENIs — bind the licence to a secondary ENI's MAC, then re-attach the ENI to a replacement instance to preserve the licence.
+
+#### Primary private IPv4 + internal DNS
+
+Every ENI has exactly one **primary private IPv4** — static for the life of the ENI — plus a matching **internal DNS name** that AWS derives mechanically from that IP:
+
+```text
+private IPv4   10.16.0.10
+                       ↓
+internal DNS    ip-10-16-0-10.ec2.internal
+```
+
+- Format: `ip-` + the private IPv4 with dots → hyphens + `.ec2.internal`
+- **Resolvable only inside the VPC** (via the [Route 53 Resolver](vpc.md#dns-in-vpc) at VPC base IP +2)
+- Always resolves to the private IPv4 — use it for internal service-to-service traffic
+- Choosing a VPC and subnet for the instance is really choosing them for the **primary ENI**
+
+#### 0 or more secondary private IPv4s
+
+Any ENI can carry additional secondary private IPv4 addresses. Useful for hosting multiple TLS sites with separate IPs on one instance, or for IP-affinity failover patterns where a secondary IP "floats" between instances.
+
+#### 0 or 1 public IPv4 + public DNS
+
+An ENI can also have a single **auto-assigned public IPv4** (only if the subnet auto-assigns or the launch explicitly opts in). It comes with its own mechanically-derived public DNS name:
+
+```text
+public IPv4    3.89.7.136
+                       ↓
+public DNS      ec2-3-89-7-136.compute-1.amazonaws.com
+```
+
+- Format: `ec2-` + the public IPv4 with dots → hyphens + `.compute-1.amazonaws.com`
+- **The OS never sees the public IPv4** — it's applied by 1:1 NAT at the [IGW](vpc.md#internet-gateway-igw). Inside the guest you only configure the **private IPv4**
+- **Dynamic**: deallocated on **Stop**, a **new one** assigned on **Start**. A **reboot preserves it** (the instance never leaves its host — see [Stop/Start vs Restart](#stopstart-vs-restart--these-are-not-the-same)). A forced host migration replaces it
+- The trap behind *"my public IP changed after I rebooted"* — the action was almost always a **Stop/Start in disguise**
+
+#### Split-horizon DNS — the public DNS name resolves differently inside vs outside the VPC
+
+The public DNS name resolves **differently depending on where the query originates**:
+
+| Resolver location | The public DNS name resolves to |
+| --- | --- |
+| Inside the VPC | The instance's **primary private IPv4** |
+| Outside the VPC (general internet) | The instance's **public IPv4** |
+
+A single hostname works everywhere, but **instance-to-instance traffic inside the VPC stays private** — it never hairpins out to the IGW and back. This matters for [VPC peering](vpc.md), hybrid networking, and cost (private cross-AZ traffic vs internet egress). See [DNS — Split-Horizon DNS](../concepts/dns.md#split-horizon-dns) for the generic concept.
+
+> [!tip] Exam Tip
+> When a scenario combines *"connect via the public DNS name"* with *"VPC peering"* or *"hybrid network"*, split-horizon DNS is the mechanism that keeps traffic on the AWS backbone — the name resolves to the **private IP** for callers inside the VPC.
+
+#### Elastic IP (EIP) — 1 per private IPv4
+
+An ENI can have up to **one Elastic IP per private IPv4** it holds. An EIP is a **static public IPv4** allocated to your AWS account and explicitly associated with a private IPv4 on an ENI.
+
+Attaching an EIP to an ENI has two side effects:
+
+1. The ENI's current auto-assigned dynamic public IPv4 is **removed**
+2. The EIP becomes the new public IPv4 (it does not stack — it replaces)
+
+If you later **disassociate** the EIP from the ENI:
+
+- The instance receives a **brand-new dynamic public IPv4** — *not* the original one. The original is gone for good
+- The EIP itself stays allocated to your account (and bills an idle hourly fee — see [EC2 state-based costs](#what-changes-when-the-state-changes)) until you explicitly **release** it
+
+> [!warning] Gotcha — disassociating an EIP doesn't restore the original public IP
+> Attaching and then detaching an EIP is a **one-way swap**: the ENI's original dynamic public IPv4 is permanently lost, and on detach you get a *different* dynamic public IPv4. If you need a stable address, keep the EIP attached — don't detach it expecting the old IP back.
+
+#### 0 or more IPv6 addresses
+
+IPv6 on ENIs behaves differently from IPv4 in two ways that surface on the exam:
+
+- **No public/private split** — all IPv6 addresses in AWS are publicly routable
+- **The OS does see IPv6** directly — addresses are configured inside the guest, unlike public IPv4
+
+For outbound-only IPv6 from a private subnet, use an [Egress-Only IGW](../concepts/networking.md#internet-connectivity-patterns); the [NAT Gateway](vpc.md#nat--nat-gateway) does not handle IPv6.
+
+#### Security Groups
+
+[Security Groups](vpc.md#security-groups-sg) attach to the **ENI**, not the instance. One SG (or up to 5) governs **every IP on that ENI**. If you need different SGs for different IPs on the same instance, the only way is to split those IPs across **multiple ENIs**.
+
+#### Source/Destination Check
+
+A per-ENI boolean flag. When **enabled (the default)**, AWS discards any packet whose source *and* destination IPs are neither owned by the ENI — the ENI cannot forward traffic on behalf of others. You **must disable** this flag for an instance to act as a [NAT instance](vpc.md#nat-gw-vs-nat-instance), a software router, or any in-line gateway.
+
+### The Movable-Secondary-ENI Pattern
+
+Because a **secondary ENI can be detached and re-attached to another instance**, and because its MAC and IPs travel with it, you can:
+
+- **Run MAC-locked software licenses on a movable ENI** — preserve the license by re-attaching the ENI to a replacement instance instead of issuing a new license
+- **Build IP-affinity failover** — float a "service IP" (private IPv4 + EIP) between a primary and a standby instance by re-attaching the ENI, without DNS propagation delays
+- **Multi-homed instances** — give one instance two ENIs in different subnets for tier-bridging (e.g. one ENI in a management subnet, another in a workload subnet)
+
+This is the practical answer to "how do I keep the same IP / license / SG profile when the instance dies?" — *put it on a secondary ENI, not the primary*.
+
+### ENI Attributes — Quick Reference
+
+| Attribute | Per-ENI count | Notes |
+| --- | --- | --- |
+| MAC address | 1 | Static for life of the ENI; visible inside the OS |
+| Primary private IPv4 | 1 | Static for life of the ENI; derives the internal DNS name |
+| Secondary private IPv4 | 0+ | Add/remove post-launch |
+| Public IPv4 (auto-assigned) | 0 or 1 | Dynamic; changes on Stop/Start; **not visible inside the OS** |
+| Public DNS name | 0 or 1 | Mechanically derived; **split-horizon** (private inside VPC, public outside) |
+| Elastic IP | 0+ (≤ 1 per private IPv4) | Static; allocated to account; replaces the auto public IPv4 on attach |
+| IPv6 | 0+ | All publicly routable; **OS-visible** |
+| Security Groups | 1–5 | One SG set per ENI; applies to every IP on that ENI |
+| Source/Destination Check | 1 (boolean) | Default **on**; must be **off** for NAT instances |
 
 ## Billing Model
 
@@ -416,6 +551,7 @@ The whole point of instance store is accepting tight restrictions in exchange fo
 12. **Private key downloads once** — lose it and you've lost the easy path back in
 13. **Instance types:** five categories (General Purpose / Compute / Memory / Accelerated / Storage). Start in General Purpose; deviate when a bottleneck is clear. **T3 is burstable** (credit-based); **M5 is steady-state**. Full type string = family + generation + optional capability letters + size
 14. **Instance store** — physically local to the host; highest performance in AWS; launch-time only; **lost on any host move** (stop/start, resize, host failure); reboot preserves data; included in instance price. See [Instance Store](#instance-store)
+15. **ENI is the unit of network identity, not the instance** — IPs, DNS names, MAC, EIPs, IPv6, [Security Groups](vpc.md#security-groups-sg), and source/destination check **all live on the ENI**. Every instance has exactly 1 primary ENI (cannot detach) + 0+ secondary ENIs (detachable, movable between instances — the MAC-licensing / IP-failover pattern). All ENIs on an instance must be in the **same AZ**, but can sit in different subnets. The auto-assigned public IPv4 is **not visible inside the OS** (NAT at the [IGW](vpc.md#internet-gateway-igw)); IPv6 is. **Split-horizon DNS**: the public DNS name resolves to the **private IP inside the VPC**, the public IP **outside**. See [Network Interfaces (ENIs)](#network-interfaces-enis)
 
 ## Quick Reference
 
@@ -434,6 +570,11 @@ The whole point of instance store is accepting tight restrictions in exchange fo
 | Hidden cost trap | **Stopped** instances still pay for [EBS](#storage-options) |
 | Restart vs Stop/Start | Restart = same host (IP + instance store preserved); Stop/Start = may land on a new host (auto public IP + instance store **lost**) |
 | Instance store | Ephemeral; local to host; launch-time only; lost on any host move; **highest performance in AWS** — see [Instance Store](#instance-store) |
+| ENI | Per-instance: 1 primary (non-detachable) + 0+ secondary (detachable, movable); holds IPs / DNS / MAC / EIPs / IPv6 / SGs / src-dst check; all ENIs share AZ; can span subnets — see [Network Interfaces (ENIs)](#network-interfaces-enis) |
+| Public DNS resolution | **Split-horizon** — inside VPC → private IPv4; outside VPC → public IPv4 |
+| Public IPv4 visibility in OS | **Not visible** (NAT at IGW); IPv6 **is** visible |
+| Elastic IP attach/detach | Attach **replaces** the dynamic public IP; detach gives a **new, different** dynamic IP — original is lost |
+| Source/destination check | Default on; **must be off** for NAT instances / software routers |
 | Template object | AMI (Amazon Machine Image) — region-specific |
 | AMI permission modes | Public / Owner / Explicit |
 | Linux access | SSH on port 22 + private key |
@@ -454,5 +595,6 @@ The whole point of instance store is accepting tight restrictions in exchange fo
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_instance_type.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_instance_store_volumes.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_instance_store_vs_ebs.md`
+- Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_eni_and_dns.md`
 - [EC2 Instance Types — official AWS docs](https://aws.amazon.com/ec2/instance-types/)
 - [ec2instances.info (Vantage)](https://instances.vantage.sh/) — sortable reference with pricing

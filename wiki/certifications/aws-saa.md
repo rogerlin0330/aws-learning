@@ -1,7 +1,7 @@
 ---
 title: AWS Solutions Architect Associate — Exam Notes
 type: certification
-tags: [iam, vpc, networking, ec2, ami, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, ephemeral, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, route53, organizations, cost, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, raid0, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, ebs-encryption, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr]
+tags: [iam, vpc, networking, ec2, ami, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, ephemeral, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, route53, organizations, cost, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, raid0, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, ebs-encryption, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr]
 certs: [aws-saa]
 updated: 2026-05-29
 ---
@@ -732,6 +732,64 @@ See [EC2 — Instance Store](../services/ec2.md#instance-store) and [EBS vs Inst
 > - **Launch time only** — cannot attach instance store after launch; any question about adding post-launch is testing this
 > - **Not all instance types include instance store** — verify instance type specs before assuming
 > - **Included in price** — no reason to leave allocated volumes unused; the cost is already sunk
+
+### EC2 Network Interfaces (ENIs) & Instance DNS
+
+See [EC2 — Network Interfaces (ENIs)](../services/ec2.md#network-interfaces-enis) for full details.
+
+- **Network identity lives on the ENI, not the instance.** Primary private IPv4, secondary private IPv4s, optional public IPv4, public/private DNS names, MAC, EIPs, IPv6, Security Groups, and source/destination check are **all per-ENI**
+- **Every instance has exactly 1 primary ENI + 0 or more secondary ENIs.** The primary ENI **cannot be detached**; secondary ENIs **can** be detached and re-attached to another instance — the MAC, IPs, EIPs, and SGs travel with the ENI
+- **All ENIs on one instance must be in the same AZ.** They can sit in **different subnets**, but those subnets must all belong to the same AZ — there is no cross-AZ ENI
+- **Internal DNS name format**: `ip-<private-ipv4-dashed>.ec2.internal` (e.g. `ip-10-16-0-10.ec2.internal`) — resolvable only **inside the VPC**, always to the **private** IP
+- **Public DNS name format**: `ec2-<public-ipv4-dashed>.compute-1.amazonaws.com` — and resolves with **split-horizon** behaviour
+- **The auto-assigned public IPv4 is NOT visible inside the OS** — 1:1 NAT applied at the [IGW](../services/vpc.md#internet-gateway-igw). Configure only the **private** IPv4 in the guest. **IPv6 is OS-visible** (and all IPv6 in AWS is publicly routable)
+- **The auto public IPv4 is dynamic** — released on **Stop**, a **new one** assigned on **Start**, preserved across **Reboot**. *"My public IP changed after I rebooted"* → the action was a **Stop/Start**, not a reboot
+- **Attaching an EIP removes the dynamic public IPv4**; detaching the EIP later gives a **new, different** dynamic public IP — the original is **lost for good**
+- **Source/destination check** is enabled by default — **must be disabled** for [NAT instances](../services/vpc.md#nat-gw-vs-nat-instance), software routers, or any in-line forwarding role
+- **Security Groups attach to ENIs.** A SG governs **every IP on the ENI**. Need different SGs for different IPs on the same instance → split them across **multiple ENIs**
+- **Movable secondary ENI = MAC-licensing & IP-failover pattern.** Bind the licence (or service IP + EIP) to a secondary ENI; re-attach it to a replacement instance instead of re-issuing or re-DNS-ing
+
+#### Split-horizon DNS — the most exam-tested ENI behaviour
+
+The EC2 public DNS name resolves **differently depending on caller location**:
+
+| Caller | Public DNS name resolves to |
+| --- | --- |
+| Inside the VPC | **Private IPv4** |
+| Outside the VPC | **Public IPv4** |
+
+One hostname works everywhere; **intra-VPC traffic stays private** (never hairpins through the IGW). This is what makes VPC peering and hybrid networking work cleanly when apps connect by public DNS name. See [DNS — Split-Horizon DNS](../concepts/dns.md#split-horizon-dns).
+
+#### ENI / DNS / EIP cheat sheet
+
+| Keyword in the question | Answer |
+| --- | --- |
+| "Security Group attaches to…" | **ENI**, not the instance or subnet |
+| "Different SGs for different IPs on one instance" | Split IPs across **multiple ENIs** |
+| "Multiple ENIs on different subnets" | Allowed only if those subnets are in the **same AZ** |
+| "Move the licence with the server when I replace it" | **Secondary ENI** with the MAC-bound licence + re-attach on the replacement |
+| "Stable public IPv4 across stop/start" | **Elastic IP** (EIP) |
+| "Detached my EIP and the original public IP came back" | ❌ Wrong — a **new, different** dynamic public IP is assigned; the original is lost |
+| "Public IP changed after rebooting" | Likely a **Stop/Start in disguise** — reboot preserves the auto public IPv4 |
+| "Internal DNS name doesn't resolve from on-prem" | `ip-…ec2.internal` is **VPC-only**; use Route 53 Resolver inbound endpoints or split-view PHZ for hybrid |
+| "Public DNS name resolves to a private IP from inside the VPC" | **Split-horizon DNS** — intended behaviour |
+| "Apps in two peered VPCs connect via public DNS — does traffic leave AWS?" | **No** — split-horizon DNS resolves to the **private IP** on both sides |
+| "EC2 acting as a NAT instance drops packets" | **Source/destination check** is still enabled — disable it on the NAT instance's ENI |
+| "Configure the public IPv4 inside the guest OS" | ❌ Not possible — public IPv4 is invisible to the OS; only IPv6 is OS-visible |
+| "Cannot SSH after stop/start, OS firewall unchanged" | New auto public IPv4 was assigned — update your SSH target (or attach an **EIP** for stability) |
+| "Need every existing public IP to remain forever" | **Allocate an EIP** *before* detaching anything — otherwise the dynamic IP is permanently lost on first EIP swap |
+
+> [!tip] Exam Tip
+> Pattern-match by ownership: *"X is attached to the instance"* — read it as *"X is attached to the instance's primary ENI."* The handful of exceptions matter: things that live on the **EC2 host** (instance store, host-affinity, dedicated-host BYOL) or in the **subnet/AZ** ([NACLs](../services/vpc.md#network-acl-nacl), [route tables](../services/vpc.md#route-tables)) are *not* on the ENI. Everything else — IPs, DNS names, MAC, EIPs, IPv6, SGs, source/dest check — is per-ENI.
+
+> [!warning] Common ENI / DNS / EIP Gotchas
+>
+> - **EIP detach is a one-way IP swap.** Disassociate an EIP → a new dynamic public IPv4 is assigned, not the original. If you need the original, keep the EIP attached
+> - **Public IPv4 invisibility in the OS** — only the private IPv4 is seen by the guest; the IGW does 1:1 NAT. IPv6 is the lone exception (OS-visible, all publicly routable)
+> - **Reboot ≠ Stop/Start** for the auto public IPv4 — reboot preserves it; Stop/Start releases it and assigns a new one
+> - **Source/destination check defaults on** — silently breaks NAT instances and any in-line forwarder until you turn it off
+> - **MAC is per-ENI, not per-instance** — re-attaching a secondary ENI carries the MAC. Useful for MAC-locked licensing; also why the *primary* ENI's MAC is fixed for the life of the instance
+> - **Internal DNS is VPC-scoped** — `ip-…ec2.internal` does not resolve from outside the VPC; use Route 53 private hosted zones + resolver endpoints for hybrid resolution
 
 ### EBS Service Architecture
 
