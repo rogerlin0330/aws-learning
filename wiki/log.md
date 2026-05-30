@@ -1,5 +1,16 @@
 # Wiki Log
 
+## [2026-05-29] seed | Resource Scope concept page
+
+Created `wiki/concepts/resource-scope.md` as the canonical reference for
+which AWS resources are Global / Regional / AZ-scoped / Edge. Page is
+organized as four tables (one per tier) with per-resource notes,
+followed by a Gotchas section (S3 split scope, AMI/snapshot regionality,
+KMS regionality vs portable ciphertext, stop/start AZ-pinning) and an
+SAA exam tip on scope as the first DR filter. Inline cross-links to
+IAM, VPC, EC2, EBS, S3, KMS, Route 53, CloudWatch, Organizations.
+Updated `wiki/index.md` Concepts section to surface the new page.
+
 ## [2026-05-29] update | VPC — default vs custom VPC facts
 
 Added missing default/custom VPC distinctions to `wiki/services/vpc.md`:

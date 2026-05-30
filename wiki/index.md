@@ -24,6 +24,7 @@
 - [TLS/HTTPS](concepts/tls-https.md) — Certificate chain of trust, CA issuance, TLS handshake, ACM integration
 - [Identity and Access](concepts/identity-and-access.md) — Auth vs authz, identity types, policy evaluation, credential types
 - [Resource Policies vs Identity Policies](concepts/resource-vs-identity-policies.md) — Two policy families; cross-account & anonymous access; same-account union vs cross-account intersection
+- [Resource Scope](concepts/resource-scope.md) — Global / Regional / AZ / Edge tier reference; per-service scope tables; blast radius, movement cost, and DR implications
 
 ## Patterns
 
