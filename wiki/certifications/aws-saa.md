@@ -1,9 +1,9 @@
 ---
 title: AWS Solutions Architect Associate — Exam Notes
 type: certification
-tags: [iam, vpc, networking, ec2, ami, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, ephemeral, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, route53, organizations, cost, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, raid0, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, ebs-encryption, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr]
+tags: [iam, vpc, networking, ec2, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, ephemeral, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, route53, organizations, cost, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, raid0, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, ebs-encryption, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr]
 certs: [aws-saa]
-updated: 2026-05-29
+updated: 2026-05-30
 ---
 
 # AWS Solutions Architect Associate (SAA-C03)
@@ -613,9 +613,10 @@ See [EC2](../services/ec2.md) for full details.
 - **State machine: Running ↔ Stopped → Terminated.** Stop ↔ Start is bidirectional; **Terminate is one-way** and irreversible
 - **Stop/Start ≠ Restart.** Restart stays on the **same host** (instance store + auto public IP preserved). Stop/Start can **land on a new host** in the same AZ — instance-store data is **lost** and the auto-public-IPv4 is **released**
 - **Billing granularity:** per second (Linux + most Windows AMIs, 60-second minimum) or per hour (some commercial-license AMIs)
-- **AMI is region-specific** — to use it in another region, you must **copy** it (and pay the snapshot data-transfer cost). Backed by EBS snapshots in S3
-- **AMI permission modes:** Public (everyone), Owner (implicit), Explicit (specific account IDs granted launch permission)
-- **AMI mandatory content:** ≥ 1 volume (the boot volume), permissions, and the block-device mapping (volume → OS device ID like `/dev/sda1`)
+- **AMI is region-specific** — to use it in another region, you must **copy** it (and pay the snapshot data-transfer cost). Stored in the region but **deployable to any AZ within that region** because the backing EBS snapshots live on regional S3. See [AMI — Amazon Machine Image](#ami--amazon-machine-image) for the full treatment
+- **AMI permission modes:** **Private** (default, owner-only) / **Public** (everyone — e.g. AWS base images) / **Explicit** (specific account IDs granted launch permission)
+- **AMI is a logical container, not a data carrier** — it holds an AMI ID + permissions + a block device mapping pointing at EBS snapshots. The real volume data lives in the snapshots; deleting the snapshots breaks the AMI
+- **AMIs cannot be edited** — to change one, launch from it, modify, and create a brand-new AMI
 - **Linux access: SSH/22 + private key** (direct public-key auth, no password). **Windows access: RDP/3389 + private key to decrypt the Administrator password**, then RDP with that password — the SSH key never touches the RDP session itself
 - **Private key downloads once.** Lose it → create a new key pair (no recovery from AWS)
 
@@ -641,7 +642,12 @@ See [EC2](../services/ec2.md) for full details.
 | "Multiple ENIs on different subnets" | OK only if the subnets are in the **same AZ** |
 | "Rebooted, lost scratch disk" | Was it really a reboot? **Stop/Start** can land on a new host → **instance-store lost**. Restart keeps the same host |
 | "Public IP changed after I cycled the instance" | Stop/Start releases auto public IPv4; use an **Elastic IP** for stability |
-| "Use the same AMI in another region" | **Copy AMI** to the destination region first |
+| "Use the same AMI in another region" | **Copy AMI** to the destination region first (`aws ec2 copy-image`); copied AMIs default back to **Private** permissions |
+| "Use the same AMI in another AZ" | **No copy needed** — an AMI deploys to any AZ in its home region |
+| "Edit an existing AMI to add a package" | **Cannot edit** — launch from it, configure, capture a new AMI |
+| "Cost of an AMI sitting in an account" | Billed on the **EBS snapshots' used data**, not the AMI container or the volume's allocated size |
+| "Marketplace AMI billing" | Normal instance hourly rate **plus** a per-hour software-license charge bundled into the AMI |
+| "Build many identical web servers from a configured master" | **AMI baking** — configure one, capture as AMI, launch the fleet |
 | "Per-socket Windows / Oracle / SQL Server licensing" | **Dedicated Host** — pay per host, target the host, satisfy BYOL per-socket licensing |
 | "No hardware co-tenancy but I don't care about the host" | **Dedicated Instance** — single-tenant hardware, host stays opaque |
 | "Instance has no internet despite being in public subnet" | Check public IP assignment, SG inbound, route to [IGW](../services/vpc.md#internet-gateway-igw), NACL ephemeral return |
@@ -668,6 +674,8 @@ See [EC2](../services/ec2.md) for full details.
 > - **Dedicated Instance vs Dedicated Host** look similar but are not the same: Dedicated Host adds **per-host billing**, **host targeting**, and **BYOL per-socket licensing**; Dedicated Instance only guarantees no hardware co-tenancy
 > - **AMI ≠ snapshot.** An AMI references one or more EBS snapshots plus metadata (permissions, block-device mapping); deleting just the underlying snapshots breaks the AMI
 > - **Region-locked AMIs.** Multi-region launch requires `aws ec2 copy-image` first; otherwise the AMI ID won't exist in the target region
+> - **AMIs cannot be edited.** The only path is (1) launch from the AMI, (2) modify the instance, (3) capture a new AMI; the old AMI is immutable
+> - **Marketplace AMIs add a per-hour license charge** on top of the standard EC2 instance rate — easy to miss when sizing cost for vendor-bundled stacks
 > - **Private key is download-once.** A lost private key on a single-key-pair instance means a painful recovery via root-volume detach
 
 ### EC2 Instance Types
@@ -790,6 +798,52 @@ One hostname works everywhere; **intra-VPC traffic stays private** (never hairpi
 > - **Source/destination check defaults on** — silently breaks NAT instances and any in-line forwarder until you turn it off
 > - **MAC is per-ENI, not per-instance** — re-attaching a secondary ENI carries the MAC. Useful for MAC-locked licensing; also why the *primary* ENI's MAC is fixed for the life of the instance
 > - **Internal DNS is VPC-scoped** — `ip-…ec2.internal` does not resolve from outside the VPC; use Route 53 private hosted zones + resolver endpoints for hybrid resolution
+
+### AMI — Amazon Machine Image
+
+See [EC2 — AMI](../services/ec2.md#ami--amazon-machine-image) for full details.
+
+- **AMI = a logical container, not a data carrier.** Holds an AMI ID, permissions, and a **block device mapping** pointing at EBS snapshots. The volume data lives in the snapshots — the AMI itself stores no bytes
+- **Three sources**: **AWS-provided** (Amazon Linux, Windows base), **Community** (Red Hat, CentOS, Ubuntu), **Marketplace** (commercial software bundled). Marketplace billing = **instance hourly rate + per-hour software-license charge**
+- **Three permission modes**: **Private** (default — owner-only) / **Public** (everyone) / **Explicit** (specific named AWS account IDs)
+- **Regional** — one AMI lives in exactly one region. Same OS has a **different AMI ID per region**. **Deployable to any AZ within the region** (snapshots live on regional S3)
+- **Four-phase lifecycle**: (1) Launch from an AMI, (2) Configure the instance, (3) Create Image (captures snapshots and writes the block device mapping), (4) Launch new instances from the new AMI. The flow runs in **both directions** — using an AMI to launch an instance, and capturing an instance as an AMI
+- **AMIs cannot be edited.** To change an AMI, launch from it, modify the instance, capture a **brand-new** AMI
+- **AMIs can be copied across regions** with `aws ec2 copy-image`. Copies the underlying snapshots; copied AMIs **default back to Private** — sharing does not travel with the copy
+- **Encrypted AMIs** require [KMS](../services/kms.md) grants for services like Auto Scaling to launch from them. Cross-region copy re-wraps the snapshot DEK under a destination-region KMS key
+- **Billing**: pay for the **EBS snapshot used data** the AMI references, not for the AMI container, and not for the source volume's full allocated size. A mostly-empty large volume produces a small, cheap snapshot
+- **AMI baking** = configure an instance, install all software, capture as AMI, launch many identical instances. The canonical pattern for fleet provisioning and golden-image pipelines (EC2 Image Builder, Packer)
+
+#### AMI cheat sheet
+
+| Keyword in the question | Answer |
+| --- | --- |
+| "Same OS, different AMI IDs across regions" | Yes — AMIs are **regional**; same OS gets a distinct AMI ID in each region |
+| "Move an AMI to another region" | **`aws ec2 copy-image`** — copies the underlying snapshots; permissions reset to Private |
+| "Move an AMI to another AZ" | **No action needed** — an AMI deploys to any AZ in its home region |
+| "Modify an existing AMI" | ❌ Not possible — launch from it, configure, capture a **new** AMI |
+| "Share AMI with a specific AWS account" | **Explicit** permission with that account's ID |
+| "Share AMI with everyone" | **Public** permission — also the model for AWS-provided base images |
+| "Default AMI permission" | **Private** (owner-only) |
+| "Marketplace AMI cost model" | Normal instance hourly rate **plus** a per-hour software-license charge |
+| "What does the AMI actually store?" | AMI ID + permissions + **block device mapping** pointing at EBS snapshots. **No volume bytes inside the AMI** |
+| "Block device mapping" | A table: snapshot ID + original device ID (e.g. `/dev/xvda` for boot, `/dev/xvdf` for data). Used at launch to recreate the volume layout |
+| "How much does an idle AMI cost?" | **Snapshot used data × $/GB-month** — not the volume's allocated size, not the AMI itself |
+| "Configure once, launch many" | **AMI baking** — capture the configured instance as an AMI |
+| "AMIs created from one AZ" | Deployable to **all AZs in the region** — the AMI's snapshots are stored on S3, which is regional |
+| "Encrypted AMI fails to launch via Auto Scaling" | Auto Scaling needs a **KMS grant** on the AMI's encryption key |
+
+> [!tip] Exam Tip
+> Pattern-match: *"create many identical instances from a customized server"* → **AMI baking** (capture as AMI, then launch). *"AMI not available in region X"* → **copy AMI** to that region first. *"edit an AMI to update the package version"* → ❌ not possible; (1) launch from the AMI, (2) modify the instance, (3) capture a new AMI. *"AMI created in AZ-a — can it launch in AZ-b?"* → ✅ yes, same region is enough. *"Marketplace AMI total cost"* → instance rate **plus** per-hour license. *"Who owns the data in an AMI?"* → the EBS snapshots underneath; the AMI is just a pointer.
+
+> [!warning] Common AMI Gotchas
+>
+> - **AMIs are immutable.** Every change is a new AMI. The exam trap framing is *"edit the AMI to upgrade the OS"* — always wrong
+> - **Region-locked.** Multi-region launch requires `copy-image` first. Permissions reset to Private after copy
+> - **Logical container, not data.** Deleting the underlying snapshots breaks the AMI; AMI lifecycle and snapshot lifecycle must be managed together
+> - **Snapshot used-data billing.** A 100 GB volume with 5 GB written produces an AMI billed for ~5 GB, not 100 GB. The cost is in the *snapshot*, not the AMI object
+> - **Marketplace AMIs carry a license charge** bundled into the per-hour bill — not just the instance rate
+> - **Encrypted AMI + Auto Scaling** silently fails without a KMS **grant** on the encryption key — common cross-account / multi-region trap
 
 ### EBS Service Architecture
 

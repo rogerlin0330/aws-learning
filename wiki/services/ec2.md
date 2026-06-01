@@ -1,9 +1,9 @@
 ---
 title: EC2 — Elastic Compute Cloud
 type: service
-tags: [ec2, compute, iaas, ami, ssh, rdp, instance-lifecycle, shared-responsibility, ebs, key-pair, host, tenancy, dedicated-host, dedicated-instance, instance-store, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, security-group]
+tags: [ec2, compute, iaas, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, ssh, rdp, instance-lifecycle, shared-responsibility, ebs, key-pair, host, tenancy, dedicated-host, dedicated-instance, instance-store, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, security-group]
 certs: [aws-saa]
-updated: 2026-05-29
+updated: 2026-05-30
 ---
 
 # EC2 — Elastic Compute Cloud
@@ -314,35 +314,90 @@ This is the only path. For multi-AZ high availability the architectural answer i
 
 ## AMI — Amazon Machine Image
 
-An **AMI** is the template used to launch an EC2 instance. Mental models: a server image (on-prem virtualization), or a USB installer for an operating system.
+An **AMI** is the template used to launch an EC2 instance. Mental models: a server image (on-prem virtualization), or a USB installer for an operating system. Every EC2 instance you launch is created from an AMI — even picking "Amazon Linux 2" in the console is just picking an Amazon-provided AMI under the hood.
 
-AMIs are **region-specific** — an AMI created in `us-east-1` does not appear in `eu-west-1` unless you **copy** it to that region. This is an exam favourite.
+The interesting case is creating **your own** AMI from an already-configured instance — capture-then-replay as a reusable launch template.
 
-### Two-way relationship with instances
+### Where AMIs come from
 
-- An **AMI is used to launch** an EC2 instance
-- An **existing EC2 instance can be captured** into a new AMI (for example, after configuring it the way you want — the resulting AMI bakes in that configuration)
+| Source | Example | Notes |
+| --- | --- | --- |
+| **AWS-provided** | Amazon Linux 2, Windows Server | Official AWS base images |
+| **Community-provided** | Red Hat, CentOS, Ubuntu | Vendor-published OS distributions |
+| **Marketplace** | Pre-packaged commercial software | Billed at the **normal instance hourly rate plus a per-hour software-license charge** bundled into the AMI |
 
-### What an AMI contains
+### Core Properties
 
-**1. Permissions** — who can launch from this AMI:
+**Regional.** An AMI exists in **one region** and can only be used in that region. The *same* OS (e.g. Amazon Linux 2) has a **different AMI ID in every region** — `us-east-1`, `us-west-1`, Sydney, and so on. IDs use the format `ami-<random alphanumeric>`. **To use an AMI in another region you must copy it** (see [Key Gotchas](#key-gotchas) below).
+
+**Permissions.** An AMI controls who can use it. There are three permission models:
 
 | Permission | Who can use it |
 | --- | --- |
-| **Public** | Everyone — e.g. AWS-provided Amazon Linux / Ubuntu / Windows base images |
-| **Owner** | Only the AMI owner (implicit) |
-| **Explicit** | Specific AWS account IDs the owner has granted launch permission to |
+| **Private** (default) | Only the AMI's owning AWS account — also called **Owner-only** |
+| **Public** | Anyone — e.g. AWS-provided Amazon Linux / Ubuntu / Windows base images |
+| **Explicit** | Specific named AWS accounts the owner has granted launch permission to (e.g. other accounts in your org, or partner accounts) |
 
-**2. Boot volume(s)** — at minimum the root volume (C: on Windows; `/` on Linux), plus optional additional data volumes. Every AMI has **at least one** volume: the boot volume.
+### The AMI Lifecycle
 
-**3. Block device mapping** — the configuration that links each volume to a device ID the OS expects (e.g. `/dev/sda1` is the boot volume; `/dev/sdb` is a data volume). The OS uses this mapping to know which volume to boot from and where to mount the rest.
+Think of the lifecycle as **four phases** — and note the two separate Launch phases are intentional.
 
-### AMI lifecycle considerations (for later expansion)
+![AMI lifecycle diagram with four labelled bands: 1. Launch shows an AMI tile, an arrow into an Instance icon, and the resulting Boot volume /dev/xvda and Data volume /dev/xvdf attached to that instance; 2. Configure shows the same instance with its two volumes plus a cloud-shaped "Customizations" badge applied on top; 3. Create Image shows the customized instance + its volumes feeding into a new AMI tile, with two snapshot icons branching off labelled Block Device Mapping; 4. Launch repeats step 1's layout — the new AMI is used to stamp out a fresh Instance with the same two volumes /dev/xvda and /dev/xvdf, demonstrating that the AMI is both produced from an instance and used to produce more instances](../assets/ec2-ami-lifecycle.png)
 
-- AMIs are backed by **EBS snapshots** in S3 (you don't pay for the AMI itself; you pay for the snapshots underneath)
-- **Copying an AMI across regions** copies the snapshots — useful for multi-region DR; subject to data-transfer costs
-- **Encrypted AMIs** require [KMS](kms.md) grants for services like Auto Scaling to launch from them
-- Hardening / golden-image pipelines typically build AMIs with EC2 Image Builder or Packer — out of scope here, will be its own page
+1. **Launch** — Use an AMI to launch an EC2 instance. Most people only ever experience this phase, and that's fine — custom AMIs are one of several provisioning patterns, not a requirement.
+2. **Configure** — Take the launched instance (the instance plus its attached [EBS](ebs.md) volumes) and customize it: install applications, tune the OS, attach additional volumes, install and configure an application suite.
+3. **Create Image** — Capture that customized configuration as a new AMI (see [What an AMI Actually Contains](#what-an-ami-actually-contains) below).
+4. **Launch (again)** — Use the new AMI to stamp out brand-new instances with **the same data and the same volume configuration** as the original.
+
+The flow most people know — using an AMI to launch an instance — can be run in **reverse** (capturing an existing instance as an AMI) to turn an existing configuration into a reusable launch template.
+
+### What an AMI Actually Contains
+
+An AMI is best understood as a **logical container** — it does **not itself hold any real volume data**. It holds:
+
+- An **AMI ID**
+- **Permissions** (Private / Public / Explicit — see above)
+- A **block device mapping** that references EBS snapshots
+
+When you create an AMI from an instance, the key step is that **an EBS [snapshot](ebs.md#snapshots--crossing-the-az-and-region-boundaries) is taken of each attached EBS volume first** — and the AMI's block device mapping points at those snapshots. (Recall that EBS snapshots are incremental, but the *first* snapshot is a full copy of the volume's used data.)
+
+#### Block Device Mapping
+
+A small table inside the AMI. For each snapshot, it records:
+
+- the **snapshot ID**, and
+- the **device ID** the original volume had on the source instance.
+
+A two-volume instance produces a mapping with two entries:
+
+| Snapshot | Original device ID | Role |
+| --- | --- | --- |
+| snapshot of boot volume | `/dev/xvda` | boot |
+| snapshot of data volume | `/dev/xvdf` | data |
+
+When the AMI is later used to launch a new instance, the referenced **snapshots are used to create new EBS volumes in the target Availability Zone**, and those volumes are attached using the **same device IDs** recorded in the mapping. This is what reproduces the original volume layout on the new instance.
+
+#### Regional Storage — AZ Reach Within the Region
+
+The AMI object itself is stored in the region. The underlying snapshots live on [S3](s3.md), which is already regional and replicated across 3+ AZs. Because of this, **an AMI created from an instance in one AZ can deploy new instances back into that same AZ or into any other AZ in the region**. This is the standard path for [moving an instance across AZs](#moving-an-instance-across-azs) — and the foundation for multi-AZ HA fleets built from a single golden image.
+
+### AMI Baking
+
+**AMI baking** is the practice of taking an instance, installing all software and applying all configuration, then "baking" that finished state into an AMI. Example: instead of manually installing/configuring WordPress on every instance, do it once, bake an AMI, then launch tens or hundreds of pre-configured instances from it. Hardening / golden-image pipelines typically automate this with **EC2 Image Builder** or **Packer**.
+
+### Key Gotchas
+
+**AMIs cannot be edited.** There is no "edit AMI" operation. To change an existing AMI's configuration you must (1) launch an instance from it, (2) make your changes, then (3) create a **brand-new** AMI. The old AMI stays untouched.
+
+**AMIs can be copied between regions.** Since AMIs are regional, copying is how you get the same image into another region (`aws ec2 copy-image`). Copying duplicates the underlying snapshots into the destination region. Copied AMIs retain the **default Private permissions** unless you change them — sharing does not travel with the copy.
+
+**Encrypted AMIs** require [KMS](kms.md) grants for services like Auto Scaling to launch from them. The encrypted snapshot's DEK is wrapped by a KMS key in the AMI's region; copying across regions re-wraps under a destination-region KMS key. See [EBS Encryption](ebs.md#ebs-encryption).
+
+### Billing
+
+You are billed for an AMI based on the **storage capacity used by the EBS snapshots it references** — *not* for the AMI container itself.
+
+Because [snapshots only store the *used* data](ebs.md#snapshots--crossing-the-az-and-region-boundaries) (not the full allocated volume size), the cost can be much smaller than the source volume's allocation suggests. A 40 GB volume with 10 GB written becomes a snapshot billed for ~10 GB. **Marketplace AMIs** add the bundled software license to the running instance's hourly rate — the AMI's snapshot storage is billed the same way as a custom AMI.
 
 ## Connecting to Instances
 
@@ -546,7 +601,7 @@ The whole point of instance store is accepting tight restrictions in exchange fo
 7. **Three key states:** Running, Stopped, Terminated. **Stop/Start ≠ Restart** — Stop/Start can move the instance to a new host (losing instance-store data and auto-public-IP); Restart cannot
 8. **Stopped ≠ free** — you still pay for attached [EBS](#storage-options) storage; only **Terminated** ends all charges
 9. **Terminated is permanent** — root volumes deleted by default, instance-store data lost, no undelete
-10. **AMI = launch template** — carries permissions, boot + data volumes, and the block-device mapping; region-specific
+10. **AMI = a logical container, not a data carrier** — it holds an AMI ID, permissions (Private / Public / Explicit), and a block device mapping pointing at EBS snapshots; the real volume data lives in the snapshots. Sources: AWS / Community / Marketplace (Marketplace adds a per-hour license charge on top of the instance rate). **Region-specific** — copy across regions. **Cannot be edited** — relaunch, reconfigure, recreate. Stored in the region but deployable to **any AZ within it**. Billed on the **snapshot used data**, not the AMI itself or the volume's allocated size. **AMI baking** = configure once, capture, stamp out many
 11. **Linux: SSH on 22**; **Windows: RDP on 3389** (private key decrypts the admin password, then RDP)
 12. **Private key downloads once** — lose it and you've lost the easy path back in
 13. **Instance types:** five categories (General Purpose / Compute / Memory / Accelerated / Storage). Start in General Purpose; deviate when a bottleneck is clear. **T3 is burstable** (credit-based); **M5 is steady-state**. Full type string = family + generation + optional capability letters + size
@@ -575,12 +630,16 @@ The whole point of instance store is accepting tight restrictions in exchange fo
 | Public IPv4 visibility in OS | **Not visible** (NAT at IGW); IPv6 **is** visible |
 | Elastic IP attach/detach | Attach **replaces** the dynamic public IP; detach gives a **new, different** dynamic IP — original is lost |
 | Source/destination check | Default on; **must be off** for NAT instances / software routers |
-| Template object | AMI (Amazon Machine Image) — region-specific |
-| AMI permission modes | Public / Owner / Explicit |
+| Template object | AMI (Amazon Machine Image) — region-specific; deployable to any AZ in the region |
+| AMI permission modes | **Private** (default, owner-only) / **Public** / **Explicit** (named accounts) |
+| AMI sources | AWS-provided / Community / Marketplace (Marketplace = instance rate + per-hour license) |
+| AMI contents | Logical container: **AMI ID + permissions + block device mapping** pointing at EBS snapshots (no volume data in the AMI itself) |
+| AMI editing | **Cannot be edited** — to change one, (1) launch from it, (2) modify the instance, (3) create a new AMI |
+| AMI billing | **EBS snapshot used data**, not the AMI container, not the volume's allocated size |
+| AMI baking | Configure an instance, install everything, capture as AMI, launch many identical instances |
 | Linux access | SSH on port 22 + private key |
 | Windows access | RDP on port 3389 + private key (used to decrypt admin password) |
 | Key-pair download policy | Private key downloadable **once** only |
-| AMI mandatory content | ≥ 1 volume (boot), permissions, block device mapping |
 
 ## References
 
@@ -596,5 +655,6 @@ The whole point of instance store is accepting tight restrictions in exchange fo
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_instance_store_volumes.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_instance_store_vs_ebs.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_eni_and_dns.md`
+- Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_ami.md`
 - [EC2 Instance Types — official AWS docs](https://aws.amazon.com/ec2/instance-types/)
 - [ec2instances.info (Vantage)](https://instances.vantage.sh/) — sortable reference with pricing

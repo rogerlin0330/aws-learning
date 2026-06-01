@@ -1,5 +1,48 @@
 # Wiki Log
 
+## [2026-05-30] ingest | EC2 AMI — sources, 4-phase lifecycle, logical container, baking, immutability
+
+Ingested `raw/aws-cert-study-notes/aws-solution-architect/ec2_ami.md`. Copied `ec2-ami-lifecycle.png` from raw assets to `wiki/assets/` and embedded with multi-clause alt text naming each of the four bands (Launch / Configure / Create Image / Launch), the AMI tile, the instance icon, the boot/data volume icons with their device IDs (`/dev/xvda`, `/dev/xvdf`), the Customizations badge, and the Block Device Mapping branch — so the alt text doubles as a reading guide for screen-reader and grep users.
+
+Replaced the previous AMI section in `wiki/services/ec2.md` (previously ~30 lines, structured as intro + 2-way relationship + contents + "for later expansion") with a fully reworked section organized as: intro + mental model, **Where AMIs come from** (3-source table: AWS / Community / Marketplace with the marketplace billing rule = instance hourly + per-hour license), **Core Properties** (regional + per-region IDs, **3-row permissions table** Private (default) / Public / Explicit), **The AMI Lifecycle** (embedded image + 4 numbered phases), **What an AMI Actually Contains** (logical-container framing, snapshot-on-create rule, block-device-mapping subsection with example table, regional-storage-but-all-AZs-reach subsection), **AMI Baking** (named pattern + tooling references — Image Builder, Packer), **Key Gotchas** (cannot-edit, can-copy-cross-region with permissions reset, encrypted-AMI KMS grant requirement), and **Billing** (snapshot used data, not container, not allocated size; Marketplace license overlay).
+
+Updated `wiki/services/ec2.md` to:
+
+- Add new tags to frontmatter (`ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping`); bumped `updated:` to 2026-05-30
+- Rewrite Key Takeaway #10 (AMI) into a single dense bullet covering: logical container, sources, region-specific, cannot-edit, all-AZs-in-region, snapshot-used-data billing, AMI baking
+- Replace the prior 2-row AMI rows in Quick Reference with **6 new rows**: AMI sources, AMI contents (logical container), AMI editing (cannot), AMI billing (snapshot used data), AMI baking, plus permission-modes row updated to Private/Public/Explicit
+- Add `raw/aws-cert-study-notes/aws-solution-architect/ec2_ami.md` to the References source list
+
+Updated `wiki/certifications/aws-saa.md`:
+
+- Replaced 3 existing inline AMI bullets in the `## EC2` section with **4 corrected/expanded bullets** — region-specific now also notes all-AZs-in-region reach, permission modes corrected from "Public/Owner/Explicit" to **Private/Public/Explicit** (Private is the canonical name for the default; Owner-only is a synonym), logical-container framing added, and the cannot-be-edited rule added
+- Added **6 new rows** to the EC2 cheat-sheet table: cross-region copy with permissions reset, cross-AZ deploy with no copy needed, "edit an existing AMI" (impossible), idle-AMI cost (snapshot used data), Marketplace billing model, "build many identical web servers" → AMI baking
+- Added **2 new Common Gotcha bullets**: AMIs cannot be edited, Marketplace AMI per-hour license overlay
+- Added a new `### AMI — Amazon Machine Image` subsection (placed **after EC2 ENI/DNS and before EBS Service Architecture** — keeps all EC2-proper content grouped before the EBS deep-dive) containing: 10 bullet-form principles, a **14-row AMI cheat-sheet table** (pattern-match keyword → answer), a pattern-match `[!tip]` Exam Tip covering 6 canonical scenarios, and a `[!warning]` Common AMI Gotchas block with 6 traps (immutable, region-locked with permissions reset, logical container, snapshot used-data billing, Marketplace license charge, encrypted AMI + Auto Scaling needs a KMS grant)
+- Added new tags to frontmatter (`ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping`); bumped `updated:` to 2026-05-30
+
+Updated `wiki/index.md`: rewrote the AMI clause in the EC2 entry to cover the logical-container framing, sources + Marketplace billing, permission modes (with Private as the canonical default), 4-phase lifecycle, all-AZs-in-region reach, cannot-edit, copy-resets-permissions, snapshot-used-data billing, and AMI baking.
+
+Synthesis choices over straight-copy:
+
+1. **Corrected the permission terminology** from "Owner" to **Private**. The raw note calls the default Private; the previous wiki used "Owner" (which is a valid synonym but less common in the AWS console UI and exam stems). The new wording leads with **Private** and notes "owner-only" as the explanation — this matches both the exam framing and the raw note while keeping the prior wording grokkable.
+
+2. **Promoted "logical container" into the section's spine.** The raw note makes this point in passing; the wiki uses it as the conceptual anchor that ties together permissions + block-device mapping + snapshots-do-the-real-work + billing-is-on-snapshots. This is the single most useful framing for the entire AMI mental model — once you see the AMI as a pointer rather than a data carrier, every other rule falls into place (cross-region copy copies snapshots; deleting snapshots breaks the AMI; billing is on snapshot used data; etc.).
+
+3. **Made "AMIs cannot be edited" its own labeled gotcha** — the raw note calls this an "exam trap" inline; the wiki gives it both a top-level mention in the Key Gotchas subsection and a dedicated bullet in the SAA Common Gotchas callout. This is the single highest-leverage AMI exam rule and was previously not surfaced in the wiki at all.
+
+4. **Strengthened the "all AZs in the region" point** into its own subsection. The raw note mentions this briefly; the wiki promotes it because it cross-cuts AZ-resilience (you can't move an instance across AZs, but you *can* deploy a fresh one in any AZ from the same AMI) and ties directly to the Moving-an-instance-across-AZs procedure.
+
+5. **Added a Marketplace billing row everywhere.** The raw note flags Marketplace billing in one sentence; the wiki surfaces it in the sources table, in Quick Reference, in the SAA cheat-sheet, and in a dedicated Common Gotcha bullet — because "Marketplace AMI = instance rate + license charge" is a recurring cost-question trap that's easy to miss.
+
+6. **Re-cast the block device mapping as a worked example table** (snapshot + device ID per row). The raw note has the same idea in prose; the table form makes the device-ID reproduction rule pattern-matchable for the exam.
+
+7. **Cross-linked aggressively** from the new AMI section: to [EBS](../services/ebs.md) for snapshots, [EBS Encryption](../services/ebs.md#ebs-encryption) for encrypted-AMI mechanics, [KMS](../services/kms.md) for grants, [S3](../services/s3.md) for snapshot storage substrate, and to the in-page Moving-instance-across-AZs procedure for the natural sibling.
+
+8. **Did not duplicate the four-phase lifecycle diagram in prose.** The image carries the four phases; the prose names each phase in one sentence with the relevant cross-link. Earlier ingests sometimes mirrored the diagram in text — this one trusts the alt text + the four numbered prose bullets.
+
+No content from the raw note was discarded. The note's "Quick exam recall" final block maps cleanly to: (1) AMI = regional but deployable to all AZs → Core Properties + Regional Storage subsection; (2) Same OS → different AMI per region → Core Properties; (3) Permissions Private/Public/Explicit → Core Properties table; (4) AMI is a container → What an AMI Actually Contains; (5) Cannot edit → Key Gotchas + SAA gotcha callout; (6) Can copy between regions → Key Gotchas + cheat-sheet row; (7) Billed for snapshot storage → Billing subsection; (8) AMI baking → its own subsection + SAA cheat-sheet row.
+
 ## [2026-05-29] seed | Resource Scope concept page
 
 Created `wiki/concepts/resource-scope.md` as the canonical reference for
