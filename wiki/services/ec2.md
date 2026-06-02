@@ -1,7 +1,7 @@
 ---
 title: EC2 — Elastic Compute Cloud
 type: service
-tags: [ec2, compute, iaas, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, ssh, rdp, instance-lifecycle, shared-responsibility, ebs, key-pair, host, tenancy, dedicated-host, dedicated-instance, instance-store, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, security-group]
+tags: [ec2, compute, iaas, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, ssh, rdp, instance-lifecycle, shared-responsibility, ebs, key-pair, host, tenancy, dedicated-host, dedicated-instance, instance-store, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, security-group, imds, instance-metadata, imdsv2, link-local, user-data, ssrf]
 certs: [aws-saa]
 updated: 2026-06-02
 ---
@@ -49,7 +49,7 @@ EC2 sits on the **IaaS** side of the shared responsibility model. AWS is respons
 ## How EC2 Fits Into the AWS Architecture
 
 - **Networking:** instances live in [VPC](vpc.md) subnets; traffic is controlled by [Security Groups](vpc.md#security-groups-sg) (attached to the [ENI](#network-interfaces-enis)) and [NACLs](vpc.md#network-acl-nacl) (attached to the subnet)
-- **Identity:** instances access other AWS services via [IAM roles](iam.md#iam-roles) — never embed access keys directly in an instance
+- **Identity:** instances access other AWS services via [IAM roles](iam.md#iam-roles) — never embed access keys directly in an instance. Temporary role credentials are delivered to the instance through the [Instance Metadata Service (IMDS)](#instance-metadata-service-imds)
 - **Internet access:** public instances route through an [IGW](vpc.md#internet-gateway-igw); private instances route through a [NAT Gateway](vpc.md#nat--nat-gateway)
 - **Storage:** the boot volume is typically [EBS](#storage-options) (a separate AWS service exposing network-attached block volumes); some instance types also offer **instance store** volumes physically on the host
 
@@ -162,7 +162,7 @@ public DNS      ec2-3-89-7-136.compute-1.amazonaws.com
 ```
 
 - Format: `ec2-` + the public IPv4 with dots → hyphens + `.compute-1.amazonaws.com`
-- **The OS never sees the public IPv4** — it's applied by 1:1 NAT at the [IGW](vpc.md#internet-gateway-igw). Inside the guest you only configure the **private IPv4**
+- **The OS never sees the public IPv4** — it's applied by 1:1 NAT at the [IGW](vpc.md#internet-gateway-igw). Inside the guest you only configure the **private IPv4**. The only way for code running on the instance to discover its own public IPv4 is to query the [Instance Metadata Service (IMDS)](#instance-metadata-service-imds)
 - **Dynamic**: deallocated on **Stop**, a **new one** assigned on **Start**. A **reboot preserves it** (the instance never leaves its host — see [Stop/Start vs Restart](#stopstart-vs-restart--these-are-not-the-same)). A forced host migration replaces it
 - The trap behind *"my public IP changed after I rebooted"* — the action was almost always a **Stop/Start in disguise**
 
@@ -428,6 +428,74 @@ When you create an EC2 key pair, AWS generates two halves:
 > [!warning] Gotcha
 > The **private key is downloadable once**. Re-launching the wizard for the same key pair does **not** let you re-download it. If you lose it, create a new key pair; you cannot recover the original.
 
+## Instance Metadata Service (IMDS)
+
+The **Instance Metadata Service** is a service EC2 provides *to* its instances — a small HTTP endpoint that any process inside the instance can query to learn about the instance itself and the environment it runs in. Some of that information **only IMDS can supply** — most notably the [auto-assigned public IPv4](#0-or-1-public-ipv4--public-dns), which is never configured inside the OS.
+
+> [!tip] Mental model
+> The OS is a guest in a hotel room. It knows what's inside the room (its private IPv4, its IPv6) but not the building's street address (its public IPv4). The metadata service is the front desk it can phone to ask, *"what address am I at?"*
+
+### The Endpoint
+
+IMDS is reached at a fixed **link-local IPv4** — the same address on every EC2 instance in the world. Link-local means it is reachable only from inside the instance itself; the request never leaves the instance.
+
+```text
+http://169.254.169.254/latest/meta-data/<attribute>
+```
+
+| Part | Value |
+| --- | --- |
+| IP address | `169.254.169.254` — link-local, identical on every instance |
+| Base path | `/latest/meta-data/` |
+| Append | The attribute name (e.g. `public-ipv4`, `iam/security-credentials/<role-name>`) |
+
+> [!tip] Exam Tip
+> The exam can ask you to pick the *exact* URL. Memorize both halves: **"169.254 repeated"** for the IP, and always **"the latest meta-data"** for the path. The literal endpoint shows up in MCQ stems.
+
+### What IMDS Exposes
+
+Information is grouped into categories — networking, IAM, hostname, security groups, AMI ID, AZ, events, user data, and more. The exam-relevant uses:
+
+| Use case | What IMDS provides | Why it matters |
+| --- | --- | --- |
+| **Public IPv4 discovery** | `public-ipv4`, `public-hostname` | The OS never sees the public IPv4 (1:1 NAT at the [IGW](vpc.md#internet-gateway-igw)). IMDS is the only path for code inside the instance to learn its own public address |
+| **IAM role credentials** | `iam/security-credentials/<role-name>` returns Access Key ID + Secret Access Key + **session token** + expiry, refreshed automatically by AWS | When the instance has an [IAM role](iam.md#iam-roles) attached, every AWS SDK on the instance reads its credentials from here. This is why you must **never** bake access keys into AMIs or user data |
+| **User data** | `/latest/user-data/` (separate path from `/meta-data/`) | Bootstrap scripts and cloud-init payloads passed at launch are exposed here for the instance to read and execute |
+| **EC2 Instance Connect SSH keys** | `meta-data/public-keys/` | Instance Connect injects a short-lived SSH public key into IMDS; the SSH daemon picks it up via a helper script and accepts the matching one-time login |
+| **Self-identifying attributes** | `instance-id`, `instance-type`, `ami-id`, `placement/availability-zone`, `security-groups`, `mac`, `local-ipv4`, `hostname`, etc. | Configuration management, telemetry tagging, AZ-aware routing inside the application |
+
+### Querying in Practice
+
+Two common ways from inside the instance:
+
+1. **`curl`** against the metadata URL plus an attribute. Example: `curl http://169.254.169.254/latest/meta-data/public-ipv4` returns the public address the OS otherwise can't see.
+2. **The `ec2-metadata` helper** — a small shell script bundled with Amazon Linux (`/usr/bin/ec2-metadata`) that wraps the same service with friendlier flags. `ec2-metadata --help` lists every attribute it can fetch.
+
+Both call the same HTTP endpoint. SDKs (boto3, AWS SDK for Java, etc.) call it transparently when they need role credentials — you do not write that code yourself.
+
+### IMDSv1 vs IMDSv2 — the security upgrade
+
+IMDS has two versions. The exam mostly asks about the difference and why v2 exists.
+
+| | **IMDSv1** | **IMDSv2** |
+| --- | --- | --- |
+| Authentication | None | **Session token** required on every request |
+| How to use | Single `GET` to the metadata URL | (1) `PUT` to `/latest/api/token` (with a `X-aws-ec2-metadata-token-ttl-seconds` header) to obtain a token, (2) include that token in the `X-aws-ec2-metadata-token` header on every subsequent `GET` |
+| Mitigates SSRF? | No | **Yes** — a server-side request forgery vulnerability that tricks an app into making a `GET` cannot obtain a token (browsers and most HTTP libraries won't issue the required `PUT`) |
+| AWS guidance | Legacy, still supported for compatibility | **Recommended default for all new instances** |
+
+A per-instance setting (`HttpTokens`: `optional` allows both; `required` forces v2-only) controls which versions are accepted. Setting `HttpTokens=required` is the modern hardening baseline and is what AWS Foundational Security Best Practices, CIS, and most exam scenarios expect.
+
+> [!warning] Gotcha — IMDS is unauthenticated by default (IMDSv1)
+> IMDSv1 has **no authentication** and **no encryption**. Anyone with a shell on the instance — or any web app vulnerable to SSRF — can read everything IMDS exposes, including the **IAM role's temporary credentials**. The 2019 Capital One breach is the textbook example: a misconfigured WAF allowed SSRF, the attacker pulled the EC2 role credentials from IMDSv1, and used them to read 100M+ S3 objects. The fix is **enforce IMDSv2** (`HttpTokens=required`) and treat the role's permissions like any other production secret — least privilege.
+
+> [!tip] Exam Tip
+> Pattern-match: *"how does code on an EC2 instance discover its own public IPv4?"* → **IMDS** (`http://169.254.169.254/latest/meta-data/public-ipv4`). *"how does an app on EC2 get AWS credentials without storing keys?"* → **IAM role + IMDS** (the SDK reads `iam/security-credentials/<role>` automatically). *"mitigate SSRF against the metadata service"* → **enforce IMDSv2** (`HttpTokens=required`). *"restrict access to metadata at the host level"* → block `169.254.169.254` with a local OS firewall rule (per-instance, high-overhead — IMDSv2 is the real answer).
+
+### Quick recall
+
+> Metadata lives at **`169.254.169.254/latest/meta-data/`**, IMDSv1 is **unauthenticated and unencrypted** (use **IMDSv2** with session tokens), and it is the only way an instance can discover its own **public IPv4** — because that address lives on the [IGW](vpc.md#internet-gateway-igw), never in the OS.
+
 ## When to Use EC2
 
 EC2 is the **default compute service** in AWS. Reach for it first; deviate only when a specific requirement clearly favours a managed alternative.
@@ -618,6 +686,7 @@ The instance-level concerns are EC2-specific (resize is a stop/start, see [Stop/
 13. **Instance types:** five categories (General Purpose / Compute / Memory / Accelerated / Storage). Start in General Purpose; deviate when a bottleneck is clear. **T3 is burstable** (credit-based); **M5 is steady-state**. Full type string = family + generation + optional capability letters + size
 14. **Instance store** — physically local to the host; highest performance in AWS; launch-time only; **lost on any host move** (stop/start, resize, host failure); reboot preserves data; included in instance price. See [Instance Store](#instance-store)
 15. **ENI is the unit of network identity, not the instance** — IPs, DNS names, MAC, EIPs, IPv6, [Security Groups](vpc.md#security-groups-sg), and source/destination check **all live on the ENI**. Every instance has exactly 1 primary ENI (cannot detach) + 0+ secondary ENIs (detachable, movable between instances — the MAC-licensing / IP-failover pattern). All ENIs on an instance must be in the **same AZ**, but can sit in different subnets. The auto-assigned public IPv4 is **not visible inside the OS** (NAT at the [IGW](vpc.md#internet-gateway-igw)); IPv6 is. **Split-horizon DNS**: the public DNS name resolves to the **private IP inside the VPC**, the public IP **outside**. See [Network Interfaces (ENIs)](#network-interfaces-enis)
+16. **Instance Metadata Service (IMDS)** — fixed link-local endpoint **`http://169.254.169.254/latest/meta-data/`** that every instance can query about itself. Exposes networking (including the **public IPv4 the OS cannot see**), **IAM role credentials** (how SDKs get keys without baking them in), user data, and EC2 Instance Connect SSH keys. **IMDSv1 is unauthenticated and unencrypted** — vulnerable to SSRF exfiltration of role credentials (Capital One 2019); enforce **IMDSv2** (`HttpTokens=required`) which adds a session-token handshake. See [Instance Metadata Service (IMDS)](#instance-metadata-service-imds)
 
 ## Quick Reference
 
@@ -651,6 +720,9 @@ The instance-level concerns are EC2-specific (resize is a stop/start, see [Stop/
 | Linux access | SSH on port 22 + private key |
 | Windows access | RDP on port 3389 + private key (used to decrypt admin password) |
 | Key-pair download policy | Private key downloadable **once** only |
+| Instance Metadata Service endpoint | **`http://169.254.169.254/latest/meta-data/`** — link-local, same IP on every instance |
+| IMDS use cases | Public IPv4 discovery, IAM role credentials, user data, EC2 Instance Connect SSH keys, self-identifying attributes (AMI ID, AZ, instance type, security groups) |
+| IMDSv1 vs IMDSv2 | v1 = unauthenticated `GET` (SSRF-exploitable); v2 = `PUT`-token handshake + `X-aws-ec2-metadata-token` header on every `GET`. Enforce v2 via `HttpTokens=required` |
 
 ## References
 
@@ -670,5 +742,6 @@ The instance-level concerns are EC2-specific (resize is a stop/start, see [Stop/
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_eni_and_dns.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_ami.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_horizontal_and_vertical_scaling.md`
+- Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_instance_metadata.md`
 - [EC2 Instance Types — official AWS docs](https://aws.amazon.com/ec2/instance-types/)
 - [ec2instances.info (Vantage)](https://instances.vantage.sh/) — sortable reference with pricing

@@ -103,7 +103,7 @@ Most real-world AWS deployments use **many accounts** — a per-team / per-envir
 
 ## Topics To Cover Next
 
-- EC2: instance metadata service (IMDS / IMDSv2), placement groups, user-data & bootstrapping
+- EC2: placement groups, user-data & bootstrapping (IMDS / IMDSv2 now covered on the [EC2 page](services/ec2.md#instance-metadata-service-imds))
 - ELB / Auto Scaling: ALB vs NLB, target groups, scaling policies — builds directly on the [Scaling pattern](patterns/scaling.md)
 - AWS AI services (for AI Practitioner cert)
 - Architecture patterns: HA, multi-AZ, disaster recovery tiers

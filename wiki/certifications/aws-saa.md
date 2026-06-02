@@ -1,7 +1,7 @@
 ---
 title: AWS Solutions Architect Associate — Exam Notes
 type: certification
-tags: [iam, vpc, networking, ec2, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, ephemeral, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, route53, organizations, cost, purchase-options, on-demand, spot, reserved-instances, scheduled-reserved, capacity-reservations, zonal-ri, regional-ri, savings-plans, byol, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, raid0, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, ebs-encryption, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr, scaling, horizontal-scaling, vertical-scaling, stateless, sticky-sessions, elasticity, load-balancer]
+tags: [iam, vpc, networking, ec2, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, ephemeral, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, route53, organizations, cost, purchase-options, on-demand, spot, reserved-instances, scheduled-reserved, capacity-reservations, zonal-ri, regional-ri, savings-plans, byol, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, raid0, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, ebs-encryption, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr, scaling, horizontal-scaling, vertical-scaling, stateless, sticky-sessions, elasticity, load-balancer]
 certs: [aws-saa]
 updated: 2026-06-02
 ---
@@ -798,6 +798,46 @@ One hostname works everywhere; **intra-VPC traffic stays private** (never hairpi
 > - **Source/destination check defaults on** — silently breaks NAT instances and any in-line forwarder until you turn it off
 > - **MAC is per-ENI, not per-instance** — re-attaching a secondary ENI carries the MAC. Useful for MAC-locked licensing; also why the *primary* ENI's MAC is fixed for the life of the instance
 > - **Internal DNS is VPC-scoped** — `ip-…ec2.internal` does not resolve from outside the VPC; use Route 53 private hosted zones + resolver endpoints for hybrid resolution
+
+### EC2 Instance Metadata Service (IMDS)
+
+See [EC2 — Instance Metadata Service (IMDS)](../services/ec2.md#instance-metadata-service-imds) for full details.
+
+- **The endpoint is a memorizable URL**: `http://169.254.169.254/latest/meta-data/<attribute>` — link-local IPv4, **same address on every EC2 instance**. Memorize as "169.254 repeated" + "latest meta-data"
+- **`169.254.0.0/16` is the link-local range** — the request never leaves the instance, so IMDS is reachable from inside even with no internet route or public IP
+- **IMDS is the only way for code on the instance to discover its own public IPv4** — the OS configures only the private IPv4; the public IPv4 lives on the [IGW](../services/vpc.md#internet-gateway-igw) as 1:1 NAT. *"How does the app on the instance learn its public address?"* → **IMDS**, not `ifconfig` / `ipconfig`
+- **IMDS is how the SDK gets IAM role credentials** — when an instance has an [IAM role](../services/iam.md#iam-roles) (instance profile) attached, the temporary creds (access key + secret + **session token** + expiry) live at `iam/security-credentials/<role-name>` and are refreshed automatically. This is the mechanism that makes *"never bake access keys into AMIs or user data"* possible
+- **User data is exposed via IMDS** at `/latest/user-data/` (separate from `/meta-data/`) — bootstrap scripts can read what the launch passed them
+- **EC2 Instance Connect injects short-lived SSH public keys via IMDS** — the SSH daemon's helper script pulls them out at login time
+- **IMDSv1 has no authentication and no encryption** — anything with a shell on the instance, or any SSRF vulnerability in a web app on the instance, can read everything IMDS exposes including the **role credentials**. This is the Capital One 2019 breach pattern
+- **IMDSv2 fixes this with session tokens** — clients first `PUT` to `/latest/api/token` (with `X-aws-ec2-metadata-token-ttl-seconds`), then send the returned token in `X-aws-ec2-metadata-token` on every subsequent `GET`. SSRF cannot obtain the token because most HTTP libraries forced into making a `GET` cannot pivot to a `PUT`
+- **Enforce IMDSv2 with `HttpTokens=required`** — per-instance setting; modern hardening baseline. `optional` accepts both v1 and v2
+
+#### IMDS cheat sheet
+
+| Keyword in the question | Answer |
+| --- | --- |
+| The metadata service URL | **`http://169.254.169.254/latest/meta-data/`** |
+| "Code on the instance needs its public IPv4" | **IMDS** — `meta-data/public-ipv4` |
+| "App on EC2 needs to call S3 without storing access keys" | **IAM role on the instance + SDK reads creds from IMDS** at `iam/security-credentials/<role>` |
+| "Bootstrap script needs to read the user-data passed at launch" | `http://169.254.169.254/latest/user-data/` |
+| "Pulled credentials from the metadata service via SSRF" | The **Capital One** pattern — IMDSv1 vulnerability; fix is **enforce IMDSv2** |
+| "Mitigate SSRF against the metadata service" | **`HttpTokens=required`** (forces IMDSv2 session-token handshake) |
+| "Block all metadata access from inside the OS" | Local OS firewall rule blocking `169.254.169.254` — per-instance, high-overhead; IMDSv2 is the real answer |
+| "Metadata service uses TLS" | ❌ No — IMDS is **plain HTTP** over link-local. Confidentiality comes from the local-only addressing, not from encryption |
+| "169.254.169.254 reachable from outside the instance" | ❌ No — link-local; never leaves the instance |
+| "Same IP address for IMDS in `us-east-1` and `ap-southeast-2`" | ✅ Yes — link-local, identical on every instance everywhere |
+
+> [!tip] Exam Tip
+> Pattern-match: *"discover own public IPv4 from inside the instance"* → **IMDS** at `meta-data/public-ipv4`. *"SDK on EC2 obtains credentials"* → **IAM role + IMDS** (no static keys). *"SSRF stole the role credentials from metadata"* → **enforce IMDSv2** (`HttpTokens=required`). *"the metadata endpoint URL"* → **`http://169.254.169.254/latest/meta-data/`** — memorize verbatim.
+
+> [!warning] Common IMDS Gotchas
+>
+> - **IMDSv1 is unauthenticated** — any local process or SSRF-vulnerable web app reads everything including the **role's temporary credentials**. Treat the role's policy as production-secret-equivalent
+> - **IMDS is plain HTTP**, not HTTPS. The link-local addressing is the only confidentiality boundary
+> - **IMDS works without internet access** — link-local addressing routes inside the hypervisor; an instance in a fully private subnet still reads metadata fine
+> - **Stop/Start changes the public IPv4** — and IMDS will return the new one immediately. Apps that cache `public-ipv4` need to re-read after a host migration
+> - **OS firewall blocking 169.254.169.254 breaks SDK credential resolution** — the SDK has no other path to the role's temporary keys. Don't blanket-block; enforce IMDSv2 instead
 
 ### AMI — Amazon Machine Image
 

@@ -1,5 +1,41 @@
 # Wiki Log
 
+## [2026-06-02] ingest | EC2 Instance Metadata Service (IMDS)
+
+Ingested `raw/aws-cert-study-notes/aws-solution-architect/ec2_instance_metadata.md` into the wiki. The note covered the IMDSv1 foundations cleanly (the link-local endpoint, the categories of metadata, the "OS never sees its public IPv4" connection, the unauth/unencrypted security gotcha) but **did not mention IMDSv2** — the AWS-recommended session-token-based version that mitigates SSRF. Added IMDSv2 as a critical synthesis addition; the v1 vs v2 distinction is SAA exam-relevant and IMDSv1's SSRF exploitability is the textbook Capital One 2019 breach pattern.
+
+Updated `wiki/services/ec2.md`:
+
+- New section "## Instance Metadata Service (IMDS)" between "Connecting to Instances" and "When to Use EC2"
+  - "What it is" with the hotel-room front-desk analogy (kept the user's framing — it's the right mental model)
+  - "The Endpoint" with the `http://169.254.169.254/latest/meta-data/<attribute>` URL anchored in a 3-row table and an exam-tip callout to memorize it verbatim ("169.254 repeated" + "latest meta-data")
+  - "What IMDS Exposes" — 5-row table covering public-IPv4 discovery, IAM role credentials (with the exact path `iam/security-credentials/<role-name>` and the access-key + secret + **session token** triplet), user data, EC2 Instance Connect SSH keys, and self-identifying attributes (AMI ID, AZ, instance type, security groups)
+  - "Querying in Practice" — `curl` vs the `ec2-metadata` helper bundled with Amazon Linux, plus a note that SDKs (boto3, AWS SDK for Java) call IMDS transparently for role creds
+  - "IMDSv1 vs IMDSv2 — the security upgrade" — comparison table covering the auth model, the PUT-token-then-GET handshake, SSRF mitigation, and AWS guidance. Added a `HttpTokens=required` callout as the modern hardening baseline
+  - `[!warning]` callout naming the **Capital One 2019** breach as the exemplar of IMDSv1 SSRF credential exfiltration
+  - `[!tip]` exam-pattern callout with 4 pattern-matches: how-to-discover-public-IPv4, how-to-get-creds-without-keys, mitigate-SSRF, restrict-at-OS-level
+  - Quick recall one-liner closes the section
+- Added link from existing ENI section ("OS never sees the public IPv4") pointing forward to the new IMDS section as the discovery mechanism
+- Added link from the "Identity" bullet under "How EC2 Fits Into the AWS Architecture" — IAM role temporary credentials are delivered via IMDS
+- Added Key Takeaway #16 covering IMDS endpoint + use cases + IMDSv1 vulnerability + IMDSv2 fix
+- Added 3 rows to Quick Reference: IMDS endpoint, IMDS use cases, IMDSv1 vs IMDSv2
+- Added to source list and frontmatter tags (imds, instance-metadata, imdsv2, link-local, user-data, ssrf)
+
+Updated `wiki/certifications/aws-saa.md`:
+
+- New "### EC2 Instance Metadata Service (IMDS)" subsection between the ENI subsection and the AMI subsection (the ENI and IMDS sections share the "public IPv4 not visible in the OS" frame — they belong adjacent)
+  - 9-bullet exam tips covering the URL, the link-local range, the public-IPv4 discovery role, the IAM-role credential mechanism, user data path, EC2 Instance Connect, IMDSv1's security holes, the IMDSv2 PUT-token handshake, and the `HttpTokens=required` enforcement setting
+  - "IMDS cheat sheet" with 10 pattern-match rows including the Capital One reference and the trap *"metadata service uses TLS"* → ❌ no, plain HTTP over link-local
+  - `[!tip]` exam-pattern callout with 4 pattern-matches
+  - `[!warning] Common IMDS Gotchas` with 5 entries — unauth-by-default, plain-HTTP, works-without-internet, public-IPv4-changes-after-stop-start, the OS-firewall-breaks-SDK-credential-resolution trap
+- Added imds / instance-metadata / imdsv2 / link-local / user-data / ssrf to frontmatter tags
+
+Updated `wiki/index.md`: added the IMDS clause to the EC2 entry's summary.
+
+Updated `wiki/overview.md`: removed IMDS from "Topics To Cover Next" and replaced with a pointer to the new section (placement groups and user-data are still on the to-do list).
+
+Followed the [arrow notation memory](../../../.claude/projects/-Users-rogerlin-SelfProjects-aws-learning/memory/feedback_arrow_notation.md) for all new prose — used "1, 2" lists and plain English; preserved arrows only inside callouts/tables where they're idiomatic shorthand.
+
 ## [2026-06-02] ingest | Horizontal vs Vertical Scaling
 
 Ingested `raw/aws-cert-study-notes/aws-solution-architect/ec2_horizontal_and_vertical_scaling.md` into the wiki as a foundational **architecture pattern** (not a service feature), since the dichotomy applies broadly across EC2, ECS, Lambda, RDS, and beyond.
