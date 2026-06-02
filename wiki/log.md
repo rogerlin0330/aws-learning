@@ -1,5 +1,137 @@
 # Wiki Log
 
+## [2026-06-02] fix | EC2 Purchase Options — add missing Convertible Reserved Instances
+
+User caught that the new EC2 Purchase Options page covered Standard and Scheduled Reserved Instances but **omitted Convertible Reserved Instances** entirely. Convertible is the third Reserved Instance offering class — smaller discount (~54% max vs Standard's ~72%) traded for the right to **exchange** the reservation for an RI of **equal or greater value** with different family / OS / tenancy / payment option. This was a meaningful gap; Convertible vs Standard is a recurring SAA pattern.
+
+Updated `wiki/patterns/ec2-purchase-options.md`:
+
+- Master matrix: added a new row for **Convertible Reserved Instances** (~54%, exchangeable, can be Regional or Zonal — same scope choice as Standard)
+- Renamed the subsection from "Standard Reserved Instances vs Scheduled Reserved Instances" to "**Reserved Instance offering classes — Standard vs Convertible vs Scheduled**" and replaced the prose bullets with a 3-row offering-class comparison table (Standard / Convertible / Scheduled-retired) listing max discount, exchange/change rules, and best-for guidance per class; added explicit note that **offering class (Standard vs Convertible) is independent of scope (Regional vs Zonal)** — both Standard and Convertible can be purchased with either scope, which is a common SAA confusion
+- Added a `[!tip] When to pick Convertible over Standard` callout explaining the ~18-percentage-point cost of exchange flexibility and naming the workload-shape-change scenarios where Convertible is the right answer (family migration like M-family → Graviton, OS swap, tenancy change)
+- Added a `[!warning] Convertible exchange must be equal or greater value` callout — Convertible protects against *changes in shape*, not against *shrinkage*; you cannot downgrade via exchange. This is exam-testable and easy to miss
+- Restructured Key Takeaway #6 from "Standard vs Scheduled" into a 3-bullet sub-list covering Standard / Convertible / Scheduled with the orthogonal-scope note
+- Quick Reference: added a new row for offering class (**Standard** vs **Convertible**) and re-labeled the existing biggest-discount row as "3-year, All Upfront **Standard Reserved Instance**" to disambiguate from Convertible
+- Quick Decision Recap: added a Convertible bullet between Standard and Scheduled
+- Single-decision tip: expanded the Reserved branch to mention Convertible as the answer when family/OS/tenancy may change
+- Frontmatter tags: added `standard-ri, convertible-ri`
+
+Updated `wiki/certifications/aws-saa.md` (the Purchase Plans section already had a Convertible RI row in the matrix from the original ingest; I added the missing pattern-match content):
+
+- Expanded the pattern-match Exam Tip with a Convertible trigger ("workload family/OS/tenancy may change mid-term → Convertible Reserved Instance")
+- Added 2 new rows to the EC2 Purchase Options pattern-match cheat-sheet ("Long-running, but workload family/OS/tenancy might change mid-term" → Convertible; "Convertible RI exchange — can I downgrade?" → No, equal or greater value only)
+- Added a new bullet to the Common purchase-option gotchas block on the equal-or-greater-value exchange rule
+
+Updated `wiki/index.md`: extended the EC2 Purchase Options Patterns entry to include Convertible Reserved Instances with its discount + exchange-rule + orthogonal-to-scope clauses.
+
+Synthesis choices:
+
+1. **Kept the master matrix to 1 Convertible row, not 2.** Could have added "Convertible (Regional)" + "Convertible (Zonal)" rows in parallel with Standard's 2 rows, but that would have stretched the matrix to 11 rows and obscured the bigger picture. Instead, the Convertible row carries a parenthetical note that scope is "Optional (Regional = no, Zonal = yes — same scope choice as Standard)" so the orthogonality is captured without doubling the row count. The deeper offering-class table inside the Reserved Instances section is where the matrix's compression gets unpacked.
+
+2. **Promoted "offering class is orthogonal to scope" as an explicit point.** This is the single most common confusion in the Standard/Convertible/Regional/Zonal space: people read the two axes as a single 4-way choice (Standard-Regional / Standard-Zonal / Convertible-Regional / Convertible-Zonal) when they're actually two independent choices. Calling this out explicitly avoids the trap.
+
+3. **Surfaced the "equal or greater value" exchange constraint as both a `[!warning]` and a dedicated cheat-sheet row.** This is the single most-tested Convertible-specific rule on the SAA exam.
+
+4. **Did not change the existing Convertible row in `cost-optimization.md`** — that page already had Convertible in its RI types table; no inconsistency to fix.
+
+## [2026-06-02] fix | EC2 Purchase Options — align all terms with AWS official names
+
+User flagged that the new EC2 Purchase Options page was using informal shorthand ("Scheduled Reserved" instead of **Scheduled Reserved Instances**, etc.) and asked for a full pass to match AWS's canonical terminology.
+
+Term-by-term mapping applied across `wiki/patterns/ec2-purchase-options.md`, `wiki/certifications/aws-saa.md` (the Cost Optimization section), `wiki/services/ec2.md` (the two cross-link sentences), and `wiki/index.md` (the Patterns entry):
+
+| Was | Now |
+| --- | --- |
+| On-Demand (as standalone noun) | **On-Demand Instances** |
+| Spot / Spot instances | **Spot Instances** (capital I) |
+| Standard Reserved | **Standard Reserved Instances** |
+| Scheduled Reserved | **Scheduled Reserved Instances** |
+| Regional RI / Zonal RI | **Regional Reserved Instance / Zonal Reserved Instance** |
+| Convertible RI | **Convertible Reserved Instances** |
+| Compute SP / EC2 Instance SP | **Compute Savings Plans / EC2 Instance Savings Plans** |
+| On-Demand Capacity Reservation (where used as feature noun) | **On-Demand Capacity Reservations** (matches AWS feature page) |
+| region (capacity discussion) | **Region** (matches AWS convention in feature/limit context) |
+| per-region fee / per-region instance limits | **per-Region fee / per-Region On-Demand Instance limits** |
+
+Kept short forms where AWS itself uses them: section headings (AWS docs use "On-Demand" as a section title), pricing/billing adjective contexts ("On-Demand price", "On-Demand rate"), the abbreviation "Spot" inside a sentence that established "Spot Instances" earlier (kept for sentence flow). The "Spot price" / "spot price" usage stayed lowercase per AWS docs convention.
+
+Anchor-link fix: the H3 heading was renamed from `### On-Demand Capacity Reservation` to `### On-Demand Capacity Reservations` (plural to match the AWS feature page), which changed the slug from `#on-demand-capacity-reservation` to `#on-demand-capacity-reservations`. Updated the three in-page anchor links to the new slug.
+
+Table-style fix: a couple of tables broke MD060 alignment after terminology widening (longer cell contents misaligned the previously-aligned style); reformatted both tables to compact-style padding to avoid MD060 churn on future edits.
+
+Did **not** touch `wiki/patterns/cost-optimization.md` — it is a pre-existing page with its own established terminology, and the user's request was scoped to the new doc. The cost-optimization page can be normalised separately if desired.
+
+Did **not** rewrite earlier log entries (lines 42, 48, 58 reference "Regional RI", "Zonal RI", "Compute SP" etc.) — the log is an append-only journal of what was done at the time; retroactively rewriting it would distort the history. The log entries' shorthand is descriptive, not authoritative.
+
+## [2026-06-02] fix | Scheduled Reserved Instances — flag as retired 2024-09-03
+
+User caught that the new EC2 Purchase Options page treated Scheduled Reserved as a current product. Verified via AWS docs ([Reserved Instances pricing page](https://aws.amazon.com/ec2/pricing/reserved-instances/), [On-Demand Capacity Reservations docs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-capacity-reservations.html), and the original 2016-01-13 launch post [New – Scheduled Reserved Instances](https://aws.amazon.com/blogs/aws/new-scheduled-reserved-instances/) which now carries an in-post 2024-09-03 update with the retirement notice): **AWS retired Scheduled Reserved Instances on 2024-09-03** — they cannot be purchased and AWS has no plans to bring them back. AWS recommends **On-Demand Capacity Reservations** for recurring-window capacity guarantees. AWS gave no explicit reason for the retirement; the launch post shows the product shipped with only a 5–10% discount and supported only the legacy C3/C4/M4/R3 families — narrow enough that Savings Plans (2019) and On-Demand Capacity Reservations made it redundant.
+
+The capacity-reservation claim itself was correct for the historical product — Scheduled RIs did reserve capacity within their recurring window (that was their defining feature). The bug was treating the entire product as still purchasable. The raw note `raw/aws-cert-study-notes/aws-solution-architect/ec2_purchase_options.md` is outdated on this point but kept as-is (raw is immutable).
+
+Updated `wiki/patterns/ec2-purchase-options.md`:
+
+- Master matrix row for Scheduled Reserved now annotated `*(retired 2024-09-03)*` with the "Primary use" cell pointing to **On-Demand Capacity Reservation**
+- Standard vs Scheduled Reserved subsection rewritten in past tense for the Scheduled half and prefaced with a `[!warning] Scheduled Reserved is discontinued` block citing the 2024-09-03 retirement date and the On-Demand-Capacity-Reservation replacement; the prior `[!warning] Scheduled Reserved restrictions` block downgraded to a `[!note] Historical restrictions`
+- Quick Decision Recap bullet for Scheduled Reserved struck through with the replacement called out
+- Key Takeaway #6 updated to mention retirement + replacement
+- Quick Reference row replaced (was: "1,200 hr/year min..."; now: "Retired 2024-09-03 — use On-Demand Capacity Reservations")
+
+Updated `wiki/certifications/aws-saa.md`:
+
+- Purchase Plans matrix row for Scheduled Reserved annotated `*(retired 2024-09-03)*` with the "What it covers" cell updated
+- EC2 Purchase Options pattern-match cheat-sheet row for "Need EC2 only every Friday for 24 hours" updated — historical answer kept, new answer = On-Demand Capacity Reservation in the window
+- Exam Tip "Recurring time window, not 24/7" updated to historical + replacement
+- Common purchase-option gotchas bullet for Scheduled Reserved rewritten as "Scheduled Reserved was retired on 2024-09-03 — no longer purchasable; AWS recommends On-Demand Capacity Reservations instead. Historical minimums were 1,200 hr/year + 1-year commitment"
+
+Updated `wiki/index.md`: Patterns entry for ec2-purchase-options updated to flag Scheduled Reserved as retired with the replacement.
+
+Synthesis choices:
+
+1. **Kept the Scheduled Reserved section rather than deleting it.** Reasoning: (a) the SAA exam still references the product in some question banks, (b) older study material (Cantrill notes included) still treats it as live, (c) the section is now useful for "what was that?" recognition rather than "what should I buy?" guidance. Compromise: section is preserved but every mention is tagged as historical and points to the replacement.
+
+2. **Did not delete the diagram.** The Scheduled Reserved diagram still illustrates the *concept* of recurring windows, which is portable to the replacement (On-Demand Capacity Reservation in a recurring window). Kept with adjusted caption ("original constraints" rather than current).
+
+3. **Did not retroactively edit the raw note.** Per CLAUDE.md, raw is immutable. The correction lives in the wiki only.
+
+4. **Logged this as `fix` rather than `update`.** This is a correctness fix to information that was wrong on the wiki page when written, even though the raw note led me there. `update` would imply new information was added; `fix` correctly attributes this as a correction.
+
+## [2026-06-02] ingest | EC2 Purchase Options — all 7 options, capacity reservations matrix, tenancy
+
+Ingested `raw/aws-cert-study-notes/aws-solution-architect/ec2_purchase_options.md`. Copied 8 images from raw assets to `wiki/assets/`: `ec2-purchase-option-on-demand.png` (typo-fixed from raw filename `ec2-purchse-option-on-demand.png`), `ec2-purchase-option-spot-instances.png`, `ec2-purchase-option-reserved-instances.png`, `ec2-purchase-option-scheduled-reserved-instances.png`, `ec2-purchase-option-capacity-reservations.png`, `ec2-purchase-option-dedicated-hosts.png`, `ec2-purchase-option-dedicated-instances.png`, `ec2-purchase-option-comparison.png`. Each is embedded with a multi-clause descriptive alt text naming every element in the diagram (price tiers and coin/banknote icons on Spot, payment-structure row on Reserved, treasure-chest + greyed instance on Capacity Reservations, etc.) so the alt text doubles as a reading guide.
+
+Created a new page `wiki/patterns/ec2-purchase-options.md`. Chose to create a dedicated page rather than fold the content into `patterns/cost-optimization.md` because: (a) the raw note is EC2-specific with substantial new material (Scheduled Reserved, the three Capacity Reservation flavours, the discount-vs-capacity combination matrix, the AWS 4-way comparison, Dedicated Hosts vs Dedicated Instances) that doesn't fit cleanly into cost-optimization.md's broader "all compute purchase plans incl. RDS/ElastiCache/DynamoDB" framing, (b) the master comparison matrix has 9 rows and cost-optimization already has 3 separate matrices — adding a fourth would have made that page sprawl, (c) the tenancy material (Dedicated Hosts/Instances) needs both a cost-side home and the existing host-level home in `services/ec2.md#hosts-vs-instances`, so a separate pattern page gives the cost-side treatment its own anchor.
+
+Page structure: intro framing "purchase options" as the official term + the default-to-On-Demand mental model + scope note pointing to cost-optimization for non-EC2 services; **All Options at a Glance** (7-column master matrix covering commitment, discount, capacity reservation, interruption risk, tenancy, primary use across all 9 options); per-option sections (On-Demand, Spot, Reserved, Capacity Reservations, Savings Plans, Dedicated Hosts, Dedicated Instances) — each leads with the diagram, then How-It-Works, Billing/Mechanics, Good-For/Anti-patterns; **Capacity Reservations** has its own subsections for **capacity priority order under shortage** (Reserved → On-Demand → Spot), **the two separate components** (with the 3-row billed-if-idle / reserves-capacity / term-lock / discount matrix), **On-Demand Capacity Reservation** as a standalone option, **Combining discount + capacity** (4-row mix-and-match matrix), and **AWS's own four-way comparison** (Capacity Reservation / Zonal RI / Regional RI / Savings Plan); Tenancy/Hosting Model summary table; Quick Decision Recap; 10 Key Takeaways; Quick Reference (13-row cheat sheet).
+
+Updated `wiki/patterns/cost-optimization.md` (light cross-links only — the page already exists at a higher abstraction level so I didn't duplicate content): (1) extended the scope note to forward readers to the new page for EC2-specific deep-dive content; (2) added a sentence in the RI scope subsection pointing to the new page's discount-vs-capacity matrix; (3) added the new page as the first entry in the References.
+
+Updated `wiki/services/ec2.md`: (1) extended the Billing Model paragraph to point to the new purchase options page; (2) added a one-sentence forward link below the Tenancy table; (3) added the new page to the References.
+
+Updated `wiki/certifications/aws-saa.md` significantly in the Cost Optimization section: (1) added a header pointer to both `cost-optimization.md` and `ec2-purchase-options.md`; (2) extended the Purchase Plans matrix from 6 rows to **11 rows** adding On-Demand, Scheduled Reserved (with the 1,200 hr/year footnote), On-Demand Capacity Reservation, Dedicated Instances, and Dedicated Hosts; (3) added a new `[!warning]` gotcha for the **capacity priority order under shortage** rule (Reserved → On-Demand → Spot — discount ≠ priority); (4) expanded the existing pattern-match exam tip with five new triggers (BYOL → Dedicated Host, no-co-tenant → Dedicated Instance, 24/7/365 cheapest → 3-yr All-Upfront, recurring window → Scheduled Reserved, plus the existing four); (5) added a new **EC2 Capacity Reservations — discount vs capacity** subsection with a 5-row combination matrix (Regional RI alone / Capacity Reservation alone / Regional RI + Capacity Reservation / Zonal RI / Savings Plan + Capacity Reservation) and a `[!warning]` trap explaining that **a Zonal RI's discount does NOT stack with a separate Capacity Reservation** (only Regional RI / Savings Plan does); (6) added a new `[!tip]` Exam Tip on the canonical "both discount AND capacity" answers; (7) added a new **EC2 Purchase Options pattern-match cheat-sheet** (14-row keyword-→-answer table covering every option plus the recurring-shortage / unused-RI-floats / unused-reservation-still-billed traps); (8) added a `[!warning]` Common purchase-option gotchas block with 7 bullets (no On-Demand capacity priority, current-Spot-price-not-your-max, Reserved-billed-if-idle, Scheduled Reserved minimums, On-Demand Capacity Reservations count toward On-Demand instance limits, Zonal-RI-doesn't-stack-with-Capacity-Reservation, Dedicated-is-two-things). Bumped frontmatter `updated:` to 2026-06-02 and added new tags (`purchase-options, on-demand, spot, reserved-instances, scheduled-reserved, capacity-reservations, zonal-ri, regional-ri, savings-plans, byol`).
+
+Updated `wiki/index.md`: added a new Patterns entry under cost-optimization for `ec2-purchase-options.md` with a dense one-line summary covering all 7 options, the discount-vs-capacity-axis distinction, the Zonal-stacking trap, and the capacity priority order.
+
+Synthesis choices over straight-copy:
+
+1. **Promoted the "discount and capacity are separate axes" framing to the spine of the Capacity Reservations section.** The raw note has this in one of its terminology callouts; the wiki uses it as the conceptual anchor for the entire section — once you see that a Reserved Instance is fundamentally a *billing discount* and capacity reservation is a *separate object*, every combination rule in the section reduces to "do I want one axis, the other, or both?". This is the single most exam-leverageable framing in the raw note.
+
+2. **Made "capacity priority order under shortage" a top-level subsection with the explicit Reserved → On-Demand → Spot order.** The raw note gives the order in a numbered list; the wiki promotes it to a named subsection and cross-references it from both On-Demand's section ("no capacity priority") and the Capacity Reservations section header. This is the foundational reason the entire Capacity Reservations section exists — without it the section reads as "weird billing trivia."
+
+3. **Surfaced the Zonal-RI-doesn't-stack trap as both a `[!warning]` on the pattern page and a dedicated row in the SAA cheat-sheet.** The raw note has this as a one-line warning at the bottom of the combination matrix; this is high-leverage because the natural-language inference ("a Zonal RI is just a Regional RI with capacity, so adding more capacity should still get the discount") is wrong, and the exam tests it. The wiki gives it both a warning callout and an explicit "discount stacking only works with Regional RIs (or Savings Plans)" row in the cert page's combination matrix.
+
+4. **Did not promote Savings Plans to a deep section.** The raw note notes that Savings Plans are exam-scope as "you only need to know they exist." The wiki defers to `cost-optimization.md` for the deeper Savings Plans treatment and gives the new page only a short section + a `[!note]` pointing to the cost-optimization page. This avoids duplicating the Compute-vs-EC2-Instance-SP decision tree that already lives there.
+
+5. **Cross-linked aggressively to existing content.** The new page links to: `services/ec2.md#hosts-vs-instances` (for Tenancy/Hosts), `services/ec2.md#billing-model`, `services/ebs.md` (for the stopped-instance EBS-bills-anyway gotcha), `services/organizations.md#consolidated-billing` (for the unused-RI-floats rule), and `cost-optimization.md` (for non-EC2 services). The new page is also linked **back** from cost-optimization.md, ec2.md, and aws-saa.md, so it is reachable from all three natural entry points.
+
+6. **Fixed a typo'd filename during the asset copy.** The raw asset was named `ec2-purchse-option-on-demand.png` (missing the `a` in "purchase"). Renamed to `ec2-purchase-option-on-demand.png` in `wiki/assets/` to match the naming convention of the other 7 images. The raw file was not touched.
+
+7. **Reused the official AWS comparison table image and re-typed the same data as a markdown table immediately above it.** The image is a screenshot of AWS docs and is hard to read at typical screen sizes; the markdown version is searchable, screen-reader-friendly, and accurate. Both are kept because the image carries provenance ("this matches what AWS docs say") that the markdown table alone cannot.
+
+8. **Created a new `Quick Reference` 13-row cheat-sheet table** at the bottom of the page in the same style as other service/pattern pages — single-row-per-concept keyword → answer pairs. This makes the page consistent with `services/ec2.md`'s Quick Reference style and supports the wiki's pattern-match study mode.
+
+No content from the raw note was discarded. The note's eight bottom-of-page "Quick Decision Recap" bullets map cleanly to: (1) Default to On-Demand → intro + Decision Recap on new page + cert cheat-sheet row; (2) Spot interruptible → Spot section + cert cheat-sheet + warning callout; (3) Standard Reserved 24/7/365 → Reserved section + cert cheat-sheet; (4) Scheduled Reserved time windows → Reserved section + cert cheat-sheet + 1,200 hr footnote; (5) Capacity Reservations zonal/regional/On-Demand → Capacity Reservations section + 3 matrices + cert cheat-sheet; (6) Savings Plans hourly spend → Savings Plans section + cert Purchase Plans matrix; (7) Dedicated Hosts BYOL → Dedicated Hosts section + cert cheat-sheet + tenancy summary; (8) Dedicated Instances no-shared-hardware → Dedicated Instances section + cert cheat-sheet + tenancy summary. The capacity-priority reminder at the end of the raw note maps to the dedicated "Capacity priority order under shortage" subsection plus the SAA warning callout.
+
 ## [2026-05-30] ingest | EC2 AMI — sources, 4-phase lifecycle, logical container, baking, immutability
 
 Ingested `raw/aws-cert-study-notes/aws-solution-architect/ec2_ami.md`. Copied `ec2-ami-lifecycle.png` from raw assets to `wiki/assets/` and embedded with multi-clause alt text naming each of the four bands (Launch / Configure / Create Image / Launch), the AMI tile, the instance icon, the boot/data volume icons with their device IDs (`/dev/xvda`, `/dev/xvdf`), the Customizations badge, and the Block Device Mapping branch — so the alt text doubles as a reading guide for screen-reader and grep users.

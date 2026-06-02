@@ -80,6 +80,8 @@ EC2 separates the **physical layer** (hosts) from the **virtual layer** (instanc
 | **Dedicated Instance** | Hardware not shared with other customers, but you cannot address or target the host itself | Per-instance, with a small dedicated-tenancy premium | Compliance scenarios that forbid hardware co-tenancy but don't require host targeting |
 | **Dedicated Host** | One account allocates the entire host; you can see and target it | **Per host**, regardless of how many instances run on it | Hardware-bound BYOL licensing (per-socket / per-core Windows, Oracle, SQL Server), strict isolation, host-affinity workloads |
 
+The full purchase-option treatment — including how the three tenancy modes interact with On-Demand Instances, Spot Instances, Reserved Instances, On-Demand Capacity Reservations, and Savings Plans — lives on [EC2 Purchase Options](../patterns/ec2-purchase-options.md).
+
 > [!warning] Gotcha — "Dedicated" is two things
 > AWS uses *Dedicated* in two adjacent ways: **Dedicated Instance** (no hardware co-tenancy, host opaque) vs **Dedicated Host** (you allocate and target the host, pay per host). They look similar in question stems — the Dedicated Host adds **per-socket licensing**, **host affinity**, and **per-host billing**.
 
@@ -246,7 +248,7 @@ EC2 uses **on-demand billing** — you pay only for what you consume — with th
 
 Billing granularity is **per second** or **per hour**, depending on the software running on the instance (Linux/most Windows AMIs bill per second with a 60-second minimum; some commercial licenses bill per hour).
 
-For multi-year predictable workloads, EC2 is the canonical target of the [Cost Optimization](../patterns/cost-optimization.md) commitment ladder — Compute Savings Plans, EC2 Instance Savings Plans, Reserved Instances, and Spot.
+For multi-year predictable workloads, EC2 is the canonical target of the [Cost Optimization](../patterns/cost-optimization.md) commitment ladder — Compute Savings Plans, EC2 Instance Savings Plans, Reserved Instances, and Spot Instances. See [EC2 Purchase Options](../patterns/ec2-purchase-options.md) for the full set (On-Demand Instances, Spot Instances, Standard & Scheduled Reserved Instances, On-Demand Capacity Reservations, Savings Plans, Dedicated Instances, Dedicated Hosts) and the discount/capacity decision matrix.
 
 ### Storage options
 
@@ -647,7 +649,8 @@ The whole point of instance store is accepting tight restrictions in exchange fo
 - [IAM — roles for EC2](iam.md)
 - [Networking Concepts — ENI, OSI layers, ephemeral ports](../concepts/networking.md)
 - [Identity & Access — auth vs authz, credential types](../concepts/identity-and-access.md)
-- [Cost Optimization — Savings Plans, RIs, Spot](../patterns/cost-optimization.md)
+- [Cost Optimization — Savings Plans, Reserved Instances, Spot Instances](../patterns/cost-optimization.md)
+- [EC2 Purchase Options — On-Demand Instances, Spot Instances, Reserved Instances, On-Demand Capacity Reservations, Savings Plans, Dedicated Hosts, Dedicated Instances](../patterns/ec2-purchase-options.md)
 - [AWS SAA Exam Notes — EC2](../certifications/aws-saa.md#ec2)
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_101.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_architecture_and_resilience.md`

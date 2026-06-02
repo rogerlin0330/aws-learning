@@ -11,7 +11,7 @@ updated: 2026-05-15
 AWS offers three layered mechanisms for paying less than On-Demand: **Savings Plans**, **Reserved Instances**, and **Spot**. They are not mutually exclusive — a well-tuned account typically uses all three plus On-Demand for unpredictable bursts. The trade-off is uniform: **more commitment = bigger discount**.
 
 > [!note] Scope of this page
-> Compute purchase plans only (EC2, Fargate, Lambda) plus the database reservation equivalents. Storage-tier, data-transfer, and architecture-level cost patterns are out of scope here.
+> Compute purchase plans only (EC2, Fargate, Lambda) plus the database reservation equivalents. Storage-tier, data-transfer, and architecture-level cost patterns are out of scope here. For the **EC2-specific deep dive** — including Scheduled Reserved Instances, Capacity Reservations (Regional / Zonal / On-Demand), the discount-vs-capacity combination matrix, and Dedicated Hosts vs Dedicated Instances — see [EC2 Purchase Options](ec2-purchase-options.md).
 
 ## The Three Mechanisms at a Glance
 
@@ -72,7 +72,7 @@ Although Savings Plans replaced most EC2 RI usage, RIs remain the **only purchas
 - **Regional RI** (default) — applies to any AZ in the region; no capacity reservation
 - **Zonal RI** — pinned to a specific AZ; **does reserve capacity**
 
-For pure capacity reservation without a price commitment, use a stand-alone **On-Demand Capacity Reservation** instead.
+For pure capacity reservation without a price commitment, use a stand-alone **On-Demand Capacity Reservation** instead. The discount/capacity combination matrix and the four-way comparison (Regional RI / Zonal RI / On-Demand Capacity Reservation / Savings Plan) live on the [EC2 Purchase Options](ec2-purchase-options.md#capacity-reservations) page.
 
 ## Spot Instances
 
@@ -131,6 +131,7 @@ For "multiple AWS accounts, maximize cost efficiency" exam questions, this pooli
 
 ## References
 
+- [EC2 Purchase Options](ec2-purchase-options.md) — EC2-focused deep dive on all 7 options + capacity reservations + tenancy
 - [AWS Organizations](../services/organizations.md)
 - [EC2](../services/ec2.md)
 - [Savings Plans Documentation](https://docs.aws.amazon.com/savingsplans/)

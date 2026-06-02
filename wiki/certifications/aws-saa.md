@@ -1,9 +1,9 @@
 ---
 title: AWS Solutions Architect Associate — Exam Notes
 type: certification
-tags: [iam, vpc, networking, ec2, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, ephemeral, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, route53, organizations, cost, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, raid0, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, ebs-encryption, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr]
+tags: [iam, vpc, networking, ec2, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, ephemeral, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, route53, organizations, cost, purchase-options, on-demand, spot, reserved-instances, scheduled-reserved, capacity-reservations, zonal-ri, regional-ri, savings-plans, byol, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, raid0, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, ebs-encryption, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr]
 certs: [aws-saa]
-updated: 2026-05-30
+updated: 2026-06-02
 ---
 
 # AWS Solutions Architect Associate (SAA-C03)
@@ -1087,24 +1087,82 @@ See [Service Control Policies](../services/organizations.md#service-control-poli
 
 ## Cost Optimization
 
-See [Cost Optimization](../patterns/cost-optimization.md) for the decision tree and pooling rules.
+See [Cost Optimization](../patterns/cost-optimization.md) for the decision tree and pooling rules, and [EC2 Purchase Options](../patterns/ec2-purchase-options.md) for the EC2-specific deep dive.
 
 ### Purchase Plans
 
 | Plan | Term | Discount | What it covers |
 | --- | --- | --- | --- |
-| **Compute Savings Plan** | 1 / 3 yr | up to ~66 % | EC2 (any family/region/OS), Fargate, Lambda |
-| **EC2 Instance Savings Plan** | 1 / 3 yr | up to ~72 % | Specific family in a specific region (size+OS flex) |
-| **Standard RI** | 1 / 3 yr | up to ~72 % | Family/OS/region locked; size flexibility only |
-| **Convertible RI** | 1 / 3 yr | up to ~54 % | Exchangeable for different family/OS/tenancy |
+| **On-Demand Instances** | None | None | Per-second EC2 compute; no commitment, **no capacity priority** |
+| **Compute Savings Plans** | 1 / 3 yr | up to ~66 % | EC2 (any family/Region/OS), Fargate, Lambda |
+| **EC2 Instance Savings Plans** | 1 / 3 yr | up to ~72 % | Specific family in a specific Region (size+OS flex) |
+| **Standard Reserved Instances** | 1 / 3 yr | up to ~72 % | Family/OS/Region locked; size flexibility only |
+| **Convertible Reserved Instances** | 1 / 3 yr | up to ~54 % | Exchangeable for different family/OS/tenancy |
+| **Scheduled Reserved Instances** *(retired 2024-09-03)* | 1 yr min | Modest vs On-Demand | Recurring time-window EC2 — **discontinued; use On-Demand Capacity Reservations** |
+| **On-Demand Capacity Reservations** | None (immediate-use) | None | Pure capacity guarantee in one AZ; billed even idle |
 | **Reserved Capacity** (RDS / ElastiCache / Redshift / OpenSearch / DynamoDB) | 1 / 3 yr | up to ~72 % | The only purchase plan for these services |
-| **Spot** | None | up to ~90 % | Spare EC2 capacity, 2-minute interruption warning |
+| **Spot Instances** | None | up to ~90 % | Spare EC2 capacity, 2-minute interruption warning |
+| **Dedicated Instances** | None | Premium (per-Region hourly fee) | No co-tenant hardware; host opaque |
+| **Dedicated Hosts** | None or per-host | Pay-per-host | Socket/core-based **BYOL** licensing; Host Affinity |
 
 > [!warning] Gotcha
 > **Savings Plans do NOT cover RDS, ElastiCache, Redshift, OpenSearch, or DynamoDB.** For long-running databases, the answer is a **Reserved Instance / Reserved Capacity**, not a Savings Plan.
 
+> [!warning] Gotcha — capacity priority under shortage
+> If a Region or AZ runs short on EC2 capacity (e.g. after a major fault), AWS allocates remaining capacity in this order: **Reserved Instances → On-Demand Instances → Spot Instances.** A *discount* (Regional Reserved Instance, Savings Plan) gives you **no** capacity priority — only a Zonal Reserved Instance or an On-Demand Capacity Reservation does.
+
 > [!tip] Exam Tip
-> Pattern-match purchase plans: workload moves between EC2/Fargate/Lambda → **Compute SP**. Pinned `m5` in `us-east-1` → **EC2 Instance SP** (deeper discount). Long-running RDS → **Reserved DB Instance**. Batch / CI / checkpointable → **Spot**. Many accounts → consolidate via **Organizations** so SPs/RIs pool automatically.
+> Pattern-match purchase plans: workload moves between EC2/Fargate/Lambda → **Compute Savings Plans**. Pinned `m5` in `us-east-1` → **EC2 Instance Savings Plans** (deeper discount). Long-running RDS → **Reserved DB Instance**. Batch / CI / checkpointable → **Spot Instances**. Many accounts → consolidate via **AWS Organizations** so Savings Plans / Reserved Instances pool automatically. **BYOL per-socket / per-core licensing** → **Dedicated Host** (pay per host, host targeting). **"No other customer's hardware" but don't need to target the host** → **Dedicated Instance**. **Need cheapest 24/7/365 EC2 long-term** → **3-year All-Upfront Standard Reserved Instance**. **Need a Reserved Instance but workload family/OS/tenancy may change** → **Convertible Reserved Instance** (smaller ~54% discount but exchangeable for equal/greater value). **Recurring time window, not 24/7** → historically **Scheduled Reserved Instances** (retired 2024-09-03); for current designs use **On-Demand Capacity Reservations** in the window.
+
+### EC2 Capacity Reservations — discount vs capacity
+
+A reservation has a **billing component** and a **capacity component**, and they are independent.
+
+| Setup | Discount? | Capacity reserved? | Notes |
+| --- | --- | --- | --- |
+| **Regional Reserved Instance** alone | Yes | No | Flexible across AZs/sizes; no capacity guarantee |
+| **On-Demand Capacity Reservation** alone | No | **Yes (one AZ)** | Capacity guaranteed; billed at full On-Demand |
+| **Regional Reserved Instance + On-Demand Capacity Reservation** | Yes | **Yes (one AZ)** | The AWS-recommended combo for both benefits |
+| **Zonal Reserved Instance** | Yes | **Yes (one AZ)** | Both in one purchase; locked to one AZ |
+| **Savings Plan + On-Demand Capacity Reservation** | Yes | **Yes (one AZ)** | Same stacking trick as Regional Reserved Instance |
+
+> [!warning] Trap — discount stacking only works with Regional Reserved Instances (or Savings Plans)
+> A **Zonal Reserved Instance's discount does not apply to a separate On-Demand Capacity Reservation** — the Zonal Reserved Instance already includes its own bundled capacity reservation. The "get both discount and capacity" pattern is **Regional Reserved Instance + On-Demand Capacity Reservation** or **Savings Plan + On-Demand Capacity Reservation**.
+
+> [!tip] Exam Tip
+> When a question wants **both** a billing discount *and* a capacity guarantee, the canonical answers are: (1) buy a **Zonal Reserved Instance** if you're committed long-term and AZ-locked is fine, or (2) pair a **Regional Reserved Instance** (or Savings Plan) with an **On-Demand Capacity Reservation** if you need AZ/size flexibility plus capacity in one specific AZ.
+
+### EC2 Purchase Options — pattern-match cheat-sheet
+
+| Question pattern | Answer |
+| --- | --- |
+| "Default — short or unknown duration, cannot tolerate interruption" | **On-Demand Instances** |
+| "Cheapest possible — can resume from checkpoint / stateless / batch" | **Spot Instances** |
+| "Spot terminates when ___" | Spot price rises **above your maximum** |
+| "Two customers both running Spot Instances at different max prices — what do they pay?" | **Same current Spot price** — max only sets termination tolerance |
+| "Long-running 24/7/365, lowest possible cost" | **3-year All-Upfront Standard Reserved Instance** |
+| "Long-running, but workload family/OS/tenancy might change mid-term" | **Convertible Reserved Instance** (~54% discount but exchangeable) |
+| "Convertible RI exchange — can I downgrade?" | **No** — exchange requires equal or greater value |
+| "Need EC2 only every Friday for 24 hours" / "recurring time window" | Historically Scheduled Reserved Instances — **retired 2024-09-03**; new answer is **On-Demand Capacity Reservations** in the window |
+| "Guaranteed capacity in one AZ, no long-term commitment" | **On-Demand Capacity Reservations** |
+| "Discount across families and from EC2 to Fargate/Lambda" | **Compute Savings Plans** |
+| "Discount locked to `m5` in `us-east-1`, deepest possible Savings Plan" | **EC2 Instance Savings Plans** |
+| "BYOL Oracle / SQL Server / Windows per-socket licensing" | **Dedicated Hosts** |
+| "No co-tenant hardware, don't need to target the host" | **Dedicated Instances** |
+| "Region-wide capacity shortage — who gets capacity first?" | **Reserved Instances → On-Demand Instances → Spot Instances** |
+| "Reserved Instance bought in account A, account A doesn't use it" | Floats automatically to a sibling account with matching usage (default org behaviour) |
+| "Unused Reserved Instance or Capacity Reservation costs anything?" | **Yes — billed whether used or not** |
+
+> [!warning] Common purchase-option gotchas
+>
+> - **On-Demand Instances have no capacity priority.** Discount and capacity are separate — On-Demand Instances and Spot Instances both get whatever Reserved Instances didn't claim
+> - **"You always pay the current Spot price, not your maximum."** Higher max = more termination tolerance, *not* a higher price
+> - **Reserved Instances are billed if idle.** Plan reservations carefully; an unused 3-year All-Upfront Reserved Instance is wasted money (mitigated within an AWS Organization by automatic floating)
+> - **Convertible Reserved Instance exchanges go up, not down.** The new RI(s) must be of equal or greater value than the current one — you cannot downgrade via exchange. Useful for *shape changes* (M-family → Graviton, OS swap, Shared → Dedicated tenancy mid-term), not for shrinking commitments
+> - **Scheduled Reserved Instances were retired on 2024-09-03** — no longer purchasable; AWS recommends On-Demand Capacity Reservations instead. Historical minimums were 1,200 hr/year + 1-year commitment. Source: the in-post 2024-09-03 update on the [original launch announcement](https://aws.amazon.com/blogs/aws/new-scheduled-reserved-instances/) (the product shipped with only a 5–10% discount on legacy C3/C4/M4/R3 families — narrow enough that Savings Plans and On-Demand Capacity Reservations made it redundant)
+> - **On-Demand Capacity Reservations count toward your per-Region On-Demand Instance limits** even when unused
+> - **Zonal Reserved Instance ≠ Regional Reserved Instance + Capacity Reservation** for discount stacking — a Zonal Reserved Instance's discount does NOT apply to a separately-purchased On-Demand Capacity Reservation
+> - **"Dedicated" is two things.** Dedicated Host (own the host, BYOL per-socket) vs Dedicated Instance (no co-tenant hardware, host opaque) — see [the tenancy gotcha](../services/ec2.md#tenancy-shared-vs-dedicated)
 
 ## TLS, HTTPS, and ACM
 
