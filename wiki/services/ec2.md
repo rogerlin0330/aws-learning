@@ -3,7 +3,7 @@ title: EC2 — Elastic Compute Cloud
 type: service
 tags: [ec2, compute, iaas, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, ssh, rdp, instance-lifecycle, shared-responsibility, ebs, key-pair, host, tenancy, dedicated-host, dedicated-instance, instance-store, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, security-group]
 certs: [aws-saa]
-updated: 2026-05-30
+updated: 2026-06-02
 ---
 
 # EC2 — Elastic Compute Cloud
@@ -592,6 +592,15 @@ The whole point of instance store is accepting tight restrictions in exchange fo
 - **Included in instance price** → no benefit to leaving allocated volumes unused
 - **Never use for persistent or irreplaceable data**
 
+## Scaling EC2 — Vertical vs Horizontal
+
+EC2 capacity grows in two fundamentally different ways. The choice cascades into every other architectural decision (load balancing, session storage, availability tier, cost shape):
+
+- **Vertical scaling** — resize one instance to a bigger type. Simple, works for monoliths, no application changes, but requires a **stop / modify / start** sequence (disruption) and is capped at the largest available instance size.
+- **Horizontal scaling** — add more instances behind a load balancer. No upper limit, no disruption to scale, but requires **stateless application design** with sessions stored off-host ([ElastiCache](../patterns/scaling.md#the-critical-consideration--sessions), DynamoDB, RDS).
+
+The instance-level concerns are EC2-specific (resize is a stop/start, see [Stop/Start vs Restart](#stopstart-vs-restart--these-are-not-the-same)); the design pattern itself is broader. See [Scaling — Horizontal vs Vertical](../patterns/scaling.md) for the full treatment, including the session problem, sticky-session gotcha, and how horizontal scaling combines with ELB and Auto Scaling Groups to deliver HA.
+
 ## Key Takeaways
 
 1. **EC2 = IaaS** — you manage OS and above; AWS manages everything below
@@ -651,6 +660,7 @@ The whole point of instance store is accepting tight restrictions in exchange fo
 - [Identity & Access — auth vs authz, credential types](../concepts/identity-and-access.md)
 - [Cost Optimization — Savings Plans, Reserved Instances, Spot Instances](../patterns/cost-optimization.md)
 - [EC2 Purchase Options — On-Demand Instances, Spot Instances, Reserved Instances, On-Demand Capacity Reservations, Savings Plans, Dedicated Hosts, Dedicated Instances](../patterns/ec2-purchase-options.md)
+- [Scaling — Horizontal vs Vertical](../patterns/scaling.md)
 - [AWS SAA Exam Notes — EC2](../certifications/aws-saa.md#ec2)
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_101.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_architecture_and_resilience.md`
@@ -659,5 +669,6 @@ The whole point of instance store is accepting tight restrictions in exchange fo
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_instance_store_vs_ebs.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_eni_and_dns.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_ami.md`
+- Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_horizontal_and_vertical_scaling.md`
 - [EC2 Instance Types — official AWS docs](https://aws.amazon.com/ec2/instance-types/)
 - [ec2instances.info (Vantage)](https://instances.vantage.sh/) — sortable reference with pricing

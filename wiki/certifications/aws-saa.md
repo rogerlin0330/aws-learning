@@ -1,14 +1,14 @@
 ---
 title: AWS Solutions Architect Associate — Exam Notes
 type: certification
-tags: [iam, vpc, networking, ec2, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, ephemeral, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, route53, organizations, cost, purchase-options, on-demand, spot, reserved-instances, scheduled-reserved, capacity-reservations, zonal-ri, regional-ri, savings-plans, byol, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, raid0, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, ebs-encryption, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr]
+tags: [iam, vpc, networking, ec2, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, ephemeral, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, route53, organizations, cost, purchase-options, on-demand, spot, reserved-instances, scheduled-reserved, capacity-reservations, zonal-ri, regional-ri, savings-plans, byol, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, raid0, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, ebs-encryption, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr, scaling, horizontal-scaling, vertical-scaling, stateless, sticky-sessions, elasticity, load-balancer]
 certs: [aws-saa]
 updated: 2026-06-02
 ---
 
 # AWS Solutions Architect Associate (SAA-C03)
 
-A running collection of exam tips, gotchas, and comparison tables. Deep-dive pages: [IAM](../services/iam.md) · [VPC](../services/vpc.md) · [EC2](../services/ec2.md) · [S3](../services/s3.md) · [Route 53](../services/route53.md) · [Organizations](../services/organizations.md) · [CloudWatch](../services/cloudwatch.md) · [KMS](../services/kms.md) · [Networking](../concepts/networking.md) · [Identity & Access](../concepts/identity-and-access.md) · [Resource vs Identity Policies](../concepts/resource-vs-identity-policies.md) · [DNS](../concepts/dns.md) · [TLS/HTTPS](../concepts/tls-https.md) · [Cost Optimization](../patterns/cost-optimization.md).
+A running collection of exam tips, gotchas, and comparison tables. Deep-dive pages: [IAM](../services/iam.md) · [VPC](../services/vpc.md) · [EC2](../services/ec2.md) · [S3](../services/s3.md) · [Route 53](../services/route53.md) · [Organizations](../services/organizations.md) · [CloudWatch](../services/cloudwatch.md) · [KMS](../services/kms.md) · [Networking](../concepts/networking.md) · [Identity & Access](../concepts/identity-and-access.md) · [Resource vs Identity Policies](../concepts/resource-vs-identity-policies.md) · [DNS](../concepts/dns.md) · [TLS/HTTPS](../concepts/tls-https.md) · [Cost Optimization](../patterns/cost-optimization.md) · [Scaling](../patterns/scaling.md).
 
 ## IAM
 
@@ -1008,6 +1008,33 @@ A single DEK threads through: **original volume → its snapshots → restored v
 
 > [!warning] Gotcha — KMS key region scope flows to EBS encryption
 > KMS keys are **regional**. The account-level default-encryption setting and any customer-managed key referenced by EBS must exist in **every region** where you want encrypted volumes. Copying an encrypted snapshot to another region requires the destination region to have access to a KMS key (the source key's region won't decrypt it).
+
+## Scaling — Horizontal vs Vertical
+
+See [Scaling — Horizontal vs Vertical](../patterns/scaling.md) for the full treatment.
+
+- **Vertical scaling = resize one instance.** Simple, works for monoliths, no app changes. But requires **stop / modify / start** (disruption), only happens in maintenance windows, and is **capped at the largest available instance size**.
+- **Horizontal scaling = add more instances behind a load balancer.** No upper limit, no disruption, finer granularity, and usually cheaper per unit of capacity. Requires a **load balancer** and **stateless application design**.
+- **Sessions are the critical constraint.** With horizontal scaling, a customer's consecutive requests can hit different instances. If session state lives on the instance, the user appears logged out, the cart empties, the wizard restarts. **Move sessions off-host** to ElastiCache (Redis or Memcached), DynamoDB, or RDS.
+- **ALB sticky sessions are NOT the proper fix.** They pin a user to one instance; if that instance is replaced or scaled in, the session is lost anyway. Sticky sessions are a migration aid for legacy apps. Exam-correct long-term answer: **off-host sessions, stateless instances**.
+- **Resizing EC2 is a stop/start in disguise** — instance-store data destroyed, auto-public-IPv4 changes. See [EC2 — Stop/Start vs Restart](../services/ec2.md#stopstart-vs-restart--these-are-not-the-same).
+- **Horizontal scaling is the foundation for HA.** Vertical scaling cannot reach fault tolerance — a single instance always inherits the resilience tier of its AZ. Horizontal + ELB + Auto Scaling Groups across multiple AZs is the HA pattern.
+
+### Scaling — pattern-match cheat-sheet
+
+| Question pattern | Answer |
+| --- | --- |
+| "App is a monolith on one instance, traffic doubled" | **Vertical scaling** — resize to a larger instance type |
+| "Cannot tolerate downtime, need to scale during business hours" | **Horizontal scaling** — adding instances doesn't disrupt existing connections |
+| "Users get logged out at random after deploying behind ALB" | **Move sessions off-host** to ElastiCache / DynamoDB, not sticky sessions |
+| "Shopping cart empties intermittently across instances" | **Stateless app + external session store** |
+| "Legacy app, on-host sessions, no time to refactor" | **ALB sticky sessions** — migration aid only |
+| "Need infinite scale" | **Horizontal** — vertical has a hard cap |
+| "Need fault tolerance, not just scalability" | **Horizontal scaling across multiple AZs** — load balancer + Auto Scaling Group; vertical can't reach this |
+| "Cheapest at large total capacity" | **Many small commodity instances (horizontal)** — large instances carry a price premium |
+
+> [!tip] Mnemonic
+> **Many Bobs = horizontal. One giant Bob = vertical.** Adding workers = scale out; growing one worker = scale up.
 
 ## DNS and Route 53
 

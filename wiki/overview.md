@@ -2,7 +2,7 @@
 title: AWS Learning — Overview
 type: overview
 tags: [aws, architecture, iam, vpc, organizations, cost, s3, ec2]
-updated: 2026-05-25
+updated: 2026-06-02
 ---
 
 # AWS Learning Overview
@@ -91,6 +91,7 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 ### Patterns
 
 - [Cost Optimization](patterns/cost-optimization.md) — Savings Plans, RIs, Spot, decision tree, pooling via Organizations
+- [Scaling — Horizontal vs Vertical](patterns/scaling.md) — bigger box vs more boxes; the session problem; stateless design; how horizontal scaling combines with ELB + Auto Scaling for HA
 
 ### Certifications
 
@@ -102,7 +103,7 @@ Most real-world AWS deployments use **many accounts** — a per-team / per-envir
 
 ## Topics To Cover Next
 
-- EC2: instance types & families, EBS volume types (gp3 / io2 / st1 / sc1), EBS snapshots, instance metadata service (IMDS / IMDSv2), placement groups, user-data & bootstrapping
-- ELB / Auto Scaling: ALB vs NLB, target groups, scaling policies
+- EC2: instance metadata service (IMDS / IMDSv2), placement groups, user-data & bootstrapping
+- ELB / Auto Scaling: ALB vs NLB, target groups, scaling policies — builds directly on the [Scaling pattern](patterns/scaling.md)
 - AWS AI services (for AI Practitioner cert)
 - Architecture patterns: HA, multi-AZ, disaster recovery tiers

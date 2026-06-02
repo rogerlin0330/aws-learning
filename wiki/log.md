@@ -1,5 +1,42 @@
 # Wiki Log
 
+## [2026-06-02] ingest | Horizontal vs Vertical Scaling
+
+Ingested `raw/aws-cert-study-notes/aws-solution-architect/ec2_horizontal_and_vertical_scaling.md` into the wiki as a foundational **architecture pattern** (not a service feature), since the dichotomy applies broadly across EC2, ECS, Lambda, RDS, and beyond.
+
+Created `wiki/patterns/scaling.md`:
+
+- Opens with the slogan framing (bigger box vs more boxes) and a five-row quick-comparison table to anchor the rest of the page
+- **Vertical scaling** section: framed explicitly as a **stop / modify / start** sequence in EC2 terms (cross-link to [Stop/Start vs Restart](../services/ec2.md#stopstart-vs-restart--these-are-not-the-same)); pros (simple, monolith-friendly) and cons (disruption, outage-window-only, non-linear cost premium at large sizes, hard upper cap) in side-by-side tables
+- **Horizontal scaling** section: defines scale-out / scale-in terminology, introduces the load balancer and names ELB (ALB for HTTP/HTTPS, NLB for TCP/UDP)
+- **The session problem** — given its own subsection because it is the keystone of horizontal scaling. Added a "where to put sessions" mapping table (ElastiCache for in-memory cache, DynamoDB for durable key-value, RDS for shared relational state) that was missing from the raw note
+- **Sticky-sessions gotcha** — added a callout explaining that ALB sticky sessions are a **migration aid**, not the proper fix, because a scaled-in or failed instance loses the state anyway. This is exam-testable and not in the raw note
+- Side-by-side summary table, the "Bob" mnemonic, and a "where this leads" section pointing forward to ELB + Auto Scaling Groups as the elasticity primitives built on top of horizontal scaling
+- Key Takeaways section closes with the five highest-leverage statements
+- Followed the [arrow notation memory](../../../.claude/projects/-Users-rogerlin-SelfProjects-aws-learning/memory/feedback_arrow_notation.md) — no `→` or `->` in prose; numbered "1, 2" lists and plain English instead
+
+Updated `wiki/services/ec2.md`:
+
+- Added a new "Scaling EC2 — Vertical vs Horizontal" section just before Key Takeaways. Kept it brief (8 lines) — the two-bullet summary with cross-link to the pattern page, plus a note that resize is a stop/start in disguise
+- Updated References block and source list
+- Bumped `updated:` to 2026-06-02
+
+Updated `wiki/certifications/aws-saa.md`:
+
+- New "## Scaling — Horizontal vs Vertical" section between EBS Encryption and DNS, with:
+  - 6 bullet exam tips covering both scaling modes, the session constraint, sticky-sessions-are-not-the-fix, the stop/start-disguise gotcha, and horizontal as the HA foundation
+  - "Scaling — pattern-match cheat-sheet" table with 8 common SAA question patterns and the right answer (monolith → vertical, infinite scale → horizontal, logged-out-after-ALB → off-host sessions, fault tolerance → horizontal multi-AZ, etc.)
+  - "Many Bobs = horizontal" mnemonic callout
+- Updated deep-dive page list in the lead paragraph and added scaling-related tags to frontmatter
+
+Updated `wiki/overview.md`:
+
+- Added scaling pattern to Patterns list
+- Updated "Topics To Cover Next" — removed instance-types / EBS-volume-type bullets (already covered) and pointed the ELB / Auto Scaling line at the new scaling pattern
+- Bumped `updated:` to 2026-06-02
+
+Updated `wiki/index.md`: added scaling pattern entry under Patterns with a one-line summary of the key trade-offs.
+
 ## [2026-06-02] fix | EC2 Purchase Options — add missing Convertible Reserved Instances
 
 User caught that the new EC2 Purchase Options page covered Standard and Scheduled Reserved Instances but **omitted Convertible Reserved Instances** entirely. Convertible is the third Reserved Instance offering class — smaller discount (~54% max vs Standard's ~72%) traded for the right to **exchange** the reservation for an RI of **equal or greater value** with different family / OS / tenancy / payment option. This was a meaningful gap; Convertible vs Standard is a recurring SAA pattern.
