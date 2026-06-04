@@ -1,7 +1,7 @@
 ---
 title: AWS Learning — Overview
 type: overview
-tags: [aws, architecture, iam, vpc, organizations, cost, s3, ec2, containers]
+tags: [aws, architecture, iam, vpc, organizations, cost, s3, ec2, ecs, containers]
 updated: 2026-06-04
 ---
 
@@ -69,7 +69,7 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 
 ### Compute Packaging Changes the Management Line
 
-[EC2](services/ec2.md) gives you the full OS and runtime surface. [Containers](concepts/containers.md) package the application and dependencies into portable images that run as isolated processes on a host OS. Managed compute such as Fargate or Lambda shifts even more infrastructure responsibility away from you, but the exam still tests the basic boundary: VM means full guest OS; container means shared host kernel plus packaged user-space dependencies.
+[EC2](services/ec2.md) gives you the full OS and runtime surface. [Containers](concepts/containers.md) package the application and dependencies into portable images that run as isolated processes on a host OS. [ECS](services/ecs.md) is the managed orchestration layer for those containers: run tasks on EC2 when you want host control and pricing flexibility, or run tasks on Fargate when you want AWS to own the host layer. Managed compute such as Fargate or Lambda shifts more infrastructure responsibility away from you, but the exam still tests the basic boundary: VM means full guest OS; container means shared host kernel plus packaged user-space dependencies.
 
 ## Pages in This Wiki
 
@@ -78,6 +78,7 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 - [IAM](services/iam.md) — users, groups, roles (STS / federation), policies, ARNs
 - [VPC](services/vpc.md) — subnets, routing, IGW, NACL, SG, NAT GW, PrivateLink
 - [EC2](services/ec2.md) — IaaS foundations, hosts vs instances (tenancy + AZ-resilience), instance lifecycle & state-based costs (incl. stop/start vs restart), AMIs, SSH/RDP access, when-to-use-EC2 decision framing
+- [ECS](services/ecs.md) — managed container orchestration; task definitions, services, task roles, EC2 launch type vs Fargate
 - [S3](services/s3.md) — buckets, bucket policies, ACLs (legacy), Block Public Access, pre-signed URLs, versioning, SSE/CSE encryption, multipart upload + Transfer Acceleration, storage classes + lifecycle, replication (CRR/SRR), S3 Select / Glacier Select, event notifications + EventBridge, access logging
 - [Route 53](services/route53.md) — hosted zones, routing policies, health checks
 - [Organizations](services/organizations.md) — multi-account management, consolidated billing, SCPs
@@ -92,7 +93,7 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 - [Resource Scope](concepts/resource-scope.md) — global / regional / AZ / edge tiers; blast radius and movement cost
 - [DNS](concepts/dns.md) — resolution, record types, TTL
 - [TLS/HTTPS](concepts/tls-https.md) — certificate trust, TLS handshake, ACM
-- [Containers](concepts/containers.md) — container vs VM mental model, Docker image layers, runtime R/W layer, registries
+- [Containers](concepts/containers.md) — container vs VM mental model, Docker image layers, runtime R/W layer, registries, ECS as orchestration
 
 ### Patterns
 
@@ -111,6 +112,6 @@ Most real-world AWS deployments use **many accounts** — a per-team / per-envir
 
 - EC2: placement groups, user-data & bootstrapping (IMDS / IMDSv2 now covered on the [EC2 page](services/ec2.md#instance-metadata-service-imds))
 - ELB / Auto Scaling: ALB vs NLB, target groups, scaling policies — builds directly on the [Scaling pattern](patterns/scaling.md)
-- Container services: ECS, EKS, Fargate, ECR — builds on the [Containers](concepts/containers.md) concept page
+- Container services: EKS and deeper ECR coverage — builds on [ECS](services/ecs.md) and the [Containers](concepts/containers.md) concept page
 - AWS AI services (for AI Practitioner cert)
 - Architecture patterns: HA, multi-AZ, disaster recovery tiers

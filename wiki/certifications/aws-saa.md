@@ -1,14 +1,14 @@
 ---
 title: AWS Solutions Architect Associate — Exam Notes
 type: certification
-tags: [iam, vpc, networking, ec2, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, ephemeral, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns, route53, organizations, cost, purchase-options, on-demand, spot, reserved-instances, scheduled-reserved, capacity-reservations, zonal-ri, regional-ri, savings-plans, byol, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, raid0, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, ebs-encryption, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr, scaling, horizontal-scaling, vertical-scaling, stateless, sticky-sessions, elasticity, load-balancer, containers, docker, container-image, container-registry]
+tags: [iam, vpc, networking, ec2, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, ephemeral, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns, route53, organizations, cost, purchase-options, on-demand, spot, reserved-instances, scheduled-reserved, capacity-reservations, zonal-ri, regional-ri, savings-plans, byol, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, raid0, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, ebs-encryption, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr, scaling, horizontal-scaling, vertical-scaling, stateless, sticky-sessions, elasticity, load-balancer, containers, docker, container-image, container-registry, ecs, ecr, fargate, task-definition, task-role]
 certs: [aws-saa]
 updated: 2026-06-04
 ---
 
 # AWS Solutions Architect Associate (SAA-C03)
 
-A running collection of exam tips, gotchas, and comparison tables. Deep-dive pages: [IAM](../services/iam.md) · [VPC](../services/vpc.md) · [EC2](../services/ec2.md) · [S3](../services/s3.md) · [Route 53](../services/route53.md) · [Organizations](../services/organizations.md) · [CloudWatch](../services/cloudwatch.md) · [KMS](../services/kms.md) · [Networking](../concepts/networking.md) · [Identity & Access](../concepts/identity-and-access.md) · [Resource vs Identity Policies](../concepts/resource-vs-identity-policies.md) · [DNS](../concepts/dns.md) · [TLS/HTTPS](../concepts/tls-https.md) · [Containers](../concepts/containers.md) · [Cost Optimization](../patterns/cost-optimization.md) · [Scaling](../patterns/scaling.md).
+A running collection of exam tips, gotchas, and comparison tables. Deep-dive pages: [IAM](../services/iam.md) · [VPC](../services/vpc.md) · [EC2](../services/ec2.md) · [ECS](../services/ecs.md) · [S3](../services/s3.md) · [Route 53](../services/route53.md) · [Organizations](../services/organizations.md) · [CloudWatch](../services/cloudwatch.md) · [KMS](../services/kms.md) · [Networking](../concepts/networking.md) · [Identity & Access](../concepts/identity-and-access.md) · [Resource vs Identity Policies](../concepts/resource-vs-identity-policies.md) · [DNS](../concepts/dns.md) · [TLS/HTTPS](../concepts/tls-https.md) · [Containers](../concepts/containers.md) · [Cost Optimization](../patterns/cost-optimization.md) · [Scaling](../patterns/scaling.md).
 
 ## IAM
 
@@ -712,6 +712,44 @@ See [Containers](../concepts/containers.md) for the full concept page.
 
 > [!warning] Common Container Gotchas
 > A base image is not a full OS kernel; it contains user-space files and libraries, while the running container still uses the host OS kernel. Image layers are read-only, runtime changes belong in the per-container read/write layer, and that layer is not durable application state. Exposed ports also do not equal reachable services; AWS networking controls still decide whether traffic can arrive.
+
+### ECS
+
+See [ECS](../services/ecs.md) for the full service page and [Containers](../concepts/containers.md) for container fundamentals.
+
+- **ECS is the managed orchestrator** for containers. It runs tasks from task definitions and keeps production workloads healthy through services
+- **Hierarchy:** cluster contains services; services manage tasks; tasks contain one or more containers
+- **Container definition:** image, ports, and container-level behavior
+- **Task definition:** application template containing one or more container definitions plus CPU, memory, networking, compatibility, and roles
+- **Task role:** [IAM role](../services/iam.md#iam-roles) assumed by the task. This is the best-practice way for application containers to access AWS services
+- **Task execution role:** platform/setup role used by ECS or Fargate to pull images and write logs. Do not confuse it with the task role
+- **Service:** long-running distributed layer that keeps a desired number of task copies running, replaces failed tasks, supports rolling deployments, and can attach to a load balancer
+- **ECR:** AWS-managed container registry; ECS task definitions can point at images in ECR or another registry
+- **EC2 launch type:** ECS places tasks on EC2 container instances in your account. You manage and pay for the host fleet even when it is idle, but you get EC2 pricing flexibility such as Spot and Reserved Instances
+- **Fargate launch type:** no EC2 host fleet to manage. Tasks run on AWS-managed infrastructure and attach to your [VPC](../services/vpc.md) through [ENIs](../concepts/networking.md#elastic-network-interfaces-enis)
+- **Fargate billing correction:** billed for configured task resources while tasks run, not for live CPU utilization only
+
+#### ECS cheat sheet
+
+| Keyword in the question | Answer |
+| --- | --- |
+| "Containerized app on AWS, managed orchestration" | **ECS** |
+| "Where does ECS get the image?" | **Container registry**, commonly ECR |
+| "One running copy of an application" | **Task** |
+| "Application template with one or more containers" | **Task definition** |
+| "One container inside a task definition" | **Container definition** |
+| "Keep 5 copies running and replace failed copies" | **ECS service** |
+| "Container app needs S3 / DynamoDB / KMS permissions" | **ECS task role** |
+| "Pull image from ECR and write logs" | **Task execution role** |
+| "Large, steady, price-sensitive container workload" | **ECS on EC2** |
+| "Small / bursty / periodic / no host management" | **ECS on Fargate** |
+| "Serverless but still has VPC networking" | **Fargate task with ENI** |
+
+> [!tip] Exam Tip
+> Pattern-match ECS launch type questions by the management line. If the company wants host control, Spot / Reserved economics, or dense packing for steady load, use ECS on EC2. If the company wants no host management or has small, bursty, or periodic container work, use ECS on Fargate.
+
+> [!warning] Common ECS Gotchas
+> A standalone task is not highly available by itself; use a service for production desired-count management. Fargate removes EC2 host management, but it does not remove VPC design: subnets, security groups, routes, public IP assignment, and load balancers still matter. The task role is for app permissions; the execution role is for ECS platform setup.
 
 ### EC2 Status Checks & Auto Recovery
 

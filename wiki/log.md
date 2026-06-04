@@ -2,6 +2,10 @@
 
 <!-- markdownlint-disable MD051 -->
 
+## [2026-06-04] ingest | ECS 101
+
+Ingested `raw/aws-cert-study-notes/aws-solution-architect/ecs_101.md` into a new [ECS](services/ecs.md) service page. Copied `ecs-cluster-mode-ec2.png` and `ecs-cluster-mode-fargate.png` from raw assets into `wiki/assets/` and embedded them with descriptive alt text. Added ECS hierarchy (cluster, service, task, container), task definitions vs container definitions, task role vs task execution role, services for desired-count HA and load balancing, ECR/registry positioning, EC2 launch type vs Fargate launch type, capacity-provider framing, VPC/ENI behavior for Fargate, and EC2-vs-Fargate selection heuristics. Corrected the raw Fargate billing wording: Fargate is billed for configured task resources while tasks run, not merely live container utilization. Updated Containers, EC2, SAA notes, overview, and index with inline links and exam-focused ECS traps.
+
 ## [2026-06-04] ingest | Container Introduction
 
 Ingested `raw/aws-cert-study-notes/aws-solution-architect/container_introduction.md` into a new [Containers](concepts/containers.md) concept page. Copied `image-anatomy.png` and `container-anatomy.png` from raw assets into `wiki/assets/` and embedded them with descriptive alt text. Added the VM-vs-container distinction, Dockerfile/image/layer model, per-container R/W layer, registries, port exposure, Docker terminology, and SAA exam tips. Refined the raw note's OS wording: a base image carries user-space files and libraries, but the running container still shares the host OS kernel. Updated EC2, SAA notes, overview, and index with inline links.

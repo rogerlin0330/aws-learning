@@ -591,7 +591,7 @@ EC2 is the **default compute service** in AWS. Reach for it first; deviate only 
 Move *away from* EC2 when a niche requirement clearly favours another service:
 
 - **Event-driven, short-lived, sporadic** → Lambda
-- **Containerised microservices without OS management** → ECS / EKS (with Fargate for the no-host case). See [Containers](../concepts/containers.md) for the container vs VM model, image layers, registries, and port-exposure basics
+- **Containerised microservices without OS management** → [ECS](ecs.md) / EKS (with Fargate for the no-host case). See [Containers](../concepts/containers.md) for the container vs VM model, image layers, registries, and port-exposure basics
 - **Fully managed runtime / PaaS** → Elastic Beanstalk, App Runner
 - **Specialised workload primitives** (queues, streams, data warehouses) → use the managed primitive, not a VM hosting it
 
@@ -818,6 +818,7 @@ The instance-level concerns are EC2-specific (resize is a stop/start, see [Stop/
 - [Cost Optimization — Savings Plans, Reserved Instances, Spot Instances](../patterns/cost-optimization.md)
 - [EC2 Purchase Options — On-Demand Instances, Spot Instances, Reserved Instances, On-Demand Capacity Reservations, Savings Plans, Dedicated Hosts, Dedicated Instances](../patterns/ec2-purchase-options.md)
 - [Scaling — Horizontal vs Vertical](../patterns/scaling.md)
+- [ECS — managed container orchestration, EC2 launch type, and Fargate launch type](ecs.md)
 - [Containers — container vs VM model, image layers, registries](../concepts/containers.md)
 - [AWS SAA Exam Notes — EC2](../certifications/aws-saa.md#ec2)
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_101.md`

@@ -1,7 +1,7 @@
 ---
 title: Containers
 type: concept
-tags: [containers, docker, dockerfile, container-image, container-registry, virtualization, compute]
+tags: [containers, docker, dockerfile, container-image, container-registry, virtualization, compute, ecs, ecr, fargate]
 certs: [aws-saa]
 updated: 2026-06-04
 ---
@@ -72,7 +72,7 @@ Typical workflow:
 4. Pull the image onto one or more container hosts
 5. Run one or more containers from that image
 
-One image can create many containers, and many hosts can pull the same image. In AWS, this model is the foundation for services such as ECS, EKS, Fargate, and ECR. The service-specific details are separate, but the image, registry, host, and running-container vocabulary stays the same.
+One image can create many containers, and many hosts can pull the same image. In AWS, this model is the foundation for services such as [ECS](../services/ecs.md), EKS, Fargate, and ECR. The service-specific details are separate, but the image, registry, host, and running-container vocabulary stays the same.
 
 ## Networking and Ports
 
@@ -107,12 +107,12 @@ Containers are useful because they combine repeatable packaging with high densit
 - **Fast start/stop:** starting a process is faster than booting a guest OS
 - **Composable systems:** multi-tier applications can be split across containers, such as an app container and a database container
 
-The trade-off is that container platforms introduce orchestration concerns: scheduling, service discovery, networking, health checks, secret injection, image scanning, and persistent storage. AWS container services handle different parts of that operational surface.
+The trade-off is that container platforms introduce orchestration concerns: scheduling, service discovery, networking, health checks, secret injection, image scanning, and persistent storage. AWS container services handle different parts of that operational surface. [ECS](../services/ecs.md) is AWS's managed orchestrator for this layer: it turns container images into task definitions, tasks, and services, then runs them on either EC2-backed hosts or Fargate.
 
 ## Exam Tips
 
 > [!tip] Exam Tip
-> A container runs as a process on the host OS, not as a full guest OS on a hypervisor. Image layers are read-only, and the per-container read/write layer is added only when a container runs. Portability, consistency, density, and fast startup point to containers; full OS control, per-host licensing, or direct OS administration usually points back to [EC2](../services/ec2.md#when-to-use-ec2).
+> A container runs as a process on the host OS, not as a full guest OS on a hypervisor. Image layers are read-only, and the per-container read/write layer is added only when a container runs. Portability, consistency, density, and fast startup point to containers; full OS control, per-host licensing, or direct OS administration usually points back to [EC2](../services/ec2.md#when-to-use-ec2). Production container orchestration on AWS usually points to [ECS](../services/ecs.md) rather than hand-running Docker on one EC2 instance.
 
 ## Key Takeaways
 
@@ -121,7 +121,8 @@ The trade-off is that container platforms introduce orchestration concerns: sche
 3. A running container adds a read/write layer on top of the image
 4. Multiple containers from the same image share the read-only layers, which drives density and efficiency
 5. Registries distribute images; hosts pull images and run containers from them
-6. Docker is common terminology, but Docker is one implementation of container tooling, not the entire concept
+6. ECS is the AWS managed orchestrator that runs containerized applications as tasks and services
+7. Docker is common terminology, but Docker is one implementation of container tooling, not the entire concept
 
 ## References
 
@@ -129,3 +130,4 @@ The trade-off is that container platforms introduce orchestration concerns: sche
 - [Scaling — Horizontal vs Vertical](../patterns/scaling.md)
 - [Networking Concepts — ENI and network controls](networking.md#elastic-network-interfaces-enis)
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/container_introduction.md`
+- Source: `raw/aws-cert-study-notes/aws-solution-architect/ecs_101.md`
