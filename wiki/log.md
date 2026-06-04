@@ -1,5 +1,7 @@
 # Wiki Log
 
+<!-- markdownlint-disable MD051 -->
+
 ## [2026-06-04] ingest | Container Introduction
 
 Ingested `raw/aws-cert-study-notes/aws-solution-architect/container_introduction.md` into a new [Containers](concepts/containers.md) concept page. Copied `image-anatomy.png` and `container-anatomy.png` from raw assets into `wiki/assets/` and embedded them with descriptive alt text. Added the VM-vs-container distinction, Dockerfile/image/layer model, per-container R/W layer, registries, port exposure, Docker terminology, and SAA exam tips. Refined the raw note's OS wording: a base image carries user-space files and libraries, but the running container still shares the host OS kernel. Updated EC2, SAA notes, overview, and index with inline links.
@@ -1027,3 +1029,23 @@ Added a warning callout in the Block Public Access section emphasizing that disa
 ## [2026-05-17] update | Document IAM policy JSON case-sensitivity rules
 
 Added "Policy JSON — Case Sensitivity" subsection to `services/iam.md` covering case-sensitive elements (top-level keys, Effect values, Principal sub-keys, condition operators), case-insensitive elements (action names, condition-key names), and value rules (StringEquals vs StringEqualsIgnoreCase, ARNs, tags). Added an exam tip. Added a cross-referencing summary on `concepts/resource-vs-identity-policies.md` pointing to the canonical IAM section. Updated index.
+
+## [2026-06-04] update | Wiki health fixes
+
+Fixed issues from the wiki review: corrected S3 server access logging to use the modern `logging.s3.amazonaws.com` bucket-policy model, clarified S3 replication archive-class wording, fixed broken links and Obsidian image embeds, added missing frontmatter tags, linked the Resource Scope concept from the overview, refreshed VPC RNAT references to official AWS docs, removed the stale S3 access-logs diagram, and cleaned markdownlint violations.
+
+## [2026-06-04] update | Restore S3 access logs diagram
+
+Restored `s3-access-logs.png` to the S3 Access Logging section because the raw note treats it as an essential visual aid. Added surrounding prose clarifying that the diagram's ACL permission label is legacy and that the current recommended model is a target-bucket policy granting `s3:PutObject` to `logging.s3.amazonaws.com`; also corrected the remaining S3 exam tip to match.
+
+## [2026-06-04] update | Clarify S3 access logging source-vs-current guidance
+
+Added an explicit comparison table in `services/s3.md` preserving the original raw-note / diagram ACL model while noting that current AWS documentation recommends the target-bucket policy model with `logging.s3.amazonaws.com`.
+
+## [2026-06-04] update | Link AWS S3 access logging permission docs
+
+Added a direct AWS documentation link next to the S3 access-logs diagram caveat so the current bucket-policy recommendation is immediately verifiable from the wiki page.
+
+## [2026-06-04] update | Separate adjacent wiki callouts
+
+Restored real blank-line separation between consecutive Exam Tip, Gotcha, and related callout blocks. Disabled markdownlint MD028 because the rule conflicts with the wiki's callout format when separate callouts appear back-to-back.

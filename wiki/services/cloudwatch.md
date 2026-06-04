@@ -79,7 +79,7 @@ CloudWatch is a **regional service** — log groups and their data are region-sc
 
 > [!tip] Exam Tip
 > **Log Group = unit of configuration.** Retention, permissions, and metric filters all attach to the log group and inherit down to every stream it contains. Stream-level configuration does not exist.
->
+
 > [!warning] Gotcha
 > The Unified CloudWatch Agent is required for **any log source that isn't a native AWS service** — including OS-level logs from EC2 instances. EC2 does not automatically send logs to CloudWatch; only metrics like CPU are available without the agent.
 
