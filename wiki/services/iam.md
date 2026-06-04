@@ -1,8 +1,9 @@
 ---
 title: IAM — Identity and Access Management
 type: service
+tags: [iam, identity, access-management, authentication, authorization, roles, users, groups, policies, sts, federation]
 certs: [aws-saa, aws-aip]
-updated: 2026-05-17
+updated: 2026-06-04
 ---
 
 # IAM — Identity and Access Management

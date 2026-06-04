@@ -3,7 +3,7 @@ title: TLS and HTTPS
 type: concept
 tags: [tls, https, security, certificates, acm, networking]
 certs: [aws-saa]
-updated: 2026-05-01
+updated: 2026-06-04
 ---
 
 # TLS and HTTPS
@@ -146,4 +146,4 @@ With TLS 1.3, the server sends its `key_share` in ServerHello, and the client re
 
 - [Networking Concepts](networking.md)
 - [DNS](dns.md)
-- Source: [How SSL and HTTPS Works](../../../raw/web-clippings/How%20SSL%20and%20HTTPS%20Works.md)
+- Source: [How SSL and HTTPS Works](../../raw/web-clippings/How%20SSL%20and%20HTTPS%20Works.md)

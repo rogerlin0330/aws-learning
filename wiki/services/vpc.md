@@ -1,8 +1,9 @@
 ---
 title: VPC — Virtual Private Cloud
 type: service
+tags: [vpc, networking, subnets, route-tables, internet-gateway, nacl, security-groups, nat-gateway, private-link, dns]
 certs: [aws-saa]
-updated: 2026-05-01
+updated: 2026-06-04
 ---
 
 # VPC — Virtual Private Cloud
@@ -306,7 +307,7 @@ An **endpoint** is an object within your VPC that connects to AWS services or ot
 ## References
 
 - [IGW vs NAT Gateway](https://medium.com/awesome-cloud/aws-vpc-difference-between-internet-gateway-and-nat-gateway-c9177e710af6)
-- [Regional NAT Gateway Overview](https://medium.com/awesome-cloud/aws-amazon-vpc-regional-nat-gateway-rnat-overview-what-is-rnat-introduction-features-use-cases-benefits-fd978309c43a)
+- [Regional NAT gateways for automatic multi-AZ expansion — Amazon VPC User Guide](https://docs.aws.amazon.com/vpc/latest/userguide/nat-gateways-regional.html)
 - [Default VPCs — Amazon VPC User Guide](https://docs.aws.amazon.com/vpc/latest/userguide/default-vpc.html)
 - [Work with your default VPC and default subnets — Amazon VPC](https://docs.aws.amazon.com/vpc/latest/userguide/work-with-default-vpc.html)
 - [Delete your VPC — Amazon VPC](https://docs.aws.amazon.com/vpc/latest/userguide/delete-vpc.html)

@@ -3,7 +3,7 @@ title: Storage Fundamentals
 type: concept
 tags: [storage, block-storage, file-storage, object-storage, ebs, instance-store, s3, efs, fsx, iops, throughput, ephemeral, persistent, direct-attached, network-attached]
 certs: [aws-saa]
-updated: 2026-05-26
+updated: 2026-06-04
 ---
 
 # Storage Fundamentals
@@ -96,7 +96,7 @@ Three metrics define storage performance — they are interconnected, not indepe
 
 ### Core Relationship
 
-![[wiki/assets/storage-performance.png]]
+![Storage performance relationship between block size, IOPS, and throughput](../assets/storage-performance.png)
 
 ```text
 Throughput  = IO (Block) Size  ×  IOPS

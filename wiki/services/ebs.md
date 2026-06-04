@@ -3,7 +3,7 @@ title: EBS — Elastic Block Store
 type: service
 tags: [ebs, block-storage, storage, gp2, gp3, io1, io2, block-express, volume-types, iops, throughput, elastic-volumes, credit-bucket, ssd, general-purpose, provisioned-iops, latency, per-instance-ceiling, az-boundary, snapshot, incremental-backup, fsr, fast-snapshot-restore, lazy-restore, lifecycle, multi-attach, billing, resilience, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, encryption, kms, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption]
 certs: [aws-saa]
-updated: 2026-05-29
+updated: 2026-06-04
 ---
 
 # EBS — Elastic Block Store
@@ -14,8 +14,10 @@ For the broader vocabulary (direct-attached vs network-attached, ephemeral vs pe
 
 ## Service Architecture
 
-![EBS service architecture showing two regions, two AZs with EC2 instances attached to EBS volumes, snapshot flow to S3, and cross-region snapshot copy|697](../assets/ebs-service-architecture.png)
-![[wiki/assets/ec2-host-vs-instance-icon-legend.png]]
+![EBS service architecture showing two regions, two AZs with EC2 instances attached to EBS volumes, snapshot flow to S3, and cross-region snapshot copy](../assets/ebs-service-architecture.png)
+
+![EC2 host vs instance icon legend used by storage architecture diagrams](../assets/ec2-host-vs-instance-icon-legend.png)
+
 ### What EBS Volumes Are
 
 EBS takes allocations of physical disks and presents them to EC2 as **raw block devices** — indistinguishable from a locally attached disk. The EC2 instance's OS is then responsible for putting a **file system** on top:
@@ -329,17 +331,17 @@ No formula, no bucket, no crossover points. A 1 GB GP3 volume and a 16 TB GP3 vo
 
 ## GP2 vs GP3 — Side-by-Side
 
-| Attribute              | GP2                                   | GP3                         |
-| ---------------------- | ------------------------------------- | --------------------------- |
-| Performance model      | Credit bucket — size-dependent        | Flat standard + paid extras |
+| Attribute | GP2 | GP3 |
+| --- | --- | --- |
+| Performance model | Credit bucket — size-dependent | Flat standard + paid extras |
 | Baseline IOPS (= credit refill rate for GP2) | 3 IOPS/GB (min 100, max 16,000) | 3,000 for all volumes |
-| Burst IOPS             | Up to 3,000 (via credits)             | N/A — no bursting concept   |
-| Max IOPS               | 16,000 (at ≥ 5.33 TB)                 | 16,000 (paid extra)         |
-| Standard throughput    | Scales with size                      | 125 MB/s for all volumes    |
-| Max throughput         | **250 MB/s**                          | **1,000 MB/s** — 4× GP2     |
-| Initial credit balance | 5.4 M credits (≈ 30 min @ 3,000 IOPS) | N/A                         |
-| Base price             | Higher                                | **~20% cheaper than GP2**   |
-| AWS default today      | No (was default; AWS switched to GP3) | **Yes — current default**   |
+| Burst IOPS | Up to 3,000 (via credits) | N/A — no bursting concept |
+| Max IOPS | 16,000 (at ≥ 5.33 TB) | 16,000 (paid extra) |
+| Standard throughput | Scales with size | 125 MB/s for all volumes |
+| Max throughput | **250 MB/s** | **1,000 MB/s** — 4× GP2 |
+| Initial credit balance | 5.4 M credits (≈ 30 min @ 3,000 IOPS) | N/A |
+| Base price | Higher | **~20% cheaper than GP2** |
+| AWS default today | No (was default; AWS switched to GP3) | **Yes — current default** |
 
 ## Migration and Elastic Volumes
 

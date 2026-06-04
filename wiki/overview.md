@@ -55,7 +55,7 @@ This distinction recurs across AWS — understanding it once unlocks many servic
 
 ### Resilience Tiers
 
-Every AWS service operates at a specific resilience scope. Knowing this is critical for HA design:
+Every AWS service operates at a specific resilience scope. Knowing this is critical for HA design; [Resource Scope](concepts/resource-scope.md) is the detailed reference.
 
 | Tier | Examples |
 | --- | --- |
@@ -89,6 +89,7 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 - [Networking](concepts/networking.md) — OSI layers, firewall layers, routing, internet connectivity patterns
 - [Identity and Access](concepts/identity-and-access.md) — auth vs authz, identity types, role assumption, federation
 - [Resource Policies vs Identity Policies](concepts/resource-vs-identity-policies.md) — the two policy families; cross-account & anonymous access
+- [Resource Scope](concepts/resource-scope.md) — global / regional / AZ / edge tiers; blast radius and movement cost
 - [DNS](concepts/dns.md) — resolution, record types, TTL
 - [TLS/HTTPS](concepts/tls-https.md) — certificate trust, TLS handshake, ACM
 - [Containers](concepts/containers.md) — container vs VM mental model, Docker image layers, runtime R/W layer, registries

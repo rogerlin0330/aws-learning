@@ -1,8 +1,9 @@
 ---
 title: Identity and Access Concepts
 type: concept
+tags: [identity, access, authentication, authorization, iam, policies, roles, federation, scp, credentials]
 certs: [aws-saa, aws-aip]
-updated: 2026-05-16
+updated: 2026-06-04
 ---
 
 # Identity and Access Concepts
