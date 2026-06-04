@@ -1,8 +1,8 @@
 ---
 title: AWS Learning — Overview
 type: overview
-tags: [aws, architecture, iam, vpc, organizations, cost, s3, ec2]
-updated: 2026-06-02
+tags: [aws, architecture, iam, vpc, organizations, cost, s3, ec2, containers]
+updated: 2026-06-04
 ---
 
 # AWS Learning Overview
@@ -67,6 +67,10 @@ Every AWS service operates at a specific resilience scope. Knowing this is criti
 
 The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental networking unit in AWS. Security Groups attach to ENIs, not to instances or subnets. Any resource that has an ENI in your VPC can have a Security Group — including [EC2](services/ec2.md), RDS, ALB, Fargate, and Lambda-in-VPC.
 
+### Compute Packaging Changes the Management Line
+
+[EC2](services/ec2.md) gives you the full OS and runtime surface. [Containers](concepts/containers.md) package the application and dependencies into portable images that run as isolated processes on a host OS. Managed compute such as Fargate or Lambda shifts even more infrastructure responsibility away from you, but the exam still tests the basic boundary: VM means full guest OS; container means shared host kernel plus packaged user-space dependencies.
+
 ## Pages in This Wiki
 
 ### Services
@@ -87,6 +91,7 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 - [Resource Policies vs Identity Policies](concepts/resource-vs-identity-policies.md) — the two policy families; cross-account & anonymous access
 - [DNS](concepts/dns.md) — resolution, record types, TTL
 - [TLS/HTTPS](concepts/tls-https.md) — certificate trust, TLS handshake, ACM
+- [Containers](concepts/containers.md) — container vs VM mental model, Docker image layers, runtime R/W layer, registries
 
 ### Patterns
 
@@ -105,5 +110,6 @@ Most real-world AWS deployments use **many accounts** — a per-team / per-envir
 
 - EC2: placement groups, user-data & bootstrapping (IMDS / IMDSv2 now covered on the [EC2 page](services/ec2.md#instance-metadata-service-imds))
 - ELB / Auto Scaling: ALB vs NLB, target groups, scaling policies — builds directly on the [Scaling pattern](patterns/scaling.md)
+- Container services: ECS, EKS, Fargate, ECR — builds on the [Containers](concepts/containers.md) concept page
 - AWS AI services (for AI Practitioner cert)
 - Architecture patterns: HA, multi-AZ, disaster recovery tiers

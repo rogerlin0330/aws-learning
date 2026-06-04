@@ -1,14 +1,14 @@
 ---
 title: AWS Solutions Architect Associate — Exam Notes
 type: certification
-tags: [iam, vpc, networking, ec2, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, ephemeral, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns, route53, organizations, cost, purchase-options, on-demand, spot, reserved-instances, scheduled-reserved, capacity-reservations, zonal-ri, regional-ri, savings-plans, byol, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, raid0, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, ebs-encryption, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr, scaling, horizontal-scaling, vertical-scaling, stateless, sticky-sessions, elasticity, load-balancer]
+tags: [iam, vpc, networking, ec2, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, ephemeral, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns, route53, organizations, cost, purchase-options, on-demand, spot, reserved-instances, scheduled-reserved, capacity-reservations, zonal-ri, regional-ri, savings-plans, byol, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, raid0, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, ebs-encryption, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr, scaling, horizontal-scaling, vertical-scaling, stateless, sticky-sessions, elasticity, load-balancer, containers, docker, container-image, container-registry]
 certs: [aws-saa]
-updated: 2026-06-03
+updated: 2026-06-04
 ---
 
 # AWS Solutions Architect Associate (SAA-C03)
 
-A running collection of exam tips, gotchas, and comparison tables. Deep-dive pages: [IAM](../services/iam.md) · [VPC](../services/vpc.md) · [EC2](../services/ec2.md) · [S3](../services/s3.md) · [Route 53](../services/route53.md) · [Organizations](../services/organizations.md) · [CloudWatch](../services/cloudwatch.md) · [KMS](../services/kms.md) · [Networking](../concepts/networking.md) · [Identity & Access](../concepts/identity-and-access.md) · [Resource vs Identity Policies](../concepts/resource-vs-identity-policies.md) · [DNS](../concepts/dns.md) · [TLS/HTTPS](../concepts/tls-https.md) · [Cost Optimization](../patterns/cost-optimization.md) · [Scaling](../patterns/scaling.md).
+A running collection of exam tips, gotchas, and comparison tables. Deep-dive pages: [IAM](../services/iam.md) · [VPC](../services/vpc.md) · [EC2](../services/ec2.md) · [S3](../services/s3.md) · [Route 53](../services/route53.md) · [Organizations](../services/organizations.md) · [CloudWatch](../services/cloudwatch.md) · [KMS](../services/kms.md) · [Networking](../concepts/networking.md) · [Identity & Access](../concepts/identity-and-access.md) · [Resource vs Identity Policies](../concepts/resource-vs-identity-policies.md) · [DNS](../concepts/dns.md) · [TLS/HTTPS](../concepts/tls-https.md) · [Containers](../concepts/containers.md) · [Cost Optimization](../patterns/cost-optimization.md) · [Scaling](../patterns/scaling.md).
 
 ## IAM
 
@@ -677,6 +677,41 @@ See [EC2](../services/ec2.md) for full details.
 > - **AMIs cannot be edited.** The only path is (1) launch from the AMI, (2) modify the instance, (3) capture a new AMI; the old AMI is immutable
 > - **Marketplace AMIs add a per-hour license charge** on top of the standard EC2 instance rate — easy to miss when sizing cost for vendor-bundled stacks
 > - **Private key is download-once.** A lost private key on a single-key-pair instance means a painful recovery via root-volume detach
+
+### Containers Fundamentals
+
+See [Containers](../concepts/containers.md) for the full concept page.
+
+- **Container vs VM:** a VM boots a full guest OS on a hypervisor; a container runs as an isolated process environment on a host OS. The container packages app code, libraries, and user-space dependencies, but shares the host kernel
+- **Container engine:** Docker is the common name, but Docker is one implementation. "Docker container" is not synonymous with every possible container
+- **Image vs container:** an image is the template; a container is a running instance of that image with a runtime read/write layer
+- **Image layers are read-only.** A Dockerfile builds an image layer-by-layer. Each step stores only the filesystem change it introduced
+- **Runtime R/W layer:** the per-container layer holds runtime changes such as logs and temporary files. Containers from the same image share the read-only layers and differ mostly by this layer
+- **Registry:** images are pushed to and pulled from registries. Docker Hub is a public registry; AWS container service designs use the same registry/image/host/run vocabulary
+- **Benefits:** portability, consistency, density, fast start/stop, and less duplicated OS overhead than VMs
+- **Ports:** exposing a container port is only the container-level side. Real reachability still depends on host/task networking, load balancers, [VPC](../services/vpc.md) routes, and [Security Groups](../services/vpc.md#security-groups-sg)
+
+#### Containers cheat sheet
+
+| Keyword in the question | Answer |
+| --- | --- |
+| "Runs as a process, not a full OS" | **Container** |
+| "Full guest OS, kernel, and boot lifecycle" | **VM / EC2 instance** |
+| "Package app plus dependencies for portability" | **Container image** |
+| "Build instructions for the image" | **Dockerfile** |
+| "Read-only filesystem layers" | **Image layers** |
+| "Per-container runtime filesystem changes" | **Read/write layer** |
+| "Where images are pushed and pulled" | **Container registry** |
+| "Docker Hub" | A public registry, not the whole container ecosystem |
+| "Same image, many running copies" | Many containers sharing the image layers |
+
+> [!tip] Exam Tip
+> Pattern-match: portability, consistency, high density, and fast startup point to containers. Full OS control, per-socket licensing, or traditional VM migration points back to [EC2](../services/ec2.md#when-to-use-ec2).
+
+#### Container gotchas
+
+> [!warning] Common Container Gotchas
+> A base image is not a full OS kernel; it contains user-space files and libraries, while the running container still uses the host OS kernel. Image layers are read-only, runtime changes belong in the per-container read/write layer, and that layer is not durable application state. Exposed ports also do not equal reachable services; AWS networking controls still decide whether traffic can arrive.
 
 ### EC2 Status Checks & Auto Recovery
 

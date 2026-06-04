@@ -1,9 +1,9 @@
 ---
 title: EC2 — Elastic Compute Cloud
 type: service
-tags: [ec2, compute, iaas, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, ssh, rdp, instance-lifecycle, shared-responsibility, ebs, key-pair, host, tenancy, dedicated-host, dedicated-instance, instance-store, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, security-group, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns]
+tags: [ec2, compute, iaas, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, ssh, rdp, instance-lifecycle, shared-responsibility, ebs, key-pair, host, tenancy, dedicated-host, dedicated-instance, instance-store, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, security-group, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns, containers]
 certs: [aws-saa]
-updated: 2026-06-03
+updated: 2026-06-04
 ---
 
 # EC2 — Elastic Compute Cloud
@@ -591,7 +591,7 @@ EC2 is the **default compute service** in AWS. Reach for it first; deviate only 
 Move *away from* EC2 when a niche requirement clearly favours another service:
 
 - **Event-driven, short-lived, sporadic** → Lambda
-- **Containerised microservices without OS management** → ECS / EKS (with Fargate for the no-host case)
+- **Containerised microservices without OS management** → ECS / EKS (with Fargate for the no-host case). See [Containers](../concepts/containers.md) for the container vs VM model, image layers, registries, and port-exposure basics
 - **Fully managed runtime / PaaS** → Elastic Beanstalk, App Runner
 - **Specialised workload primitives** (queues, streams, data warehouses) → use the managed primitive, not a VM hosting it
 
@@ -818,6 +818,7 @@ The instance-level concerns are EC2-specific (resize is a stop/start, see [Stop/
 - [Cost Optimization — Savings Plans, Reserved Instances, Spot Instances](../patterns/cost-optimization.md)
 - [EC2 Purchase Options — On-Demand Instances, Spot Instances, Reserved Instances, On-Demand Capacity Reservations, Savings Plans, Dedicated Hosts, Dedicated Instances](../patterns/ec2-purchase-options.md)
 - [Scaling — Horizontal vs Vertical](../patterns/scaling.md)
+- [Containers — container vs VM model, image layers, registries](../concepts/containers.md)
 - [AWS SAA Exam Notes — EC2](../certifications/aws-saa.md#ec2)
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_101.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_architecture_and_resilience.md`
@@ -828,6 +829,7 @@ The instance-level concerns are EC2-specific (resize is a stop/start, see [Stop/
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_ami.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_horizontal_and_vertical_scaling.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_instance_metadata.md`
+- Source: `raw/aws-cert-study-notes/aws-solution-architect/container_introduction.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_instance_status_checks_and_auto_recovery.md`
 - [EC2 Instance Types — official AWS docs](https://aws.amazon.com/ec2/instance-types/)
 - [ec2instances.info (Vantage)](https://instances.vantage.sh/) — sortable reference with pricing

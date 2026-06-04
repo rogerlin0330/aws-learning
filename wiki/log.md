@@ -1,5 +1,9 @@
 # Wiki Log
 
+## [2026-06-04] ingest | Container Introduction
+
+Ingested `raw/aws-cert-study-notes/aws-solution-architect/container_introduction.md` into a new [Containers](concepts/containers.md) concept page. Copied `image-anatomy.png` and `container-anatomy.png` from raw assets into `wiki/assets/` and embedded them with descriptive alt text. Added the VM-vs-container distinction, Dockerfile/image/layer model, per-container R/W layer, registries, port exposure, Docker terminology, and SAA exam tips. Refined the raw note's OS wording: a base image carries user-space files and libraries, but the running container still shares the host OS kernel. Updated EC2, SAA notes, overview, and index with inline links.
+
 ## [2026-06-03] ingest | EC2 Instance Status Checks & Auto Recovery
 
 Ingested `raw/aws-cert-study-notes/aws-solution-architect/ec2_instance_status_checks_and_auto_recovery.md` into the wiki. The raw note covered the two status checks, the CloudWatch Status Check Alarm (trigger condition, SNS notification, four optional EC2 actions), and auto recovery (preserved IP addressing + same-AZ-only + EBS-only + supported-instance-types + spare-capacity requirements). Two synthesis additions:
