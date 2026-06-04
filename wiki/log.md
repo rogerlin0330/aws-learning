@@ -1,5 +1,47 @@
 # Wiki Log
 
+## [2026-06-03] ingest | EC2 Instance Status Checks & Auto Recovery
+
+Ingested `raw/aws-cert-study-notes/aws-solution-architect/ec2_instance_status_checks_and_auto_recovery.md` into the wiki. The raw note covered the two status checks, the CloudWatch Status Check Alarm (trigger condition, SNS notification, four optional EC2 actions), and auto recovery (preserved IP addressing + same-AZ-only + EBS-only + supported-instance-types + spare-capacity requirements). Two synthesis additions:
+
+1. **Modernization note on supported instance types and Simplified Automatic Recovery.** The raw note lists A1/C4/C5/M4/M5/R3/R4/R5 as the supported set — this is the older representative list. AWS has broadened supported types to most current generations and introduced **Simplified Automatic Recovery** that is enabled by default for many current types without requiring a CloudWatch alarm. Same mechanism and same limits; the difference is opt-out vs opt-in. Flagged this in both the EC2 deep-dive section and the SAA prep section so the wiki doesn't read as out-of-date next to today's console.
+2. **Auto Recovery vs Stop/Start vs Restart side-by-side.** The raw note doesn't draw this comparison explicitly, but it's the highest-leverage framing for the exam — all three can result in a host migration (except restart), but they differ in what survives. Built a 4-column table (Host migration / Instance store data / Auto public IPv4 / EIP) and placed it both in the new section and in the SAA cheat sheet. The unique-to-auto-recovery cell is **"auto public IPv4 preserved"** — this is the one host-migration event that does not release the dynamic public IP.
+
+Updated `wiki/services/ec2.md`:
+
+- New section `## Status Checks and Auto Recovery` placed between **Instance Lifecycle and State-Based Costs** (just after Moving an instance across AZs) and **AMI** — operational health concerns belong with the lifecycle material, and auto recovery directly extends the Stop/Start vs Restart mechanics
+  - "The Two Status Checks" 4-column table (Check / Also-shown-as / What-it-watches / Typical-failure-causes), the "building's plumbing vs my apartment" mental model callout, and the static-public-IPv4 trap as a `[!warning]` Gotcha with a cross-link to IMDS (the only path for the OS to see its public IPv4)
+  - "Responding to a Failed Check" — manual responses listed, then the CloudWatch Status Check Alarm with the 5-minute consecutive-period trigger, SNS notification, and the 4-row optional-action table (Reboot / Stop / Terminate / Recover) with explicit "Terminate only self-heals when paired with an Auto Scaling group" framing
+  - "EC2 Auto Recovery" — what's preserved (all IP addressing including the auto public IPv4 + EIP), what it's for ("avoid waking up a sysadmin"), what it's not (HA / cross-AZ)
+  - "Requirements and Limits" — 4-row table covering same-AZ-only, spare-capacity dependency, supported instance types (with the modernization note), EBS-only (with a `[!tip]` Why EBS-only makes sense explaining the local-storage-cannot-follow logic)
+  - "Simplified Automatic Recovery (modern default)" subsection
+  - "Auto Recovery vs Stop/Start vs Restart" side-by-side 4-column table — the exam-leverageable comparison
+  - `[!warning]` Gotcha — auto recovery is not HA, with cross-links to Scaling and Resilience Tiers
+  - Quick recall one-liner closes the section
+- Added a `[!tip]` cross-link callout from the existing Stop/Start vs Restart subsection pointing forward to auto recovery as the third sibling (preserves all IPs unlike Stop/Start)
+- Added Key Takeaway #17 covering both status checks and auto recovery in one dense bullet
+- Added 6 rows to Quick Reference: status checks, alarm trigger, alarm destinations, auto recovery, auto recovery limits, Simplified Automatic Recovery
+- Added new tags to frontmatter (`status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns`)
+- Added the source file to the References list
+
+Updated `wiki/certifications/aws-saa.md`:
+
+- New `### EC2 Status Checks & Auto Recovery` subsection placed between **EC2 cheat sheet** and **EC2 Instance Types** — operational health belongs with the basic state-based material
+  - 10-bullet exam tips covering the two checks, what each indicates, the static-public-IPv4 trap, alarm mechanics (trigger + destinations + optional actions), the Terminate-only-self-heals-with-Auto-Scaling rule, auto recovery's preserved-IP-set, the four hard requirements (same-AZ, EBS-only, supported type, spare capacity), and Simplified Automatic Recovery
+  - "Auto Recovery vs Stop/Start vs Restart" 4-column comparison table (Host migration / Instance store / Auto public IPv4 / EIP) — the key cell is "auto recovery preserves the auto-assigned public IPv4 where Stop/Start does not"
+  - "Status Checks & Auto Recovery cheat sheet" — 14-row keyword → answer table covering the healthy-state (2/2), which-check-for-which-failure, the static-public-IPv4 trap, the 5-minute trigger, the 4 optional actions, the IP-preservation rule, the AZ-failure limitation, the instance-store incompatibility, the spare-capacity dependency, the modernization note, and the "Terminate alone is not replacement" rule
+  - `[!tip]` Exam Tip with 6 pattern-matches mapped to the right concept
+  - `[!warning]` Common Status Check / Auto Recovery Gotchas — 6 bullets including the single-AZ-not-HA trap, EBS-only, spare-capacity dependency, Terminate-without-Auto-Scaling, 5-minute trigger window, and the preserved-IP exam framing
+- Added new tags to frontmatter (`status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns`)
+
+Updated `wiki/services/cloudwatch.md`: extended the Metric Filters and Alarms section with a sentence calling out the **EC2 Status Check Alarm** as the canonical example of the alarm + EC2-action pipeline, with forward links to the new sections in the EC2 page. CloudWatch page already mentions "EC2 Actions" as a generic alarm action; this gives it a concrete name and a worked example.
+
+Updated `wiki/index.md`: extended the EC2 entry's summary with a status-checks-and-auto-recovery clause covering both checks, the alarm mechanics, the same-AZ + EBS-only + supported-type + spare-capacity requirements, the explicit "not a substitute for multi-AZ HA" note, and Simplified Automatic Recovery as the modern default.
+
+Did not update `wiki/overview.md` — the new content is a refinement of operational concerns within the existing EC2 deep-dive, not a new resilience tier or pattern, and the "Topics To Cover Next" section doesn't list status checks (correctly — they're an EC2-internal detail, not a top-level topic).
+
+Followed the [arrow notation memory](../../../.claude/projects/-Users-rogerlin-SelfProjects-aws-learning/memory/feedback_arrow_notation.md) for prose — used "1, 2" lists and plain English; preserved → and ↔ inside tables, callouts, and the explicit "Auto Recovery vs Stop/Start vs Restart" comparison where they're idiomatic shorthand.
+
 ## [2026-06-02] ingest | EC2 Instance Metadata Service (IMDS)
 
 Ingested `raw/aws-cert-study-notes/aws-solution-architect/ec2_instance_metadata.md` into the wiki. The note covered the IMDSv1 foundations cleanly (the link-local endpoint, the categories of metadata, the "OS never sees its public IPv4" connection, the unauth/unencrypted security gotcha) but **did not mention IMDSv2** — the AWS-recommended session-token-based version that mitigates SSRF. Added IMDSv2 as a critical synthesis addition; the v1 vs v2 distinction is SAA exam-relevant and IMDSv1's SSRF exploitability is the textbook Capital One 2019 breach pattern.

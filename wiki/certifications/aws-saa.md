@@ -1,9 +1,9 @@
 ---
 title: AWS Solutions Architect Associate — Exam Notes
 type: certification
-tags: [iam, vpc, networking, ec2, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, ephemeral, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, route53, organizations, cost, purchase-options, on-demand, spot, reserved-instances, scheduled-reserved, capacity-reservations, zonal-ri, regional-ri, savings-plans, byol, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, raid0, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, ebs-encryption, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr, scaling, horizontal-scaling, vertical-scaling, stateless, sticky-sessions, elasticity, load-balancer]
+tags: [iam, vpc, networking, ec2, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, ephemeral, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns, route53, organizations, cost, purchase-options, on-demand, spot, reserved-instances, scheduled-reserved, capacity-reservations, zonal-ri, regional-ri, savings-plans, byol, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, raid0, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, ebs-encryption, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr, scaling, horizontal-scaling, vertical-scaling, stateless, sticky-sessions, elasticity, load-balancer]
 certs: [aws-saa]
-updated: 2026-06-02
+updated: 2026-06-03
 ---
 
 # AWS Solutions Architect Associate (SAA-C03)
@@ -677,6 +677,60 @@ See [EC2](../services/ec2.md) for full details.
 > - **AMIs cannot be edited.** The only path is (1) launch from the AMI, (2) modify the instance, (3) capture a new AMI; the old AMI is immutable
 > - **Marketplace AMIs add a per-hour license charge** on top of the standard EC2 instance rate — easy to miss when sizing cost for vendor-bundled stacks
 > - **Private key is download-once.** A lost private key on a single-key-pair instance means a painful recovery via root-volume detach
+
+### EC2 Status Checks & Auto Recovery
+
+See [EC2 — Status Checks and Auto Recovery](../services/ec2.md#status-checks-and-auto-recovery) for full details.
+
+- **Every EC2 instance has two independent status checks**: **System** (the EC2 service and host underneath) and **Instance** (the OS layer). A healthy, fully booted instance shows **2/2 checks passed** — anything else after boot completes is a real problem
+- **System check fails** → AWS-side issue (host power, host network, host hardware/software). Common manual fixes that work: **Stop/Start** (lands on a new host) or **Recover** (auto recovery)
+- **Instance check fails** → OS-side issue (corrupt filesystem, OS networking misconfig, kernel/boot problem). Reboot, console-based recovery, or rebuild from AMI
+- **The static-public-IPv4 trap** — setting a public IPv4 on an OS interface is a classic instance-check failure pattern. The public IP lives on the [IGW](../services/vpc.md#internet-gateway-igw) as 1:1 NAT, never inside the guest
+- **Status Check Alarm** = a [CloudWatch](../services/cloudwatch.md) alarm created via the EC2 console (*Actions → Create Status Check Alarm*). Fires when **either** check fails for **≥ 1 consecutive 5-minute period**
+- **Alarm destinations**: SNS topic (notification) **plus** one optional EC2 action — **Reboot**, **Stop**, **Terminate**, or **Recover** (auto recovery)
+- **Terminate as an alarm action** only "self-heals" if paired with an [Auto Scaling group](../patterns/scaling.md) that re-provisions a replacement — on a lone instance, Terminate is just deletion
+- **Auto recovery (the Recover action)** brings the instance back to life by anything from a restart to migrating it to a **brand-new EC2 host**. **All IP addressing is preserved** — primary private IPv4, the auto-assigned public IPv4, and any Elastic IP. With software set to auto-start, the heal is fully unattended
+- **Auto recovery requirements**: (1) **same AZ only** — does not protect against AZ failure, only isolated host/instance failures; (2) **supported instance type** (older docs cite A1/C4/C5/M4/M5/R3/R4/R5 — the modern list is much broader); (3) **EBS-only** — instance store would be lost on host migration; (4) **spare host capacity** must exist in the AZ
+- **Simplified Automatic Recovery** is the modern default — most current-generation types are auto-recovered without you setting up a CloudWatch alarm. The mechanism and limits are identical; the difference is opt-out vs opt-in
+
+#### Auto Recovery vs Stop/Start vs Restart cheat sheet
+
+| Operation | Host migration | Instance-store data | Auto public IPv4 | Elastic IP |
+| --- | --- | :-: | --- | :-: |
+| **Restart (reboot)** | ❌ Never — same host | Preserved | Preserved | Preserved |
+| **Stop → Start** | Possible (new host, same AZ) | **Lost** | **Released — new IP on Start** | Preserved |
+| **Auto recovery** | Possible (new host, same AZ) | **Lost** (EBS-only requirement) | **Preserved** | Preserved |
+
+#### Status Checks & Auto Recovery cheat sheet
+
+| Keyword in the question | Answer |
+| --- | --- |
+| "Healthy instance shows X/Y checks" | **2/2 checks passed** |
+| "The check that failed indicates a host hardware fault" | **System status check** |
+| "The check that failed indicates an OS-level issue / corrupt FS / kernel problem" | **Instance status check** |
+| "Static public IPv4 set on the OS interface" | ❌ Instance check failure pattern — public IPv4 is NAT'd at the IGW, never in the guest |
+| "How do I get notified when a check fails" | **CloudWatch Status Check Alarm → SNS topic** |
+| "Alarm triggers when…" | Either check fails for **at least one consecutive 5-minute period** |
+| "Optional EC2 actions on the alarm" | **Reboot / Stop / Terminate / Recover** |
+| "Self-heal a failed instance, keep its IP, no manual action" | **Recover** (auto recovery) |
+| "Auto recovery preserves which IPs?" | **All of them** — primary private IPv4, auto-assigned public IPv4, **and** Elastic IP |
+| "Auto recovery and AZ failure" | ❌ Same-AZ only — does not survive AZ-wide failure. Use **multi-AZ + ELB + Auto Scaling** for HA |
+| "Auto recovery on an instance with instance-store volumes" | ❌ Not supported — **EBS-only** requirement |
+| "Auto recovery fails during a major regional event" | Likely **no spare host capacity** in the AZ — recovery depends on AWS having a target host to migrate to |
+| "Auto recovery isn't working on this old instance type" | Verify the type is supported — older list **A1, C4, C5, M4, M5, R3, R4, R5**; modern types are broader and most are recovered automatically (Simplified Automatic Recovery) |
+| "Terminate action on a single instance — does it replace?" | ❌ No — Terminate **deletes**; replacement requires pairing with [Auto Scaling](../patterns/scaling.md) |
+
+> [!tip] Exam Tip
+> Pattern-match: *"check the host underneath"* → **System status check**. *"check the OS inside"* → **Instance status check**. *"automated heal that preserves the same IP"* → **Recover** (auto recovery), not Stop/Start. *"automated heal that survives AZ failure"* → ❌ not auto recovery — you need a **multi-AZ fleet behind a load balancer**. *"alarm fires after 5 minutes of failed checks"* → standard Status Check Alarm trigger. *"notify the team when an instance becomes unhealthy"* → **CloudWatch Status Check Alarm + SNS**.
+
+> [!warning] Common Status Check / Auto Recovery Gotchas
+>
+> - **Auto recovery is single-AZ, not HA.** It saves you from an isolated host failure, not from an AZ outage. The exam trap is selecting "enable auto recovery" as the answer to "design for AZ failure"
+> - **Auto recovery requires EBS-only.** Instance-store volumes block recovery — by definition, local disks cannot follow the instance to a new host
+> - **Auto recovery requires spare capacity.** In a major regional event, the underlying mechanism can silently fail because AWS has no free host to migrate to
+> - **Terminate as an alarm action is not a replacement mechanism on its own** — only when paired with Auto Scaling does termination self-heal. On a lone instance, Terminate ends the instance and that's it
+> - **5 minutes of consecutive failure** is the trigger — shorter blips don't fire the alarm. Use richer CloudWatch metric thresholds if you need a tighter SLO
+> - **Auto recovery preserves IPs, including the auto-assigned public IPv4** — this is the one case where a host-migration event does *not* release the dynamic public IP. The contrast with Stop/Start is exam-testable
 
 ### EC2 Instance Types
 

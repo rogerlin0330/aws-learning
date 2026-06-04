@@ -3,7 +3,7 @@ title: Amazon CloudWatch
 type: service
 tags: [cloudwatch, monitoring, logging, observability, ec2, lambda, cloudtrail, vpc]
 certs: [aws-saa]
-updated: 2026-05-18
+updated: 2026-06-03
 ---
 
 # Amazon CloudWatch
@@ -58,6 +58,8 @@ Metric filters let you **generate numeric metrics from log content**:
 3. Set an **alarm** on that metric to notify (SNS) or trigger automated responses (Lambda, Auto Scaling, EC2 Actions)
 
 This pipeline is how AWS converts unstructured logs into actionable telemetry without exporting data to a separate tool.
+
+The canonical example of the alarm + **EC2 action** pipeline is the [EC2 Status Check Alarm](ec2.md#status-checks-and-auto-recovery) — a built-in alarm on either of EC2's two instance status checks that can notify via SNS and optionally **Reboot / Stop / Terminate / Recover** the instance (the **Recover** action triggers [EC2 auto recovery](ec2.md#ec2-auto-recovery)).
 
 ## CloudWatch Logs as the Logging Backbone
 

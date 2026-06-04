@@ -1,9 +1,9 @@
 ---
 title: EC2 — Elastic Compute Cloud
 type: service
-tags: [ec2, compute, iaas, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, ssh, rdp, instance-lifecycle, shared-responsibility, ebs, key-pair, host, tenancy, dedicated-host, dedicated-instance, instance-store, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, security-group, imds, instance-metadata, imdsv2, link-local, user-data, ssrf]
+tags: [ec2, compute, iaas, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, ssh, rdp, instance-lifecycle, shared-responsibility, ebs, key-pair, host, tenancy, dedicated-host, dedicated-instance, instance-store, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, security-group, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns]
 certs: [aws-saa]
-updated: 2026-06-02
+updated: 2026-06-03
 ---
 
 # EC2 — Elastic Compute Cloud
@@ -303,6 +303,9 @@ Both preserve the instance ID, the EBS root-volume contents, the private IPv4, a
 > [!warning] Gotcha — "Why did my public IP change?"
 > The auto-assigned public IPv4 is released on **Stop** and a new one is assigned on **Start**. A plain **Restart** keeps the same public IP. If a stable public address is required across stop/start cycles, attach an **Elastic IP** (and remember it bills hourly while not attached to a running instance — see the cost table above).
 
+> [!tip] Auto recovery is the third sibling
+> [Auto recovery](#ec2-auto-recovery) can also land the instance on a new host in the same AZ, but it **preserves all IP addressing** (auto public IPv4 included) where Stop/Start does not. See [Auto Recovery vs Stop/Start vs Restart](#auto-recovery-vs-stopstart-vs-restart) for the side-by-side.
+
 ### Moving an instance across AZs
 
 Instances **cannot natively cross AZ boundaries** — they're tied to their host, which is tied to its AZ. To relocate:
@@ -313,6 +316,81 @@ Instances **cannot natively cross AZ boundaries** — they're tied to their host
 4. Update any DNS, load balancer, or [Security Group](vpc.md#security-groups-sg) references to point at the new instance
 
 This is the only path. For multi-AZ high availability the architectural answer is not "make one instance cross AZs"; it is "**run a fleet across multiple AZs and load-balance**" — see [Overview — Resilience Tiers](../overview.md#resilience-tiers).
+
+## Status Checks and Auto Recovery
+
+EC2 continuously monitors every instance with **two independent status checks**. Each watches a different layer of the stack, so the check that fails tells you where the problem lives — the EC2 service and host underneath, or the operating system inside the instance. A healthy, fully booted instance shows **2/2 checks passed**; anything else (after boot completes) is a problem to resolve. During boot you may briefly see `initializing` or `1/2 passed`.
+
+### The Two Status Checks
+
+| Check | Also shown as | What it watches | Typical causes of failure |
+| --- | --- | --- | --- |
+| **System status** | System Reliability Check | The EC2 **service / host** underneath the instance | Loss of system power, lost network connectivity, hardware or software fault on the EC2 host |
+| **Instance status** | Instance Reachability Check | The **instance itself** (OS layer) | Corrupt file system, misconfigured networking inside the OS, kernel issues preventing proper startup |
+
+> [!tip] Mental model
+> System check = *"Is the building's power and plumbing working?"* Instance check = *"Is the problem inside my own apartment?"* The check that fails identifies whose problem it is — AWS's (system) or yours (instance).
+
+> [!warning] Gotcha — the static public IPv4 trap
+> A classic instance-check failure is statically setting a **public IPv4 address on the OS's internal interface**. This never works — the public IP is mapped externally by 1:1 NAT at the [IGW](vpc.md#internet-gateway-igw) and is never configured inside the guest OS. [IMDS](#instance-metadata-service-imds) is the only path for the OS to even *see* its public IPv4.
+
+### Responding to a Failed Check
+
+You can respond manually or set up an automated response.
+
+**Manual responses:** stop and start the instance, restart (reboot), or terminate and re-launch.
+
+**Automated response — the Status Check Alarm.** Create a [CloudWatch](cloudwatch.md) alarm via *Actions → Create Status Check Alarm* in the EC2 console. The alarm fires when **either** status check fails for **at least one consecutive 5-minute period**, publishes a notification to an **SNS** topic, and optionally takes one EC2 action:
+
+| Action | What it does | When it's useful |
+| --- | --- | --- |
+| **Reboot** | OS-level reboot — same host | Quick fix for transient instance-layer issues |
+| **Stop** | Stops the instance | Lets you preserve a "frozen" state for diagnostics — see [Stop/Start vs Restart](#stopstart-vs-restart--these-are-not-the-same) for what changes |
+| **Terminate** | Destroys the instance | Pairs with an HA setup — an [Auto Scaling group](../patterns/scaling.md) re-provisions a replacement. On a lone instance, the instance is simply gone — nothing replaces it |
+| **Recover** | Triggers **auto recovery** (next section) | Recover from an isolated host/instance failure with the configuration intact |
+
+### EC2 Auto Recovery
+
+Auto recovery is the "headline" automated response. It attempts to bring a failed instance back to life by taking a graduated set of actions — anywhere from a **simple restart** to **migrating the instance to a brand-new EC2 host in the same AZ**.
+
+**What's preserved:** the instance comes up with **exactly the same configuration** — including all **IP addressing** (primary private IPv4, the auto-assigned public IPv4 if it had one, and any [Elastic IP](#elastic-ip-eip--1-per-private-ipv4)). If the software inside the instance is set to auto-start, recovery can run **fully unattended** — hence the name. From the caller's point of view, the instance simply heals.
+
+**Purpose:** lightweight automation to handle a narrow set of **isolated host or instance failures** and "avoid waking up a sysadmin". It is **not** designed for AZ-wide or region-wide outages, and it is **not a substitute for a multi-AZ HA fleet**.
+
+#### Requirements and Limits
+
+| Constraint | Detail |
+| --- | --- |
+| **Same AZ only** | EC2 is AZ-bound — recovery moves the instance within the **same Availability Zone**. It does **NOT** protect against a full AZ failure, only isolated host or instance failures |
+| **Spare capacity needed** | Relies on AWS having **spare EC2 host capacity** in the AZ. In a major multi-AZ regional event, recovery can fail if no spare exists |
+| **Supported instance types only** | Older notes list **A1, C4, C5, M4, M5, R3, R4, R5** as representative. AWS has since broadened the supported set to most current-generation types and enables recovery automatically on many of them — verify against current AWS docs for the specific instance type |
+| **EBS only** | The instance must use **EBS volumes exclusively**. **Instance store** is physically attached to the host — migrating to a new host cannot carry it along, so auto recovery is incompatible with instance-store volumes |
+
+> [!tip] Why EBS-only makes sense
+> Instance store lives on the host's local disks. Migrating to a new host is the whole point of auto recovery — but local storage cannot follow. Only network-attached EBS volumes can re-attach to the recovered instance on the new host. The restriction falls straight out of the [Stop/Start vs Restart](#stopstart-vs-restart--these-are-not-the-same) mechanics: any host change wipes [instance store](#instance-store).
+
+#### Simplified Automatic Recovery (modern default)
+
+Modern EC2 also includes **Simplified Automatic Recovery** — for most current-generation instance types, AWS automatically recovers a failed instance **without** requiring you to create a CloudWatch status check alarm. The mechanism and limits (same AZ, EBS-only, spare-capacity dependency) are the same; the difference is that you opt out, not in. The legacy "create a status check alarm with the Recover action" path is still supported and is what older study material describes.
+
+#### Auto Recovery vs Stop/Start vs Restart
+
+All three can result in a host migration except restart. The difference is what each preserves on migration:
+
+| Operation | Host | Instance store data | Auto-assigned public IPv4 | Elastic IP |
+| --- | --- | --- | --- | --- |
+| **Restart (reboot)** | **Same host** — never migrates | Preserved | Preserved | Preserved |
+| **Stop → Start** | May land on a **new host** in the same AZ | **Lost** | **Released; new IP on start** | Preserved (if attached) |
+| **Auto recovery** | May land on a **new host** in the same AZ | **Lost** (EBS-only requirement) | **Preserved** | **Preserved** |
+
+The IP preservation is what makes auto recovery distinct from a stop/start — and is why it can plausibly advertise as a transparent self-heal.
+
+> [!warning] Gotcha — auto recovery is not HA
+> Auto recovery moves the instance **within one AZ**. If the AZ itself fails (power outage, network partition, regional event), there is no host to recover onto. Multi-AZ high availability remains a fleet-and-load-balancer concern — see [Scaling — Horizontal vs Vertical](../patterns/scaling.md) and [Overview — Resilience Tiers](../overview.md#resilience-tiers). Use auto recovery as the *lightweight* automation tier, not the resilience strategy.
+
+### Status checks and auto recovery — quick recall
+
+> Two checks (**system** = host/service, **instance** = OS). Healthy = **2/2**. The status-check alarm fires when either check fails for **≥ 1 consecutive 5-minute period**, notifies via **SNS**, and can optionally **Reboot / Stop / Terminate / Recover**. **Recover** = auto recovery = a same-AZ heal that **preserves all IP addressing** but requires **EBS-only**, a **supported instance type**, and **spare host capacity**.
 
 ## AMI — Amazon Machine Image
 
@@ -687,6 +765,7 @@ The instance-level concerns are EC2-specific (resize is a stop/start, see [Stop/
 14. **Instance store** — physically local to the host; highest performance in AWS; launch-time only; **lost on any host move** (stop/start, resize, host failure); reboot preserves data; included in instance price. See [Instance Store](#instance-store)
 15. **ENI is the unit of network identity, not the instance** — IPs, DNS names, MAC, EIPs, IPv6, [Security Groups](vpc.md#security-groups-sg), and source/destination check **all live on the ENI**. Every instance has exactly 1 primary ENI (cannot detach) + 0+ secondary ENIs (detachable, movable between instances — the MAC-licensing / IP-failover pattern). All ENIs on an instance must be in the **same AZ**, but can sit in different subnets. The auto-assigned public IPv4 is **not visible inside the OS** (NAT at the [IGW](vpc.md#internet-gateway-igw)); IPv6 is. **Split-horizon DNS**: the public DNS name resolves to the **private IP inside the VPC**, the public IP **outside**. See [Network Interfaces (ENIs)](#network-interfaces-enis)
 16. **Instance Metadata Service (IMDS)** — fixed link-local endpoint **`http://169.254.169.254/latest/meta-data/`** that every instance can query about itself. Exposes networking (including the **public IPv4 the OS cannot see**), **IAM role credentials** (how SDKs get keys without baking them in), user data, and EC2 Instance Connect SSH keys. **IMDSv1 is unauthenticated and unencrypted** — vulnerable to SSRF exfiltration of role credentials (Capital One 2019); enforce **IMDSv2** (`HttpTokens=required`) which adds a session-token handshake. See [Instance Metadata Service (IMDS)](#instance-metadata-service-imds)
+17. **Status checks and auto recovery** — every instance has **two independent status checks**: **System** (the host/service underneath) and **Instance** (the OS layer); healthy = **2/2**. A **CloudWatch Status Check Alarm** can fire when either check fails for **≥ 1 consecutive 5-minute period**, notify via **SNS**, and optionally **Reboot / Stop / Terminate / Recover**. **Auto recovery** = same-AZ heal that **preserves all IP addressing** (private + auto public IPv4 + EIP); requires **EBS-only**, a **supported instance type**, and **spare host capacity**. Same-AZ only — **not a substitute for multi-AZ HA**. Modern current-generation types get **Simplified Automatic Recovery** by default with no alarm needed. See [Status Checks and Auto Recovery](#status-checks-and-auto-recovery)
 
 ## Quick Reference
 
@@ -723,6 +802,12 @@ The instance-level concerns are EC2-specific (resize is a stop/start, see [Stop/
 | Instance Metadata Service endpoint | **`http://169.254.169.254/latest/meta-data/`** — link-local, same IP on every instance |
 | IMDS use cases | Public IPv4 discovery, IAM role credentials, user data, EC2 Instance Connect SSH keys, self-identifying attributes (AMI ID, AZ, instance type, security groups) |
 | IMDSv1 vs IMDSv2 | v1 = unauthenticated `GET` (SSRF-exploitable); v2 = `PUT`-token handshake + `X-aws-ec2-metadata-token` header on every `GET`. Enforce v2 via `HttpTokens=required` |
+| Status checks | **System** (host/service) + **Instance** (OS). Healthy = **2/2 checks passed**. Anything else after boot = problem |
+| Status Check Alarm trigger | Either check fails for **≥ 1 consecutive 5-minute period** |
+| Status Check Alarm destinations | **SNS** topic (notification) + optional EC2 action: **Reboot / Stop / Terminate / Recover** |
+| Auto recovery | Same-AZ heal that **preserves all IP addressing** (private + auto public IPv4 + EIP); requires EBS-only, supported instance type, spare capacity |
+| Auto recovery limits | **Same AZ only** (not cross-AZ — not HA), **EBS-only** (no instance store), supported instance types only, spare host capacity required |
+| Simplified Automatic Recovery | Default on most current-generation instance types — same mechanism, no CloudWatch alarm required |
 
 ## References
 
@@ -743,5 +828,6 @@ The instance-level concerns are EC2-specific (resize is a stop/start, see [Stop/
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_ami.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_horizontal_and_vertical_scaling.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_instance_metadata.md`
+- Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_instance_status_checks_and_auto_recovery.md`
 - [EC2 Instance Types — official AWS docs](https://aws.amazon.com/ec2/instance-types/)
 - [ec2instances.info (Vantage)](https://instances.vantage.sh/) — sortable reference with pricing
