@@ -457,10 +457,10 @@ See [S3 — Event Notifications](../services/s3.md#event-notifications) for full
 
 See [S3 — Access Logging](../services/s3.md#access-logging) for full details.
 
-- Async, best-effort request-level audit log of every operation against a **source bucket**, delivered as **Apache-style** text files into a **target bucket** (same region)
+- Async, best-effort request-level audit log of every operation against a **source bucket**, delivered as **Apache-style** text files into a **target bucket** (same region and same account)
 - Configured on the **source bucket** via the console or **`PUT Bucket logging`** API; the XML config names the target bucket and an optional `TargetPrefix`
-- Log delivery is performed by the AWS-managed **S3 Log Delivery Group** — *not* the source-bucket owner or the requester
-- The Log Delivery Group needs **write access to the target bucket**, granted via an **ACL** on the target bucket (one of the few legitimate uses of S3 ACLs left). **Not** a bucket policy
+- Log delivery is performed by the AWS-managed S3 logging delivery path — *not* the source-bucket owner or the requester
+- The target bucket grants write access to the **`logging.s3.amazonaws.com`** service principal. Use a **bucket policy** for modern buckets; an ACL grant to the legacy S3 Log Delivery Group is possible only when ACLs are enabled and is not recommended
 - **Best-efforts, hours of latency** — enabling logging or changing config can take a few hours; delivery is not guaranteed real-time. Don't build alerting on top of it
 - **Format**: log files contain many records; **records are newline-delimited**, **attributes within a record are space-delimited**. Conceptually identical to an Apache access log
 - **One target bucket, many sources** — use distinct `TargetPrefix` values per source bucket
@@ -476,10 +476,10 @@ See [S3 — Access Logging](../services/s3.md#access-logging) for full details.
 | Compliance evidence of every read/write at minimal cost | **S3 Access Logs** + lifecycle to Glacier |
 
 > [!tip] Exam Tip
-> Pattern-match: *"who accessed which objects in my bucket, cheapest option"* → **S3 Access Logs**. *"where do I enable logging / where do logs go"* → enable on **source bucket**, delivered to **target bucket**. *"how does S3 get permission to write into the target bucket"* → **ACL** granting the **S3 Log Delivery Group** WRITE permission (not a bucket policy). *"why is logging not showing up immediately"* → **best-efforts; can take hours**. *"record / attribute delimiter"* → **newline / space**. *"log retention"* → **your responsibility — use Lifecycle**. *"need real-time / structured / IAM-context-rich logs for security automation"* → **CloudTrail data events**, not access logs. *"need to trigger Lambda on object upload"* → **Event Notifications**, not access logs (access logs are batch/delayed).
+> Pattern-match: *"who accessed which objects in my bucket, cheapest option"* → **S3 Access Logs**. *"where do I enable logging / where do logs go"* → enable on **source bucket**, delivered to **target bucket**. *"target bucket constraints"* → **same region and same account**, no Object Lock default retention, no Requester Pays. *"how does S3 get permission to write into the target bucket"* → **bucket policy** granting `s3:PutObject` to **`logging.s3.amazonaws.com`**. *"why is logging not showing up immediately"* → **best-efforts; can take hours**. *"record / attribute delimiter"* → **newline / space**. *"log retention"* → **your responsibility — use Lifecycle**. *"need real-time / structured / IAM-context-rich logs for security automation"* → **CloudTrail data events**, not access logs. *"need to trigger Lambda on object upload"* → **Event Notifications**, not access logs (access logs are batch/delayed).
 
-> [!warning] Gotcha — access logs are the rare legitimate ACL use case
-> Modern S3 defaults to ACLs disabled (Object Ownership = Bucket owner enforced). The target bucket for access logging must keep ACLs enabled, because the S3 Log Delivery Group is granted via the ACL grantee model. If a question describes "ACLs disabled on the target bucket / log delivery failing", re-enabling ACLs (or using a different target bucket) is the fix.
+> [!warning] Gotcha — ACLs disabled changes the answer
+> Modern S3 defaults to ACLs disabled (Object Ownership = Bucket owner enforced). In that mode, an ACL grant to the S3 Log Delivery Group cannot work. The fix is a target-bucket policy granting `s3:PutObject` to `logging.s3.amazonaws.com`, not re-enabling ACLs.
 
 ### S3 Access Points & Multi-Region Access Points
 
