@@ -69,7 +69,7 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 
 ### Compute Packaging Changes the Management Line
 
-[EC2](services/ec2.md) gives you the full OS and runtime surface. [Containers](concepts/containers.md) package the application and dependencies into portable images that run as isolated processes on a host OS. Two managed orchestrators run those containers: [ECS](services/ecs.md) (AWS-proprietary) and [EKS](services/eks.md) (AWS-managed [Kubernetes](concepts/kubernetes.md), the cloud-agnostic open standard). Both run tasks/pods on EC2 when you want host control and pricing flexibility, or on Fargate when you want AWS to own the host layer — so launch type is orthogonal to the orchestrator choice. Managed compute such as Fargate or Lambda shifts more infrastructure responsibility away from you, but the exam still tests the basic boundary: VM means full guest OS; container means shared host kernel plus packaged user-space dependencies.
+[EC2](services/ec2.md) gives you the full OS and runtime surface. [Containers](concepts/containers.md) package the application and dependencies into portable images that run as isolated processes on a host OS. Two managed orchestrators run those containers: [ECS](services/ecs.md) (AWS-proprietary) and [EKS](services/eks.md) (AWS-managed [Kubernetes](concepts/kubernetes.md), the cloud-agnostic open standard). Both run tasks/pods on EC2 when you want host control and pricing flexibility, or on Fargate when you want AWS to own the host layer — so launch type is orthogonal to the orchestrator choice. Both orchestrators pull their images from a registry — on AWS that is [ECR](services/ecr.md), the managed container image registry that stores, scans, and distributes images for ECS, EKS, and Fargate. Managed compute such as Fargate or Lambda shifts more infrastructure responsibility away from you, but the exam still tests the basic boundary: VM means full guest OS; container means shared host kernel plus packaged user-space dependencies.
 
 ## Pages in This Wiki
 
@@ -80,6 +80,7 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 - [EC2](services/ec2.md) — IaaS foundations, hosts vs instances (tenancy + AZ-resilience), instance lifecycle & state-based costs (incl. stop/start vs restart), AMIs, SSH/RDP access, when-to-use-EC2 decision framing
 - [ECS](services/ecs.md) — managed container orchestration (AWS-proprietary); task definitions, services, task roles, EC2 launch type vs Fargate
 - [EKS](services/eks.md) — AWS-managed Kubernetes; control plane + etcd (multi-AZ), node options (EC2 / managed node groups / Fargate), two-VPC architecture, ECS-vs-EKS choice
+- [ECR](services/ecr.md) — managed container image registry; registry/repository/image/tag hierarchy, public vs private permission model, IAM + repository policies, Basic vs Enhanced (Inspector) scanning, cross-region + cross-account replication
 - [S3](services/s3.md) — buckets, bucket policies, ACLs (legacy), Block Public Access, pre-signed URLs, versioning, SSE/CSE encryption, multipart upload + Transfer Acceleration, storage classes + lifecycle, replication (CRR/SRR), S3 Select / Glacier Select, event notifications + EventBridge, access logging
 - [Route 53](services/route53.md) — hosted zones, routing policies, health checks
 - [Organizations](services/organizations.md) — multi-account management, consolidated billing, SCPs
@@ -114,6 +115,6 @@ Most real-world AWS deployments use **many accounts** — a per-team / per-envir
 
 - EC2: placement groups, user-data & bootstrapping (IMDS / IMDSv2 now covered on the [EC2 page](services/ec2.md#instance-metadata-service-imds))
 - ELB / Auto Scaling: ALB vs NLB, target groups, scaling policies — builds directly on the [Scaling pattern](patterns/scaling.md)
-- Container services: deeper ECR coverage — builds on [ECS](services/ecs.md), [EKS](services/eks.md), and the [Containers](concepts/containers.md) / [Kubernetes](concepts/kubernetes.md) concept pages
+- Container services: ELB integration patterns and App Mesh / service discovery — builds on [ECS](services/ecs.md), [EKS](services/eks.md), [ECR](services/ecr.md), and the [Containers](concepts/containers.md) / [Kubernetes](concepts/kubernetes.md) concept pages
 - AWS AI services (for AI Practitioner cert)
 - Architecture patterns: HA, multi-AZ, disaster recovery tiers

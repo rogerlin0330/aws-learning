@@ -8,7 +8,7 @@ updated: 2026-06-05
 
 # AWS Solutions Architect Associate (SAA-C03)
 
-A running collection of exam tips, gotchas, and comparison tables. Deep-dive pages: [IAM](../services/iam.md) · [VPC](../services/vpc.md) · [EC2](../services/ec2.md) · [ECS](../services/ecs.md) · [S3](../services/s3.md) · [Route 53](../services/route53.md) · [Organizations](../services/organizations.md) · [CloudWatch](../services/cloudwatch.md) · [KMS](../services/kms.md) · [EKS](../services/eks.md) · [Networking](../concepts/networking.md) · [Identity & Access](../concepts/identity-and-access.md) · [Resource vs Identity Policies](../concepts/resource-vs-identity-policies.md) · [DNS](../concepts/dns.md) · [TLS/HTTPS](../concepts/tls-https.md) · [Containers](../concepts/containers.md) · [Kubernetes](../concepts/kubernetes.md) · [Cost Optimization](../patterns/cost-optimization.md) · [Scaling](../patterns/scaling.md).
+A running collection of exam tips, gotchas, and comparison tables. Deep-dive pages: [IAM](../services/iam.md) · [VPC](../services/vpc.md) · [EC2](../services/ec2.md) · [ECS](../services/ecs.md) · [ECR](../services/ecr.md) · [S3](../services/s3.md) · [Route 53](../services/route53.md) · [Organizations](../services/organizations.md) · [CloudWatch](../services/cloudwatch.md) · [KMS](../services/kms.md) · [EKS](../services/eks.md) · [Networking](../concepts/networking.md) · [Identity & Access](../concepts/identity-and-access.md) · [Resource vs Identity Policies](../concepts/resource-vs-identity-policies.md) · [DNS](../concepts/dns.md) · [TLS/HTTPS](../concepts/tls-https.md) · [Containers](../concepts/containers.md) · [Kubernetes](../concepts/kubernetes.md) · [Cost Optimization](../patterns/cost-optimization.md) · [Scaling](../patterns/scaling.md).
 
 ## IAM
 
@@ -724,7 +724,7 @@ See [ECS](../services/ecs.md) for the full service page and [Containers](../conc
 - **Task role:** [IAM role](../services/iam.md#iam-roles) assumed by the task. This is the best-practice way for application containers to access AWS services
 - **Task execution role:** platform/setup role used by ECS or Fargate to pull images and write logs. Do not confuse it with the task role
 - **Service:** long-running distributed layer that keeps a desired number of task copies running, replaces failed tasks, supports rolling deployments, and can attach to a load balancer
-- **ECR:** AWS-managed container registry; ECS task definitions can point at images in ECR or another registry
+- **ECR:** AWS-managed container registry (see the dedicated [ECR section](#ecr) below); ECS task definitions can point at images in [ECR](../services/ecr.md) or another registry
 - **EC2 launch type:** ECS places tasks on EC2 container instances in your account. You manage and pay for the host fleet even when it is idle, but you get EC2 pricing flexibility such as Spot and Reserved Instances
 - **Fargate launch type:** no EC2 host fleet to manage. Tasks run on AWS-managed infrastructure and attach to your [VPC](../services/vpc.md) through [ENIs](../concepts/networking.md#elastic-network-interfaces-enis)
 - **Fargate billing correction:** billed for configured task resources while tasks run, not for live CPU utilization only
@@ -750,6 +750,43 @@ See [ECS](../services/ecs.md) for the full service page and [Containers](../conc
 
 > [!warning] Common ECS Gotchas
 > A standalone task is not highly available by itself; use a service for production desired-count management. Fargate removes EC2 host management, but it does not remove VPC design: subnets, security groups, routes, public IP assignment, and load balancers still matter. The task role is for app permissions; the execution role is for ECS platform setup.
+
+### ECR
+
+See [ECR](../services/ecr.md) for the full service page.
+
+- **ECR is the managed container image registry** — "Docker Hub for AWS." It stores, secures, scans, and distributes images; it does not build or run them
+- **Hierarchy:** registry → repository → image → tag. **Tags are unique within a repository**
+- **One private registry per account, per region** (endpoint `<account>.dkr.ecr.<region>.amazonaws.com`); plus access to a public registry. The private registry is a **regional** resource
+- **Public registry:** anyone can pull, push needs permissions. **Private registry:** permissions required for **all** operations
+- **[IAM](../services/iam.md) controls all access**; **repository policies** (resource policies) enable cross-account pulls
+- **Enhanced scanning = Amazon Inspector**, OS + software packages, layer-by-layer; **Basic** is the lighter built-in scan
+- **Observability:** CloudWatch (metrics), CloudTrail (API audit), EventBridge (image-change events)
+- **Replication is cross-region AND cross-account**
+- **Who pulls the private image?** On ECS it's the **[task execution role](../services/ecs.md#task-definitions-and-task-roles)**, not the task role
+
+#### ECR cheat sheet
+
+| Keyword in the question | Answer |
+| --- | --- |
+| "Managed container image registry on AWS" | **ECR** |
+| "Tags must be unique within…" | The **repository** |
+| "Anyone can pull, no credentials" | **Public** registry |
+| "Permissions required for pull and push" | **Private** registry |
+| "Grant another AWS account pull access" | **Repository (resource) policy** |
+| "CVE / vulnerability scan, OS + language packages, layer-by-layer" | **Enhanced scanning (Inspector)** |
+| "Lighter, default image scan" | **Basic scanning** |
+| "Metrics on push / pull / auth" | **CloudWatch** |
+| "Audit who called which ECR API" | **CloudTrail** |
+| "Trigger a workflow when a new image is pushed" | **EventBridge** |
+| "Copy images to another region or account" | **Replication** (cross-region and cross-account) |
+| "ECS can't pull the private image" | Check the **task execution role** permissions |
+
+> [!tip] Exam Tip
+> The two highest-value ECR facts: **Enhanced scanning is the Inspector tier** (OS + software packages, layer-by-layer) — Basic is the lighter option; and **ECR replication is both cross-region and cross-account**. For "who pulls the image on ECS," the answer is the **task execution role**.
+
+> [!warning] Common ECR Gotchas
+> The private registry is **regional** — an image pushed to one region isn't in another unless you configure replication. Public vs private only changes the **read** default (anonymous pull on public); push always needs permissions. Don't credit **Inspector** to Basic scanning — only **Enhanced** uses it.
 
 ### Kubernetes & EKS
 

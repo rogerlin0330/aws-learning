@@ -75,7 +75,7 @@ Use a service for:
 
 ECS does not build your application by itself. It runs images from a **container registry**.
 
-[Amazon ECR](https://docs.aws.amazon.com/AmazonECR/latest/userguide/what-is-ecr.html) is AWS's managed container registry. It fits naturally with ECS because IAM controls image access, ECS can pull private images through the execution role, and the registry lives inside the AWS operational model. Docker Hub and other registries can also be used when appropriate.
+[Amazon ECR](ecr.md) is AWS's managed container registry. It fits naturally with ECS because [IAM](iam.md) controls image access, ECS can pull private images through the [task execution role](#task-definitions-and-task-roles), and the registry lives inside the AWS operational model. Docker Hub and other registries can also be used when appropriate.
 
 ## Launch Types and Capacity Providers
 

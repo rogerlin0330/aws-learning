@@ -72,7 +72,7 @@ Typical workflow:
 4. Pull the image onto one or more container hosts
 5. Run one or more containers from that image
 
-One image can create many containers, and many hosts can pull the same image. In AWS, this model is the foundation for services such as [ECS](../services/ecs.md), [EKS](../services/eks.md), Fargate, and ECR. The service-specific details are separate, but the image, registry, host, and running-container vocabulary stays the same.
+One image can create many containers, and many hosts can pull the same image. In AWS, this model is the foundation for services such as [ECS](../services/ecs.md), [EKS](../services/eks.md), Fargate, and [ECR](../services/ecr.md) (the managed image registry). The service-specific details are separate, but the image, registry, host, and running-container vocabulary stays the same.
 
 ## Networking and Ports
 

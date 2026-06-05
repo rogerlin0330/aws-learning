@@ -64,7 +64,7 @@ EKS integrates with AWS the way a native product would:
 
 | Need | AWS service |
 | --- | --- |
-| Container images | **[ECR](ecs.md#container-registries-and-ecr)** (Elastic Container Registry) |
+| Container images | **[ECR](ecr.md)** (Elastic Container Registry) |
 | Load balancing (wherever Kubernetes needs it) | **Elastic Load Balancers** (via the AWS Load Balancer Controller acting as the [ingress controller](../concepts/kubernetes.md#services-ingress-and-jobs)) |
 | Security / identity | **[IAM](iam.md)** |
 | Networking | **[VPC](vpc.md)** |
