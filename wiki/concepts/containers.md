@@ -1,9 +1,9 @@
 ---
 title: Containers
 type: concept
-tags: [containers, docker, dockerfile, container-image, container-registry, virtualization, compute, ecs, ecr, fargate]
+tags: [containers, docker, dockerfile, container-image, container-registry, virtualization, compute, ecs, eks, kubernetes, ecr, fargate]
 certs: [aws-saa]
-updated: 2026-06-04
+updated: 2026-06-05
 ---
 
 # Containers
@@ -72,7 +72,7 @@ Typical workflow:
 4. Pull the image onto one or more container hosts
 5. Run one or more containers from that image
 
-One image can create many containers, and many hosts can pull the same image. In AWS, this model is the foundation for services such as [ECS](../services/ecs.md), EKS, Fargate, and ECR. The service-specific details are separate, but the image, registry, host, and running-container vocabulary stays the same.
+One image can create many containers, and many hosts can pull the same image. In AWS, this model is the foundation for services such as [ECS](../services/ecs.md), [EKS](../services/eks.md), Fargate, and ECR. The service-specific details are separate, but the image, registry, host, and running-container vocabulary stays the same.
 
 ## Networking and Ports
 
@@ -107,7 +107,7 @@ Containers are useful because they combine repeatable packaging with high densit
 - **Fast start/stop:** starting a process is faster than booting a guest OS
 - **Composable systems:** multi-tier applications can be split across containers, such as an app container and a database container
 
-The trade-off is that container platforms introduce orchestration concerns: scheduling, service discovery, networking, health checks, secret injection, image scanning, and persistent storage. AWS container services handle different parts of that operational surface. [ECS](../services/ecs.md) is AWS's managed orchestrator for this layer: it turns container images into task definitions, tasks, and services, then runs them on either EC2-backed hosts or Fargate.
+The trade-off is that container platforms introduce orchestration concerns: scheduling, service discovery, networking, health checks, secret injection, image scanning, and persistent storage. AWS container services handle different parts of that operational surface. [ECS](../services/ecs.md) is AWS's proprietary managed orchestrator for this layer: it turns container images into task definitions, tasks, and services, then runs them on either EC2-backed hosts or Fargate. [EKS](../services/eks.md) is the alternative — AWS's managed [Kubernetes](kubernetes.md), chosen when you want the cloud-agnostic open standard instead of an AWS-only orchestrator. Both can run on EC2 or Fargate.
 
 ## Exam Tips
 

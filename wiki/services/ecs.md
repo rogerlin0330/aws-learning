@@ -1,9 +1,9 @@
 ---
 title: Amazon ECS
 type: service
-tags: [ecs, containers, fargate, ec2, ecr, task-definition, task-role, service, cluster, launch-type, capacity-provider, eni, auto-scaling]
+tags: [ecs, eks, kubernetes, containers, fargate, ec2, ecr, task-definition, task-role, service, cluster, launch-type, capacity-provider, eni, auto-scaling]
 certs: [aws-saa]
-updated: 2026-06-04
+updated: 2026-06-05
 ---
 
 # Amazon ECS
@@ -11,6 +11,8 @@ updated: 2026-06-04
 Amazon Elastic Container Service (ECS) is AWS's managed container orchestrator. It runs container images as tasks, keeps long-running workloads healthy through services, and lets you choose whether the underlying compute is your [EC2](ec2.md) fleet or AWS-managed [Fargate](#fargate-launch-type) capacity.
 
 The mental model: ECS is to [containers](../concepts/containers.md) what EC2 is to virtual machines. With EC2 you launch instances from AMIs; with ECS you launch tasks from task definitions that point at container images in a registry such as [ECR](#container-registries-and-ecr) or Docker Hub.
+
+ECS is AWS's **proprietary** orchestrator. Its main alternative is [EKS](eks.md), AWS's managed [Kubernetes](../concepts/kubernetes.md) — pick EKS when you specifically want the cloud-agnostic open standard or already run Kubernetes elsewhere; pick ECS when an AWS-native orchestrator with no control-plane fee is enough.
 
 ## Core Hierarchy
 
@@ -134,6 +136,9 @@ Use the question's operational and cost signals:
 
 > [!tip] Exam Tip
 > Large and steady plus price-sensitive usually points to ECS on EC2. Bursty, periodic, small, or "no servers to manage" points to ECS on Fargate.
+
+> [!tip] Exam Tip — ECS vs EKS
+> The launch-type choice (EC2 vs Fargate) is separate from the orchestrator choice (ECS vs [EKS](eks.md)). Both ECS and EKS can run on either EC2 or Fargate. Choose **EKS** when the scenario wants [Kubernetes](../concepts/kubernetes.md) specifically — cloud-agnostic, open standard, avoid lock-in, or an existing Kubernetes workload. Choose **ECS** when an AWS-native orchestrator is fine and you want to avoid EKS's per-cluster control-plane fee.
 
 ## Key Takeaways
 

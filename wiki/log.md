@@ -2,6 +2,28 @@
 
 <!-- markdownlint-disable MD051 -->
 
+## [2026-06-05] ingest | Kubernetes 101 & EKS 101
+
+Ingested `raw/aws-cert-study-notes/aws-solution-architect/k8s_101.md` and `eks_101.md` as two new pages: a cloud-agnostic concept page [Kubernetes](concepts/kubernetes.md) and an AWS service page [EKS](services/eks.md). Split this way because Kubernetes is cloud-agnostic (a cross-cutting concept) while EKS is the AWS-specific managed implementation — the EKS page reuses the concept's vocabulary rather than repeating it. Copied 3 images into `wiki/assets/` and embedded with multi-clause descriptive alt text: `k8s-cluster-structure.png`, `k8s-control-panel-and-node.png` (concept page), and `eks-architecture-101.png` (service page).
+
+`concepts/kubernetes.md` covers: cluster structure (control plane vs nodes, kubelet + container runtime, all comms over the K8s API), the five control-plane components in a table (kube-apiserver / etcd / kube-scheduler / kube-controller-manager / optional cloud-controller-manager) plus the kube-controller-manager's bundled controllers, node software (runtime / kubelet / kube-proxy) with the "kube-proxy is a node component" trap, pods (smallest unit, "think pods not containers," one-container-one-pod, non-permanent/not-HA), services/jobs/ingress + ingress controllers, ephemeral node-local storage vs Persistent Volumes (mapped to EC2 instance store, not EBS), a "how Kubernetes maps to AWS" table bridging to EKS, a keyword-trigger exam table, and the A.E.S.C.C. mnemonic.
+
+`services/eks.md` covers: managed-Kubernetes framing ("same Kubernetes, AWS runs it"), why-EKS-vs-ECS (cloud-agnostic / avoid lock-in / existing K8s), deployment modes (AWS / Outposts / EKS Anywhere / EKS Distro), AWS-managed multi-AZ control plane + etcd, integrations (ECR/ELB/IAM/VPC), node options (self-managed EC2 / managed node groups / Fargate via Fargate profiles), capability-support caveats, persistent storage providers (EBS/EFS/FSx), and the two-VPC architecture walkthrough (control plane in AWS-managed VPC, EC2 workers in customer VPC, connectivity via injected ENIs or public endpoint).
+
+Synthesis additions beyond the raw notes:
+
+1. **EKS per-cluster control-plane hourly fee.** The raw note doesn't mention cost. Added that EKS bills roughly $0.10/hr (~$73/mo) per cluster for the managed control plane, whereas ECS has no control-plane charge — a genuine, exam-relevant reason to prefer ECS when Kubernetes isn't specifically required. Surfaced as a `[!warning]` on the EKS page and in the SAA gotchas.
+2. **Cluster endpoint access modes (public / private / both).** The raw note describes "public endpoint" and "injected ENIs" as the two kube-api paths but doesn't name the formal endpoint-access feature that governs them. Added a short subsection and cross-linked it from the architecture walkthrough.
+3. **ECS-vs-EKS as an explicit decision axis orthogonal to launch type.** Promoted the point that the orchestrator choice (ECS vs EKS) is independent of the compute choice (EC2 vs Fargate) — both orchestrators run on both. Added as an exam tip on the ECS page and the SAA section.
+
+Cross-references: linked the new pages from [Containers](concepts/containers.md) (bare "EKS" mention now linked; orchestration paragraph now names EKS as the Kubernetes alternative) and [ECS](services/ecs.md) (intro + a new ECS-vs-EKS exam tip). Added an EKS deep-dive link and a Kubernetes concept link to the SAA lead paragraph. `concepts/resource-scope.md` was left untouched — it has no container/orchestrator content to extend.
+
+Updated `wiki/certifications/aws-saa.md`: new `### Kubernetes & EKS` subsection after ECS (12 bullet exam tips, a 15-row keyword cheat sheet, an ECS-vs-EKS `[!tip]`, and a `[!warning]` gotchas block); added eks/kubernetes/k8s/control-plane/etcd/kubelet/pod/ingress/persistent-volume/node-group/fargate-profile tags.
+
+Updated `wiki/index.md` (EKS under Services, Kubernetes under Concepts), `wiki/overview.md` (compute-packaging theme now names both orchestrators with launch-type-orthogonal framing; added EKS to Services list and Kubernetes to Concepts list; removed EKS from "Topics To Cover Next" since now covered).
+
+Followed the [arrow notation memory](../../../.claude/projects/-Users-rogerlin-SelfProjects-aws-learning/memory/feedback_arrow_notation.md) for prose — numbered "1, 2" lists and plain English; preserved arrows only inside tables, callouts, and the request-flow code block where they're idiomatic.
+
 ## [2026-06-04] ingest | ECS 101
 
 Ingested `raw/aws-cert-study-notes/aws-solution-architect/ecs_101.md` into a new [ECS](services/ecs.md) service page. Copied `ecs-cluster-mode-ec2.png` and `ecs-cluster-mode-fargate.png` from raw assets into `wiki/assets/` and embedded them with descriptive alt text. Added ECS hierarchy (cluster, service, task, container), task definitions vs container definitions, task role vs task execution role, services for desired-count HA and load balancing, ECR/registry positioning, EC2 launch type vs Fargate launch type, capacity-provider framing, VPC/ENI behavior for Fargate, and EC2-vs-Fargate selection heuristics. Corrected the raw Fargate billing wording: Fargate is billed for configured task resources while tasks run, not merely live container utilization. Updated Containers, EC2, SAA notes, overview, and index with inline links and exam-focused ECS traps.

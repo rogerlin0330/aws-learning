@@ -1,14 +1,14 @@
 ---
 title: AWS Solutions Architect Associate — Exam Notes
 type: certification
-tags: [iam, vpc, networking, ec2, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, ephemeral, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns, route53, organizations, cost, purchase-options, on-demand, spot, reserved-instances, scheduled-reserved, capacity-reservations, zonal-ri, regional-ri, savings-plans, byol, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, raid0, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, ebs-encryption, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr, scaling, horizontal-scaling, vertical-scaling, stateless, sticky-sessions, elasticity, load-balancer, containers, docker, container-image, container-registry, ecs, ecr, fargate, task-definition, task-role]
+tags: [iam, vpc, networking, ec2, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, ephemeral, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns, route53, organizations, cost, purchase-options, on-demand, spot, reserved-instances, scheduled-reserved, capacity-reservations, zonal-ri, regional-ri, savings-plans, byol, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, raid0, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, ebs-encryption, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr, scaling, horizontal-scaling, vertical-scaling, stateless, sticky-sessions, elasticity, load-balancer, containers, docker, container-image, container-registry, ecs, eks, kubernetes, k8s, control-plane, etcd, kubelet, pod, ingress, persistent-volume, node-group, fargate-profile, ecr, fargate, task-definition, task-role]
 certs: [aws-saa]
-updated: 2026-06-04
+updated: 2026-06-05
 ---
 
 # AWS Solutions Architect Associate (SAA-C03)
 
-A running collection of exam tips, gotchas, and comparison tables. Deep-dive pages: [IAM](../services/iam.md) · [VPC](../services/vpc.md) · [EC2](../services/ec2.md) · [ECS](../services/ecs.md) · [S3](../services/s3.md) · [Route 53](../services/route53.md) · [Organizations](../services/organizations.md) · [CloudWatch](../services/cloudwatch.md) · [KMS](../services/kms.md) · [Networking](../concepts/networking.md) · [Identity & Access](../concepts/identity-and-access.md) · [Resource vs Identity Policies](../concepts/resource-vs-identity-policies.md) · [DNS](../concepts/dns.md) · [TLS/HTTPS](../concepts/tls-https.md) · [Containers](../concepts/containers.md) · [Cost Optimization](../patterns/cost-optimization.md) · [Scaling](../patterns/scaling.md).
+A running collection of exam tips, gotchas, and comparison tables. Deep-dive pages: [IAM](../services/iam.md) · [VPC](../services/vpc.md) · [EC2](../services/ec2.md) · [ECS](../services/ecs.md) · [S3](../services/s3.md) · [Route 53](../services/route53.md) · [Organizations](../services/organizations.md) · [CloudWatch](../services/cloudwatch.md) · [KMS](../services/kms.md) · [EKS](../services/eks.md) · [Networking](../concepts/networking.md) · [Identity & Access](../concepts/identity-and-access.md) · [Resource vs Identity Policies](../concepts/resource-vs-identity-policies.md) · [DNS](../concepts/dns.md) · [TLS/HTTPS](../concepts/tls-https.md) · [Containers](../concepts/containers.md) · [Kubernetes](../concepts/kubernetes.md) · [Cost Optimization](../patterns/cost-optimization.md) · [Scaling](../patterns/scaling.md).
 
 ## IAM
 
@@ -750,6 +750,49 @@ See [ECS](../services/ecs.md) for the full service page and [Containers](../conc
 
 > [!warning] Common ECS Gotchas
 > A standalone task is not highly available by itself; use a service for production desired-count management. Fargate removes EC2 host management, but it does not remove VPC design: subnets, security groups, routes, public IP assignment, and load balancers still matter. The task role is for app permissions; the execution role is for ECS platform setup.
+
+### Kubernetes & EKS
+
+See [Kubernetes](../concepts/kubernetes.md) for the cloud-agnostic concept and [EKS](../services/eks.md) for the AWS service.
+
+- **Kubernetes** is an open-source, **cloud-agnostic** container orchestrator. Control plane does the thinking; **nodes** run the workloads
+- **Control-plane components:** **kube-apiserver** (front door, everything talks to it), **etcd** (key/value state store), **kube-scheduler** (assigns pods to nodes), **kube-controller-manager** (controllers, e.g. Node Controller responds to node outages), **cloud-controller-manager** (optional cloud integration)
+- **Node software:** container runtime, **kubelet** (talks to control plane via the K8s API), and **kube-proxy** (runs on every node, implements services) — kube-proxy is a **node** component, not control-plane
+- **Pod** = smallest unit; **think pods, not containers**; one-container-one-pod is the common pattern. **Pods are non-permanent and not highly available** — services provide the stable abstraction
+- **Service** = consistent abstraction over pods (the "application"). **Job** = run-to-completion task. **Ingress** = external access to a service; the **Ingress Controller** provisions the hardware (on AWS, the AWS Load Balancer Controller uses ALB/NLB)
+- **Storage:** default is **ephemeral and node-local** (like [EC2 instance store](../services/ec2.md#instance-store), lost on pod relocation); **Persistent Volumes** outlive pods
+- **EKS = AWS-managed Kubernetes** — same Kubernetes, AWS runs it. Pick it for **cloud-agnostic / avoid lock-in / existing Kubernetes** workloads
+- **Control plane AND etcd** are both AWS-managed and **multi-AZ**
+- **Node options:** self-managed EC2, **managed node groups** (EC2), and **Fargate** (serverless, via **Fargate profiles**)
+- **Integrations:** ECR (images), ELB (load balancing/ingress), IAM (security), VPC (networking)
+- **Persistent storage providers:** EBS, EFS, FSx
+- **Architecture:** control plane lives in an **AWS-managed VPC** (multi-AZ); EC2 workers live in **your VPC**; connectivity via **injected ENIs** or the **public endpoint**
+
+#### Kubernetes & EKS cheat sheet
+
+| Keyword in the question | Answer |
+| --- | --- |
+| "Container orchestration," open standard, avoid lock-in | **Kubernetes / EKS** |
+| "Front end for the control plane" | **kube-apiserver** |
+| "Cluster key/value backing store" | **etcd** |
+| "Assigns pods to nodes" | **kube-scheduler** |
+| "Responds to node outages" | **Node Controller** (in kube-controller-manager) |
+| "Network proxy on every node" | **kube-proxy** (node component) |
+| "Consistent abstraction over pods / the app" | **Service** |
+| "External access to a service" | **Ingress** (+ Ingress Controller) |
+| "Run to completion, then finish" | **Job** |
+| "Storage that outlives a pod" | **Persistent Volume** (EBS/EFS/FSx on EKS) |
+| "Managed Kubernetes on AWS" | **EKS** |
+| "Already run Kubernetes elsewhere, want managed AWS" | **EKS**, not ECS |
+| "Serverless EKS nodes" | **Fargate** via a **Fargate profile** |
+| "EKS worker nodes — where do they run?" | **Your (customer) VPC** |
+| "EKS control plane — where does it run?" | **AWS-managed VPC**, multi-AZ |
+
+> [!tip] Exam Tip — ECS vs EKS
+> Both run on EC2 or Fargate, so launch type is **not** the differentiator. Choose **EKS** when the scenario wants Kubernetes specifically (cloud-agnostic, open standard, existing K8s workload). Choose **ECS** when an AWS-native orchestrator is fine and you want to avoid EKS's **per-cluster control-plane hourly fee** (ECS has none).
+
+> [!warning] Common Kubernetes & EKS Gotchas
+> Pods are **not** durable or highly available — never design around a specific pod surviving. **kube-proxy and kubelet are node components**, not control-plane. Default pod storage is **ephemeral/node-local** (instance-store-like), not EBS-durable. On EKS, **both the control plane and etcd** are multi-AZ — don't credit only the control plane. EKS worker nodes sit in **your VPC**, while the control plane sits in an **AWS-managed VPC**. EKS bills an **hourly per-cluster** control-plane fee that ECS does not — a real cost reason to prefer ECS when Kubernetes isn't required.
 
 ### EC2 Status Checks & Auto Recovery
 
