@@ -1106,3 +1106,7 @@ Added a direct AWS documentation link next to the S3 access-logs diagram caveat 
 ## [2026-06-04] update | Separate adjacent wiki callouts
 
 Restored real blank-line separation between consecutive Exam Tip, Gotcha, and related callout blocks. Disabled markdownlint MD028 because the rule conflicts with the wiki's callout format when separate callouts appear back-to-back.
+
+## [2026-06-05] update | Clarify "per-socket" on EC2 Dedicated Hosts
+
+Added a `[!note]` callout right after the tenancy table in `services/ec2.md` (the first place "per-socket" appears) explaining that a socket is a physical CPU socket, why Dedicated Hosts expose physical sockets/cores, how BYOL licensing tracks physical hardware, and why "per-socket / per-core" is phrased that way. Triggered by a query asking whether "socket" meant CPU socket.

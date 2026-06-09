@@ -80,6 +80,15 @@ EC2 separates the **physical layer** (hosts) from the **virtual layer** (instanc
 | **Dedicated Instance** | Hardware not shared with other customers, but you cannot address or target the host itself | Per-instance, with a small dedicated-tenancy premium | Compliance scenarios that forbid hardware co-tenancy but don't require host targeting |
 | **Dedicated Host** | One account allocates the entire host; you can see and target it | **Per host**, regardless of how many instances run on it | Hardware-bound BYOL licensing (per-socket / per-core Windows, Oracle, SQL Server), strict isolation, host-affinity workloads |
 
+> [!note] What "per-socket" means
+> A **socket** here is a physical **CPU socket** — the slot on the host's motherboard where an actual processor package (a CPU chip) is seated. A typical Dedicated Host is a 2-socket box (for example an R5 host with 2 sockets and 48 physical cores). It matters because:
+>
+> - **Dedicated Hosts expose the physical hardware to you** — you can see the host's sockets and physical cores. Shared tenancy and Dedicated Instances hide all of that behind the hypervisor.
+> - **Legacy BYOL licenses are often priced per-socket or per-core of the physical machine** (Windows Server, Oracle, SQL Server), not per the vCPU your instance is allocated. Those licenses must be bound to physical sockets or cores.
+> - A Dedicated Host lets you pin instances to known physical sockets and cores, and **Host Affinity** keeps them there across a stop/start — so it is the only tenancy that can satisfy a per-socket licensing requirement. That is the main exam reason to pick Dedicated Host over Dedicated Instance.
+>
+> It is usually written **"per-socket / per-core"** because vendors license either way; both are properties of the physical host that only a Dedicated Host lets you control.
+
 The full purchase-option treatment — including how the three tenancy modes interact with On-Demand Instances, Spot Instances, Reserved Instances, On-Demand Capacity Reservations, and Savings Plans — lives on [EC2 Purchase Options](../patterns/ec2-purchase-options.md).
 
 > [!warning] Gotcha — "Dedicated" is two things
