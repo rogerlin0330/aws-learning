@@ -1,9 +1,9 @@
 ---
 title: AWS Solutions Architect Associate — Exam Notes
 type: certification
-tags: [iam, vpc, networking, ec2, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, ephemeral, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns, route53, organizations, cost, purchase-options, on-demand, spot, reserved-instances, scheduled-reserved, capacity-reservations, zonal-ri, regional-ri, savings-plans, byol, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, raid0, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, ebs-encryption, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr, scaling, horizontal-scaling, vertical-scaling, stateless, sticky-sessions, elasticity, load-balancer, containers, docker, container-image, container-registry, ecs, eks, kubernetes, k8s, control-plane, etcd, kubelet, pod, ingress, persistent-volume, node-group, fargate-profile, ecr, fargate, task-definition, task-role]
+tags: [iam, vpc, networking, ec2, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, ephemeral, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns, route53, organizations, cost, purchase-options, on-demand, spot, reserved-instances, scheduled-reserved, capacity-reservations, zonal-ri, regional-ri, savings-plans, byol, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, raid0, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, ebs-encryption, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr, scaling, horizontal-scaling, vertical-scaling, stateless, sticky-sessions, elasticity, load-balancer, containers, docker, container-image, container-registry, ecs, eks, kubernetes, k8s, control-plane, etcd, kubelet, pod, ingress, persistent-volume, node-group, fargate-profile, ecr, fargate, task-definition, task-role, cloudtrail, audit, governance, management-events, data-events, insight-events, global-service-events, organizational-trail, log-file-integrity, event-history, eventbridge]
 certs: [aws-saa]
-updated: 2026-06-05
+updated: 2026-06-08
 ---
 
 # AWS Solutions Architect Associate (SAA-C03)
@@ -1472,6 +1472,31 @@ See [CloudWatch](../services/cloudwatch.md) for full details.
 > [!warning] Gotcha
 > Log **streams** have no configuration of their own — retention, permissions, and metric filters all attach to the **log group**. If a question asks where to set retention, the answer is the log group.
 
+## CloudTrail
+
+See [CloudTrail](../services/cloudtrail.md) for full details.
+
+- CloudTrail records **API / account activity** as **events** — who did what, when, from where. This is the **audit** service; [CloudWatch](../services/cloudwatch.md) is the **health/telemetry** service, and **AWS Config** is the **resource-configuration/compliance** service
+- **Event History** is on **by default, free, 90 days, management events only** — no S3 storage. For retention beyond 90 days, data events, or log delivery you must create a **trail**
+- **Three event types**: **Management** (control-plane, on by default), **Data** (S3 object access, Lambda invokes — **opt-in, extra cost, high volume**), **Insight** (anomaly detection over management-event activity — opt-in)
+- **Trail scope**: **single-region** or **all-regions** (the latter auto-adds new regions). All-regions is the recommended default
+- **Global service events** — **IAM, STS, CloudFront** (and **Route 53**) have no region, so their events deliver to **`us-east-1`**. The trail setting must be enabled (console default)
+- **Destinations**: an **[S3](../services/s3.md) bucket** (compressed JSON, retained indefinitely, optional **SSE-KMS**) and/or **[CloudWatch Logs](../services/cloudwatch.md)** (unlocks search + metric filters + alarms)
+- **Organizational trail** — created from the **management account** of an [Organization](../services/organizations.md); captures all member accounts centrally
+- **Log file integrity validation** — SHA-256 hashes + hourly **signed digest files** prove logs weren't tampered with
+- **Not real-time** — log files are delivered ~every **15 minutes**. For fast automated reactions, match **management events in EventBridge** rather than polling delivered files
+
+> [!tip] Exam Tip
+> Pattern-match: *"who made this API call / who deleted the bucket"* → **CloudTrail**. *"keep audit logs longer than 90 days / deliver to S3"* → **create a trail** (Event History isn't enough). *"audit S3 object-level access / Lambda invokes"* → **data events** (opt-in, extra cost). *"missing IAM / STS / CloudFront logs"* → **global service events → `us-east-1`**. *"audit every account in the org centrally"* → **organizational trail from the management account**. *"prove logs weren't altered"* → **log file integrity validation**. *"react in real time to an API call"* → **EventBridge on CloudTrail events**, not the ~15-min log files. *"detect unusual API activity automatically"* → **CloudTrail Insights**.
+
+> [!warning] Common CloudTrail Gotchas
+>
+> - **Event History ≠ a trail.** It's free but capped at **90 days** and **management events only** — no data events, no S3 archive.
+> - **Data events are off by default and cost extra** — management events are the free default.
+> - **CloudTrail is not real-time** for log delivery (~15 min). Any "instant" requirement points to EventBridge, not delivered log files.
+> - **Global service events go to `us-east-1`** — if IAM/STS/CloudFront logs are "missing," check that setting / that region.
+> - **Don't confuse CloudTrail with CloudWatch Logs, VPC Flow Logs, or S3 access logs** — CloudTrail = AWS API/account audit, not application/OS/network logs.
+
 ## KMS
 
 See [KMS](../services/kms.md) for full details.
@@ -1556,6 +1581,7 @@ See [S3 Bucket Keys](../services/s3.md#s3-bucket-keys--sse-kms-cost-optimization
 | [EC2](../services/ec2.md) instance | AZ-specific |
 | [S3](../services/s3.md) bucket | Regional (globally unique name) |
 | [KMS](../services/kms.md) key | Regional (single-region by default; multi-region keys are a separate feature) |
+| [CloudTrail](../services/cloudtrail.md) trail | Regional (all-regions trail spans every region; global service events → `us-east-1`) |
 
 ## Common Exam Traps
 
@@ -1581,3 +1607,5 @@ See [S3 Bucket Keys](../services/s3.md#s3-bucket-keys--sse-kms-cost-optimization
 - [Organizations](../services/organizations.md)
 - [Cost Optimization](../patterns/cost-optimization.md)
 - [KMS](../services/kms.md)
+- [CloudWatch](../services/cloudwatch.md)
+- [CloudTrail](../services/cloudtrail.md)

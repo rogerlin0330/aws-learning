@@ -43,7 +43,7 @@ Log events are organized in a hierarchy:
 
 | Method | When to use |
 | --- | --- |
-| Native AWS service integration | [EC2](ec2.md), [VPC](vpc.md) Flow Logs, Lambda, [CloudTrail](../concepts/identity-and-access.md), Route 53 — zero config, logs flow automatically via service/IAM roles |
+| Native AWS service integration | [EC2](ec2.md), [VPC](vpc.md) Flow Logs, Lambda, [CloudTrail](cloudtrail.md), Route 53 — zero config, logs flow automatically via service/IAM roles |
 | **Unified CloudWatch Agent** | Custom OS logs (e.g. `/var/log/messages` on EC2), on-premises servers, non-AWS compute |
 | AWS SDK | Application-level logging from any language — call `PutLogEvents` directly |
 
@@ -67,7 +67,7 @@ CloudWatch Logs is the default log destination for most AWS services. Key integr
 
 | Service | What it logs |
 | --- | --- |
-| [CloudTrail](../services/organizations.md) | API call history — who called what, when, from where |
+| [CloudTrail](cloudtrail.md) | API call history — who called what, when, from where |
 | Lambda | Function execution output (stdout/stderr) |
 | [VPC](vpc.md) Flow Logs | Network traffic flow records (accepted/rejected) |
 | [EC2](ec2.md) | OS and application logs (via CloudWatch Agent) |
@@ -88,4 +88,5 @@ CloudWatch is a **regional service** — log groups and their data are region-sc
 - [IAM](iam.md) — roles and permissions for log access
 - [VPC](vpc.md) — VPC Flow Logs sent to CloudWatch Logs
 - [EC2](ec2.md) — OS and app logs via CloudWatch Agent
+- [CloudTrail](cloudtrail.md) — API/account-activity audit; delivers events to CloudWatch Logs for search + alarms
 - [Organizations](organizations.md) — CloudTrail integration context

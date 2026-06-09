@@ -2,6 +2,27 @@
 
 <!-- markdownlint-disable MD051 -->
 
+## [2026-06-08] ingest | CloudTrail 101
+
+Ingested `raw/aws-cert-study-notes/aws-solution-architect/cloudtrail_101.md` into a new [CloudTrail](services/cloudtrail.md) service page. Copied `cloudtrail-essentials.png` into `wiki/assets/` and embedded it with multi-clause descriptive alt text that doubles as a reading guide for the infographic (blue dotted input arrows for management/data events, red double-headed One-Region-vs-All-Regions scope arrow, CloudWatch Logs + S3 outputs, red dotted region/global-service source arrows). The raw note was accurate, so the bulk of the work was synthesis, cross-linking, and a few exam-relevant additions the note omitted.
+
+Page covers: CloudTrail events (user/role/service activity as JSON records); free 90-day **Event History** (management-events-only, no S3 archive) vs **trails** for retention/delivery/data-events; the three event types (management default / data opt-in + cost / Insight anomaly detection); single-region vs all-regions trails (auto-adds new regions); **global service events** (IAM/STS/CloudFront, plus Route 53) delivering to `us-east-1`; organizational trail from the management account; S3 (compressed JSON, indefinite, optional SSE-KMS) + optional CloudWatch Logs delivery; and a where-it-fits table positioning CloudTrail (audit) against CloudWatch (telemetry) and Config (configuration state).
+
+Synthesis additions beyond the raw note:
+
+1. **Log file integrity validation.** The raw note doesn't mention it; it's a recurring SAA security topic. Added a section explaining SHA-256 hashing + hourly signed digest files (SHA-256 with RSA) and the "prove logs weren't tampered with" exam pattern, cross-linked to S3 Object Lock and SCPs for the immutability story.
+2. **EventBridge near-real-time nuance.** The raw note's "CloudTrail is not real-time" is correct for log-file *delivery* (~15 min) but is easy to over-apply. Clarified that CloudTrail also emits management events to EventBridge, which is the right answer for fast automated reactions to an API call — so "react in real time" points to EventBridge rules, not to polling delivered log files. Kept the "not real-time → CloudTrail is the wrong answer" framing scoped to log delivery.
+3. **Event History precision.** Made explicit that Event History is **management-events-only** (data/Insight events never appear there) — a detail the raw note left implicit.
+4. **Insight events.** The raw note marked Insight events as out of scope; added a one-paragraph treatment (anomaly detection over management-event baselines) since it rounds out the three-event-type table and shows up on the exam.
+
+Also added **Route 53** to the global-services list (the note's I.S.C. trio is IAM/STS/CloudFront; Route 53 is another global service routing to `us-east-1`) while keeping the I.S.C. mnemonic as the exam core.
+
+Cross-references: fixed two **placeholder CloudTrail links in [CloudWatch](services/cloudwatch.md)** that previously pointed at `concepts/identity-and-access.md` and `services/organizations.md` (no CloudTrail page existed when that page was written) — both now point to the real page, plus a new CloudTrail entry in CloudWatch's References. Linked the first CloudTrail mention on [S3](services/s3.md)'s "Access logging vs CloudTrail data events" section, the break-glass CloudTrail mention on [IAM](services/iam.md), and the SCP "disable CloudTrail" example on [Organizations](services/organizations.md). Added a **CloudTrail row to [Resource Scope](concepts/resource-scope.md)** under Regional resources (regional service; all-regions trail; global service events to `us-east-1`).
+
+Updated `wiki/certifications/aws-saa.md`: new `## CloudTrail` section after CloudWatch Logs (9 exam-tip bullets, a pattern-match `[!tip]`, and a `[!warning]` gotchas block), a CloudTrail row in the Key Service Properties scope table, CloudWatch + CloudTrail added to References, and new frontmatter tags (cloudtrail, audit, governance, management-events, data-events, insight-events, global-service-events, organizational-trail, log-file-integrity, event-history, eventbridge). Updated `wiki/index.md` (CloudTrail under Services) and `wiki/overview.md` (CloudTrail in the Services list + frontmatter tags). Bumped `updated:` on aws-saa, overview, and resource-scope to 2026-06-08.
+
+Followed the [arrow-notation memory](../../../.claude/projects/-Users-rogerlin-SelfProjects-aws-learning/memory/feedback_arrow_notation.md) — plain English and numbered "1, 2" lists in prose; arrows kept only inside tables, callouts, and the diagram-reading list where they're idiomatic.
+
 ## [2026-06-05] ingest | ECR 101
 
 Ingested `raw/aws-cert-study-notes/aws-solution-architect/ecr_101.md` into a new [ECR](services/ecr.md) service page. The raw note was largely accurate, so the work was mostly synthesis and cross-linking rather than correction. Page covers: registry/repository/image/tag hierarchy (tags unique per repo), public vs private permission model (public = anyone pulls, push needs permissions; private = permissions for all), IAM-controlled access with repository (resource) policies for cross-account pulls, Basic vs Enhanced scanning (Enhanced = Amazon Inspector, OS + software packages, layer-by-layer), observability (CloudWatch / CloudTrail / EventBridge), cross-region + cross-account replication, and ECR's narrow role in the container picture (stores/scans/distributes — does not build or run).

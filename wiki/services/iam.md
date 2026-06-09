@@ -128,7 +128,7 @@ This pattern handles unknown-number-of-principals naturally: Lambda might spin u
 
 #### Break-glass / emergency access
 
-A **break-glass role** grants elevated permissions for rare emergency situations (3 a.m. incident, service-desk escalation). The principal's day-to-day identity stays read-only or low-privilege; in an emergency they assume the role, the act is logged in CloudTrail, and credentials expire automatically.
+A **break-glass role** grants elevated permissions for rare emergency situations (3 a.m. incident, service-desk escalation). The principal's day-to-day identity stays read-only or low-privilege; in an emergency they assume the role, the act is logged in [CloudTrail](cloudtrail.md), and credentials expire automatically.
 
 This is far safer than granting permanent admin: privilege escalation becomes a deliberate, auditable event rather than the default state.
 

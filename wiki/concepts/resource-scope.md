@@ -3,7 +3,7 @@ title: Resource Scope (Global / Regional / AZ / Edge)
 type: concept
 tags: [scope, regions, availability-zones, global, edge, dr, resilience]
 certs: [aws-saa]
-updated: 2026-05-29
+updated: 2026-06-08
 ---
 
 # Resource Scope (Global / Regional / AZ / Edge)
@@ -52,6 +52,7 @@ Live in exactly one region. Most managed services are multi-AZ resilient within 
 | [S3](../services/s3.md) bucket (data) | Bucket lives in one region with multi-AZ resilience; CRR replicates to another region |
 | [KMS](../services/kms.md) keys | Regional by default; **multi-region keys** are an opt-in feature that creates linked replicas in other regions |
 | [CloudWatch](../services/cloudwatch.md) log groups, metrics, alarms | All CloudWatch data is per-region; cross-region dashboards aggregate, they don't replicate |
+| [CloudTrail](../services/cloudtrail.md) trail | Regional service; an all-regions trail spans every region as one logical trail. **Global service events** (IAM, STS, CloudFront, Route 53) deliver to **`us-east-1`** |
 | Lambda functions | Regional; cross-region invoke is allowed but the function itself doesn't exist elsewhere |
 | DynamoDB tables | Regional; **Global Tables** is the opt-in cross-region replication feature |
 | SNS topics, SQS queues | Regional |

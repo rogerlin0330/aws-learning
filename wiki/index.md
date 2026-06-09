@@ -17,6 +17,7 @@
 - [Route 53](services/route53.md) — Authoritative DNS; hosted zones, routing policies, Alias records, health checks, Resolver
 - [Organizations](services/organizations.md) — Multi-account management; OUs, consolidated billing, SCPs, cross-account role-switching
 - [CloudWatch](services/cloudwatch.md) — Monitoring & observability; CloudWatch Logs hierarchy (log group → stream → event), metric filters, alarms, agent
+- [CloudTrail](services/cloudtrail.md) — Audit & governance; records API/account activity as events; free 90-day Event History (management events only) vs trails for retention/delivery; event types (management default / data opt-in + cost / Insight anomaly detection); single-region vs all-regions trails; global service events (IAM, STS, CloudFront, Route 53) deliver to us-east-1; S3 (compressed JSON, indefinite, optional SSE-KMS) + optional CloudWatch Logs delivery; organizational trail from the management account; log file integrity validation (SHA-256 + signed digests); not real-time (~15 min log delivery — use EventBridge on management events for fast reactions)
 - [KMS](services/kms.md) — Key Management Service; symmetric/asymmetric keys, 4 KB direct limit, envelope encryption with DEKs, key ownership tiers (AWS Owned / AWS Managed / Customer Managed), key policies + IAM + grants
 
 ## Concepts

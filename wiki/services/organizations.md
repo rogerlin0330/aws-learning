@@ -76,7 +76,7 @@ See [IAM Roles → Cross-account access](iam.md#cross-account-access) for the un
 
 ## Service Control Policies (SCPs)
 
-SCPs are **JSON policy documents** that define **permission boundaries** on AWS accounts. They are AWS Organizations' primary governance lever — used to enforce things like "no one in this OU can disable CloudTrail" or "production accounts may only operate in `us-east-1` and `eu-west-1`."
+SCPs are **JSON policy documents** that define **permission boundaries** on AWS accounts. They are AWS Organizations' primary governance lever — used to enforce things like "no one in this OU can disable [CloudTrail](cloudtrail.md)" or "production accounts may only operate in `us-east-1` and `eu-west-1`."
 
 ![SCP overview: hierarchy/inheritance, management-account exemption, deny-list vs allow-list, intersection-with-IAM-policies model](../assets/organization-scp-infographic.png)
 

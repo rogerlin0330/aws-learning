@@ -1,8 +1,8 @@
 ---
 title: AWS Learning — Overview
 type: overview
-tags: [aws, architecture, iam, vpc, organizations, cost, s3, ec2, ecs, eks, kubernetes, containers]
-updated: 2026-06-05
+tags: [aws, architecture, iam, vpc, organizations, cost, s3, ec2, ecs, eks, kubernetes, containers, cloudwatch, cloudtrail]
+updated: 2026-06-08
 ---
 
 # AWS Learning Overview
@@ -85,6 +85,7 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 - [Route 53](services/route53.md) — hosted zones, routing policies, health checks
 - [Organizations](services/organizations.md) — multi-account management, consolidated billing, SCPs
 - [CloudWatch](services/cloudwatch.md) — monitoring & observability; log groups, metric filters, alarms
+- [CloudTrail](services/cloudtrail.md) — audit & governance; API/account-activity events, Event History vs trails, management/data/Insight events, global service events, organizational trail, log file integrity
 - [KMS](services/kms.md) — key management; envelope encryption, key policies + IAM + grants
 
 ### Concepts
