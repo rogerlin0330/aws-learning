@@ -2,6 +2,22 @@
 
 <!-- markdownlint-disable MD051 -->
 
+## [2026-06-10] ingest | EC2 Bootstrapping & CFN-INIT
+
+Ingested two SAA notes — `ec2_bootstrapping_with_user_data.md` and `ec2_bootstrapping_with_cfn_init.md` — across an EC2 section, a new CloudFormation service page, and a new boot-time pattern page. Copied four diagrams into `wiki/assets/` (`ec2-bootstrapping.png`, `boot-time-to-service-time-ami-baking-vs-ec2-bootstrapping.png`, `cfn-init.png`, `cfn-init-CreationPolicy-and-signals.png`) with multi-clause descriptive alt text that doubles as a reading guide.
+
+Structure (decided with the user):
+
+1. **EC2 page — new `## Bootstrapping` section** (after IMDS): bootstrapping concept; user data as the mechanism (read from IMDS at `/latest/user-data/`, runs once at first launch as root, opaque to EC2); the two classic gotchas (edit+restart doesn't re-run; failed bootstrap still passes 2/2 status checks = silent bad config); constraints (not-secret/16 KB/base64); cloud-init logs; a short boot-time framing that links out to the pattern; and a "beyond user data" pointer to cfn-init.
+2. **New `services/cloudformation.md`** — scoped (with a note) to the bootstrapping features the sources cover: template/stack vocab + placeholder substitution; **cfn-init** procedural-vs-desired-state, what it manages, the runtime flow, configSets; **cfn-hup** re-runs on stack-metadata change; **CreationPolicy + cfn-signal** (`-e $?`, timeout) completion handshake; on-instance diagnosis (`cfn-init-cmd.log`); a user-data-vs-cfn-init comparison table; exam recap. Both CFN diagrams embedded.
+3. **New `patterns/boot-time-optimization.md`** — canonical treatment of **boot-time-to-service-time** (provisioning + post-launch time), the three approaches table (bootstrap / AMI baking / combined-optimal), the diagram, the 90/10 combined pattern, and why it matters for Auto Scaling responsiveness. EC2 summarizes and links here (no duplicated detail).
+
+Correction applied during ingest (user-prompted): the raw note framed user data's insecurity around IMDSv1/SSRF. Reframed precisely — user data is **not a secret** because *any process/shell on the instance* can read it; enforcing **IMDSv2** (default on Amazon Linux 2023) closes only the *remote SSRF* path and does **not** make user data secret. The "no long-term credentials, use an IAM role" rule is version-independent.
+
+Cross-references: EC2 ↔ CloudFormation ↔ boot-time pattern all interlinked inline; EC2 bootstrapping links to IMDS, status checks, AMI baking, and IAM roles. Added a full `### EC2 Bootstrapping — User Data & cfn-init` subsection to `aws-saa.md` (bullets + Exam Tip + Common Gotchas), plus CloudFormation and the boot-time pattern to its link bar and References. Updated `index.md` (CloudFormation under Services, boot-time under Patterns, expanded EC2 entry) and `overview.md` (new Services + Patterns entries, refreshed Topics-To-Cover-Next). Bumped `updated:` to 2026-06-10 on ec2, aws-saa, and overview.
+
+Followed the [arrow-notation memory](../../../.claude/projects/-Users-rogerlin-SelfProjects-aws-learning/memory/feedback_arrow_notation.md): plain English and numbered "1, 2" lists in prose; arrows kept only inside tables, callouts, and diagram-reading lists.
+
 ## [2026-06-09] ingest | Control Tower 101
 
 Ingested `raw/aws-cert-study-notes/aws-solution-architect/control_tower_101.md` into a new [Control Tower](services/control-tower.md) service page. Copied `control-tower.png` into `wiki/assets/` and embedded it with multi-clause descriptive alt text that doubles as a reading guide for the infographic (landing-zone canvas, Management Account driving CloudFormation/Config robots, Account Factory baselined accounts behind the SCP guardrail barrier, Federated/Internal identities funneling through IAM Identity Center, Security/Foundational OU holding Audit + Log Archive). The raw note was accurate and well-structured, so the work was mostly synthesis and cross-linking.

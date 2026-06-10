@@ -1,8 +1,8 @@
 ---
 title: AWS Learning — Overview
 type: overview
-tags: [aws, architecture, iam, vpc, organizations, control-tower, cost, s3, ec2, ecs, eks, kubernetes, containers, cloudwatch, cloudtrail]
-updated: 2026-06-09
+tags: [aws, architecture, iam, vpc, organizations, control-tower, cost, s3, ec2, ecs, eks, kubernetes, containers, cloudwatch, cloudtrail, cloudformation, bootstrapping]
+updated: 2026-06-10
 ---
 
 # AWS Learning Overview
@@ -77,7 +77,8 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 
 - [IAM](services/iam.md) — users, groups, roles (STS / federation), policies, ARNs
 - [VPC](services/vpc.md) — subnets, routing, IGW, NACL, SG, NAT GW, PrivateLink
-- [EC2](services/ec2.md) — IaaS foundations, hosts vs instances (tenancy + AZ-resilience), instance lifecycle & state-based costs (incl. stop/start vs restart), AMIs, SSH/RDP access, when-to-use-EC2 decision framing
+- [EC2](services/ec2.md) — IaaS foundations, hosts vs instances (tenancy + AZ-resilience), instance lifecycle & state-based costs (incl. stop/start vs restart), AMIs, bootstrapping (user data), SSH/RDP access, when-to-use-EC2 decision framing
+- [CloudFormation](services/cloudformation.md) — infrastructure as code (templates → stacks); cfn-init desired-state bootstrapping, configSets, cfn-hup re-runs, CreationPolicy + cfn-signal completion handshake
 - [ECS](services/ecs.md) — managed container orchestration (AWS-proprietary); task definitions, services, task roles, EC2 launch type vs Fargate
 - [EKS](services/eks.md) — AWS-managed Kubernetes; control plane + etcd (multi-AZ), node options (EC2 / managed node groups / Fargate), two-VPC architecture, ECS-vs-EKS choice
 - [ECR](services/ecr.md) — managed container image registry; registry/repository/image/tag hierarchy, public vs private permission model, IAM + repository policies, Basic vs Enhanced (Inspector) scanning, cross-region + cross-account replication
@@ -104,6 +105,7 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 
 - [Cost Optimization](patterns/cost-optimization.md) — Savings Plans, RIs, Spot, decision tree, pooling via Organizations
 - [Scaling — Horizontal vs Vertical](patterns/scaling.md) — bigger box vs more boxes; the session problem; stateless design; how horizontal scaling combines with ELB + Auto Scaling for HA
+- [Boot Time to Service Time](patterns/boot-time-optimization.md) — AMI baking vs bootstrapping vs combined; minimizing post-launch time while keeping flexibility
 
 ### Certifications
 
@@ -117,7 +119,8 @@ Most real-world AWS deployments use **many accounts** — a per-team / per-envir
 
 ## Topics To Cover Next
 
-- EC2: placement groups, user-data & bootstrapping (IMDS / IMDSv2 now covered on the [EC2 page](services/ec2.md#instance-metadata-service-imds))
+- EC2: placement groups (user-data & bootstrapping now covered on the [EC2 page](services/ec2.md#bootstrapping); IMDS / IMDSv2 on the [IMDS section](services/ec2.md#instance-metadata-service-imds))
+- CloudFormation: the full surface beyond cfn-init — parameters, mappings, outputs, intrinsic functions, change sets, nested stacks / StackSets, drift detection (the [CloudFormation page](services/cloudformation.md) currently covers only the bootstrapping features)
 - ELB / Auto Scaling: ALB vs NLB, target groups, scaling policies — builds directly on the [Scaling pattern](patterns/scaling.md)
 - Container services: ELB integration patterns and App Mesh / service discovery — builds on [ECS](services/ecs.md), [EKS](services/eks.md), [ECR](services/ecr.md), and the [Containers](concepts/containers.md) / [Kubernetes](concepts/kubernetes.md) concept pages
 - AWS AI services (for AI Practitioner cert)

@@ -1,14 +1,14 @@
 ---
 title: AWS Solutions Architect Associate — Exam Notes
 type: certification
-tags: [iam, vpc, networking, ec2, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, ephemeral, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns, route53, organizations, cost, purchase-options, on-demand, spot, reserved-instances, scheduled-reserved, capacity-reservations, zonal-ri, regional-ri, savings-plans, byol, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, raid0, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, ebs-encryption, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr, scaling, horizontal-scaling, vertical-scaling, stateless, sticky-sessions, elasticity, load-balancer, containers, docker, container-image, container-registry, ecs, eks, kubernetes, k8s, control-plane, etcd, kubelet, pod, ingress, persistent-volume, node-group, fargate-profile, ecr, fargate, task-definition, task-role, cloudtrail, audit, governance, management-events, data-events, insight-events, global-service-events, organizational-trail, log-file-integrity, event-history, eventbridge, control-tower, landing-zone, guardrails, account-factory, iam-identity-center]
+tags: [iam, vpc, networking, ec2, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, ephemeral, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns, route53, organizations, cost, purchase-options, on-demand, spot, reserved-instances, scheduled-reserved, capacity-reservations, zonal-ri, regional-ri, savings-plans, byol, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, raid0, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, ebs-encryption, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr, scaling, horizontal-scaling, vertical-scaling, stateless, sticky-sessions, elasticity, load-balancer, containers, docker, container-image, container-registry, ecs, eks, kubernetes, k8s, control-plane, etcd, kubelet, pod, ingress, persistent-volume, node-group, fargate-profile, ecr, fargate, task-definition, task-role, cloudtrail, audit, governance, management-events, data-events, insight-events, global-service-events, organizational-trail, log-file-integrity, event-history, eventbridge, control-tower, landing-zone, guardrails, account-factory, iam-identity-center, bootstrapping, cloud-init, boot-time-to-service-time, cloudformation, cfn-init, configsets, cfn-hup, cfn-signal, creation-policy, desired-state, infrastructure-as-code]
 certs: [aws-saa]
-updated: 2026-06-09
+updated: 2026-06-10
 ---
 
 # AWS Solutions Architect Associate (SAA-C03)
 
-A running collection of exam tips, gotchas, and comparison tables. Deep-dive pages: [IAM](../services/iam.md) · [VPC](../services/vpc.md) · [EC2](../services/ec2.md) · [ECS](../services/ecs.md) · [ECR](../services/ecr.md) · [S3](../services/s3.md) · [Route 53](../services/route53.md) · [Organizations](../services/organizations.md) · [Control Tower](../services/control-tower.md) · [CloudWatch](../services/cloudwatch.md) · [KMS](../services/kms.md) · [EKS](../services/eks.md) · [Networking](../concepts/networking.md) · [Identity & Access](../concepts/identity-and-access.md) · [Resource vs Identity Policies](../concepts/resource-vs-identity-policies.md) · [DNS](../concepts/dns.md) · [TLS/HTTPS](../concepts/tls-https.md) · [Containers](../concepts/containers.md) · [Kubernetes](../concepts/kubernetes.md) · [Cost Optimization](../patterns/cost-optimization.md) · [Scaling](../patterns/scaling.md).
+A running collection of exam tips, gotchas, and comparison tables. Deep-dive pages: [IAM](../services/iam.md) · [VPC](../services/vpc.md) · [EC2](../services/ec2.md) · [ECS](../services/ecs.md) · [ECR](../services/ecr.md) · [S3](../services/s3.md) · [Route 53](../services/route53.md) · [Organizations](../services/organizations.md) · [Control Tower](../services/control-tower.md) · [CloudWatch](../services/cloudwatch.md) · [KMS](../services/kms.md) · [EKS](../services/eks.md) · [Networking](../concepts/networking.md) · [Identity & Access](../concepts/identity-and-access.md) · [Resource vs Identity Policies](../concepts/resource-vs-identity-policies.md) · [DNS](../concepts/dns.md) · [TLS/HTTPS](../concepts/tls-https.md) · [Containers](../concepts/containers.md) · [Kubernetes](../concepts/kubernetes.md) · [CloudFormation](../services/cloudformation.md) · [Cost Optimization](../patterns/cost-optimization.md) · [Scaling](../patterns/scaling.md) · [Boot Time to Service Time](../patterns/boot-time-optimization.md).
 
 ## IAM
 
@@ -1094,6 +1094,34 @@ See [EC2 — AMI](../services/ec2.md#ami--amazon-machine-image) for full details
 > - **Marketplace AMIs carry a license charge** bundled into the per-hour bill — not just the instance rate
 > - **Encrypted AMI + Auto Scaling** silently fails without a KMS **grant** on the encryption key — common cross-account / multi-region trap
 
+### EC2 Bootstrapping — User Data & cfn-init
+
+See [EC2 — Bootstrapping](../services/ec2.md#bootstrapping), [CloudFormation — cfn-init](../services/cloudformation.md), and [Boot Time to Service Time](../patterns/boot-time-optimization.md) for full details.
+
+- **Bootstrapping** = self-configure at launch. In EC2 it's delivered via **user data**, read from [IMDS](../services/ec2.md#instance-metadata-service-imds) at **`http://169.254.169.254/latest/user-data/`** (same service as metadata, different path)
+- User data **runs once, at first launch only**, **as root**, and is **opaque to EC2** (not validated/interpreted)
+- **Edit + restart does NOT re-run user data** — the new data is visible but never re-executed. One-shot
+- **Failed bootstrap does not fail the instance** — it stays running and passes **2/2 status checks** → silent **bad config**. EC2 can't tell good config from bad
+- **Not a secret store** — readable by anyone with code/shell on the box; **enforcing IMDSv2** (default on Amazon Linux 2023) closes the *remote SSRF* path but does **not** make user data secret. **No long-term credentials** — use an [IAM role](../services/iam.md#iam-roles)
+- **16 KB limit** — for bigger payloads, bootstrap a small script that **downloads** the rest
+- **Base64**: console **auto-encodes**; **CloudFormation requires `Fn::Base64`**
+- Diagnose with **`/var/log/cloud-init-output.log`** (user data) and **`/var/log/cfn-init-cmd.log`** (cfn-init)
+- **cfn-init** = desired-state config management (version-aware packages/files/services/commands), defined in **`AWS::CloudFormation::Init`** metadata, **invoked from user data**. Procedural *or* desired-state, vs user data's procedural-only
+- **cfn-hup** lets cfn-init **re-run on stack-metadata updates** — user data can't (it's one-shot)
+- **CreationPolicy + cfn-signal** (`cfn-signal -e $?`) is the only way CloudFormation **knows** in-instance bootstrapping succeeded: it **holds** the resource at a non-complete state and **waits for a signal** within a **timeout** (e.g. `PT15M`); no signal = assumed failure. Used on **EC2 instances** and **Auto Scaling Groups**
+- **Boot time to service time** = provisioning time + post-launch config time. Three approaches: **bootstrap** (flexible, slow each launch), **AMI baking** (fast, frozen config), **combine both** (bake slow/stable part + bootstrap fast-changing part = optimal)
+
+> [!tip] Exam Tip
+> Trigger phrases: *"run a script at launch / configure on first boot"* → **user data**. *"failed bootstrap but instance still healthy / passes status checks"* → user data is **opaque**; detect failure with **cfn-signal**. *"re-apply config on stack update, not just first launch"* → **cfn-init + cfn-hup** (NOT user data). *"ensure a specific package version / complex desired-state bootstrapping"* → **cfn-init**. *"don't store credentials in user data"* → use an **IAM role**. *"minimize boot time to service time while keeping flexibility"* → **combine AMI baking + bootstrapping** (bake the 90%, bootstrap the 10%).
+
+> [!warning] Common Bootstrapping Gotchas
+>
+> - **User data is one-shot.** Edit + stop/start does not re-run it. Re-runnable config = **cfn-init + cfn-hup**
+> - **A broken bootstrap looks healthy.** Running + 2/2 status checks ≠ correctly configured. CloudFormation only knows via **CreationPolicy + cfn-signal**
+> - **Console auto-base64s, CloudFormation does not** — forget `Fn::Base64` in a template and the launch breaks
+> - **`-e $?`** in cfn-signal forwards the **exit code of the preceding cfn-init run** — that's what becomes the success/failure signal
+> - **User data is not encrypted/secret** — IMDSv2 stops remote SSRF but a shell user still reads it; never put long-term secrets there
+
 ### EBS Service Architecture
 
 See [EBS — Service Architecture](../services/ebs.md#service-architecture) for full details.
@@ -1630,3 +1658,5 @@ See [S3 Bucket Keys](../services/s3.md#s3-bucket-keys--sse-kms-cost-optimization
 - [KMS](../services/kms.md)
 - [CloudWatch](../services/cloudwatch.md)
 - [CloudTrail](../services/cloudtrail.md)
+- [CloudFormation](../services/cloudformation.md)
+- [Boot Time to Service Time](../patterns/boot-time-optimization.md)

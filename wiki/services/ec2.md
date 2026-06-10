@@ -1,9 +1,9 @@
 ---
 title: EC2 — Elastic Compute Cloud
 type: service
-tags: [ec2, compute, iaas, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, ssh, rdp, instance-lifecycle, shared-responsibility, ebs, key-pair, host, tenancy, dedicated-host, dedicated-instance, instance-store, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, security-group, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns, containers]
+tags: [ec2, compute, iaas, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, ssh, rdp, instance-lifecycle, shared-responsibility, ebs, key-pair, host, tenancy, dedicated-host, dedicated-instance, instance-store, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, security-group, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns, containers, bootstrapping, cloud-init, boot-time-to-service-time, cfn-init, cloudformation]
 certs: [aws-saa]
-updated: 2026-06-04
+updated: 2026-06-10
 ---
 
 # EC2 — Elastic Compute Cloud
@@ -587,6 +587,67 @@ A per-instance setting (`HttpTokens`: `optional` allows both; `required` forces 
 ### Quick recall
 
 > Metadata lives at **`169.254.169.254/latest/meta-data/`**, IMDSv1 is **unauthenticated and unencrypted** (use **IMDSv2** with session tokens), and it is the only way an instance can discover its own **public IPv4** — because that address lives on the [IGW](vpc.md#internet-gateway-igw), never in the OS.
+
+## Bootstrapping
+
+**Bootstrapping** is a general systems-automation idea: a process that lets a system **self-configure when it first comes online**. It is not AWS-specific. In EC2 it enables **build automation** — instead of an instance launching into the bare default state of its [AMI](#ami--amazon-machine-image), you direct it to install software and apply post-install configuration so it enters service already set up. For a solutions architect it is the foundation for adding automation to a design.
+
+### User Data — the mechanism
+
+EC2 bootstrapping is delivered through **EC2 user data**, which the instance reads from the **[Instance Metadata Service](#instance-metadata-service-imds)** — the *same* service used for metadata, just on a different path:
+
+| Path | Returns |
+| --- | --- |
+| `http://169.254.169.254/latest/meta-data/` | Instance metadata |
+| `http://169.254.169.254/latest/user-data/` | The bootstrap payload you passed at launch |
+
+A process on the OS (cloud-init on Amazon Linux) watches that endpoint at boot and, if user data is present, **executes it as the root user**. Key properties:
+
+- **Runs once, at first launch only.** It is *not* re-run on every boot.
+- **Run as root**, so it can do anything the OS permits.
+- **Opaque to EC2.** EC2 does not validate or interpret the payload — it hands it over blindly. Pass in commands that wipe the boot volume and the instance will run them. The **instance OS** must understand what was passed in.
+
+> [!warning] Gotcha — "only once" really means once
+> If you stop the instance, **edit** the user data, and start it again, the *new* data is **visible** inside the instance but is **not re-executed**. Execution happens only on the **first** launch; after that, user data is just a read-only blob for passing data *in*. If you need config that re-applies on change, that is [cfn-init + cfn-hup](cloudformation.md#re-running-on-updates--cfn-hup), not user data.
+
+> [!warning] Gotcha — a failed bootstrap does not fail the instance
+> Because user data is separate from EC2, a script that **errors** leaves the instance **still running** and **still passing [status checks](#status-checks-and-auto-recovery)** — you just get a silently **misconfigured** box. EC2 cannot tell a good config from a bad one; both look "2/2 healthy." (CloudFormation closes this gap with a [CreationPolicy + cfn-signal](cloudformation.md#creation-policies--cfn-signal).)
+
+### Constraints
+
+| Constraint | Detail |
+| --- | --- |
+| **Not secret** | User data is readable by **any process or shell user on the instance** (it's served over [IMDS](#instance-metadata-service-imds), and even IMDSv2's token handshake doesn't restrict *who on the box* can read it). Enforcing **IMDSv2** — the default on modern AMIs like Amazon Linux 2023 — closes the *remote* [SSRF](#imdsv1-vs-imdsv2--the-security-upgrade) path, but does **not** make user data a secret. **Never pass long-term credentials** through it; use an [IAM role](iam.md#iam-roles). |
+| **16 KB size limit** | For larger payloads, pass a small script that **downloads** the bigger one. |
+| **Base64 encoding** | EC2 expects user data base64-encoded. The **console auto-converts** plain text for you; **CloudFormation does not** — you must wrap it with `Fn::Base64`. |
+
+### Diagnosing bootstrap failures
+
+User data runs through cloud-init, which logs to `/var/log/`:
+
+| Log file | Shows |
+| --- | --- |
+| `cloud-init.log` | cloud-init / user-data processing |
+| `cloud-init-output.log` | **Output of the executed commands** — the first place to look when a bootstrap "ran but didn't work" |
+
+```bash
+sudo cat /var/log/cloud-init-output.log    # diagnose a user-data bootstrap
+```
+
+![EC2 user-data bootstrapping architecture. Top row shows the normal launch path: an AMI on the left launches an Instance in the centre, which gets an attached EBS volume hanging below it. Top-right: the EC2 service delivers User Data into the instance via a blue arrow, and a process inside the OS picks it up. Following a pink path down and around, the instance reaches an "Execute User Data" step marked with a clock icon (this happens at launch). From there the path forks into two outcomes: "Bad Config" with a sad-face instance in the upper right, where the user data errored but the instance is still running and just misconfigured; and "Running / Ready for Service" in green at the bottom left, where the user data succeeded and the instance is properly configured. The footer takeaway is that the same launch can end in either state and EC2 itself cannot tell the difference — both are "running" with passing status checks](../assets/ec2-bootstrapping.png)
+
+The fork in the diagram is the whole point: the same launch ends in either **Ready for Service** or silent **Bad Config**, and EC2 reports both as a healthy running instance.
+
+### Boot time to service time
+
+Bootstrapping is one of three ways to handle the **post-launch configuration time** that delays an instance from entering service. Briefly: you can **bootstrap** (automate config after launch — flexible, but the time is spent every launch), **bake an AMI** (front-load the work into a golden image — fast, but config is frozen), or **combine both** (bake the slow, stable part and bootstrap the fast-changing part — the optimal pattern). See [AMI Baking](#ami-baking) for the baking side, and the full trade-off in **[Boot Time to Service Time — AMI Baking vs Bootstrapping](../patterns/boot-time-optimization.md)**.
+
+### Beyond user data — cfn-init
+
+Raw user data is **procedural** (a script run line by line) and one-shot. CloudFormation's **`cfn-init`** helper adds **desired-state** configuration that is version-aware and can **re-run on stack updates**, plus a **CreationPolicy/cfn-signal** handshake so CloudFormation actually *knows* whether the in-instance config succeeded. It is invoked *from* the user data, so the "runs once at launch" rule still governs the kickoff line. Full treatment on the [CloudFormation page](cloudformation.md#cfn-init--desired-state-bootstrapping).
+
+> [!tip] Exam Tip
+> Pattern-match the trigger phrases: *"run a script at launch / configure an instance on first boot"* → **user data**. *"failed bootstrap but instance still healthy"* → user data is **opaque**; EC2 can't see config failure (use **cfn-signal** to detect it). *"re-apply config on stack update, not just first launch"* → **cfn-init + cfn-hup**, not user data. *"ensure a specific package version / complex desired-state bootstrapping"* → **cfn-init**. *"don't store credentials in user data"* → use an **IAM role**.
 
 ## When to Use EC2
 
