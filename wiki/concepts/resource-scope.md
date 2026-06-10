@@ -3,7 +3,7 @@ title: Resource Scope (Global / Regional / AZ / Edge)
 type: concept
 tags: [scope, regions, availability-zones, global, edge, dr, resilience]
 certs: [aws-saa]
-updated: 2026-06-08
+updated: 2026-06-09
 ---
 
 # Resource Scope (Global / Regional / AZ / Edge)
@@ -36,6 +36,7 @@ Single namespace, no region in the ARN. Control plane is multi-region by design.
 | [IAM](../services/iam.md) users, groups, roles, policies | All IAM principals and policies are global; one IAM database per account. STS endpoints exist per region but issue credentials valid globally |
 | [Route 53](../services/route53.md) hosted zones, records | Authoritative DNS data is global; health checkers run from multiple regions |
 | [Organizations](../services/organizations.md) | The org structure (root, OUs, SCPs) is global; member accounts are global entities |
+| [Control Tower](../services/control-tower.md) | Governed from the management account across the org; the landing zone spans the regions you enable, and the **home region is always available** (cannot be denied) |
 | [S3](../services/s3.md) bucket **namespace** | Bucket names are globally unique — but the bucket data itself is regional (see below) |
 | CloudFront distributions | Global control plane; data is served from edge POPs (see Edge tier) |
 | WAF (for CloudFront) | Global WebACLs attach to CloudFront; regional WebACLs attach to ALB/API Gateway |

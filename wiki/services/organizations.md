@@ -1,14 +1,16 @@
 ---
 title: AWS Organizations
 type: service
-tags: [organizations, billing, multi-account, scp, governance]
+tags: [organizations, billing, multi-account, scp, governance, control-tower]
 certs: [aws-saa]
-updated: 2026-05-14
+updated: 2026-06-09
 ---
 
 # AWS Organizations
 
 AWS Organizations lets an enterprise manage **many AWS accounts as a single unit**: one consolidated bill, shared volume discounts and [Savings Plan / Reserved Instance benefits](../patterns/cost-optimization.md), centralized policy guardrails, and a single sign-in path that uses [IAM roles](iam.md#iam-roles) to switch between accounts. It is the answer to almost every SAA exam question about "we have many AWS accounts and want to…".
+
+When a question wants the *whole* well-architected multi-account environment stood up automatically — landing zone, foundational accounts, SSO, guardrails, and account provisioning — the answer is [AWS Control Tower](control-tower.md), which orchestrates Organizations (and turns SCPs into preventative guardrails) on top of this foundation.
 
 ## Core Architecture
 

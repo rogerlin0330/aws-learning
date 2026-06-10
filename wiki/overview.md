@@ -1,8 +1,8 @@
 ---
 title: AWS Learning — Overview
 type: overview
-tags: [aws, architecture, iam, vpc, organizations, cost, s3, ec2, ecs, eks, kubernetes, containers, cloudwatch, cloudtrail]
-updated: 2026-06-08
+tags: [aws, architecture, iam, vpc, organizations, control-tower, cost, s3, ec2, ecs, eks, kubernetes, containers, cloudwatch, cloudtrail]
+updated: 2026-06-09
 ---
 
 # AWS Learning Overview
@@ -84,6 +84,7 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 - [S3](services/s3.md) — buckets, bucket policies, ACLs (legacy), Block Public Access, pre-signed URLs, versioning, SSE/CSE encryption, multipart upload + Transfer Acceleration, storage classes + lifecycle, replication (CRR/SRR), S3 Select / Glacier Select, event notifications + EventBridge, access logging
 - [Route 53](services/route53.md) — hosted zones, routing policies, health checks
 - [Organizations](services/organizations.md) — multi-account management, consolidated billing, SCPs
+- [Control Tower](services/control-tower.md) — "Organizations with superpowers"; orchestrates a well-architected landing zone (foundational OUs + Audit/Log Archive accounts), guardrails (preventative SCP / detective Config), and Account Factory self-service provisioning
 - [CloudWatch](services/cloudwatch.md) — monitoring & observability; log groups, metric filters, alarms
 - [CloudTrail](services/cloudtrail.md) — audit & governance; API/account-activity events, Event History vs trails, management/data/Insight events, global service events, organizational trail, log file integrity
 - [KMS](services/kms.md) — key management; envelope encryption, key policies + IAM + grants
@@ -111,6 +112,8 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 ## Multi-Account Architecture
 
 Most real-world AWS deployments use **many accounts** — a per-team / per-environment / per-business-unit split provides hard blast-radius isolation that VPCs alone cannot. [AWS Organizations](services/organizations.md) is the glue: one bill, OU-based grouping, [SCP](services/organizations.md#service-control-policies-scps) guardrails, and a single login point that uses [cross-account IAM roles](services/iam.md#cross-account-access) to move between accounts. The cost-side benefit is that [Savings Plans and Reserved Instances pool org-wide](patterns/cost-optimization.md#pooling-across-accounts--aws-organizations) — so multi-account doesn't multiply purchase commitments.
+
+[AWS Control Tower](services/control-tower.md) sits one layer above Organizations: instead of assembling the governance yourself, it **orchestrates** Organizations, IAM Identity Center, CloudFormation, and Config into a well-architected **landing zone** — default OUs, isolated **Log Archive** and **Audit** foundational accounts, SSO, **guardrails** (preventative SCP vs detective Config rules), and an **Account Factory** for self-service, baselined account provisioning.
 
 ## Topics To Cover Next
 

@@ -2,6 +2,23 @@
 
 <!-- markdownlint-disable MD051 -->
 
+## [2026-06-09] ingest | Control Tower 101
+
+Ingested `raw/aws-cert-study-notes/aws-solution-architect/control_tower_101.md` into a new [Control Tower](services/control-tower.md) service page. Copied `control-tower.png` into `wiki/assets/` and embedded it with multi-clause descriptive alt text that doubles as a reading guide for the infographic (landing-zone canvas, Management Account driving CloudFormation/Config robots, Account Factory baselined accounts behind the SCP guardrail barrier, Federated/Internal identities funneling through IAM Identity Center, Security/Foundational OU holding Audit + Log Archive). The raw note was accurate and well-structured, so the work was mostly synthesis and cross-linking.
+
+Page covers: Control Tower as **orchestration** ("Organizations with superpowers") over Organizations / IAM Identity Center / CloudFormation / Config / CloudWatch / CloudTrail / SNS / Service Catalog; the **four parts** (Landing Zone, Guardrails/Controls, Account Factory, Dashboard); a diagram-reading walkthrough; the **Landing Zone** (home region always available; default Foundational/Security and Custom/Sandbox OUs) and its two **foundational accounts** (Log Archive = isolated read-only Config+CloudTrail log store; Audit = SNS/CloudWatch governance visibility + third-party audit tooling); **guardrails on two independent axes** (enforcement: mandatory/strongly-recommended/elective; type: preventative=SCP-stops vs detective=Config-flags); and **Account Factory** self-service provisioning with cookie-cutter account+network baselines (non-overlapping VPC IPs).
+
+Synthesis additions beyond the raw note (both flagged as modern/optional so they don't muddy the SAA core):
+
+1. **"Guardrails" → "controls" console rename.** Surfaced as a gotcha so a question using either term doesn't trip the reader, paralleling the existing AWS SSO / IAM Identity Center note.
+2. **Proactive controls (CloudFormation hooks).** The note only covers preventative + detective; AWS now has a third deploy-time control type. Added as an exam-tip aside while keeping the core distinction at preventative (SCP) vs detective (Config).
+
+Cross-references: added a Control Tower paragraph to the [Organizations](services/organizations.md) intro (positioning Control Tower as the layer above that orchestrates Organizations and turns SCPs into preventative guardrails) and bumped its `updated:` + tags. Linked from [overview.md](overview.md) (new Services entry + a second paragraph in the Multi-Account Architecture section) and added a **Control Tower row to [Resource Scope](concepts/resource-scope.md)** under Global resources (home-region-always-available note). The Control Tower page itself links inline to Organizations/SCPs, IAM Identity Center (Identity & Access), CloudTrail, CloudWatch, and Resource Scope.
+
+Updated `wiki/certifications/aws-saa.md`: new `### Control Tower` subsection under AWS Organizations (7 exam-tip bullets, a pattern-match `[!tip]`, and a `[!warning]` covering preventative-vs-detective + the SSO/guardrails renames), added Control Tower to the deep-dive link bar and References, and new frontmatter tags (control-tower, landing-zone, guardrails, account-factory, iam-identity-center). Updated `wiki/index.md` (Control Tower under Services). Bumped `updated:` on organizations, overview, resource-scope, and aws-saa to 2026-06-09.
+
+Followed the [arrow-notation memory](../../../.claude/projects/-Users-rogerlin-SelfProjects-aws-learning/memory/feedback_arrow_notation.md) — plain English and numbered "1, 2" lists in prose; arrows kept only inside tables, callouts, and the diagram-reading list where they're idiomatic.
+
 ## [2026-06-08] ingest | CloudTrail 101
 
 Ingested `raw/aws-cert-study-notes/aws-solution-architect/cloudtrail_101.md` into a new [CloudTrail](services/cloudtrail.md) service page. Copied `cloudtrail-essentials.png` into `wiki/assets/` and embedded it with multi-clause descriptive alt text that doubles as a reading guide for the infographic (blue dotted input arrows for management/data events, red double-headed One-Region-vs-All-Regions scope arrow, CloudWatch Logs + S3 outputs, red dotted region/global-service source arrows). The raw note was accurate, so the bulk of the work was synthesis, cross-linking, and a few exam-relevant additions the note omitted.
