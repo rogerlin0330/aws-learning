@@ -573,6 +573,11 @@ IMDS has two versions. The exam mostly asks about the difference and why v2 exis
 
 A per-instance setting (`HttpTokens`: `optional` allows both; `required` forces v2-only) controls which versions are accepted. Setting `HttpTokens=required` is the modern hardening baseline and is what AWS Foundational Security Best Practices, CIS, and most exam scenarios expect.
 
+**The default depends on the AMI, not the OS itself.** An AMI carries an `imds-support` parameter that seeds the launched instance's metadata version (it is the lowest-precedence input, overridden by any value set at launch or at the account level — see [Configure the IMDS options](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configuring-instance-metadata-options.html)):
+
+- **Amazon Linux 2** leaves `imds-support` unset, so instances launch with `HttpTokens=optional` — IMDSv1 and IMDSv2 are both enabled, with v2 not enforced. The OS supports IMDSv2 but does not require it by default.
+- **Amazon Linux 2023** ships with `imds-support=v2.0`, so instances launch with `HttpTokens=required` (IMDSv2 only, IMDSv1 disabled) and a metadata hop limit of 2 (the larger hop limit lets containerized workloads still reach IMDS). AL2023's own tooling also makes only IMDSv2 calls. You can still override back to `optional` at launch if a legacy app needs v1, but the secure-by-default posture is the headline change. See [IMDSv2 — Amazon Linux 2023](https://docs.aws.amazon.com/linux/al2023/ug/imdsv2.html).
+
 > [!warning] Gotcha — IMDS is unauthenticated by default (IMDSv1)
 > IMDSv1 has **no authentication** and **no encryption**. Anyone with a shell on the instance — or any web app vulnerable to SSRF — can read everything IMDS exposes, including the **IAM role's temporary credentials**. The 2019 Capital One breach is the textbook example: a misconfigured WAF allowed SSRF, the attacker pulled the EC2 role credentials from IMDSv1, and used them to read 100M+ S3 objects. The fix is **enforce IMDSv2** (`HttpTokens=required`) and treat the role's permissions like any other production secret — least privilege.
 
@@ -811,6 +816,7 @@ The instance-level concerns are EC2-specific (resize is a stop/start, see [Stop/
 | Instance Metadata Service endpoint | **`http://169.254.169.254/latest/meta-data/`** — link-local, same IP on every instance |
 | IMDS use cases | Public IPv4 discovery, IAM role credentials, user data, EC2 Instance Connect SSH keys, self-identifying attributes (AMI ID, AZ, instance type, security groups) |
 | IMDSv1 vs IMDSv2 | v1 = unauthenticated `GET` (SSRF-exploitable); v2 = `PUT`-token handshake + `X-aws-ec2-metadata-token` header on every `GET`. Enforce v2 via `HttpTokens=required` |
+| IMDS default per AMI | AL2 defaults to `optional` (v1 and v2 both on); AL2023 defaults to `required` (v2-only, v1 disabled) plus hop limit 2. Set by the AMI's `imds-support` parameter |
 | Status checks | **System** (host/service) + **Instance** (OS). Healthy = **2/2 checks passed**. Anything else after boot = problem |
 | Status Check Alarm trigger | Either check fails for **≥ 1 consecutive 5-minute period** |
 | Status Check Alarm destinations | **SNS** topic (notification) + optional EC2 action: **Reboot / Stop / Terminate / Recover** |

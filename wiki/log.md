@@ -1127,3 +1127,7 @@ Restored real blank-line separation between consecutive Exam Tip, Gotcha, and re
 ## [2026-06-05] update | Clarify "per-socket" on EC2 Dedicated Hosts
 
 Added a `[!note]` callout right after the tenancy table in `services/ec2.md` (the first place "per-socket" appears) explaining that a socket is a physical CPU socket, why Dedicated Hosts expose physical sockets/cores, how BYOL licensing tracks physical hardware, and why "per-socket / per-core" is phrased that way. Triggered by a query asking whether "socket" meant CPU socket.
+
+## [2026-06-10] update | IMDS default version per Amazon Linux AMI
+
+Added Amazon Linux distro defaults to the IMDSv1 vs IMDSv2 section in `services/ec2.md`: AL2 leaves the AMI `imds-support` parameter unset so instances default to `HttpTokens=optional` (v1 and v2 both enabled, v2 not enforced); AL2023 ships `imds-support=v2.0` so instances default to `HttpTokens=required` (IMDSv2-only, IMDSv1 disabled) with hop limit 2 for containers. Clarified the default is AMI-driven (lowest precedence, overridable at launch/account level), not an OS property. Verified against AWS docs (configuring-instance-metadata-options + AL2023 imdsv2 page), linked both inline. Added a matching exam bullet and cheat-sheet row to `certifications/aws-saa.md` and a Quick Reference row to `services/ec2.md`.

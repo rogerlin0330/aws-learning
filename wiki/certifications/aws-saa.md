@@ -1019,6 +1019,7 @@ See [EC2 — Instance Metadata Service (IMDS)](../services/ec2.md#instance-metad
 - **IMDSv1 has no authentication and no encryption** — anything with a shell on the instance, or any SSRF vulnerability in a web app on the instance, can read everything IMDS exposes including the **role credentials**. This is the Capital One 2019 breach pattern
 - **IMDSv2 fixes this with session tokens** — clients first `PUT` to `/latest/api/token` (with `X-aws-ec2-metadata-token-ttl-seconds`), then send the returned token in `X-aws-ec2-metadata-token` on every subsequent `GET`. SSRF cannot obtain the token because most HTTP libraries forced into making a `GET` cannot pivot to a `PUT`
 - **Enforce IMDSv2 with `HttpTokens=required`** — per-instance setting; modern hardening baseline. `optional` accepts both v1 and v2
+- **The default version is set by the AMI's `imds-support` parameter, not the OS** — **Amazon Linux 2** leaves it unset, so instances default to `optional` (IMDSv1 + IMDSv2 both enabled, v2 not enforced). **Amazon Linux 2023** sets `imds-support=v2.0`, so instances default to `required` (IMDSv2 only, IMDSv1 disabled) with hop limit 2
 
 #### IMDS cheat sheet
 
@@ -1034,6 +1035,7 @@ See [EC2 — Instance Metadata Service (IMDS)](../services/ec2.md#instance-metad
 | "Metadata service uses TLS" | ❌ No — IMDS is **plain HTTP** over link-local. Confidentiality comes from the local-only addressing, not from encryption |
 | "169.254.169.254 reachable from outside the instance" | ❌ No — link-local; never leaves the instance |
 | "Same IP address for IMDS in `us-east-1` and `ap-southeast-2`" | ✅ Yes — link-local, identical on every instance everywhere |
+| "Which Amazon Linux requires IMDSv2 by default" | **AL2023** (`imds-support=v2.0`, IMDSv1 disabled). **AL2** defaults to `optional` (both enabled) |
 
 > [!tip] Exam Tip
 > Pattern-match: *"discover own public IPv4 from inside the instance"* → **IMDS** at `meta-data/public-ipv4`. *"SDK on EC2 obtains credentials"* → **IAM role + IMDS** (no static keys). *"SSRF stole the role credentials from metadata"* → **enforce IMDSv2** (`HttpTokens=required`). *"the metadata endpoint URL"* → **`http://169.254.169.254/latest/meta-data/`** — memorize verbatim.
