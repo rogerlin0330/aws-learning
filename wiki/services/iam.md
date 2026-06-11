@@ -1,9 +1,9 @@
 ---
 title: IAM — Identity and Access Management
 type: service
-tags: [iam, identity, access-management, authentication, authorization, roles, users, groups, policies, sts, federation]
+tags: [iam, identity, access-management, authentication, authorization, roles, users, groups, policies, sts, federation, instance-profile, ec2-instance-role]
 certs: [aws-saa, aws-aip]
-updated: 2026-06-04
+updated: 2026-06-11
 ---
 
 # IAM — Identity and Access Management
@@ -122,6 +122,8 @@ AWS services like Lambda and [EC2](ec2.md) are **not IAM identities** — they h
 - At runtime, the service calls `sts:AssumeRole`, gets temporary credentials, and the workload uses them — no static access keys in code.
 
 This pattern handles unknown-number-of-principals naturally: Lambda might spin up thousands of concurrent execution environments, each assuming the same role independently.
+
+For **EC2** there's one extra wrinkle: a role can't attach to an instance directly — it's wrapped in an **instance profile**, and the profile is what gets attached. The role's temporary credentials are then delivered to the instance through [IMDS](ec2.md#instance-metadata-service-imds). See [EC2 — Instance Roles & Instance Profiles](ec2.md#instance-roles--instance-profiles) for the full mechanism (and the credential provider chain that lets the CLI pick them up automatically).
 
 > [!warning] Gotcha
 > Never bake long-term IAM user access keys into Lambda code, EC2 user-data, or container images. Use a role instead — temporary credentials, automatic rotation, no secret leakage if code is exposed.

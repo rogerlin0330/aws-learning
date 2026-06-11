@@ -1,9 +1,9 @@
 ---
 title: EC2 — Elastic Compute Cloud
 type: service
-tags: [ec2, compute, iaas, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, ssh, rdp, instance-lifecycle, shared-responsibility, ebs, key-pair, host, tenancy, dedicated-host, dedicated-instance, instance-store, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, security-group, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns, containers, bootstrapping, cloud-init, boot-time-to-service-time, cfn-init, cloudformation]
+tags: [ec2, compute, iaas, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, ssh, rdp, instance-lifecycle, shared-responsibility, ebs, key-pair, host, tenancy, dedicated-host, dedicated-instance, instance-store, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, security-group, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns, containers, bootstrapping, cloud-init, boot-time-to-service-time, cfn-init, cloudformation, instance-role, instance-profile, iam-role, sts, credential-provider-chain]
 certs: [aws-saa]
-updated: 2026-06-10
+updated: 2026-06-11
 ---
 
 # EC2 — Elastic Compute Cloud
@@ -588,6 +588,90 @@ A per-instance setting (`HttpTokens`: `optional` allows both; `required` forces 
 
 > Metadata lives at **`169.254.169.254/latest/meta-data/`**, IMDSv1 is **unauthenticated and unencrypted** (use **IMDSv2** with session tokens), and it is the only way an instance can discover its own **public IPv4** — because that address lives on the [IGW](vpc.md#internet-gateway-igw), never in the OS.
 
+## Instance Roles & Instance Profiles
+
+An **EC2 instance role** is simply an [IAM role](iam.md#iam-roles) whose **trust policy** trusts the EC2 service (`ec2.amazonaws.com`), so the EC2 service can assume it on the instance's behalf. Anything running inside the instance then inherits the role's permissions — **without any long-term access keys stored on the box**. This is the canonical answer to *"an application on EC2 needs to reach S3 / DynamoDB / SQS / …"*: attach an instance role, never embed credentials.
+
+It is the same role machinery covered on the [IAM Roles](iam.md#iam-roles) page (trust policy = *who* can assume; permissions policy = *what* they can do; [STS](iam.md#how-assumerole-works-sts) mints the temporary credentials). What is EC2-specific is the **instance profile** wrapper and the **delivery via [IMDS](#instance-metadata-service-imds)**.
+
+![EC2 instance role architecture: an IAM role (with an S3 permissions policy attached) is wrapped by an InstanceProfile; the profile — not the role — is attached to the EC2 instance; temporary credentials are delivered into the instance through instance metadata and automatically renewed, and the application uses them to reach an S3 bucket](../assets/ec2-instance-roles.png)
+
+### The Instance Profile — the piece that actually attaches
+
+A role **cannot be attached to an instance directly**. The thing you attach is an **instance profile** — a thin container that wraps exactly one IAM role and is the delivery vehicle that gets the role's credentials *inside* the instance.
+
+| Tooling | What happens |
+| --- | --- |
+| **Console (UI)** | Creating an instance role **auto-creates an instance profile with the same name**. You think you're attaching the *role*; you're really attaching the *profile*. The two-object reality is hidden from you |
+| **CLI / CloudFormation / API** | You create the **role and the instance profile as separate objects** and wire them together yourself — and they can have **different names** |
+
+> [!warning] Gotcha — it is always the profile that attaches, never the role
+> An EC2 instance is associated with an **instance profile**, not an IAM role. The console's same-name auto-creation disguises this so thoroughly that it's a favourite exam trap. In CloudFormation you'll see it plainly: `AWS::IAM::Role` and `AWS::IAM::InstanceProfile` are **two separate resources**, and the profile lists the role in its `Roles` property.
+
+The CLI makes the three steps explicit — create the role (with the EC2 trust policy + a permissions policy), create the profile, add the role *into* the profile, then attach the **profile** to the instance:
+
+```bash
+# 1. Role with an EC2 trust policy, plus a permissions policy
+aws iam create-role --role-name S3Access \
+  --assume-role-policy-document file://ec2-trust-policy.json
+aws iam attach-role-policy --role-name S3Access \
+  --policy-arn arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
+
+# 2. Create the instance profile (separate object; name may differ)
+aws iam create-instance-profile --instance-profile-name Webserver
+
+# 3. Put the role into the profile (the "wrapper" link)
+aws iam add-role-to-instance-profile \
+  --role-name S3Access --instance-profile-name Webserver
+
+# 4. Attach the PROFILE (not the role) to an instance
+aws ec2 associate-iam-instance-profile \
+  --instance-id i-1234567890abcdef0 \
+  --iam-instance-profile Name=Webserver
+```
+
+The trust policy file is what makes it an *EC2* role — it allows `ec2.amazonaws.com` to call `sts:AssumeRole` (the same trust-policy shape shown on the [IAM Roles](iam.md#trust-policy-vs-permissions-policy) page, with the EC2 service as principal).
+
+### Credential delivery via IMDS
+
+When the role is assumed, STS generates **temporary credentials** (Access Key ID + Secret Access Key + session token + expiry) scoped to the role's permissions. EC2 delivers them into the instance through the [Instance Metadata Service](#instance-metadata-service-imds), at:
+
+```text
+http://169.254.169.254/latest/meta-data/iam/security-credentials/<role-name>
+```
+
+- **Always valid while attached.** EC2 and STS liaise to **renew the credentials before they expire**. As long as the profile stays attached and the application keeps reading metadata, it never hits an expired credential.
+- **Don't over-cache.** Applications should re-read the metadata path periodically (or just before expiry) rather than holding a stale copy — the SDKs do this for you.
+
+This is the same `iam/security-credentials/<role-name>` path noted under [IMDS — IAM role credentials](#what-imds-exposes); the role/profile model above is *how* those credentials come to exist.
+
+### Why the AWS CLI "just works" — credential precedence
+
+AWS tooling on the instance (CLI, SDKs) picks up the role's credentials **automatically**, with nothing configured. That's because the CLI walks a fixed **credential provider chain** and uses the first source it finds — and **EC2 instance profile credentials are the *last* link in that chain**, the fallback when nothing more explicit exists:
+
+| Priority | Source |
+| --- | --- |
+| 1 | Command-line options (`--profile`, `--region`, …) |
+| 2 | Environment variables (`AWS_ACCESS_KEY_ID`, …) |
+| 3–4 | Assume-role / assume-role-with-web-identity config |
+| 5 | IAM Identity Center (SSO) |
+| 6 | Shared credentials file (`~/.aws/credentials`) |
+| 7 | Custom external credential process |
+| 8 | Config file (`~/.aws/config`) |
+| 9 | ECS container credentials |
+| 10 | **EC2 instance profile credentials** (via IMDS) |
+
+Because instance profile credentials sit at the **bottom**, an instance with a role attached needs **zero credentials configured** — the CLI falls through to IMDS and finds them. That is exactly *why* roles are best practice: no stored secrets at all.
+
+> [!warning] Gotcha — higher-precedence credentials silently shadow the role
+> Anything **higher** in the chain overrides the instance role. If someone set `AWS_ACCESS_KEY_ID` environment variables or dropped a baked-in `~/.aws/credentials` file on the instance, the CLI uses **those** instead of the role — silently. Exam symptom: *"EC2 instance has a role attached but the app is using the wrong / expired permissions"* → look for higher-precedence credentials shadowing the role. The fix is to remove them and let the chain fall through to IMDS.
+
+> [!tip] Exam Tip
+> Pattern-match: *"application on EC2 needs to access another AWS service"* → **instance role**, not access keys. *"access keys / hardcoded credentials stored on an instance"* → **bad practice**; replace with an instance role. *"what is actually attached to the instance — the role or the profile?"* → the **instance profile** (console hides this; CLI/CloudFormation expose it). *"how do role credentials reach the app without keys?"* → **temporary credentials delivered via [IMDS](#instance-metadata-service-imds), auto-renewed by EC2 + STS**.
+
+> [!tip] Mnemonic — RPM
+> **R**ole holds the permissions, **P**rofile gets attached to the instance, **M**etadata delivers the credentials. *RPM keeps the engine running.*
+
 ## Bootstrapping
 
 **Bootstrapping** is a general systems-automation idea: a process that lets a system **self-configure when it first comes online**. It is not AWS-specific. In EC2 it enables **build automation** — instead of an instance launching into the bare default state of its [AMI](#ami--amazon-machine-image), you direct it to install software and apply post-install configuration so it enters service already set up. For a solutions architect it is the foundation for adding automation to a design.
@@ -841,6 +925,7 @@ The instance-level concerns are EC2-specific (resize is a stop/start, see [Stop/
 15. **ENI is the unit of network identity, not the instance** — IPs, DNS names, MAC, EIPs, IPv6, [Security Groups](vpc.md#security-groups-sg), and source/destination check **all live on the ENI**. Every instance has exactly 1 primary ENI (cannot detach) + 0+ secondary ENIs (detachable, movable between instances — the MAC-licensing / IP-failover pattern). All ENIs on an instance must be in the **same AZ**, but can sit in different subnets. The auto-assigned public IPv4 is **not visible inside the OS** (NAT at the [IGW](vpc.md#internet-gateway-igw)); IPv6 is. **Split-horizon DNS**: the public DNS name resolves to the **private IP inside the VPC**, the public IP **outside**. See [Network Interfaces (ENIs)](#network-interfaces-enis)
 16. **Instance Metadata Service (IMDS)** — fixed link-local endpoint **`http://169.254.169.254/latest/meta-data/`** that every instance can query about itself. Exposes networking (including the **public IPv4 the OS cannot see**), **IAM role credentials** (how SDKs get keys without baking them in), user data, and EC2 Instance Connect SSH keys. **IMDSv1 is unauthenticated and unencrypted** — vulnerable to SSRF exfiltration of role credentials (Capital One 2019); enforce **IMDSv2** (`HttpTokens=required`) which adds a session-token handshake. See [Instance Metadata Service (IMDS)](#instance-metadata-service-imds)
 17. **Status checks and auto recovery** — every instance has **two independent status checks**: **System** (the host/service underneath) and **Instance** (the OS layer); healthy = **2/2**. A **CloudWatch Status Check Alarm** can fire when either check fails for **≥ 1 consecutive 5-minute period**, notify via **SNS**, and optionally **Reboot / Stop / Terminate / Recover**. **Auto recovery** = same-AZ heal that **preserves all IP addressing** (private + auto public IPv4 + EIP); requires **EBS-only**, a **supported instance type**, and **spare host capacity**. Same-AZ only — **not a substitute for multi-AZ HA**. Modern current-generation types get **Simplified Automatic Recovery** by default with no alarm needed. See [Status Checks and Auto Recovery](#status-checks-and-auto-recovery)
+18. **Instance roles & instance profiles** — an instance role is an [IAM role](iam.md#iam-roles) trusting `ec2.amazonaws.com`; it's the right way for an app on EC2 to reach other AWS services with **no long-term keys on the box**. A role can't attach directly — an **instance profile** (a wrapper around one role) is what attaches. Console auto-creates the profile with the **same name** as the role; CLI/CloudFormation create **role and profile separately** (can differ in name). Temporary credentials are delivered via **[IMDS](#instance-metadata-service-imds)** at `iam/security-credentials/<role-name>` and **auto-renewed by EC2 + STS**. The CLI uses them automatically because **instance profile credentials are last in the credential provider chain** — but anything higher (env vars, `~/.aws/credentials`) **silently shadows** the role. See [Instance Roles & Instance Profiles](#instance-roles--instance-profiles)
 
 ## Quick Reference
 
@@ -878,6 +963,11 @@ The instance-level concerns are EC2-specific (resize is a stop/start, see [Stop/
 | IMDS use cases | Public IPv4 discovery, IAM role credentials, user data, EC2 Instance Connect SSH keys, self-identifying attributes (AMI ID, AZ, instance type, security groups) |
 | IMDSv1 vs IMDSv2 | v1 = unauthenticated `GET` (SSRF-exploitable); v2 = `PUT`-token handshake + `X-aws-ec2-metadata-token` header on every `GET`. Enforce v2 via `HttpTokens=required` |
 | IMDS default per AMI | AL2 defaults to `optional` (v1 and v2 both on); AL2023 defaults to `required` (v2-only, v1 disabled) plus hop limit 2. Set by the AMI's `imds-support` parameter |
+| Instance role | An [IAM role](iam.md#iam-roles) trusting `ec2.amazonaws.com`; grants the instance API permissions with **no stored access keys** |
+| Instance profile | A wrapper around **one** IAM role; the object **actually attached** to the instance (never the role directly) |
+| Profile creation | **Console** auto-creates it with the **same name** as the role; **CLI / CloudFormation** create role + profile **separately** (names can differ) |
+| Role credential delivery | Via [IMDS](#instance-metadata-service-imds) at `iam/security-credentials/<role-name>`; temporary creds **auto-renewed before expiry** by EC2 + STS |
+| Credential precedence | Instance profile credentials are **last** in the CLI provider chain — used only if nothing higher (CLI flags, env vars, `~/.aws/credentials`) is set; higher sources **silently shadow** the role |
 | Status checks | **System** (host/service) + **Instance** (OS). Healthy = **2/2 checks passed**. Anything else after boot = problem |
 | Status Check Alarm trigger | Either check fails for **≥ 1 consecutive 5-minute period** |
 | Status Check Alarm destinations | **SNS** topic (notification) + optional EC2 action: **Reboot / Stop / Terminate / Recover** |
@@ -908,5 +998,6 @@ The instance-level concerns are EC2-specific (resize is a stop/start, see [Stop/
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_instance_metadata.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/container_introduction.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_instance_status_checks_and_auto_recovery.md`
+- Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_instance_roles_and_profiles.md`
 - [EC2 Instance Types — official AWS docs](https://aws.amazon.com/ec2/instance-types/)
 - [ec2instances.info (Vantage)](https://instances.vantage.sh/) — sortable reference with pricing

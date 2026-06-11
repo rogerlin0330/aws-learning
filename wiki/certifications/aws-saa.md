@@ -1122,6 +1122,19 @@ See [EC2 — Bootstrapping](../services/ec2.md#bootstrapping), [CloudFormation �
 > - **`-e $?`** in cfn-signal forwards the **exit code of the preceding cfn-init run** — that's what becomes the success/failure signal
 > - **User data is not encrypted/secret** — IMDSv2 stops remote SSRF but a shell user still reads it; never put long-term secrets there
 
+### EC2 Instance Roles & Instance Profiles
+
+See [EC2 — Instance Roles & Instance Profiles](../services/ec2.md#instance-roles--instance-profiles) and [IAM Roles](../services/iam.md#iam-roles) for full details.
+
+- **EC2 instance role** = an [IAM role](../services/iam.md#iam-roles) whose **trust policy trusts `ec2.amazonaws.com`**. It's how an app on EC2 reaches other AWS services with **no long-term access keys on the instance**
+- **Instance profile** = a wrapper around **one** IAM role. A role **cannot attach to an instance directly** — the **profile is what attaches**
+- **Console**: creating the role **auto-creates a same-name instance profile** (the two-object reality is hidden). **CLI / CloudFormation / API**: you create **role and profile separately**, and they **can have different names** (`AWS::IAM::Role` + `AWS::IAM::InstanceProfile` are two resources)
+- **Credential delivery**: temporary creds (Access Key + Secret + session token + expiry) are delivered via **[IMDS](../services/ec2.md#instance-metadata-service-imds)** at **`iam/security-credentials/<role-name>`**, and **EC2 + STS auto-renew them before expiry** → always valid while attached. Apps should re-read metadata, not over-cache
+- **Credential provider chain**: instance profile credentials are the **last** source the AWS CLI checks → an instance with a role needs **zero credentials configured**. But **anything higher silently shadows the role** (env vars `AWS_ACCESS_KEY_ID`, `~/.aws/credentials`, CLI flags)
+
+> [!tip] Exam Tip
+> *"App on EC2 needs to access S3 / DynamoDB / etc."* → **instance role** (not access keys). *"Access keys / hardcoded credentials on an instance"* → **bad practice**, replace with an instance role. *"What is attached to the instance — role or profile?"* → the **instance profile**. *"How do role credentials reach the app without keys?"* → **temporary creds via IMDS, auto-renewed by EC2 + STS**. *"Role attached but app uses wrong/expired permissions"* → **higher-precedence credentials (env vars / credentials file) shadowing the role** — remove them so the chain falls through to IMDS. Mnemonic **RPM**: **R**ole holds permissions, **P**rofile attaches, **M**etadata delivers.
+
 ### EBS Service Architecture
 
 See [EBS — Service Architecture](../services/ebs.md#service-architecture) for full details.
