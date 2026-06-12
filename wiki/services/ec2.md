@@ -701,7 +701,7 @@ A process on the OS (cloud-init on Amazon Linux) watches that endpoint at boot a
 
 | Constraint | Detail |
 | --- | --- |
-| **Not secret** | User data is readable by **any process or shell user on the instance** (it's served over [IMDS](#instance-metadata-service-imds), and even IMDSv2's token handshake doesn't restrict *who on the box* can read it). Enforcing **IMDSv2** — the default on modern AMIs like Amazon Linux 2023 — closes the *remote* [SSRF](#imdsv1-vs-imdsv2--the-security-upgrade) path, but does **not** make user data a secret. **Never pass long-term credentials** through it; use an [IAM role](iam.md#iam-roles). |
+| **Not secret** | User data is readable by **any process or shell user on the instance** (it's served over [IMDS](#instance-metadata-service-imds), and even IMDSv2's token handshake doesn't restrict *who on the box* can read it). Enforcing **IMDSv2** — the default on modern AMIs like Amazon Linux 2023 — closes the *remote* [SSRF](#imdsv1-vs-imdsv2--the-security-upgrade) path, but does **not** make user data a secret. **Never pass long-term credentials** through it; use an [IAM role](iam.md#iam-roles) for AWS credentials and [SSM Parameter Store](ssm.md#parameter-store) (or Secrets Manager) for config and secrets. |
 | **16 KB size limit** | For larger payloads, pass a small script that **downloads** the bigger one. |
 | **Base64 encoding** | EC2 expects user data base64-encoded. The **console auto-converts** plain text for you; **CloudFormation does not** — you must wrap it with `Fn::Base64`. |
 

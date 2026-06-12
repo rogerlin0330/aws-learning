@@ -61,6 +61,7 @@ Live in exactly one region. Most managed services are multi-AZ resilient within 
 | Auto Scaling Group | Regional; can launch instances across multiple AZs within the region |
 | EFS file system | Regional service (the file system itself), but **mount targets** are AZ-scoped (see below) |
 | RDS DB instance | The DB resource is regional in terms of API, but the primary instance is placed in **one AZ** — Multi-AZ adds a standby in another AZ |
+| [SSM Parameter Store](../services/ssm.md) | Regional; multi-AZ resilient within the Region but **no built-in cross-Region replication** — recreate the parameter in each Region (one `put-parameter` per Region) |
 
 ## AZ-scoped resources
 

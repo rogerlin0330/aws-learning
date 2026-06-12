@@ -1630,6 +1630,25 @@ See [S3 Bucket Keys](../services/s3.md#s3-bucket-keys--sse-kms-cost-optimization
 > [!tip] Exam Tip
 > Pattern-match: *"SSE-KMS works but the KMS bill is huge on a bucket with millions of objects"* → **enable S3 Bucket Keys**. *"Cheaper than SSE-KMS"* on the same data is a misleading framing — Bucket Keys reduce **KMS request charges**, not the price per byte stored.
 
+## SSM Parameter Store
+
+See [Systems Manager — Parameter Store](../services/ssm.md#parameter-store) for full details.
+
+- **Purpose** — central store for config and secrets; the **correct replacement for putting secrets in [EC2 user data](../services/ec2.md#bootstrapping)** (user data is readable by anyone who reaches the instance)
+- **Types** — **String**, **StringList**, **SecureString** (SecureString = [KMS](../services/kms.md)-encrypted)
+- **Hierarchical names** (`/app/db/password`) — retrieve **individually** by full name (`get-parameters`) or a **whole branch** at once (`get-parameters-by-path`); IAM permissions scope to a **single parameter or an entire tree**
+- **Public AWS-published parameters** — classic use: latest **AMI ID** per OS/Region, referenced from [CloudFormation](../services/cloudformation.md) so templates don't hard-code an image
+- **Regional + multi-AZ**, but **no cross-Region replication** — recreate parameters per Region
+- **SecureString needs two permission layers** — `ssm:GetParameter*` **and** KMS permission on the key (`--with-decryption` triggers `kms:Decrypt`). Enables **role separation**: list-without-read. **Symmetric KMS keys only**
+- **Standard vs advanced tier** — standard (4 KB, direct KMS `Encrypt`, **free**, 10K/Region) vs advanced (8 KB, **envelope encryption** via the Encryption SDK, **parameter policies**, **billable**, 100K/Region). Upgrade is **one-way** — no downgrade
+- **Permission split** — standard encrypt `kms:Encrypt`; advanced encrypt `kms:GenerateDataKey`; decrypt (both) `kms:Decrypt`
+
+> [!tip] Exam Tip
+> Pattern-match: *"store config/secrets for EC2/Lambda, integrate with IAM, cheap, no rotation"* → **Parameter Store**. *"automatically rotate a DB password"* or *"native RDS secret integration"* → **Secrets Manager**. *"stop hard-coding the AMI ID in CloudFormation"* → **public parameter** (latest AMI ID). *"someone can list the secret name but must not read its value"* → SecureString with **KMS permission withheld** (role separation).
+
+> [!warning] Gotcha
+> Granting only `ssm:GetParameter` is **not enough** to read a SecureString — without `kms:Decrypt` on the key, the decrypt fails. The reverse trap: a parameter created in `us-east-1` is **not** visible in `us-west-2` (no cross-Region replication).
+
 ## Key Service Properties to Memorize
 
 | Service | Resilience level |
@@ -1642,6 +1661,7 @@ See [S3 Bucket Keys](../services/s3.md#s3-bucket-keys--sse-kms-cost-optimization
 | [EC2](../services/ec2.md) instance | AZ-specific |
 | [S3](../services/s3.md) bucket | Regional (globally unique name) |
 | [KMS](../services/kms.md) key | Regional (single-region by default; multi-region keys are a separate feature) |
+| [SSM Parameter Store](../services/ssm.md) parameter | Regional (multi-AZ within Region; no cross-Region replication) |
 | [CloudTrail](../services/cloudtrail.md) trail | Regional (all-regions trail spans every region; global service events → `us-east-1`) |
 
 ## Common Exam Traps
@@ -1667,6 +1687,7 @@ See [S3 Bucket Keys](../services/s3.md#s3-bucket-keys--sse-kms-cost-optimization
 - [TLS/HTTPS Concepts](../concepts/tls-https.md)
 - [Organizations](../services/organizations.md)
 - [Control Tower](../services/control-tower.md)
+- [Systems Manager (SSM)](../services/ssm.md)
 - [Cost Optimization](../patterns/cost-optimization.md)
 - [KMS](../services/kms.md)
 - [CloudWatch](../services/cloudwatch.md)
