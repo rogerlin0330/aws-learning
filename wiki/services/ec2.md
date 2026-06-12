@@ -1,9 +1,9 @@
 ---
 title: EC2 — Elastic Compute Cloud
 type: service
-tags: [ec2, compute, iaas, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, ssh, rdp, instance-lifecycle, shared-responsibility, ebs, key-pair, host, tenancy, dedicated-host, dedicated-instance, instance-store, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, security-group, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns, containers, bootstrapping, cloud-init, boot-time-to-service-time, cfn-init, cloudformation, instance-role, instance-profile, iam-role, sts, credential-provider-chain]
+tags: [ec2, compute, iaas, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, ssh, rdp, instance-lifecycle, shared-responsibility, ebs, key-pair, host, tenancy, dedicated-host, dedicated-instance, instance-store, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, security-group, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns, containers, bootstrapping, cloud-init, boot-time-to-service-time, cfn-init, cloudformation, instance-role, instance-profile, iam-role, sts, credential-provider-chain, cloudwatch-agent, cwagent, parameter-store, log-group, log-stream]
 certs: [aws-saa]
-updated: 2026-06-11
+updated: 2026-06-12
 ---
 
 # EC2 — Elastic Compute Cloud
@@ -906,6 +906,15 @@ EC2 capacity grows in two fundamentally different ways. The choice cascades into
 
 The instance-level concerns are EC2-specific (resize is a stop/start, see [Stop/Start vs Restart](#stopstart-vs-restart--these-are-not-the-same)); the design pattern itself is broader. See [Scaling — Horizontal vs Vertical](../patterns/scaling.md) for the full treatment, including the session problem, sticky-session gotcha, and how horizontal scaling combines with ELB and Auto Scaling Groups to deliver HA.
 
+## System & Application Logging (CloudWatch Agent)
+
+[CloudWatch](cloudwatch.md) sees an instance only from the **outside** — host-level metrics like CPU at the hypervisor. Everything **inside** the guest OS is opaque to it by default: **memory usage**, **disk-space-used**, per-process and per-core detail, and any **system or application log files**. To get those into CloudWatch you install the **[CloudWatch Agent](cloudwatch.md#cloudwatch-agent)** on the instance.
+
+The agent needs a **configuration** (which metrics and log files to collect) and **permissions** — supplied by an [instance role](#instance-roles--instance-profiles) with `CloudWatchAgentServerPolicy`, never baked-in keys. It ships logs as **one log group per file, one log stream per instance**, and its OS-level metrics surface under a new **`CWAgent`** namespace. Store the config once in [SSM Parameter Store](ssm.md#parameter-store) to reuse it across a fleet (the same pattern that pairs with [bootstrapping](#bootstrapping) and Auto Scaling).
+
+> [!warning] Gotcha — installed but some logs missing
+> The agent only reads a log file if **its run-as user** (modern default `cwagent`) has read permission on it. Root-only files like `/var/log/secure` are silently skipped unless the agent runs as root or `cwagent` is granted access. IAM controls whether it can **send**; OS file permissions control whether it can **read**. See [CloudWatch Agent](cloudwatch.md#cloudwatch-agent) for the full treatment.
+
 ## Key Takeaways
 
 1. **EC2 = IaaS** — you manage OS and above; AWS manages everything below
@@ -926,6 +935,7 @@ The instance-level concerns are EC2-specific (resize is a stop/start, see [Stop/
 16. **Instance Metadata Service (IMDS)** — fixed link-local endpoint **`http://169.254.169.254/latest/meta-data/`** that every instance can query about itself. Exposes networking (including the **public IPv4 the OS cannot see**), **IAM role credentials** (how SDKs get keys without baking them in), user data, and EC2 Instance Connect SSH keys. **IMDSv1 is unauthenticated and unencrypted** — vulnerable to SSRF exfiltration of role credentials (Capital One 2019); enforce **IMDSv2** (`HttpTokens=required`) which adds a session-token handshake. See [Instance Metadata Service (IMDS)](#instance-metadata-service-imds)
 17. **Status checks and auto recovery** — every instance has **two independent status checks**: **System** (the host/service underneath) and **Instance** (the OS layer); healthy = **2/2**. A **CloudWatch Status Check Alarm** can fire when either check fails for **≥ 1 consecutive 5-minute period**, notify via **SNS**, and optionally **Reboot / Stop / Terminate / Recover**. **Auto recovery** = same-AZ heal that **preserves all IP addressing** (private + auto public IPv4 + EIP); requires **EBS-only**, a **supported instance type**, and **spare host capacity**. Same-AZ only — **not a substitute for multi-AZ HA**. Modern current-generation types get **Simplified Automatic Recovery** by default with no alarm needed. See [Status Checks and Auto Recovery](#status-checks-and-auto-recovery)
 18. **Instance roles & instance profiles** — an instance role is an [IAM role](iam.md#iam-roles) trusting `ec2.amazonaws.com`; it's the right way for an app on EC2 to reach other AWS services with **no long-term keys on the box**. A role can't attach directly — an **instance profile** (a wrapper around one role) is what attaches. Console auto-creates the profile with the **same name** as the role; CLI/CloudFormation create **role and profile separately** (can differ in name). Temporary credentials are delivered via **[IMDS](#instance-metadata-service-imds)** at `iam/security-credentials/<role-name>` and **auto-renewed by EC2 + STS**. The CLI uses them automatically because **instance profile credentials are last in the credential provider chain** — but anything higher (env vars, `~/.aws/credentials`) **silently shadows** the role. See [Instance Roles & Instance Profiles](#instance-roles--instance-profiles)
+19. **System & application logging** — standard CloudWatch can't see inside the OS (no memory, no disk-used, no logs). The **[CloudWatch Agent](cloudwatch.md#cloudwatch-agent)** runs in-guest to capture OS metrics and logs; it needs a config plus an **instance role** (`CloudWatchAgentServerPolicy`), writes **one log group per file / one log stream per instance**, surfaces metrics under the **`CWAgent`** namespace, and reads a log file only if its **run-as user** (`cwagent` by default) has read permission. See [System & Application Logging](#system--application-logging-cloudwatch-agent)
 
 ## Quick Reference
 
@@ -974,6 +984,11 @@ The instance-level concerns are EC2-specific (resize is a stop/start, see [Stop/
 | Auto recovery | Same-AZ heal that **preserves all IP addressing** (private + auto public IPv4 + EIP); requires EBS-only, supported instance type, spare capacity |
 | Auto recovery limits | **Same AZ only** (not cross-AZ — not HA), **EBS-only** (no instance store), supported instance types only, spare host capacity required |
 | Simplified Automatic Recovery | Default on most current-generation instance types — same mechanism, no CloudWatch alarm required |
+| In-guest metrics & logs | Need the **[CloudWatch Agent](cloudwatch.md#cloudwatch-agent)** — standard CloudWatch omits memory, disk-used, and OS/app logs |
+| CloudWatch Agent permissions | An **instance role** with `CloudWatchAgentServerPolicy` (never baked-in keys) |
+| CloudWatch Agent log mapping | **One log group per file, one log stream per instance** (stream named by instance ID) |
+| CloudWatch Agent metrics namespace | **`CWAgent`** — its appearance is the fingerprint the agent is installed |
+| CloudWatch Agent run-as user | Default `cwagent`; reads only files its user can read — root-only logs like `/var/log/secure` need root or granted access |
 
 ## References
 
@@ -999,5 +1014,6 @@ The instance-level concerns are EC2-specific (resize is a stop/start, see [Stop/
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/container_introduction.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_instance_status_checks_and_auto_recovery.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_instance_roles_and_profiles.md`
+- Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_system_and_application_logging.md`
 - [EC2 Instance Types — official AWS docs](https://aws.amazon.com/ec2/instance-types/)
 - [ec2instances.info (Vantage)](https://instances.vantage.sh/) — sortable reference with pricing

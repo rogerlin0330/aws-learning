@@ -2,6 +2,22 @@
 
 <!-- markdownlint-disable MD051 -->
 
+## [2026-06-12] ingest | EC2 System & Application Logging (CloudWatch Agent)
+
+Ingested `raw/aws-cert-study-notes/aws-solution-architect/ec2_system_and_application_logging.md`. The note is fundamentally about the **CloudWatch Agent** (a CloudWatch capability exercised on EC2), so the full treatment lives on the [CloudWatch](services/cloudwatch.md) page with a concise mirror on [EC2](services/ec2.md) — the same split used for the Scaling pattern. The raw note's ASCII diagram and mnemonic are author additions (no image asset to copy).
+
+Structure:
+
+1. **New `## CloudWatch Agent` section on [cloudwatch.md](services/cloudwatch.md)** (between "CloudWatch Logs as the Logging Backbone" and "Resilience and Scope"): the outside-vs-inside-the-instance framing (standard CloudWatch only sees hypervisor-level metrics; memory/disk-used/per-process/per-core and OS+app logs are opaque); the unified agent closes the gap; the two requirements (JSON config + permissions via an **instance role** with `CloudWatchAgentServerPolicy`, never baked-in keys); the **group-by-file / stream-by-instance** log mapping; storing config in **SSM Parameter Store** for fleet reuse with the `amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c ssm:… -s` command broken down; the **`CWAgent`** namespace as the install fingerprint; and the run-as-user gotcha as a `[!warning]`. Linked the existing Ingestion-Methods "Unified CloudWatch Agent" row to the new section; added EC2/SSM cross-links + the source to References; bumped tags + `updated:`.
+2. **Concise `## System & Application Logging (CloudWatch Agent)` section on [ec2.md](services/ec2.md)** (before Key Takeaways): the problem + a pointer to the full CloudWatch treatment, the config/instance-role/log-mapping/`CWAgent` summary, and the run-as-user `[!warning]`. Added Key Takeaway #19, five Quick Reference rows, the source file, and tags.
+3. **`### CloudWatch Agent` subsection on [aws-saa.md](certifications/aws-saa.md)** under CloudWatch Logs: 6 exam bullets, a pattern-match `[!tip]`, and a run-as-user-vs-IAM `[!warning]`.
+
+Key synthesis decision — the **run-as-user vs file-permissions** gotcha is the highest-leverage non-obvious point and the raw note already nailed it: the modern wizard default is **`cwagent`** (AWS's documented default is `root`, so the two "defaults" differ), and a `cwagent`-run agent **silently skips** root-only logs like `/var/log/secure` (`0600 root:root`). Framed everywhere as *IAM governs whether the agent can **send**; OS file permissions govern whether it can **read*** — the exam tell for "agent installed but a specific log never appears." Dropped the demo-only collectd `types.db` workaround and the illustrative region/stack/parameter names as non-memorizable specifics.
+
+Cross-references: CloudWatch ↔ EC2 ↔ SSM Parameter Store interlinked inline; CloudWatch Agent links to EC2 instance roles, AMI baking, and bootstrapping as the at-scale deploy paths. Updated [index.md](index.md) (expanded CloudWatch entry) and [overview.md](overview.md) (CloudWatch Services line + `updated:`).
+
+Followed the [arrow-notation memory](../../../.claude/projects/-Users-rogerlin-SelfProjects-aws-learning/memory/feedback_arrow_notation.md): plain English and numbered "1, 2" lists in prose; arrows kept only inside tables, callouts, and the pattern-match lists where they're idiomatic.
+
 ## [2026-06-10] ingest | EC2 Bootstrapping & CFN-INIT
 
 Ingested two SAA notes — `ec2_bootstrapping_with_user_data.md` and `ec2_bootstrapping_with_cfn_init.md` — across an EC2 section, a new CloudFormation service page, and a new boot-time pattern page. Copied four diagrams into `wiki/assets/` (`ec2-bootstrapping.png`, `boot-time-to-service-time-ami-baking-vs-ec2-bootstrapping.png`, `cfn-init.png`, `cfn-init-CreationPolicy-and-signals.png`) with multi-clause descriptive alt text that doubles as a reading guide.

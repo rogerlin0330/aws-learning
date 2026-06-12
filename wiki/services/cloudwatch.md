@@ -1,9 +1,9 @@
 ---
 title: Amazon CloudWatch
 type: service
-tags: [cloudwatch, monitoring, logging, observability, ec2, lambda, cloudtrail, vpc]
+tags: [cloudwatch, monitoring, logging, observability, ec2, lambda, cloudtrail, vpc, cloudwatch-agent, cwagent, metrics, parameter-store, instance-role, log-group, log-stream]
 certs: [aws-saa]
-updated: 2026-06-03
+updated: 2026-06-12
 ---
 
 # Amazon CloudWatch
@@ -44,7 +44,7 @@ Log events are organized in a hierarchy:
 | Method | When to use |
 | --- | --- |
 | Native AWS service integration | [EC2](ec2.md), [VPC](vpc.md) Flow Logs, Lambda, [CloudTrail](cloudtrail.md), Route 53 — zero config, logs flow automatically via service/IAM roles |
-| **Unified CloudWatch Agent** | Custom OS logs (e.g. `/var/log/messages` on EC2), on-premises servers, non-AWS compute |
+| **[Unified CloudWatch Agent](#cloudwatch-agent)** | Custom OS logs (e.g. `/var/log/messages` on EC2), on-premises servers, non-AWS compute |
 | AWS SDK | Application-level logging from any language — call `PutLogEvents` directly |
 
 Security for native integrations is managed via **IAM service roles** attached to the originating service (e.g. a Lambda execution role that includes `logs:CreateLogGroup`, `logs:PutLogEvents`).
@@ -73,6 +73,46 @@ CloudWatch Logs is the default log destination for most AWS services. Key integr
 | [EC2](ec2.md) | OS and application logs (via CloudWatch Agent) |
 | Route 53 | DNS query logs |
 
+## CloudWatch Agent
+
+Standard CloudWatch only sees an instance from the **outside** — host-level metrics measured at the hypervisor, such as CPU utilization. Everything **inside** the guest OS is opaque to CloudWatch by default: memory usage, disk-space-used, per-process and per-core detail, and any system or application **log files**. The **CloudWatch Agent** (the *unified* agent, which replaced the older standalone Logs agent) closes that gap. It runs inside the instance, captures OS-visible metrics and logs, and injects them into CloudWatch (metrics) and [CloudWatch Logs](#cloudwatch-logs).
+
+> [!tip] Exam Tip
+> Any question mentioning **memory usage**, **disk space used**, **per-process metrics**, or **OS / application logs from EC2** points to the **CloudWatch Agent**. Standard CloudWatch metrics do **not** include in-guest memory or disk-used.
+
+### What the agent needs
+
+Installing the agent is not enough; it also requires two things:
+
+1. **Configuration** — a JSON document telling it *which* metrics and *which* log files to collect.
+2. **Permissions** — credentials to write to CloudWatch and CloudWatch Logs. The correct pattern is an **[EC2 instance role](ec2.md#instance-roles--instance-profiles)** (the managed `CloudWatchAgentServerPolicy`), never long-term access keys baked onto the box. Anything running on the instance — the agent included — inherits the role.
+
+### Log groups and log streams
+
+When it ships logs, the agent follows a simple mapping into the [CloudWatch Logs hierarchy](#log-data-model):
+
+- **One log group per log file** being captured (for example `/var/log/secure`, `/var/log/httpd/access_log`).
+- **One log stream per instance** sending that file, named after the instance ID by default.
+
+So *N* log files across *M* instances produce *N* log groups, each holding up to *M* streams. The mnemonic: **group by file, stream by instance**.
+
+### Storing config at scale — Parameter Store
+
+The agent's JSON config can be stored once in [SSM Parameter Store](ssm.md#parameter-store) and pulled by any number of instances, which is what makes the agent practical across a fleet (especially with Auto Scaling groups). The control utility fetches the config and starts the agent in one command:
+
+```bash
+amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c ssm:AmazonCloudWatch-linux -s
+```
+
+Here `-a fetch-config` fetches the config, `-m ec2` sets EC2 mode, `-c ssm:<name>` names the Parameter Store parameter, and `-s` starts the agent. Other ways to deliver the agent and its config: [CloudFormation](cloudformation.md), Systems Manager, baking it into an [AMI](ec2.md#ami-baking), or [user-data bootstrapping](ec2.md#bootstrapping).
+
+### The CWAgent namespace
+
+The richer OS-level metrics — disk I/O read/write, per-core CPU including I/O wait and user time — appear under a new **`CWAgent`** namespace in CloudWatch Metrics, dimensioned by image ID, instance ID, and instance type. A `CWAgent` namespace appearing is the fingerprint that the agent is installed and running.
+
+> [!warning] Gotcha — run-as user vs file permissions
+> The agent runs as an OS user (modern config wizards default to **`cwagent`**; older setups and AWS's documented default run as **`root`**). The agent can only capture a log file if **its run-as user has read permission on that file** — a question entirely separate from IAM. Root-restricted logs such as `/var/log/secure` (mode `0600 root:root`) are **silently skipped** by a `cwagent`-run agent. So if the agent is installed and configured but **certain logs never appear**, suspect a **file-permission mismatch**, not an IAM or config error: *IAM governs whether the agent can **send**; OS file permissions govern whether it can **read** the source log.*
+
 ## Resilience and Scope
 
 CloudWatch is a **regional service** — log groups and their data are region-scoped. Cross-region log aggregation requires explicit forwarding (e.g. Kinesis Data Firehose or Lambda subscription filters to a central region).
@@ -87,6 +127,8 @@ CloudWatch is a **regional service** — log groups and their data are region-sc
 
 - [IAM](iam.md) — roles and permissions for log access
 - [VPC](vpc.md) — VPC Flow Logs sent to CloudWatch Logs
-- [EC2](ec2.md) — OS and app logs via CloudWatch Agent
+- [EC2](ec2.md) — OS and app logs via the [CloudWatch Agent](#cloudwatch-agent); [instance roles](ec2.md#instance-roles--instance-profiles) supply the agent's permissions
+- [Systems Manager (SSM)](ssm.md#parameter-store) — Parameter Store holds the agent config for fleet-wide reuse
 - [CloudTrail](cloudtrail.md) — API/account-activity audit; delivers events to CloudWatch Logs for search + alarms
 - [Organizations](organizations.md) — CloudTrail integration context
+- Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_system_and_application_logging.md`
