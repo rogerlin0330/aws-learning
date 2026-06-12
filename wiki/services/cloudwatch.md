@@ -77,6 +77,22 @@ CloudWatch Logs is the default log destination for most AWS services. Key integr
 
 Standard CloudWatch only sees an instance from the **outside** — host-level metrics measured at the hypervisor, such as CPU utilization. Everything **inside** the guest OS is opaque to CloudWatch by default: memory usage, disk-space-used, per-process and per-core detail, and any system or application **log files**. The **CloudWatch Agent** (the *unified* agent, which replaced the older standalone Logs agent) closes that gap. It runs inside the instance, captures OS-visible metrics and logs, and injects them into CloudWatch (metrics) and [CloudWatch Logs](#cloudwatch-logs).
 
+### Why CPU is visible but memory is not
+
+The dividing line is **what the hypervisor measures to do its job** versus **what is bookkeeping internal to the guest OS**:
+
+- **CPU is time-shared.** The hypervisor schedules your vCPUs onto physical cores and meters that dispatch directly — when the guest is idle it halts the vCPU and the hypervisor sees it yield. "What fraction of allotted CPU time did the instance actually use?" is a number the hypervisor already tracks, so `CPUUtilization` needs nothing inside the guest. (This is also why it can differ slightly from `top` — it is measured externally.)
+- **Memory is space-allocated.** The instance gets a fixed RAM quota up front; after that the hypervisor's view is static ("these pages are assigned to this guest"). Used vs. free vs. cache vs. available is an abstraction the **guest kernel** maintains in its own structures (`/proc/meminfo`). The hypervisor does not parse those, and "pages ever touched" is useless because Linux fills nearly all free RAM with page cache. Only a process inside the guest can report the real figure.
+
+Disk splits across both rules, which confirms the pattern:
+
+| Metric | Visible without the agent? | Why |
+| --- | --- | --- |
+| Disk **I/O** (read/write ops, bytes, queue length) | Yes — EBS metrics | EBS is a network service AWS meters; it is *activity / throughput*, like CPU time |
+| Disk **space used** (filesystem % full) | No — needs the agent | Filesystem fullness is guest bookkeeping; to AWS the volume is just a fixed-size blob |
+
+So the real rule is not "CPU yes, memory no." It is: **activity/throughput of a resource AWS meters** (CPU time, network bytes, EBS IOPS) is externally observable, while **capacity-used accounting owned by the guest OS** (memory used, disk-space used) is not — and reading the latter requires a process inside the guest, which is exactly what the agent provides.
+
 > [!tip] Exam Tip
 > Any question mentioning **memory usage**, **disk space used**, **per-process metrics**, or **OS / application logs from EC2** points to the **CloudWatch Agent**. Standard CloudWatch metrics do **not** include in-guest memory or disk-used.
 

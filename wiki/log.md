@@ -2,6 +2,10 @@
 
 <!-- markdownlint-disable MD051 -->
 
+## [2026-06-12] update | CloudWatch Agent — why CPU is visible but memory is not
+
+Added a "Why CPU is visible but memory is not" subsection to the [CloudWatch Agent](services/cloudwatch.md#why-cpu-is-visible-but-memory-is-not) section, prompted by a user question. Core framing: **activity/throughput of a resource AWS meters** (CPU time, network bytes, EBS IOPS) is externally observable at the hypervisor, while **capacity-used accounting owned by the guest OS** (memory used, disk-space used) is not. CPU is *time-shared* (the hypervisor schedules and meters vCPU dispatch, so `CPUUtilization` needs nothing in-guest), whereas memory is *space-allocated* (a fixed quota up front; used/free/cache is `/proc/meminfo` bookkeeping the hypervisor never parses). Used the disk split (EBS I/O metrics visible vs. filesystem-fullness needing the agent) as the confirming example.
+
 ## [2026-06-12] ingest | EC2 System & Application Logging (CloudWatch Agent)
 
 Ingested `raw/aws-cert-study-notes/aws-solution-architect/ec2_system_and_application_logging.md`. The note is fundamentally about the **CloudWatch Agent** (a CloudWatch capability exercised on EC2), so the full treatment lives on the [CloudWatch](services/cloudwatch.md) page with a concise mirror on [EC2](services/ec2.md) — the same split used for the Scaling pattern. The raw note's ASCII diagram and mnemonic are author additions (no image asset to copy).
