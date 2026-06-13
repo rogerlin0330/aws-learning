@@ -1,7 +1,7 @@
 ---
 title: EC2 — Elastic Compute Cloud
 type: service
-tags: [ec2, compute, iaas, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, ssh, rdp, instance-lifecycle, shared-responsibility, ebs, key-pair, host, tenancy, dedicated-host, dedicated-instance, instance-store, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, security-group, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns, containers, bootstrapping, cloud-init, boot-time-to-service-time, cfn-init, cloudformation, instance-role, instance-profile, iam-role, sts, credential-provider-chain, cloudwatch-agent, cwagent, parameter-store, log-group, log-stream]
+tags: [ec2, compute, iaas, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, ssh, rdp, instance-lifecycle, shared-responsibility, ebs, key-pair, host, tenancy, dedicated-host, dedicated-instance, instance-store, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, security-group, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns, containers, bootstrapping, cloud-init, boot-time-to-service-time, cfn-init, cloudformation, instance-role, instance-profile, iam-role, sts, credential-provider-chain, cloudwatch-agent, cwagent, parameter-store, log-group, log-stream, placement-groups, cluster-placement-group, spread-placement-group, partition-placement-group, hpc, enhanced-networking, topology-aware]
 certs: [aws-saa]
 updated: 2026-06-12
 ---
@@ -897,6 +897,89 @@ The whole point of instance store is accepting tight restrictions in exchange fo
 - **Included in instance price** → no benefit to leaving allocated volumes unused
 - **Never use for persistent or irreplaceable data**
 
+## Placement Groups
+
+Normally when you launch an instance, AWS picks its physical location — whichever [EC2 host](#hosts-vs-instances) makes the most sense within the chosen AZ. **Placement groups** let you influence that decision: instances can be packed physically **close together** (for performance) or **deliberately separated** (for resilience).
+
+There are three types. All shape how instances land on physical hardware, but each for a different reason:
+
+| Type | Goal | One-line summary |
+| --- | --- | --- |
+| **Cluster** | Maximum performance | Instances packed physically close together (same rack, often same host) |
+| **Spread** | Maximum resilience | Each instance on its own separate, isolated infrastructure |
+| **Partition** | Resilience at scale | Groups of instances on isolated infrastructure, with topology visibility |
+
+### Cluster Placement Groups
+
+![Cluster placement group: a 3x3 grid of instances in a single AZ, fully interconnected with direct links; callouts note same rack, sometimes same host, 10 Gbps per stream vs 5 Gbps normally, and the lowest latency and max packets per second possible in AWS](../assets/ec2-placement-groups-cluster.png)
+
+Used when you need the **absolute highest network performance** available in EC2 — the fastest node-to-node speed and the lowest consistent latency.
+
+- All instances are placed in the **same rack, often on the same EC2 host**, giving fast direct connectivity between every member (a full mesh)
+- **Single-stream throughput of 10 Gbps** between members, versus the normal 5 Gbps single-stream cap. This is a per-connection figure — instances with faster aggregate networking still cap any one stream
+- Lowest latency and maximum packets per second (PPS) possible in AWS
+
+How placement works:
+
+- You do **not** pick an AZ when creating the group. The group becomes **locked to the AZ of the first instance launched** into it
+- Best practice is to **launch all instances at the same time**, so AWS allocates capacity for everything in one suitable location. Launch 9 instances into a spot with capacity for 12, and later doubling the count may fail for lack of local capacity
+- Best practice is also to use the **same instance type** for every member (recommended, not mandatory — same as launching together)
+
+Requirements to actually hit the performance numbers:
+
+- An instance type that **supports cluster placement** (not all do)
+- An instance type with **high-performance networking** (more than 10 Gbps single-stream) and **enhanced networking enabled** on all members
+
+The trade-off: physical co-location means a single hardware failure can take down the **entire group**. Cluster placement groups offer **little to no resilience**.
+
+**Use cases:** High Performance Compute (HPC) and scientific analysis — workloads needing fast node-to-node speeds and low, consistent latency.
+
+> [!warning] Gotcha
+> A cluster placement group **cannot span AZs** — it is locked to 1 AZ when the first instance launches. It **can** span VPC peers, but doing so significantly degrades performance.
+
+### Spread Placement Groups
+
+![Spread placement group: instances across two AZs, each instance alone inside its own dotted box labelled distinct racks, with a callout noting the limit of 7 instances per AZ](../assets/ec2-placement-groups-spread.png)
+
+The inverse of cluster — designed for **maximum availability and resilience**:
+
+- **Can span multiple AZs**
+- Each instance is placed on its **own isolated rack**, with its **own network and power supply**, separate from every other instance in the group
+- A rack-level failure (network or power) affects **only the 1 instance on that rack**
+
+The cost of that guarantee is a **hard limit of 7 running instances per AZ *per group*** — each instance needs its own isolated rack, and racks set aside for this are limited per AZ. More AZs means more total instances in the group (a 3-AZ region allows up to 21), but the per-AZ cap is always 7. The limit is **scoped to the placement group, not the account**: if you need more than 7 separated instances in 1 AZ, AWS's own recommendation is to create **multiple spread placement groups**. The catch is that AWS makes **no guarantee about spread *between* groups** — each group only guarantees isolation within itself.
+
+**Use cases:** a small number of critical instances that must stay separated — mirrors of a file server, domain controllers. Anywhere each server needs its own blast radius so one failure says nothing about the others.
+
+> [!warning] Gotcha
+> **Dedicated Instances and Dedicated Hosts are not supported** with spread placement groups.
+
+### Partition Placement Groups
+
+![Partition placement group: two AZs each divided into dotted boxes labelled partition 1 through 6, with multiple instances inside each partition; callouts note a max of 7 partitions per AZ and that each partition has its own racks with no sharing between partitions](../assets/ec2-placement-groups-partition.png)
+
+Designed for when you need **more than 7 instances per AZ** but still need them divided into distinct fault domains — large-scale distributed and replicated applications:
+
+- Can span **multiple AZs**; you specify the number of **partitions** at creation, with a **maximum of 7 partitions per AZ**
+- Each partition has its **own racks with isolated power and networking** — guaranteed no infrastructure sharing between partitions
+- Unlike spread, you can launch **as many instances as you need**, and you either **pick the partition explicitly** or let **EC2 decide** placement
+
+The isolation unit moves from the instance to the partition. Put 10 instances in 1 partition and a partition failure loses all 10; put 7 instances in 7 partitions and it behaves much like a spread group.
+
+The real point is **topology awareness**: the group exposes **which instances are in which partition**, and topology-aware applications — **HDFS, HBase, Cassandra** — use that visibility to make intelligent replication decisions. Example: an application on 75 instances replicates every piece of data 3 times. Without a partition group, all 75 could in theory share hardware, making the replication meaningless. With one, the application places each of the 3 replicas in a **different partition**, getting spread-like resilience at a scale spread cannot reach. (These are the same applications that pair well with [instance store](#instance-store) — the app supplies durability through replication.)
+
+### Spread vs Partition — the key distinction
+
+| | Spread | Partition |
+| --- | --- | --- |
+| Instance cap | **7 per AZ** (hard) | **As many as needed** (the 7-per-AZ cap is on *partitions*) |
+| Isolation unit | Per **instance** | Per **partition** |
+| Who manages placement | **AWS** handles it all | **You / a topology-aware app** can pick the partition (or let EC2 decide) |
+| Resilience guarantee | Every instance fully separated | Every *partition* separated; instances **within** a partition share a fault domain |
+
+> [!tip] Exam Tip
+> Choose by what the question emphasises: *highest performance, lowest latency, HPC, scientific* — **Cluster**. *Small number of critical instances, maximum availability, separate blast radius* — **Spread**. *Large-scale distributed or replicated app, more than 7 instances, HDFS / HBase / Cassandra, topology-aware* — **Partition**. The most common trap is spread vs partition: *"need separation **and** lots of instances"* points at **Partition**.
+
 ## Scaling EC2 — Vertical vs Horizontal
 
 EC2 capacity grows in two fundamentally different ways. The choice cascades into every other architectural decision (load balancing, session storage, availability tier, cost shape):
@@ -936,6 +1019,7 @@ The agent needs a **configuration** (which metrics and log files to collect) and
 17. **Status checks and auto recovery** — every instance has **two independent status checks**: **System** (the host/service underneath) and **Instance** (the OS layer); healthy = **2/2**. A **CloudWatch Status Check Alarm** can fire when either check fails for **≥ 1 consecutive 5-minute period**, notify via **SNS**, and optionally **Reboot / Stop / Terminate / Recover**. **Auto recovery** = same-AZ heal that **preserves all IP addressing** (private + auto public IPv4 + EIP); requires **EBS-only**, a **supported instance type**, and **spare host capacity**. Same-AZ only — **not a substitute for multi-AZ HA**. Modern current-generation types get **Simplified Automatic Recovery** by default with no alarm needed. See [Status Checks and Auto Recovery](#status-checks-and-auto-recovery)
 18. **Instance roles & instance profiles** — an instance role is an [IAM role](iam.md#iam-roles) trusting `ec2.amazonaws.com`; it's the right way for an app on EC2 to reach other AWS services with **no long-term keys on the box**. A role can't attach directly — an **instance profile** (a wrapper around one role) is what attaches. Console auto-creates the profile with the **same name** as the role; CLI/CloudFormation create **role and profile separately** (can differ in name). Temporary credentials are delivered via **[IMDS](#instance-metadata-service-imds)** at `iam/security-credentials/<role-name>` and **auto-renewed by EC2 + STS**. The CLI uses them automatically because **instance profile credentials are last in the credential provider chain** — but anything higher (env vars, `~/.aws/credentials`) **silently shadows** the role. See [Instance Roles & Instance Profiles](#instance-roles--instance-profiles)
 19. **System & application logging** — standard CloudWatch can't see inside the OS (no memory, no disk-used, no logs). The **[CloudWatch Agent](cloudwatch.md#cloudwatch-agent)** runs in-guest to capture OS metrics and logs; it needs a config plus an **instance role** (`CloudWatchAgentServerPolicy`), writes **one log group per file / one log stream per instance**, surfaces metrics under the **`CWAgent`** namespace, and reads a log file only if its **run-as user** (`cwagent` by default) has read permission. See [System & Application Logging](#system--application-logging-cloudwatch-agent)
+20. **Placement groups** influence physical placement: **Cluster** = same rack (often same host) for 10 Gbps single-stream, lowest latency — single AZ only, little resilience, HPC; **Spread** = 1 instance per isolated rack, max **7 running instances per AZ *per group*** (per-group, not account-wide — use multiple groups for more, with no cross-group spread guarantee), can span AZs — small sets of critical instances; **Partition** = up to 7 partitions per AZ each with isolated racks, unlimited instances, topology visibility for HDFS / HBase / Cassandra. See [Placement Groups](#placement-groups)
 
 ## Quick Reference
 
@@ -989,6 +1073,10 @@ The agent needs a **configuration** (which metrics and log files to collect) and
 | CloudWatch Agent log mapping | **One log group per file, one log stream per instance** (stream named by instance ID) |
 | CloudWatch Agent metrics namespace | **`CWAgent`** — its appearance is the fingerprint the agent is installed |
 | CloudWatch Agent run-as user | Default `cwagent`; reads only files its user can read — root-only logs like `/var/log/secure` need root or granted access |
+| Placement group types | **Cluster** (performance) / **Spread** (resilience) / **Partition** (resilience at scale) — see [Placement Groups](#placement-groups) |
+| Cluster placement | Same rack, often same host; **10 Gbps single-stream** (vs 5 Gbps normal); locked to the AZ of the first launch; needs supported instance type + enhanced networking |
+| Spread placement | 1 instance per isolated rack (own network + power); **hard limit 7 running instances per AZ *per group*** (not account-wide — use multiple groups for more, but no cross-group spread guarantee); can span AZs; no Dedicated Instances/Hosts |
+| Partition placement | **Max 7 partitions per AZ**, unlimited instances; each partition on isolated racks; pick the partition or let EC2 decide; topology visibility for HDFS / HBase / Cassandra |
 
 ## References
 

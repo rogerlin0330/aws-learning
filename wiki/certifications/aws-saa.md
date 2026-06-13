@@ -1,7 +1,7 @@
 ---
 title: AWS Solutions Architect Associate — Exam Notes
 type: certification
-tags: [iam, vpc, networking, ec2, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, ephemeral, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns, route53, organizations, cost, purchase-options, on-demand, spot, reserved-instances, scheduled-reserved, capacity-reservations, zonal-ri, regional-ri, savings-plans, byol, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, raid0, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, ebs-encryption, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr, scaling, horizontal-scaling, vertical-scaling, stateless, sticky-sessions, elasticity, load-balancer, containers, docker, container-image, container-registry, ecs, eks, kubernetes, k8s, control-plane, etcd, kubelet, pod, ingress, persistent-volume, node-group, fargate-profile, ecr, fargate, task-definition, task-role, cloudtrail, audit, governance, management-events, data-events, insight-events, global-service-events, organizational-trail, log-file-integrity, event-history, eventbridge, control-tower, landing-zone, guardrails, account-factory, iam-identity-center, bootstrapping, cloud-init, boot-time-to-service-time, cloudformation, cfn-init, configsets, cfn-hup, cfn-signal, creation-policy, desired-state, infrastructure-as-code, cloudwatch-agent, cwagent, parameter-store, log-group, log-stream]
+tags: [iam, vpc, networking, ec2, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, ephemeral, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns, route53, organizations, cost, purchase-options, on-demand, spot, reserved-instances, scheduled-reserved, capacity-reservations, zonal-ri, regional-ri, savings-plans, byol, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, raid0, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, ebs-encryption, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr, scaling, horizontal-scaling, vertical-scaling, stateless, sticky-sessions, elasticity, load-balancer, containers, docker, container-image, container-registry, ecs, eks, kubernetes, k8s, control-plane, etcd, kubelet, pod, ingress, persistent-volume, node-group, fargate-profile, ecr, fargate, task-definition, task-role, cloudtrail, audit, governance, management-events, data-events, insight-events, global-service-events, organizational-trail, log-file-integrity, event-history, eventbridge, control-tower, landing-zone, guardrails, account-factory, iam-identity-center, bootstrapping, cloud-init, boot-time-to-service-time, cloudformation, cfn-init, configsets, cfn-hup, cfn-signal, creation-policy, desired-state, infrastructure-as-code, cloudwatch-agent, cwagent, parameter-store, log-group, log-stream, placement-groups, cluster-placement-group, spread-placement-group, partition-placement-group, hpc, enhanced-networking, topology-aware]
 certs: [aws-saa]
 updated: 2026-06-12
 ---
@@ -1134,6 +1134,43 @@ See [EC2 — Instance Roles & Instance Profiles](../services/ec2.md#instance-rol
 
 > [!tip] Exam Tip
 > *"App on EC2 needs to access S3 / DynamoDB / etc."* → **instance role** (not access keys). *"Access keys / hardcoded credentials on an instance"* → **bad practice**, replace with an instance role. *"What is attached to the instance — role or profile?"* → the **instance profile**. *"How do role credentials reach the app without keys?"* → **temporary creds via IMDS, auto-renewed by EC2 + STS**. *"Role attached but app uses wrong/expired permissions"* → **higher-precedence credentials (env vars / credentials file) shadowing the role** — remove them so the chain falls through to IMDS. Mnemonic **RPM**: **R**ole holds permissions, **P**rofile attaches, **M**etadata delivers.
+
+### EC2 Placement Groups
+
+See [EC2 — Placement Groups](../services/ec2.md#placement-groups) for full details.
+
+- Placement groups influence the **physical placement** of instances on EC2 hosts: **Cluster** packs them close together for performance; **Spread** and **Partition** separate them for resilience
+- **Cluster**: same rack, often same host; **10 Gbps single-stream** throughput (normal cap is 5 Gbps); lowest latency and max PPS in AWS; **single AZ only** (locked to the AZ of the first instance launched, not chosen at creation); little to no resilience
+- **Spread**: each instance on its own isolated rack with its own network and power; **hard limit of 7 running instances per AZ *per group*** (per placement group, **not** account-wide — for more, AWS recommends multiple spread groups, but there's no guarantee of spread *between* groups); can span multiple AZs
+- **Partition**: **max 7 partitions per AZ**, each on isolated racks with no sharing between partitions; **unlimited instances**; you pick the partition or EC2 decides; exposes partition topology to applications
+
+#### Placement group decision table
+
+| If the question emphasises… | Pick |
+| --- | --- |
+| Highest performance, lowest latency, fastest node-to-node (HPC, scientific) | **Cluster** |
+| Small number of critical instances, max availability, separate blast radius | **Spread** |
+| Large-scale distributed/replicated app, more than 7 instances, topology-aware (HDFS / HBase / Cassandra) | **Partition** |
+
+#### Numbers to memorise
+
+| Fact | Value |
+| --- | --- |
+| Cluster single-stream throughput | **10 Gbps** (vs **5 Gbps** normal) |
+| Spread instances per AZ | **7** (hard limit, **per group** not per account) |
+| Partition *partitions* per AZ | **7** (max) |
+| Partition instances per partition | Unlimited (your choice) |
+
+> [!tip] Exam Tip
+> The cluster performance numbers are conditional: you need a **supported instance type** with high-performance networking **and enhanced networking enabled** on all members. Same instance type and launching all members at the same time are **recommended, not mandatory**. And the mnemonic: **C**luster is **C**lose together for **C**ompute performance; **S**pread is **S**eparated, **S**even per AZ; **P**artition gives 7 **P**artitions per AZ for **P**arallel-processing apps at scale.
+
+> [!warning] Common Placement Group Gotchas
+>
+> - **Cluster cannot span AZs** — it can span **VPC peers**, but that significantly degrades performance
+> - **Cluster has low or no resilience** — co-location means one hardware failure can take out the whole group
+> - **Spread caps at 7 running instances per AZ *per group*** (not account-wide) — a scenario needing more separated instances is pointing at **Partition**, not Spread (the most common trap: separation **and** lots of instances means Partition). You *can* run multiple spread groups for more than 7, but AWS gives **no spread guarantee between** groups — so it's not a substitute for Partition at scale
+> - **Spread does not support Dedicated Instances or Dedicated Hosts**
+> - **Partition isolation is per partition, not per instance** — 10 instances in 1 partition all share that partition's fate
 
 ### EBS Service Architecture
 
