@@ -1,7 +1,7 @@
 ---
 title: EC2 — Elastic Compute Cloud
 type: service
-tags: [ec2, compute, iaas, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, ssh, rdp, instance-lifecycle, shared-responsibility, ebs, key-pair, host, tenancy, dedicated-host, dedicated-instance, instance-store, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, security-group, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns, containers, bootstrapping, cloud-init, boot-time-to-service-time, cfn-init, cloudformation, instance-role, instance-profile, iam-role, sts, credential-provider-chain, cloudwatch-agent, cwagent, parameter-store, log-group, log-stream, placement-groups, cluster-placement-group, spread-placement-group, partition-placement-group, hpc, enhanced-networking, topology-aware]
+tags: [ec2, compute, iaas, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, ssh, rdp, instance-lifecycle, shared-responsibility, ebs, key-pair, host, tenancy, dedicated-host, dedicated-instance, instance-store, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, security-group, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns, containers, bootstrapping, cloud-init, boot-time-to-service-time, cfn-init, cloudformation, instance-role, instance-profile, iam-role, sts, credential-provider-chain, cloudwatch-agent, cwagent, parameter-store, log-group, log-stream, placement-groups, cluster-placement-group, spread-placement-group, partition-placement-group, hpc, enhanced-networking, topology-aware, ebs-optimized, sr-iov, ena, pps]
 certs: [aws-saa]
 updated: 2026-06-13
 ---
@@ -919,6 +919,24 @@ On most **modern instance types** enhanced networking is **enabled by default or
 > [!tip] Exam Tip
 > Trigger keywords that point at enhanced networking: **"consistent low latency," "high packets per second / PPS," "small packets across a small isolated network,"** and **"required for cluster placement groups."** It's the foundation cluster placement groups build on — the high-bandwidth, low-latency numbers there are only achievable with enhanced networking enabled on every member.
 
+## EBS-Optimized Instances
+
+Where [enhanced networking](#enhanced-networking) improves the **data** network path, **EBS optimization** is the same idea applied to the **storage** path. It's a single **per-instance on/off** option that provisions **dedicated network capacity for [EBS](ebs.md) traffic**, plus some stack-level optimizations.
+
+The reason it exists comes straight from EBS being **[network-attached](ebs.md), not local** to the instance — every EBS read and write crosses the network. **Historically**, an instance used **one shared network stack for both regular data networking and EBS storage traffic.** The two **contended** for the same capacity, capping the performance of both: a burst of application traffic could starve disk I/O, and vice versa.
+
+Turning EBS optimization on gives EBS its **own dedicated lane**:
+
+- **Faster EBS speeds** become possible, and
+- **Storage traffic and data traffic stop competing** — saturating one no longer degrades the other.
+
+The cleanest mental model: **EBS optimization adds dedicated storage-networking capacity to an EC2 instance.**
+
+This matters most on **high-performance instances** promising high **throughput and IOPS**, and it's effectively **required** to hit the headline numbers of the provisioned-performance volume types (the source calls out **gp2** and **io1** as examples — they are illustrative high-performance types, not the full list). This is the other half of the [EBS per-instance ceiling](ebs.md#the-two-ceiling-rule): a volume can promise 64,000 IOPS, but those IOPS still have to *reach* the instance over its storage-networking lane — which is why the per-instance ceiling is gated by instance type and size.
+
+> [!tip] Exam Tip
+> On **most modern instance types EBS optimization is supported and enabled by default at no extra charge** — the capability is built into the hardware, and *disabling it does nothing*. Only some **older instance types** support it as an opt-in that **costs extra**. So if a question pits "shared network stack causing EBS/network contention" against a fix, the answer is **enable EBS optimization** — and on current-generation instances it's already on.
+
 ## Placement Groups
 
 Normally when you launch an instance, AWS picks its physical location — whichever [EC2 host](#hosts-vs-instances) makes the most sense within the chosen AZ. **Placement groups** let you influence that decision: instances can be packed physically **close together** (for performance) or **deliberately separated** (for resilience).
@@ -1043,6 +1061,7 @@ The agent needs a **configuration** (which metrics and log files to collect) and
 19. **System & application logging** — standard CloudWatch can't see inside the OS (no memory, no disk-used, no logs). The **[CloudWatch Agent](cloudwatch.md#cloudwatch-agent)** runs in-guest to capture OS metrics and logs; it needs a config plus an **instance role** (`CloudWatchAgentServerPolicy`), writes **one log group per file / one log stream per instance**, surfaces metrics under the **`CWAgent`** namespace, and reads a log file only if its **run-as user** (`cwagent` by default) has read permission. See [System & Application Logging](#system--application-logging-cloudwatch-agent)
 20. **Placement groups** influence physical placement: **Cluster** = same rack (often same host) for 10 Gbps single-stream, lowest latency — single AZ only, little resilience, HPC; **Spread** = 1 instance per isolated rack, max **7 running instances per AZ *per group*** (per-group, not account-wide — use multiple groups for more, with no cross-group spread guarantee), can span AZs — small sets of critical instances; **Partition** = up to 7 partitions per AZ each with isolated racks, unlimited instances, topology visibility for HDFS / HBase / Cassandra. See [Placement Groups](#placement-groups)
 21. **Enhanced networking** uses **SR-IOV** to make the host's physical NIC virtualization-aware, giving each instance its **own logical card** and taking the **host CPU out of the packet path**. The payoff: more bandwidth, **higher PPS**, and **consistent low latency**. Enabled by default / free on most modern instance types (via the **ENA**); it's the **prerequisite for [cluster placement groups](#cluster-placement-groups)**. Exam triggers: "consistent low latency," "high PPS," "required for cluster placement groups." See [Enhanced Networking](#enhanced-networking)
+22. **EBS-optimized instances** give EBS traffic a **dedicated network lane** instead of sharing one stack with regular data networking, so the two stop contending. Because [EBS is network-attached](ebs.md), this is what lets an instance actually *receive* high throughput / IOPS — it's the instance-side half of the [EBS per-instance ceiling](ebs.md#the-two-ceiling-rule). A per-instance on/off flag; **default-on and free on most modern types** (disabling does nothing), opt-in-for-a-fee on some older ones. See [EBS-Optimized Instances](#ebs-optimized-instances)
 
 ## Quick Reference
 
@@ -1101,6 +1120,7 @@ The agent needs a **configuration** (which metrics and log files to collect) and
 | Spread placement | 1 instance per isolated rack (own network + power); **hard limit 7 running instances per AZ *per group*** (not account-wide — use multiple groups for more, but no cross-group spread guarantee); can span AZs; no Dedicated Instances/Hosts |
 | Partition placement | **Max 7 partitions per AZ**, unlimited instances; each partition on isolated racks; pick the partition or let EC2 decide; topology visibility for HDFS / HBase / Cassandra |
 | Enhanced networking | **SR-IOV** makes the host NIC virtualization-aware; each instance gets its **own logical card**, host CPU out of the path. Delivers more bandwidth, **higher PPS**, **consistent low latency**. Default / free on most modern types (ENA); **required for [cluster placement groups](#cluster-placement-groups)** — see [Enhanced Networking](#enhanced-networking) |
+| EBS-optimized instance | Per-instance on/off flag giving **EBS its own dedicated network lane** (vs sharing one stack with data networking → contention). Needed to reach high throughput / IOPS; the instance-side half of the [EBS per-instance ceiling](ebs.md#the-two-ceiling-rule). Default-on + free on most modern types (disabling does nothing); paid opt-in on some older ones — see [EBS-Optimized Instances](#ebs-optimized-instances) |
 
 ## References
 
@@ -1128,5 +1148,6 @@ The agent needs a **configuration** (which metrics and log files to collect) and
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_instance_roles_and_profiles.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_system_and_application_logging.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_enhanced_networking.md`
+- Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_ebs_optimized_instances.md`
 - [EC2 Instance Types — official AWS docs](https://aws.amazon.com/ec2/instance-types/)
 - [ec2instances.info (Vantage)](https://instances.vantage.sh/) — sortable reference with pricing

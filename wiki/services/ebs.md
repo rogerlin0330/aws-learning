@@ -1,9 +1,9 @@
 ---
 title: EBS — Elastic Block Store
 type: service
-tags: [ebs, block-storage, storage, gp2, gp3, io1, io2, block-express, volume-types, iops, throughput, elastic-volumes, credit-bucket, ssd, general-purpose, provisioned-iops, latency, per-instance-ceiling, az-boundary, snapshot, incremental-backup, fsr, fast-snapshot-restore, lazy-restore, lifecycle, multi-attach, billing, resilience, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, encryption, kms, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption]
+tags: [ebs, block-storage, storage, gp2, gp3, io1, io2, block-express, volume-types, iops, throughput, elastic-volumes, credit-bucket, ssd, general-purpose, provisioned-iops, latency, per-instance-ceiling, ebs-optimized, az-boundary, snapshot, incremental-backup, fsr, fast-snapshot-restore, lazy-restore, lifecycle, multi-attach, billing, resilience, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, encryption, kms, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption]
 certs: [aws-saa]
-updated: 2026-06-04
+updated: 2026-06-13
 ---
 
 # EBS — Elastic Block Store
@@ -456,7 +456,7 @@ To reach the per-instance ceiling you almost always need multiple volumes workin
 | IO2 Block Express | 260,000 | 7,500 MB/s | ~2 volumes (256,000 per volume) |
 
 > [!warning] Gotcha — Three things must align for top performance
-> The per-instance ceiling is also gated by **EC2 instance type and size** — only the newest, largest instances support these peak numbers. The formula for maximum performance: **volume type + instance type + instance size** must all be at the top tier simultaneously.
+> The per-instance ceiling is also gated by **EC2 instance type and size** — only the newest, largest instances support these peak numbers. The formula for maximum performance: **volume type + instance type + instance size** must all be at the top tier simultaneously. Part of what that instance gating buys you is the dedicated storage-networking lane of an [EBS-optimized instance](../services/ec2.md#ebs-optimized-instances) — the per-instance IOPS still have to *reach* the instance over the network.
 
 ### EBS Volume Type Selection Guide
 

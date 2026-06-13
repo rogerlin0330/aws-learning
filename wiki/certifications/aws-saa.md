@@ -1185,6 +1185,19 @@ See [EC2 — Enhanced Networking](../services/ec2.md#enhanced-networking) for fu
 > [!tip] Exam Tip
 > Map these triggers straight to **enhanced networking**: **"consistent low latency," "high packets per second / PPS," "small packets over a small isolated network,"** and **"required for cluster placement groups."** Don't overthink it — the SAA exam cares about *what it gives you* (PPS + consistent latency) and *what depends on it* (cluster placement), not how to turn it on.
 
+### EC2 EBS-Optimized Instances
+
+See [EC2 — EBS-Optimized Instances](../services/ec2.md#ebs-optimized-instances) for full details.
+
+- **What it is:** a per-instance **on/off** flag that gives **[EBS](../services/ebs.md) traffic a dedicated network lane**, separate from regular data networking
+- **Problem it solves:** historically one **shared network stack** carried both data and EBS storage traffic, so the two **contended** and capped each other's performance. EBS is **network-attached**, so its I/O always crosses the network
+- **Effect:** faster EBS throughput / IOPS, and storage vs data traffic **no longer compete**
+- **Required for:** instances driving **high throughput / IOPS** volumes (e.g. **gp2 / io1**); it's the instance-side half of the [EBS per-instance ceiling](../services/ebs.md#the-two-ceiling-rule)
+- **Availability:** **default-on and free on most modern instance types** (disabling does nothing); paid opt-in on some older types
+
+> [!tip] Exam Tip
+> Two distinct "dedicated capacity" features that are easy to confuse: **enhanced networking** dedicates the **data**-network path (PPS, consistent latency, cluster placement); **EBS optimization** dedicates the **storage**-network path (EBS throughput/IOPS, no contention with data traffic). If the scenario is about **disk performance or EBS/network contention**, it's **EBS-optimized**; if it's about **packet rate / node-to-node latency**, it's **enhanced networking**.
+
 ### EBS Service Architecture
 
 See [EBS — Service Architecture](../services/ebs.md#service-architecture) for full details.
