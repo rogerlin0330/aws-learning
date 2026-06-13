@@ -3,7 +3,7 @@ title: AWS Solutions Architect Associate — Exam Notes
 type: certification
 tags: [iam, vpc, networking, ec2, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, ephemeral, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns, route53, organizations, cost, purchase-options, on-demand, spot, reserved-instances, scheduled-reserved, capacity-reservations, zonal-ri, regional-ri, savings-plans, byol, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, raid0, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, ebs-encryption, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr, scaling, horizontal-scaling, vertical-scaling, stateless, sticky-sessions, elasticity, load-balancer, containers, docker, container-image, container-registry, ecs, eks, kubernetes, k8s, control-plane, etcd, kubelet, pod, ingress, persistent-volume, node-group, fargate-profile, ecr, fargate, task-definition, task-role, cloudtrail, audit, governance, management-events, data-events, insight-events, global-service-events, organizational-trail, log-file-integrity, event-history, eventbridge, control-tower, landing-zone, guardrails, account-factory, iam-identity-center, bootstrapping, cloud-init, boot-time-to-service-time, cloudformation, cfn-init, configsets, cfn-hup, cfn-signal, creation-policy, desired-state, infrastructure-as-code, cloudwatch-agent, cwagent, parameter-store, log-group, log-stream, placement-groups, cluster-placement-group, spread-placement-group, partition-placement-group, hpc, enhanced-networking, topology-aware]
 certs: [aws-saa]
-updated: 2026-06-12
+updated: 2026-06-13
 ---
 
 # AWS Solutions Architect Associate (SAA-C03)
@@ -1171,6 +1171,19 @@ See [EC2 — Placement Groups](../services/ec2.md#placement-groups) for full det
 > - **Spread caps at 7 running instances per AZ *per group*** (not account-wide) — a scenario needing more separated instances is pointing at **Partition**, not Spread (the most common trap: separation **and** lots of instances means Partition). You *can* run multiple spread groups for more than 7, but AWS gives **no spread guarantee between** groups — so it's not a substitute for Partition at scale
 > - **Spread does not support Dedicated Instances or Dedicated Hosts**
 > - **Partition isolation is per partition, not per instance** — 10 instances in 1 partition all share that partition's fate
+
+### EC2 Enhanced Networking
+
+See [EC2 — Enhanced Networking](../services/ec2.md#enhanced-networking) for full details.
+
+- **What it is:** a feature that boosts EC2 network performance via **SR-IOV** (Single Root I/O Virtualization), which makes the host's **physical NIC virtualization-aware**
+- **How it works:** instead of one shared physical card the host arbitrates **in software**, the card presents **per-instance logical cards**. Each instance gets exclusive access to its own, and the **host CPU is taken out of the packet path** (offloaded to hardware, the **ENA** on AWS)
+- **What it delivers:** more bandwidth, **higher packets per second (PPS)**, and — the key phrase — **consistent low latency**
+- **Availability:** enabled by default or free on **most modern instance types**; SAA does not test the enablement mechanics
+- **Why it matters:** it's the **prerequisite for [cluster placement groups](../services/ec2.md#cluster-placement-groups)** — the 10 Gbps / low-latency cluster numbers require it on every member
+
+> [!tip] Exam Tip
+> Map these triggers straight to **enhanced networking**: **"consistent low latency," "high packets per second / PPS," "small packets over a small isolated network,"** and **"required for cluster placement groups."** Don't overthink it — the SAA exam cares about *what it gives you* (PPS + consistent latency) and *what depends on it* (cluster placement), not how to turn it on.
 
 ### EBS Service Architecture
 

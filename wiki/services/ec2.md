@@ -3,7 +3,7 @@ title: EC2 — Elastic Compute Cloud
 type: service
 tags: [ec2, compute, iaas, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, ssh, rdp, instance-lifecycle, shared-responsibility, ebs, key-pair, host, tenancy, dedicated-host, dedicated-instance, instance-store, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, security-group, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns, containers, bootstrapping, cloud-init, boot-time-to-service-time, cfn-init, cloudformation, instance-role, instance-profile, iam-role, sts, credential-provider-chain, cloudwatch-agent, cwagent, parameter-store, log-group, log-stream, placement-groups, cluster-placement-group, spread-placement-group, partition-placement-group, hpc, enhanced-networking, topology-aware]
 certs: [aws-saa]
-updated: 2026-06-12
+updated: 2026-06-13
 ---
 
 # EC2 — Elastic Compute Cloud
@@ -897,6 +897,28 @@ The whole point of instance store is accepting tight restrictions in exchange fo
 - **Included in instance price** → no benefit to leaving allocated volumes unused
 - **Never use for persistent or irreplaceable data**
 
+## Enhanced Networking
+
+**Enhanced networking** improves an instance's raw [networking](../concepts/networking.md) performance, and it's a **foundational prerequisite** for high-end features — most notably [cluster placement groups](#cluster-placement-groups). It works through **SR-IOV** (Single Root I/O Virtualization), a technique that makes the host's **physical NIC aware of virtualization**.
+
+**Without enhanced networking**, every instance's [virtual network interface (ENI)](#network-interfaces-enis) talks back to a **single physical NIC** that has no concept of virtualization. The host has to sit in the middle, arbitrating which instance gets the card — and it does this **in software**. That mediation is slow, **burns host CPU**, and under load produces **latency spikes, dropped packets, and inconsistent bandwidth**. The host CPU is the bottleneck.
+
+**With enhanced networking**, the virtualization-aware physical card presents **many logical cards** instead of one shared card. Each instance gets **exclusive access to its own logical card** and talks to it as if it owned a dedicated physical NIC. The card handles the traffic **end-to-end**, taking the host CPU out of the path entirely.
+
+![Two stacked scenarios: top half "No Enhanced Networking" shows two EC2 instances each with one virtual NIC, both converging on a single shared physical NIC inside the host; bottom half "Enhanced Networking" shows the same two instances each connected to its own dedicated logical card before the host's physical NIC](../assets/ec2-enhanced-networking.png)
+
+Because the host CPU is no longer in the loop, enhanced networking delivers:
+
+- **Higher I/O and lower host CPU usage** — the host isn't doing the per-packet work
+- **More bandwidth** — networking scales without taxing host CPU
+- **Higher packets per second (PPS)** — traffic flows directly between the instance's virtual interface and its logical card
+- **Low *and consistent* latency** — offloaded to hardware, so latency no longer tracks host CPU load
+
+On most **modern instance types** enhanced networking is **enabled by default or available at no charge**; on AWS it's implemented via the **Elastic Network Adapter (ENA)**. The enablement mechanics aren't exam-relevant for SAA — the *why* and *what it delivers* are.
+
+> [!tip] Exam Tip
+> Trigger keywords that point at enhanced networking: **"consistent low latency," "high packets per second / PPS," "small packets across a small isolated network,"** and **"required for cluster placement groups."** It's the foundation cluster placement groups build on — the high-bandwidth, low-latency numbers there are only achievable with enhanced networking enabled on every member.
+
 ## Placement Groups
 
 Normally when you launch an instance, AWS picks its physical location — whichever [EC2 host](#hosts-vs-instances) makes the most sense within the chosen AZ. **Placement groups** let you influence that decision: instances can be packed physically **close together** (for performance) or **deliberately separated** (for resilience).
@@ -928,7 +950,7 @@ How placement works:
 Requirements to actually hit the performance numbers:
 
 - An instance type that **supports cluster placement** (not all do)
-- An instance type with **high-performance networking** (more than 10 Gbps single-stream) and **enhanced networking enabled** on all members
+- An instance type with **high-performance networking** (more than 10 Gbps single-stream) and **[enhanced networking](#enhanced-networking) enabled** on all members
 
 The trade-off: physical co-location means a single hardware failure can take down the **entire group**. Cluster placement groups offer **little to no resilience**.
 
@@ -1020,6 +1042,7 @@ The agent needs a **configuration** (which metrics and log files to collect) and
 18. **Instance roles & instance profiles** — an instance role is an [IAM role](iam.md#iam-roles) trusting `ec2.amazonaws.com`; it's the right way for an app on EC2 to reach other AWS services with **no long-term keys on the box**. A role can't attach directly — an **instance profile** (a wrapper around one role) is what attaches. Console auto-creates the profile with the **same name** as the role; CLI/CloudFormation create **role and profile separately** (can differ in name). Temporary credentials are delivered via **[IMDS](#instance-metadata-service-imds)** at `iam/security-credentials/<role-name>` and **auto-renewed by EC2 + STS**. The CLI uses them automatically because **instance profile credentials are last in the credential provider chain** — but anything higher (env vars, `~/.aws/credentials`) **silently shadows** the role. See [Instance Roles & Instance Profiles](#instance-roles--instance-profiles)
 19. **System & application logging** — standard CloudWatch can't see inside the OS (no memory, no disk-used, no logs). The **[CloudWatch Agent](cloudwatch.md#cloudwatch-agent)** runs in-guest to capture OS metrics and logs; it needs a config plus an **instance role** (`CloudWatchAgentServerPolicy`), writes **one log group per file / one log stream per instance**, surfaces metrics under the **`CWAgent`** namespace, and reads a log file only if its **run-as user** (`cwagent` by default) has read permission. See [System & Application Logging](#system--application-logging-cloudwatch-agent)
 20. **Placement groups** influence physical placement: **Cluster** = same rack (often same host) for 10 Gbps single-stream, lowest latency — single AZ only, little resilience, HPC; **Spread** = 1 instance per isolated rack, max **7 running instances per AZ *per group*** (per-group, not account-wide — use multiple groups for more, with no cross-group spread guarantee), can span AZs — small sets of critical instances; **Partition** = up to 7 partitions per AZ each with isolated racks, unlimited instances, topology visibility for HDFS / HBase / Cassandra. See [Placement Groups](#placement-groups)
+21. **Enhanced networking** uses **SR-IOV** to make the host's physical NIC virtualization-aware, giving each instance its **own logical card** and taking the **host CPU out of the packet path**. The payoff: more bandwidth, **higher PPS**, and **consistent low latency**. Enabled by default / free on most modern instance types (via the **ENA**); it's the **prerequisite for [cluster placement groups](#cluster-placement-groups)**. Exam triggers: "consistent low latency," "high PPS," "required for cluster placement groups." See [Enhanced Networking](#enhanced-networking)
 
 ## Quick Reference
 
@@ -1074,9 +1097,10 @@ The agent needs a **configuration** (which metrics and log files to collect) and
 | CloudWatch Agent metrics namespace | **`CWAgent`** — its appearance is the fingerprint the agent is installed |
 | CloudWatch Agent run-as user | Default `cwagent`; reads only files its user can read — root-only logs like `/var/log/secure` need root or granted access |
 | Placement group types | **Cluster** (performance) / **Spread** (resilience) / **Partition** (resilience at scale) — see [Placement Groups](#placement-groups) |
-| Cluster placement | Same rack, often same host; **10 Gbps single-stream** (vs 5 Gbps normal); locked to the AZ of the first launch; needs supported instance type + enhanced networking |
+| Cluster placement | Same rack, often same host; **10 Gbps single-stream** (vs 5 Gbps normal); locked to the AZ of the first launch; needs supported instance type + [enhanced networking](#enhanced-networking) |
 | Spread placement | 1 instance per isolated rack (own network + power); **hard limit 7 running instances per AZ *per group*** (not account-wide — use multiple groups for more, but no cross-group spread guarantee); can span AZs; no Dedicated Instances/Hosts |
 | Partition placement | **Max 7 partitions per AZ**, unlimited instances; each partition on isolated racks; pick the partition or let EC2 decide; topology visibility for HDFS / HBase / Cassandra |
+| Enhanced networking | **SR-IOV** makes the host NIC virtualization-aware; each instance gets its **own logical card**, host CPU out of the path. Delivers more bandwidth, **higher PPS**, **consistent low latency**. Default / free on most modern types (ENA); **required for [cluster placement groups](#cluster-placement-groups)** — see [Enhanced Networking](#enhanced-networking) |
 
 ## References
 
@@ -1103,5 +1127,6 @@ The agent needs a **configuration** (which metrics and log files to collect) and
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_instance_status_checks_and_auto_recovery.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_instance_roles_and_profiles.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_system_and_application_logging.md`
+- Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_enhanced_networking.md`
 - [EC2 Instance Types — official AWS docs](https://aws.amazon.com/ec2/instance-types/)
 - [ec2instances.info (Vantage)](https://instances.vantage.sh/) — sortable reference with pricing
