@@ -37,10 +37,19 @@ A VPC is a **private, isolated network** within AWS. It lives within **1 account
 
 ### DNS in VPC
 
-- DNS is provided by **Route 53 Resolver**, reachable at `VPC base IP + 2` (e.g. `10.0.0.2` for `10.0.0.0/16`)
-- Two key settings:
-  - `enableDnsSupport` — enables DNS resolution in the VPC (default: `true`)
-  - `enableDnsHostnames` — assigns public DNS names to instances with public IPs (default: `false` for custom VPCs)
+- DNS is provided by the **[Route 53](route53.md) Resolver**, reachable at `VPC base IP + 2` (e.g. `10.0.0.2` for `10.0.0.0/16`) and at the link-local address `169.254.169.253`
+- Two key settings — they do **different** jobs, so don't conflate them:
+  - `enableDnsSupport` — whether the **Amazon `.2` resolver answers** at all, i.e. DNS *resolution* (default: `true`)
+  - `enableDnsHostnames` — whether instances with a public IP get a **public DNS hostname** assigned (default: `false` for custom VPCs)
+
+When `enableDnsSupport = false`, the `.2` resolver (and `169.254.169.253`) goes **silent**. Instances still have `/etc/resolv.conf` pointing at `.2`, but nothing answers — so there is effectively **no DNS resolution** until you point them at another resolver via a custom [DHCP Options Set](#dhcp-options-set).
+
+> [!warning] Gotcha
+> The Amazon `.2` resolver is the **only** path to a Route 53 [private hosted zone](route53.md#private-hosted-zone). So disabling `enableDnsSupport` silently breaks all PHZ and **[split-view DNS](route53.md#split-view-split-horizon-dns)** resolution:
+>
+> - With `enableDnsSupport = false`, nothing in the VPC consults the PHZ — the whole "most-specific private zone wins, no fallback to public" behavior never engages.
+> - If you then add a **custom DNS server** via DHCP options, it resolves through the **public** DNS path and has no access to your PHZ — so you get the **public** zone's answers (or nothing), never the private ones.
+> - This is why a PHZ requires **both** `enableDnsSupport` *and* `enableDnsHostnames` set to `true`. The public-hostname split-horizon behavior (private IP inside, public IP outside) likewise depends on `enableDnsSupport`, since it goes through the same `.2` resolver.
 
 ### DHCP Options Set
 
