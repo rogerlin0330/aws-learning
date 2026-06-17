@@ -1,9 +1,9 @@
 ---
 title: Route 53
 type: service
-tags: [dns, route53, networking, health-checks]
+tags: [dns, route53, networking, health-checks, routing-policy, weighted-routing, latency-routing, geolocation-routing, geoproximity-routing, multi-value-routing, failover-routing]
 certs: [aws-saa]
-updated: 2026-05-13
+updated: 2026-06-17
 ---
 
 # Route 53
@@ -90,15 +90,54 @@ The CNAME restriction at the zone apex (naked domain) is a DNS standard limitati
 
 Route 53 can make routing decisions based on health, geography, and load — going well beyond basic DNS.
 
-| Policy | Behaviour |
-| --- | --- |
-| Simple | Single record; no health checks |
-| Weighted | Split traffic by percentage (A/B testing, gradual migration) |
-| Latency | Route to the AWS region with lowest latency for the client |
-| Failover | Active/passive; switch to secondary when primary health check fails |
-| Geolocation | Route based on client's country/continent |
-| Geoproximity | Route based on geographic distance; adjustable bias |
-| Multi-value | Return multiple IPs; basic load distribution (not a true load balancer) |
+| Policy | Behaviour | Health checks |
+| --- | --- | --- |
+| Simple | Single record | **Not supported** — a simple record can't be associated with a health check |
+| Weighted | Split traffic by percentage (A/B testing, gradual migration) | **Optional** — an unhealthy record is skipped and the draw repeats (the total weight is unchanged) |
+| Latency | Route to the AWS region with lowest latency for the client | **Optional** — if the lowest-latency record is unhealthy, the next-lowest healthy one is returned |
+| Failover | Active/passive; switch to secondary when primary health check fails | **Required on the primary** — the health check *is* the switching mechanism |
+| Geolocation | Route based on client's state/country/continent | **Optional** — an unhealthy record falls through as if it didn't exist, continuing the specificity search |
+| Geoproximity | Route based on geographic distance; adjustable bias | **Optional** — an unhealthy record is excluded and traffic shifts to the next-closest |
+| Multi-value | Return multiple IPs; basic load distribution (not a true load balancer) | **Optional, per record** — each record is independently checked when a check is attached; a record with no check is always treated as healthy. Per-record checking is the whole point of multi-value, so it's almost always used |
+
+Every policy starts the same way: a hosted zone holding **multiple records of the same name**. What differs is how Route 53 chooses which value(s) to return — by weight, by latency, by health, or by location. The three location-aware policies are easy to confuse, so keep them straight: **geolocation** matches on tagged location (relevance, never distance), **latency** picks the lowest estimated latency, and **geoproximity** picks the lowest physical distance with an adjustable bias.
+
+Health checks are **optional** on every policy except **Failover** (and unsupported on **Simple**). Where optional, a record with **no health check attached is always treated as healthy** — so don't mix checked and unchecked records in one same-name group, or the unchecked ones can never drop out. See [Health Checks](#health-checks) for the full mechanics.
+
+## Weighted Routing
+
+Weighted routing controls **how often each of several same-name records is returned**. That makes it the policy for **simple load balancing** across resources, and for **controlled rollout / testing of a new software version** — send a small slice of traffic (say 5 %) to the record running the new build.
+
+You assign each same-name record a **weight**. Route 53 sums all the weights for that name into a **total weight**, then returns each record with probability `record weight ÷ total weight`. Weights do **not** have to add up to 100: three `www` records weighted 40, 40, and 20 total 100 and so happen to read directly as 40 %, 40 %, and 20 %, but the same formula applies for any values.
+
+![Route 53 weighted routing: three same-name www A records weighted 40/40/20 summing to a total weight of 100, returned 40%/40%/20% of the time, with callouts for zero-weight behaviour and health-check interaction](../assets/R53-weighted-routing.png)
+
+### Zero weight and health checks
+
+- A weight of **0** means the record is **never returned** — useful for temporarily pulling a record out of rotation. The one exception: if **every** record for the name is 0, Route 53 considers them all, so resolution can never break.
+- Weighted records can carry **health checks**, and the interaction is a classic trap. A record is first selected by the weight calculation; if the selected record is **unhealthy** it is **skipped** and the draw **repeats** until a healthy record is chosen. Health checks do **not** remove a record from the calculation, so the **total weight (the denominator) never changes** — an unhealthy record is skipped over, not subtracted.
+
+> [!warning] Gotcha
+> Health checks don't re-balance weights. People expect an unhealthy record's share to be redistributed proportionally, but Route 53 just re-draws until it lands on a healthy record — the denominator stays the same.
+
+## Latency-Based Routing
+
+Latency-based routing returns the record expected to give the user the **lowest latency**, so it's the policy for **performance / user-experience optimization** of a global application.
+
+Each same-name record is tagged with the **AWS region** where its infrastructure lives — you get **one record per name per region**. AWS maintains a **latency database** of the latency between user locations and AWS regions. At resolution time Route 53:
+
+1. Determines the user's approximate location with an **IP-geolocation lookup** (see note below).
+2. Looks up the modelled latency from that location to each tagged region.
+3. Returns the record for the region with the **lowest estimated latency that is also healthy**. If the lowest-latency record is unhealthy, the **next-lowest** healthy record is returned instead.
+
+![Route 53 latency-based routing: three same-name records tagged us-east-1/us-west-1/ap-southeast-2, a user in Australia matched against AWS's latency database where ap-southeast-2 (42 ms) beats us-west-1 (280) and us-east-1 (400), returning the ap-southeast-2 record](../assets/R53-latency-based-routing.png)
+
+> [!warning] What "IP lookup" means — and whose IP
+> The IP lookup is **not a separate service**. It's an internal **geo-IP** lookup: Route 53 maps the **source IP of the incoming DNS query** to an approximate location using a built-in IP-to-location database. The same mechanism drives [Geolocation Routing](#geolocation-routing) below.
+> Crucially, the IP Route 53 sees is usually the user's **DNS resolver** (their ISP's resolver, `8.8.8.8`, etc.), **not the end-user device** — DNS is recursive, so the resolver is what queries Route 53. Route 53 geolocates the resolver on the assumption it sits near the user. If the resolver supports **EDNS Client Subnet (ECS)** — an EDNS0 extension that forwards a truncated slice of the client's IP — Route 53 uses that client subnet for a far more accurate location. Public resolvers (Google, OpenDNS) support ECS; many ISP resolvers don't. This is why the result is always *approximate*.
+
+> [!warning] Gotcha
+> The latency database is an **estimate** — updated in the background, **not real-time**, and blind to local network conditions. It's a strong performance aid, not a live measurement. Don't confuse it with **geoproximity**, which routes by physical distance plus an adjustable bias (a different mechanism even though both feel location-aware).
 
 > [!tip] Exam Tip
 > **Failover** requires a Route 53 **health check** on the primary record. Health checks can monitor an endpoint (HTTP/HTTPS/TCP), a CloudWatch alarm, or other health checks (calculated health check). See [Health Checks](#health-checks) below.
@@ -128,6 +167,66 @@ The canonical use is an **"out-of-band" failure or maintenance architecture**: t
 > [!warning] Gotcha
 > Don't confuse failover with **weighted** or **multi-value** routing. Failover is strictly *active/passive* — one resource serves at a time, chosen by health. Weighted and multi-value **distribute** traffic across multiple healthy resources at once; they are not a primary/backup mechanism.
 
+## Geolocation Routing
+
+Geolocation routing makes decisions from the **location of the user** and the **location tagged on each record**. Use it to **restrict content** to a market, serve **language-specific** content, or **load balance across regional endpoints** by customer location. It resembles latency routing but keys off location rather than latency.
+
+> [!warning] Gotcha
+> The single most important point (and a repeated exam trap): geolocation returns **relevant (location-matching) records only — never the closest record as a fallback**. A user in the UK will *not* receive a Canadian record just because no nearer record exists. The outcome is always a matching record, the default record, or "no answer" — never a proximity-chosen "nearest".
+
+You tag each record with one of four location types, most specific to least:
+
+1. **Subdivision** — a US state (the most specific)
+2. **Country** — ISO country code
+3. **Continent** — ISO continent code (e.g. `SA` for South America)
+4. **Default** — an optional catch-all
+
+At resolution, the same **geo-IP lookup** described under [Latency-Based Routing](#latency-based-routing) determines the location — geolocating the source IP of the DNS query, which is normally the user's resolver unless EDNS Client Subnet is in play. Route 53 then checks for matching records in specificity order, **stopping at the first level that produces a match**: state, then country, then continent, then default. It returns the **most specific** relevant record. If nothing matches and there is **no default record**, Route 53 returns **"no answer"**.
+
+![Route 53 geolocation routing: records tagged by US state / country / continent / default, with the matching order State then Country then Continent then Default, returning the most specific relevant record or NO ANSWER when nothing matches](../assets/R53-geolocation-routing.png)
+
+## Geoproximity Routing
+
+Geoproximity routing answers with the resource that is **physically closest** to the user by **distance**, and adds an adjustable **bias** so you can deliberately shift that boundary to send more or less traffic to a resource.
+
+You define **rules**, each specifying where a resource lives:
+
+- For an **AWS resource**: its **AWS region** (e.g. `us-east-1`, `ap-southeast-2`).
+- For an **external (non-AWS) resource**: **latitude/longitude coordinates**.
+
+Each rule also takes a **bias** that changes how the distance calculation is performed rather than using raw distance:
+
+- A **positive (`+`) bias grows** a resource's effective service area, pulling in more surrounding traffic — and correspondingly **shrinks neighbouring** regions.
+- A **negative (`-`) bias shrinks** it.
+
+![Route 53 geoproximity routing: three resources in America, the UK, and Australia each with a tinted service area, where a large plus bias on the Australian resource expands its area across the Middle East so Saudi Arabian users route to Australia instead of the geographically closer UK](../assets/R53-geoproximity-routing.png)
+
+**Worked example from the diagram:** a user in Saudi Arabia has no local resource and sits roughly 6,700 km from a UK resource and 10,000 km from an Australian one, so by raw distance the **UK** would win. Applying a large **`+` bias to the Australian resource** expands its service area across the Middle East, routing the Saudi user to **Australia instead of the UK** despite the greater distance.
+
+> [!tip] Exam Tip
+> Keep the location-aware trio distinct: **geolocation** = relevance by tagged location (no concept of distance or bias); **latency** = lowest *estimated latency* (no bias); **geoproximity** = lowest *physical distance* plus an adjustable bias. Only geoproximity lets you tune how much traffic a resource attracts.
+
+## Multi-Value Routing
+
+Multi-value routing behaves like a blend of **simple** and **failover** routing: it returns **multiple same-name records at once**, each **independently health-checkable**, and lets the client pick one — an active/active approach to DNS.
+
+- Route 53 returns **up to 8 healthy records** per query; if more than 8 healthy records exist, **8 are chosen at random**.
+- Each record can have its **own health check** (optional, but the reason to use multi-value). A record failing its check is **excluded** from responses; a record with **no** check attached is always treated as healthy.
+- The **client selects one value** from the set it receives and connects to that resource directly.
+
+![Route 53 multi-value routing: three same-name www records each with an independent health check, the two healthy records returned to the client while the failing one is struck through, and the client choosing one value to connect to](../assets/R53-multi-value-routing.png)
+
+This positions it between the simpler policies — it adds per-record health checking that **simple** routing lacks, while returning many records at once rather than the strict primary/backup of **failover**:
+
+| Policy | Health checks? | Typical use |
+| --- | --- | --- |
+| Simple | No | A single resource (e.g. one web server) |
+| Failover | Yes | Active/backup architectures (e.g. EC2 primary, S3 backup) |
+| Multi-value | Optional, per record | Many resources that can all serve requests; health-checked and returned at random |
+
+> [!warning] Gotcha
+> Multi-value routing is **not a load balancer**. It improves **availability** by returning several health-checked addresses over DNS, but it does **not** manage connections at the network level — the client does the choosing and connecting. When a question needs true load balancing, the answer is an **ELB**, not multi-value routing.
+
 ## Health Checks
 
 Route 53 health checks monitor the availability of endpoints and feed the result back into DNS routing decisions. They are the engine behind **Failover** routing and a useful filter for **Multi-value** and **Weighted** policies, where unhealthy records are excluded from query responses.
@@ -141,8 +240,13 @@ Route 53 health checks monitor the availability of endpoints and feed the result
 - **Globally distributed checkers**: AWS runs a fleet of health checkers across many regions. Each checker probes the target independently and reports back.
 - **Default interval 30 s; fast mode 10 s** (extra cost). **Failure threshold** = number of consecutive failed probes before status flips.
 
+- **No check means "healthy"**: a record with **no health check associated** is always treated as **healthy** and stays eligible to be returned. This is why health checks are *optional* on every policy except **Failover** (where the primary's check is the switching mechanism). For [Alias records](#alias-records-vs-cname) the equivalent switch is **Evaluate Target Health** — left off, the alias is always healthy; turned on, the alias inherits the health of its target (e.g. the ELB's own target health).
+
 > [!warning] Gotcha
 > Your firewall ([Security Group](vpc.md#security-groups-sg)/[NACL](vpc.md#network-acl-nacl)) must **allow inbound traffic from Route 53 health checker IP ranges**. Blocking them by accident causes false alarms — endpoints look unhealthy even though real traffic is fine. AWS publishes the IP ranges and lets you scope checks to specific checker regions.
+
+> [!warning] Gotcha
+> **Don't mix checked and unchecked records in the same same-name group.** Because a record with no health check is permanently "healthy", a record you forgot to attach a check to can **never drop out** of responses — it keeps receiving traffic even when its endpoint is down. Attach checks to **all** records in a group, or none.
 
 ### Quorum: the 18 % rule
 
@@ -224,3 +328,8 @@ For hybrid environments, **Resolver Endpoints** (inbound/outbound) allow on-prem
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/route53_alias_vs_cname.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/route53_health_check.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/route53_failover_routing.md`
+- Source: `raw/aws-cert-study-notes/aws-solution-architect/route53_weighted_routing.md`
+- Source: `raw/aws-cert-study-notes/aws-solution-architect/route53_latency_based_routing.md`
+- Source: `raw/aws-cert-study-notes/aws-solution-architect/route53_geolocation_routing.md`
+- Source: `raw/aws-cert-study-notes/aws-solution-architect/route53_geoproximity_routing.md`
+- Source: `raw/aws-cert-study-notes/aws-solution-architect/route53_multi_value_routing.md`

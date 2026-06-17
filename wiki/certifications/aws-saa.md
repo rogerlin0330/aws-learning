@@ -3,7 +3,7 @@ title: AWS Solutions Architect Associate — Exam Notes
 type: certification
 tags: [iam, vpc, networking, ec2, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, ephemeral, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns, route53, organizations, cost, purchase-options, on-demand, spot, reserved-instances, scheduled-reserved, capacity-reservations, zonal-ri, regional-ri, savings-plans, byol, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, raid0, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, ebs-encryption, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr, scaling, horizontal-scaling, vertical-scaling, stateless, sticky-sessions, elasticity, load-balancer, containers, docker, container-image, container-registry, ecs, eks, kubernetes, k8s, control-plane, etcd, kubelet, pod, ingress, persistent-volume, node-group, fargate-profile, ecr, fargate, task-definition, task-role, cloudtrail, audit, governance, management-events, data-events, insight-events, global-service-events, organizational-trail, log-file-integrity, event-history, eventbridge, control-tower, landing-zone, guardrails, account-factory, iam-identity-center, bootstrapping, cloud-init, boot-time-to-service-time, cloudformation, cfn-init, configsets, cfn-hup, cfn-signal, creation-policy, desired-state, infrastructure-as-code, cloudwatch-agent, cwagent, parameter-store, log-group, log-stream, placement-groups, cluster-placement-group, spread-placement-group, partition-placement-group, hpc, enhanced-networking, topology-aware]
 certs: [aws-saa]
-updated: 2026-06-13
+updated: 2026-06-17
 ---
 
 # AWS Solutions Architect Associate (SAA-C03)
@@ -1405,17 +1405,28 @@ See [Route 53](../services/route53.md) and [DNS Concepts](../concepts/dns.md) fo
 
 ### Route 53 Routing Policies
 
-| Policy | When to use |
-| --- | --- |
-| Simple | Single endpoint, no health checks |
-| Weighted | A/B testing, gradual traffic shifts |
-| Latency | Route to lowest-latency AWS region |
-| Failover | Active/passive HA; requires health check on primary |
-| Geolocation | Route by user's country/continent |
-| Multi-value | Return multiple IPs; basic load distribution |
+| Policy | When to use | Health checks? |
+| --- | --- | --- |
+| Simple | Single endpoint | No |
+| Weighted | A/B testing, gradual traffic shifts, simple load balancing | Optional |
+| Latency | Route to lowest-latency AWS region (performance) | Optional |
+| Failover | Active/passive HA; primary + secondary | Required on primary |
+| Geolocation | Restrict/route by user's state/country/continent | Optional |
+| Geoproximity | Closest resource by physical distance, tunable with bias | Optional |
+| Multi-value | Return multiple IPs; improve availability (not a load balancer) | Optional, per record |
+
+- **Weighted**: each same-name record gets a weight; returned with probability `weight ÷ total weight` — weights **need not sum to 100**. Weight **0** = never returned, **unless all are 0** (then all eligible). Health checks **don't change the denominator**: an unhealthy selected record is skipped and the draw repeats; its share is **not** redistributed. Triggers: "percentage of traffic", "test a new version", "send 5 % to the new build".
+- **Latency**: each record tagged with an **AWS region** (one record per name per region); AWS holds a **latency database** between user location and regions. Returns the **lowest-estimated-latency healthy** record; if unhealthy, the next-lowest. Latency data is **estimated / not real-time**. Triggers: "lowest latency", "best performance for a global app".
+- **Geolocation vs Geoproximity** — the most-tested distinction:
+  - **Geolocation** = match by **tagged location** (US state, country, continent, default). Specificity order State → Country → Continent → Default, stopping at the first match; no match and no default → **"no answer"**. It returns **relevant records only, NEVER the closest** as a fallback. Triggers: "restrict content by region", "block/allow by country", "language-specific content".
+  - **Geoproximity** = **physical distance** to the resource (AWS region for AWS resources, **lat/long** for external), plus a **bias**: `+` grows a resource's service area (shrinking neighbours), `-` shrinks it. Only geoproximity lets you **shift traffic away from the geographically closest** resource. Triggers: "closest resource", "bias", "route more/less traffic to a region".
+- **Multi-value**: returns **up to 8 healthy** records (random 8 if more exist), each with its **own health check**; client picks one. **Improves availability, is NOT a load balancer** — it doesn't manage connections.
 
 > [!tip] Exam Tip
 > **Failover routing** requires a Route 53 **health check** on the primary record. If the primary fails the health check, Route 53 automatically returns the secondary record. It uses **two records of the same name** (one Primary, one Secondary). Trigger phrases: "active/passive", "primary and secondary", "fail over to a backup/maintenance page". The classic pattern is **out-of-band failover** — primary and secondary point at *different* services (e.g. an EC2 primary with an S3 static-page secondary) so the backup survives a platform-level failure of the primary. Don't confuse with **weighted/multi-value**, which *distribute* across healthy resources rather than active/passive switching.
+
+> [!warning] Gotcha
+> Two perennial routing traps: (1) **geolocation never returns the nearest record** — only a location-match, the default, or "no answer"; if a question says "closest", that's **geoproximity** or **latency**, not geolocation. (2) **Multi-value is not a load balancer** — it improves availability via DNS but performs no connection management; true load balancing means an **ELB**.
 
 ### Route 53 Health Checks
 

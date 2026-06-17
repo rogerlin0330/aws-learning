@@ -2,6 +2,22 @@
 
 <!-- markdownlint-disable MD051 -->
 
+## [2026-06-17] ingest | Route 53 Routing Policies (Weighted, Latency, Geolocation, Geoproximity, Multi-Value)
+
+Ingested five SAA notes — `route53_weighted_routing.md`, `route53_latency_based_routing.md`, `route53_geolocation_routing.md`, `route53_geoproximity_routing.md`, `route53_multi_value_routing.md` — into the existing [Route 53](services/route53.md) page, which already covered failover and health checks. Copied five diagrams into `wiki/assets/` (`R53-weighted-routing.png`, `R53-latency-based-routing.png`, `R53-geolocation-routing.png`, `R53-geoproximity-routing.png`, `R53-multi-value-routing.png`) with multi-clause descriptive alt text.
+
+Structure: added five `##` sections in reading order around the pre-existing Failover section — **Weighted** and **Latency-Based** before Failover; **Geolocation**, **Geoproximity**, and **Multi-Value** after it (before Health Checks). Added a lead-in paragraph under the Routing Policies overview table that disambiguates the three location-aware policies up front. Each section embeds its diagram and carries the highest-leverage exam traps as callouts:
+
+- **Weighted**: `weight ÷ total weight`, weights needn't sum to 100, weight-0-unless-all-0, and the key trap that health checks **don't change the denominator** (unhealthy record is re-drawn, not redistributed).
+- **Latency**: one record per name per region, AWS's **non-real-time estimated** latency database, lowest-latency-healthy fallback; contrasted with geoproximity.
+- **Geolocation**: relevance-not-proximity (NEVER returns the closest as a fallback), State → Country → Continent → Default first-match order, "no answer" when no match and no default.
+- **Geoproximity**: distance by AWS region or lat/long, `+`/`-` **bias** grows/shrinks a resource's service area; Saudi-Arabia-to-Australia worked example; explicit three-way distinction from geolocation and latency.
+- **Multi-Value**: up to 8 random healthy records, per-record health checks, client picks one; the **"not a load balancer"** trap plus a Simple/Failover/Multi-value comparison table.
+
+Updated [aws-saa.md](certifications/aws-saa.md): expanded the routing-policy table (added Geoproximity + a health-check column), added a per-policy bullet block centred on the **geolocation-vs-geoproximity** and **multi-value-is-not-a-load-balancer** distinctions, and a Gotcha callout for the two perennial traps. Updated [index.md](index.md) Route 53 entry to enumerate all policies, and bumped `updated:` to 2026-06-17 on route53.md and aws-saa.md.
+
+Followed the [arrow-notation memory](../../../.claude/projects/-Users-rogerlin-SelfProjects-aws-learning/memory/feedback_arrow_notation.md): plain English and numbered "1, 2" lists in prose; arrows kept only inside tables, callouts, and the pattern-match bullets where they're idiomatic. Raw notes left in place (not deleted — they're under `aws-cert-study-notes/`, not `random-thoughts/`).
+
 ## [2026-06-12] update | CloudWatch Agent — why CPU is visible but memory is not
 
 Added a "Why CPU is visible but memory is not" subsection to the [CloudWatch Agent](services/cloudwatch.md#why-cpu-is-visible-but-memory-is-not) section, prompted by a user question. Core framing: **activity/throughput of a resource AWS meters** (CPU time, network bytes, EBS IOPS) is externally observable at the hypervisor, while **capacity-used accounting owned by the guest OS** (memory used, disk-space used) is not. CPU is *time-shared* (the hypervisor schedules and meters vCPU dispatch, so `CPUUtilization` needs nothing in-guest), whereas memory is *space-allocated* (a fixed quota up front; used/free/cache is `/proc/meminfo` bookkeeping the hypervisor never parses). Used the disk split (EBS I/O metrics visible vs. filesystem-fullness needing the agent) as the confirming example.
