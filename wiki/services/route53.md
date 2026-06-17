@@ -103,6 +103,31 @@ Route 53 can make routing decisions based on health, geography, and load — goi
 > [!tip] Exam Tip
 > **Failover** requires a Route 53 **health check** on the primary record. Health checks can monitor an endpoint (HTTP/HTTPS/TCP), a CloudWatch alarm, or other health checks (calculated health check). See [Health Checks](#health-checks) below.
 
+## Failover Routing
+
+Failover routing implements **active/passive failover**: one DNS name normally resolves to a primary resource, and automatically falls back to a backup resource when the primary becomes unavailable.
+
+You create **two records of the same name** in the hosted zone, each tagged with a failover role:
+
+- A **Primary** record pointing at the main resource (e.g. an EC2 instance).
+- A **Secondary** record of the same name pointing at a different resource (e.g. an S3 bucket).
+
+A [health check](#health-checks) — generally attached to the **primary** record — decides which value is returned:
+
+- Primary health check **healthy**: the name resolves to the **primary** record's value.
+- Primary health check **unhealthy**: the name resolves to the **secondary** record's value.
+
+![Route 53 failover routing in the animals4life.org hosted zone: a www query resolves through the primary record to an EC2 instance while its health check is healthy, and to the secondary record's S3 bucket when the health check is unhealthy](../assets/R53-failover-routing-architecture.png)
+
+In the diagram, two `www` records share a name inside the hosted zone. A health check probes the EC2 instance and is wired to the primary record. While it reports **healthy**, the client's `www` query follows the orange path to the **EC2 instance** running the app. When it reports **unhealthy**, the same query follows the pink path to the **S3 bucket** instead.
+
+### Out-of-band failure / maintenance pattern
+
+The canonical use is an **"out-of-band" failure or maintenance architecture**: the primary and secondary deliberately point at *different, independent services* (EC2 primary, S3 static-site secondary). Because the backup runs on a separate platform, it can still serve a maintenance page or static fallback even when the primary's underlying platform is the thing that has failed — the failure path does not depend on the same infrastructure that broke.
+
+> [!warning] Gotcha
+> Don't confuse failover with **weighted** or **multi-value** routing. Failover is strictly *active/passive* — one resource serves at a time, chosen by health. Weighted and multi-value **distribute** traffic across multiple healthy resources at once; they are not a primary/backup mechanism.
+
 ## Health Checks
 
 Route 53 health checks monitor the availability of endpoints and feed the result back into DNS routing decisions. They are the engine behind **Failover** routing and a useful filter for **Multi-value** and **Weighted** policies, where unhealthy records are excluded from query responses.
@@ -198,3 +223,4 @@ For hybrid environments, **Resolver Endpoints** (inbound/outbound) allow on-prem
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/route53_private_hosted_zone.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/route53_alias_vs_cname.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/route53_health_check.md`
+- Source: `raw/aws-cert-study-notes/aws-solution-architect/route53_failover_routing.md`

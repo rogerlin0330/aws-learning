@@ -1415,7 +1415,7 @@ See [Route 53](../services/route53.md) and [DNS Concepts](../concepts/dns.md) fo
 | Multi-value | Return multiple IPs; basic load distribution |
 
 > [!tip] Exam Tip
-> **Failover routing** requires a Route 53 **health check** on the primary record. If the primary fails the health check, Route 53 automatically returns the secondary record.
+> **Failover routing** requires a Route 53 **health check** on the primary record. If the primary fails the health check, Route 53 automatically returns the secondary record. It uses **two records of the same name** (one Primary, one Secondary). Trigger phrases: "active/passive", "primary and secondary", "fail over to a backup/maintenance page". The classic pattern is **out-of-band failover** — primary and secondary point at *different* services (e.g. an EC2 primary with an S3 static-page secondary) so the backup survives a platform-level failure of the primary. Don't confuse with **weighted/multi-value**, which *distribute* across healthy resources rather than active/passive switching.
 
 ### Route 53 Health Checks
 
