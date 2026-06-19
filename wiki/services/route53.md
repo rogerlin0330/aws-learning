@@ -12,9 +12,72 @@ Route 53 is AWS's **authoritative DNS service** and domain registrar. It is **gl
 
 Route 53 integrates tightly with [TLS/HTTPS](../concepts/tls-https.md) (ACM certificate validation uses DNS TXT records) and with [VPC](vpc.md) (private hosted zones and the built-in Resolver).
 
+## Two Services & Global Resilience
+
+At its core Route 53 is AWS's **managed DNS** product, bringing the abstract [DNS](../concepts/dns.md) building blocks (registries, zones, name servers, delegation) into an AWS-native service. It does **two conceptually separate jobs**:
+
+1. **Domain registration** — Route 53 acts as a **registrar** with relationships to all the major TLD **registries**, registering domains on your behalf. Covered in depth under [Registrar vs DNS Hosting](#registrar-vs-dns-hosting-interoperability).
+2. **Hosted zones** — Route 53 hosts your zone files on the **AWS-managed name servers** it provides. This is DNS-as-a-service. Covered under [Hosted Zones](#hosted-zones).
+
+These two jobs are related but independent, and either can be handed to a third party — that split is the whole point of the [interoperability](#registrar-vs-dns-hosting-interoperability) section below.
+
+### Global service characteristics
+
+Route 53 is one of very few AWS services that runs as a **single global service backed by a single database**, rather than as independent per-region deployments:
+
+- **No region to pick** — the console has no region selector for Route 53.
+- Its data is **distributed globally as a single set** and **replicated between regions**, making it **globally resilient**.
+- It can **tolerate the failure of one or more regions** and keep resolving.
+
+> [!tip] Exam Tip
+> "Globally resilient," "single global service," and "no region to pick" are Route 53 trigger phrases. Contrast with most AWS services, which are **region-scoped** — see [Resource Scope](../concepts/resource-scope.md).
+
+### Domain registration mechanics
+
+When you register a domain through Route 53, four things happen behind the scenes:
+
+1. **Availability check** — Route 53 checks with the **registry for that TLD** (for example **PIR** for `.org`) whether the name is free.
+2. **Create the zone file** — Route 53 creates a **zone file** (a database of all the domain's DNS records). In Route 53 terminology this becomes a **hosted zone**.
+3. **Allocate name servers** — Route 53 creates and manages name servers distributed globally — **generally four per zone** — and places the zone file onto them.
+4. **Liaise with the TLD registry** — Route 53 gets **NS (name server) delegation records** added into the **TLD's zone file**, pointing back at those four name servers. This delegation is what makes your name servers **authoritative** for the domain.
+
+![Route 53 acting as registrar: the purple Route 53 icon top-left has relationships with the .com/.io/.net registries (red arrow to the Registries box) and contacts the .org registry (PIR) to register animals4life; Route 53 creates the animals4life.org zone file and four managed name servers (dotted arrows), places the zone file onto the four servers (red arrow), and PIR adds NS delegation records into the .org TLD zone pointing back at those four name servers](../assets/R53-function-register-domains.png)
+
+> [!note] DNS is a system of delegation
+> The end state is always the same: the **TLD registry holds NS records pointing at the name servers that host your zone file**. Resolution then flows down that delegation chain ([DNS Resolution Chain](../concepts/dns.md#resolution-chain)). Registering a domain is just arranging that delegation.
+
 ## Hosted Zones
 
-A **hosted zone** is a DNS database for a specific domain — the container for all its DNS records.
+A **hosted zone** is a DNS database for a specific domain — the container for all its DNS records. Route 53 provides both the **zone** and the **hosting**: when a hosted zone is created, a set of **managed name servers is allocated and linked to it**, so a hosted zone and its name servers are effectively one and the same. As above, you generally get **four** managed name servers per zone.
+
+![Route 53 hosted zones summary: a hosted zone is a zone file hosted in AWS on four managed name servers (shown stacked on the right inside a RECORDS box); it can be public (reachable on the internet) or private (linked to one or more VPCs), and it stores DNS records, also called record sets](../assets/R53-function-hosted-zones.png)
+
+> [!note] Records vs record sets
+> Inside the Route 53 console, DNS records are labelled **record sets**. There is a tiny technical distinction (a record set groups records of the same name and type), but for study purposes treat **records ≈ record sets** — they refer to the same thing.
+
+### Zone vs hosting — two separable things
+
+A working DNS zone needs **two distinct ingredients**, and a hosted zone bundles both:
+
+- **The zone (the data)** — the **zone file** itself: the database holding all your records (A, CNAME, MX, NS, SOA, …). This is the *content*.
+- **The hosting (the servers)** — the actual **name server machines**, running DNS software and reachable on the internet, that *serve* that zone file in response to queries. This is the *infrastructure*.
+
+Historically these were two separate jobs: you authored a zone file, then found name servers to put it on. A Route 53 hosted zone gives you both at once, and you **cannot have one without the other** — the four name servers are allocated and loaded with the zone file automatically, and they cannot be detached. That is what "Route 53 provides both the zone and the hosting" means.
+
+### Three things called "NS"
+
+The word "name server" / "NS" is overloaded, which is the usual source of confusion. Keep **three** meanings apart:
+
+| "NS" meaning | What it is | Where it lives | Route 53's role |
+| --- | --- | --- | --- |
+| Name server **machines** | The 4 servers that actually serve the zone | AWS global infrastructure | Provides them — this *is* "the hosting" |
+| NS **record set** | A record inside the zone that lists those 4 server hostnames | Inside **your** hosted zone | Auto-created with the zone |
+| NS **delegation record** | The pointer that lets resolvers *find* your zone | In the **parent TLD** zone (e.g. `.org`) | Added during registration, via the registrar |
+
+The first two travel with the hosted zone itself. The **third lives up in the TLD zone** and is the [delegation handshake](#registrar-vs-dns-hosting-interoperability) that connects a *registered domain* to *this hosted zone* — the same point made in [Domain registration mechanics](#domain-registration-mechanics).
+
+> [!warning] Gotcha
+> "Route 53 provides the zone and the hosting" refers only to the first two rows — the zone file and the four name servers. It does **not** include the delegation NS record in the TLD; that is a separate step that the **registrar** arranges. A hosted zone with no matching TLD delegation is perfectly valid but unreachable from the public internet — nothing points resolvers at its four name servers. See [interoperability](#registrar-vs-dns-hosting-interoperability).
 
 ### Public Hosted Zone
 
@@ -382,3 +445,4 @@ For hybrid environments, **Resolver Endpoints** (inbound/outbound) allow on-prem
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/route53_geoproximity_routing.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/route53_multi_value_routing.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/route53_interoperability.md`
+- Source: `raw/aws-cert-study-notes/aws-solution-architect/route53_fundamentals.md`

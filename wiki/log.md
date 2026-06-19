@@ -2,7 +2,13 @@
 
 <!-- markdownlint-disable MD051 -->
 
-## [2026-06-17] ingest | Route 53 Routing Policies (Weighted, Latency, Geolocation, Geoproximity, Multi-Value)
+## [2026-06-18] ingest | Route 53 Fundamentals (two services + global resilience)
+
+Ingested `route53_fundamentals.md` into the existing [Route 53](services/route53.md) page. The page already deep-covered hosted zones, interoperability, routing policies, and health checks, so this added only the foundational framing not yet present, avoiding duplication. Copied two diagrams into `wiki/assets/` (`R53-function-register-domains.png`, `R53-function-hosted-zones.png`) with descriptive alt text.
+
+Added a new **Two Services & Global Resilience** section after the intro: the registrar-vs-hosted-zones split as Route 53's two jobs; global-service characteristics (single global database, replicated between regions, no region to pick, tolerates regional failure) with a trigger-phrase exam tip linking [Resource Scope](concepts/resource-scope.md); and the four-step domain-registration mechanics (availability check, create zone file, allocate ~4 managed name servers, NS delegation records into the TLD zone) embedding the register-domains diagram and a "DNS is a system of delegation" note linking the [DNS resolution chain](concepts/dns.md#resolution-chain). Under Hosted Zones, added that the zone and its managed name servers are bundled and a **records ≈ record sets** terminology note, with the hosted-zones-function diagram. Updated the index entry and References.
+
+Follow-up clarification (same day, prompted by a reader question on what "Route 53 provides both the zone and the hosting" means): added two subsections under Hosted Zones — **Zone vs hosting** (the data/zone-file vs the infrastructure/name-server-machines as two separable ingredients a hosted zone bundles) and **Three things called "NS"** (a table disambiguating the name-server *machines* = the hosting, the NS *record set* inside the zone, and the NS *delegation record* up in the parent TLD zone). Added a gotcha that "zone + hosting" excludes the TLD delegation record (a registrar step), so an undelegated hosted zone is valid but publicly unreachable.
 
 Ingested five SAA notes — `route53_weighted_routing.md`, `route53_latency_based_routing.md`, `route53_geolocation_routing.md`, `route53_geoproximity_routing.md`, `route53_multi_value_routing.md` — into the existing [Route 53](services/route53.md) page, which already covered failover and health checks. Copied five diagrams into `wiki/assets/` (`R53-weighted-routing.png`, `R53-latency-based-routing.png`, `R53-geolocation-routing.png`, `R53-geoproximity-routing.png`, `R53-multi-value-routing.png`) with multi-clause descriptive alt text.
 
