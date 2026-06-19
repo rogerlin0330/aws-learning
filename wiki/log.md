@@ -1215,3 +1215,7 @@ Expanded the `### DNS in VPC` subsection in `services/vpc.md` (prompted by a que
 ## [2026-06-16] ingest | Route 53 failover routing
 
 Added a dedicated Failover Routing section to services/route53.md (active/passive, two same-name Primary/Secondary records gated by a health check, out-of-band EC2-primary/S3-secondary maintenance pattern) with the failover architecture diagram; enriched the aws-saa.md failover exam tip and updated index.md.
+
+## [2026-06-17] update | DNS resolution diagram
+
+Embedded the DNS resolution-chain diagram (from the LinkedIn source clipping) into `concepts/dns.md` Resolution Chain section after the user added it to the raw note. Copied `how-dns-works.png` into `wiki/assets/` with descriptive alt text covering the 8-step query walkthrough (user → recursive resolver → root → TLD → authoritative). Also expanded the inline "TLD" abbreviation to "Top-Level Domain (TLD)" in the ASCII chain. Bumped `updated` to 2026-06-17.

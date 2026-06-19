@@ -10,7 +10,7 @@ tags:
 ---
 ## How Does the DNS Process Work?
 
-![DNS](https://media.licdn.com/dms/image/v2/D4D12AQE159kL9RIQMA/article-inline_image-shrink_1500_2232/article-inline_image-shrink_1500_2232/0/1678451591042?e=1779321600&v=beta&t=19fCH_GN1u_I_j33V8UpvC5Ji0MADCnNZ8Dy0Q5mznY)
+![[how_dns_works.png]]
 
 - When you request a domain name, your computer first checks its **local cache** to see if you've previously looked up the address recently; if not, a request to your **Recursive DNS Server** will be made.
 

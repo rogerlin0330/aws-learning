@@ -2,7 +2,7 @@
 title: DNS — Domain Name System
 type: concept
 tags: [dns, networking, split-horizon-dns, split-view-dns, ttl, cname, alias]
-updated: 2026-05-29
+updated: 2026-06-17
 ---
 
 # DNS — Domain Name System
@@ -24,7 +24,7 @@ Client
   │      └─ also has a local cache
   │
   ├─ 3. Root DNS Servers  ← ~13 logical roots, anycast globally
-  │      └─ returns TLD nameserver for ".com", ".org", etc.
+  │      └─ returns Top-Level Domain (TLD) nameserver for ".com", ".org", etc.
   │
   ├─ 4. TLD Server  ← e.g. Verisign for .com
   │      └─ returns the authoritative nameserver for the domain
@@ -34,6 +34,8 @@ Client
 ```
 
 The recursive resolver handles steps 3–5 on behalf of the client, caches the result, and returns the answer. The client only ever talks to the recursive resolver.
+
+![DNS resolution walkthrough: a user computer queries the ISP recursive resolver for www.example.com; the resolver asks the root server (which points to the .com TLD server), then the TLD server (which points to the authoritative server), then the authoritative server (which returns 217.64.213.12); the resolver finally returns that IP to the user](../assets/how-dns-works.png)
 
 ## Caching and TTL
 
