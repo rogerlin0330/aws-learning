@@ -2,7 +2,7 @@
 title: DNS — Domain Name System
 type: concept
 tags: [dns, networking, split-horizon-dns, split-view-dns, ttl, cname, alias, ns, mx, txt, a-record, aaaa-record, delegation, authoritative]
-updated: 2026-06-18
+updated: 2026-06-19
 ---
 
 # DNS — Domain Name System
@@ -165,6 +165,9 @@ This avoids two common problems:
 | --- | --- |
 | **EC2 public DNS name** (e.g. `ec2-3-89-7-136.compute-1.amazonaws.com`) | Inside the VPC → resolves to the **private IPv4**; outside → resolves to the **public IPv4**. Built-in; no configuration required. See [EC2 — Network Interfaces (ENIs)](../services/ec2.md#split-horizon-dns--the-public-dns-name-resolves-differently-inside-vs-outside-the-vpc) |
 | **Route 53 split-view hosted zones** | Same domain registered as both a **public hosted zone** *and* a **private hosted zone** associated with a VPC — VPC queries hit the private zone, internet queries hit the public zone. See [Route 53](../services/route53.md) |
+
+> [!warning] Gotcha
+> Route 53 split-view is **not** an overlay where the private zone overrides a few records and the rest fall through to public. Inside the VPC the private zone **replaces** the whole namespace: a name not present in the private zone returns **NXDOMAIN**, not the public answer. Any public name you still need internally must be **duplicated** into the private zone. See [Route 53 — How association and namespace resolution work](../services/route53.md#how-association-and-namespace-resolution-work).
 
 > [!tip] Exam Tip
 > When a question mentions *"connect via the public DNS name"* alongside *"VPC peering"*, *"hybrid network"*, or *"keep traffic off the internet gateway"*, the answer leans on split-horizon DNS — internal callers automatically resolve to the private address.

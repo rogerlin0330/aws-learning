@@ -3,7 +3,7 @@ title: Route 53
 type: service
 tags: [dns, route53, networking, health-checks, routing-policy, weighted-routing, latency-routing, geolocation-routing, geoproximity-routing, multi-value-routing, failover-routing, registrar, dns-hosting, interoperability]
 certs: [aws-saa]
-updated: 2026-06-18
+updated: 2026-06-19
 ---
 
 # Route 53
@@ -116,6 +116,20 @@ You can create both a **public** and a **private** hosted zone for the **same do
 
 > [!tip] Exam Tip
 > If a question describes needing **different DNS answers for the same domain depending on whether the query comes from inside or outside a VPC**, the answer is Split-View DNS.
+
+> [!warning] Gotcha: a private zone *replaces* the namespace inside the VPC — it does not overlay it
+> The most common split-view mistake is assuming the private zone only needs the records you want to *override*, and that everything else "falls through" to the public zone. It does not. Once a private hosted zone matches the query name, the Resolver answers **only** from that private zone; a missing record returns **NXDOMAIN**, never the public answer (see [How association and namespace resolution work](#how-association-and-namespace-resolution-work)).
+>
+> **Worked example.** You run a private and a public hosted zone, both named `example.com`, and associate the private zone with your VPC. You want split-horizon for `www` but no split for `customer`:
+>
+> | Query from inside the VPC | In private zone? | Result |
+> | --- | --- | --- |
+> | `www.example.com` | yes (employee portal) | employee portal — the split you wanted |
+> | `customer.example.com` | **no** (only in public zone) | **NXDOMAIN** — *not* the public record |
+>
+> The private `example.com` zone is a **parent match** for `customer.example.com`, so it claims the name even though no record exists for it. Per the AWS docs: *"If there's a matching private hosted zone but there's no record that matches the domain name and type in the request, VPC Resolver doesn't forward the request to a public DNS resolver. Instead, it returns NXDOMAIN."*
+>
+> **Fix:** duplicate `customer.example.com` into the private zone pointing at the **same value as the public record**. It is not a split — both zones return the same answer — but the name will not resolve inside the VPC unless the private zone carries it. An apex-level private zone must list **every** `example.com` name you want reachable from the VPC, not just the ones you intend to override.
 
 ## Registrar vs DNS Hosting (Interoperability)
 
@@ -429,11 +443,34 @@ Every VPC has a built-in DNS resolver reachable at **VPC base IP + 2** (e.g. `10
 
 For hybrid environments, **Resolver Endpoints** (inbound/outbound) allow on-premises networks to resolve Route 53 private zones, and VPCs to resolve on-premises DNS.
 
+### How association and namespace resolution work
+
+Associating a VPC with a [private hosted zone](#private-hosted-zone) does **not** copy the zone's records into the VPC. The records never leave Route 53. The `.2` resolver address is not a server living in your subnet — it is a per-VPC doorway into the regional Route 53 Resolver service, and because the doorway is per-VPC, **every query arrives stamped with its origin VPC ID**. Association is just a control-plane authorization entry — a mapping that says *"this VPC may resolve against this private zone."* Resolution is then a live lookup at query time, not a preload.
+
+For each query, the Resolver decides the **zone first, record second**:
+
+1. **Zone selection — does the query name fall under any associated private zone?** A private zone "matches" if its name is **identical to** or a **parent of** the query name. For `seattle.accounting.example.com`, both `accounting.example.com` and `example.com` match (the closest parent counts). If **two** private zones match, the Resolver picks the **most specific** one (`accounting.example.com` beats `example.com`).
+2. **If no private zone matches** the query name, the Resolver does ordinary recursive/public resolution. *This is the only path that reaches the public zone.*
+3. **If a private zone matches**, the Resolver searches **only that zone** for a record of the requested name and type. A hit is returned; a miss returns **NXDOMAIN** — it does **not** fall back to public DNS.
+
+> [!warning] Public fall-through is decided at the **zone** level, never per record
+> The trap is reading step 2 as "if the record isn't found, try public." It is not. Public fall-through happens **only when no associated private zone owns the namespace at all**. Once a private zone claims the name, a missing record is a hard NXDOMAIN. See the [split-view gotcha](#split-view-split-horizon-dns) for the canonical `www` + `customer` failure this causes.
+
+Two escape hatches override this default behavior:
+
+- A **Resolver rule** for the same domain **takes precedence over** a private hosted zone — matching queries are forwarded to the target (e.g. on-premises) instead of being answered from the zone.
+- **NS records inside a private zone** can **delegate a subdomain** to another resolver, carving a hole in the otherwise all-or-nothing namespace.
+
+> [!tip] Exam Tip
+> "I created a private zone for my apex domain and now public names under it (like `customer.example.com`) stopped resolving from the VPC" is a classic symptom. The cause is namespace replacement; the fix is to recreate the still-needed public records inside the private zone.
+
 ## References
 
 - [DNS Concepts](../concepts/dns.md)
 - [VPC](vpc.md)
 - [TLS/HTTPS](../concepts/tls-https.md)
+- [AWS Docs — Considerations when working with a private hosted zone](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/hosted-zone-private-considerations.html) (NXDOMAIN-vs-fall-through and most-specific-match rules)
+- [AWS Docs — Working with private hosted zones](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/hosted-zones-private.html)
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/route53_public_hosted_zone.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/route53_private_hosted_zone.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/route53_alias_vs_cname.md`
