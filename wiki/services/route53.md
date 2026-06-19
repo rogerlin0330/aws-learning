@@ -1,9 +1,9 @@
 ---
 title: Route 53
 type: service
-tags: [dns, route53, networking, health-checks, routing-policy, weighted-routing, latency-routing, geolocation-routing, geoproximity-routing, multi-value-routing, failover-routing]
+tags: [dns, route53, networking, health-checks, routing-policy, weighted-routing, latency-routing, geolocation-routing, geoproximity-routing, multi-value-routing, failover-routing, registrar, dns-hosting, interoperability]
 certs: [aws-saa]
-updated: 2026-06-17
+updated: 2026-06-18
 ---
 
 # Route 53
@@ -53,6 +53,54 @@ You can create both a **public** and a **private** hosted zone for the **same do
 
 > [!tip] Exam Tip
 > If a question describes needing **different DNS answers for the same domain depending on whether the query comes from inside or outside a VPC**, the answer is Split-View DNS.
+
+## Registrar vs DNS Hosting (Interoperability)
+
+Registering a domain *looks* like one action, but Route 53 is really doing **two conceptually separate jobs** — and either one can be handed to a third party. Keeping them apart is the whole topic.
+
+| Role | What it does | R53 console home | Fee |
+| --- | --- | --- | --- |
+| **Registrar** | Liaises with the TLD **registry**; registers the domain on your behalf; gets the **NS delegation records** added to the TLD zone | **Registered Domains** | One-off per-year (or per-3-year) registration fee |
+| **DNS Hosting** | Allocates the **4 name servers**, creates and hosts the **zone file**, lets you manage records — this is exactly a [public hosted zone](#public-hosted-zone) | **Public Hosted Zone** | Recurring **monthly** hosting fee |
+
+Three more terms keep the roles straight:
+
+- **Registry** — the entity that owns a specific TLD's zone (for `.org` it is **PIR**, Public Interest Registry). It is *not* the registrar.
+- **Registrar** — a company authorised to register domains *with* a registry on customers' behalf.
+- **NS delegation records** — the entry the registry adds to the TLD zone, pointing the domain at its 4 name servers. This is the **handshake** that links registrar to host, and it is present in **every** configuration below.
+
+> [!warning] Gotcha
+> The registration fee (per-year / per-3-year, paid to the **registrar**) and the hosting fee (**monthly**, paid per **hosted zone** to the **host**) are *different fees*. Don't conflate them. Also don't confuse the **registry** (owns the TLD) with the **registrar** (registers on your behalf).
+
+**Interoperability** is the term for splitting these two roles across different providers — Route 53 doing one while a third party (e.g. Hover) does the other. There are three arrangements.
+
+### Both roles via Route 53 (the default)
+
+The traditional setup: you pay R53 to register, and R53 also hosts the zone. The R53 registrar liaises with the R53 hosting side to create a public hosted zone with 4 name servers, then hands the **registration fee + domain name + 4 NS** to the registry (PIR for `.org`), which adds the NS delegation records to the TLD. You pay **once** to register plus a **monthly** hosting fee.
+
+![Route 53 acting as both registrar and DNS host: a left purple "Registered Domains" panel where a person registers and pays the per-year fee, a right purple "Public Hosted Zone" panel holding the 4 name servers and zone file for animals4life.org with a monthly fee, internal orange arrows creating the hosted zone and returning the 4 NS to the registrar, and red arrows where the PIR registry adds NS delegation records into the TLD — both panels the same colour to signal both roles belong to R53](../assets/R53-interoperability-both.png)
+
+The visual "tell" across all three diagrams: **panel colour = ownership**. Purple = Route 53; green/teal (with Hover branding) = third party. Whichever side is green is the part R53 is *not* doing.
+
+### Route 53 as registrar only
+
+R53 registers the domain, but a **third party hosts** the zone. You create the hosted zone *at the third party* (monthly fee), retrieve **its** name server details, and pass those external NS to R53 the registrar, which sets the TLD's NS records to point at the third-party name servers.
+
+![Route 53 as registrar only: left purple "Registered Domains" panel unchanged, right panel now green/teal "3rd Party Domain Hosting" with a Hover-branded zone file and the 4 external name servers, green arrows pulling the external NS details back to the admin and into R53, and red arrows where the registry adds NS delegation records pointing at the external Hover name servers](../assets/R53-interoperability-registrar-only.png)
+
+> [!warning] Gotcha
+> This is **rare and discouraged** — arguably the worst way to manage domains. R53's registrar function is unremarkable; the real value of R53 is its **DNS hosting**, which this arrangement throws away. If a question frames registrar-only as "getting R53's main benefit," that's the trap.
+
+### Route 53 as hosting only
+
+The popular split: a **third party registers** the domain, but **R53 hosts** the zone. You'd do this when the business must register elsewhere (an existing deal or discount), or when a domain was **historically registered** elsewhere and you now want R53's DNS hosting. You create a **public hosted zone in R53** (4 NS, monthly fee), then pass those R53 NS details to the external registrar, who relays them to the registry to set the TLD's NS delegation records.
+
+![Route 53 as hosting only: left panel now green/teal "3rd Party Domain Registrar" shown as a Hover logo box where a person registers and pays the per-year fee, right panel back to purple "Public Hosted Zone" holding R53's 4 name servers and zone file, purple arrows creating the R53 hosted zone and passing its NS to Hover, and red arrows where the registry adds NS delegation records pointing at the R53 name servers](../assets/R53-interoperability-hosting-only.png)
+
+> [!tip] Exam Tip
+> Hosting-only can be set up **at registration time or after the fact**. The classic scenario is **migrating an old, externally-registered domain to R53 DNS**: create a public hosted zone in R53 and update the **NS records at the existing registrar** to the 4 R53 name servers. No re-registration needed.
+
+**The universal pattern:** regardless of who plays which role, the end state is identical — the **TLD registry holds NS delegation records pointing at 4 name servers that host the zone file**, and resolution works through that delegation (the same chain described in [DNS Concepts](../concepts/dns.md#resolution-chain)). All that changes between configurations is **who registers** and **who hosts**.
 
 ## Alias Records vs CNAME
 
@@ -333,3 +381,4 @@ For hybrid environments, **Resolver Endpoints** (inbound/outbound) allow on-prem
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/route53_geolocation_routing.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/route53_geoproximity_routing.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/route53_multi_value_routing.md`
+- Source: `raw/aws-cert-study-notes/aws-solution-architect/route53_interoperability.md`

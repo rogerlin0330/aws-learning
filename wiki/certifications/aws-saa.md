@@ -1403,6 +1403,26 @@ See [Route 53](../services/route53.md) and [DNS Concepts](../concepts/dns.md) fo
 - **Split-View DNS**: same domain name, public + private zone → different answers based on query origin
 - TTL = how long resolvers cache a record; **lower TTL before migrations**, raise after
 
+### Registrar vs DNS Hosting (Interoperability)
+
+See [Registrar vs DNS Hosting](../services/route53.md#registrar-vs-dns-hosting-interoperability) for full details.
+
+- "Registering a domain" is **two independent roles**, each can live with a different provider:
+  - **Registrar** = registers the domain with the TLD **registry**; **one-off per-year** (or per-3-year) fee; console **Registered Domains**
+  - **DNS Hosting** = the **public hosted zone** (4 name servers + zone file); **monthly** fee; console **Public Hosted Zone**
+- **Registry ≠ Registrar**: the registry *owns* the TLD zone (`.org` = **PIR**); the registrar *registers with* it on your behalf
+- **NS delegation records** are the handshake — the registry always points the domain at its 4 name servers; present in every configuration
+- Three valid arrangements:
+  - **Both via R53** — the default
+  - **R53 registrar only** (3rd party hosts) — valid but **rare/discouraged**; you lose R53's main value (its DNS hosting)
+  - **R53 hosting only** (3rd party registers) — **common**; create a public hosted zone in R53, give the 4 NS to the external registrar
+
+> [!tip] Exam Tip
+> **Migrating an old domain registered elsewhere to R53 DNS** = R53 **hosting only**, done *after the fact*: create a public hosted zone in R53 and update the **NS records at the existing registrar** to the 4 R53 name servers. No re-registration. Triggers: "domain registered with GoDaddy/Hover but we want R53 to manage records", "keep the existing registrar".
+
+> [!warning] Gotcha
+> Registration fee (per-year, to the registrar) and hosting fee (monthly, per hosted zone, to the host) are **separate fees**. And R53 registrar-only is the trap answer when a question implies it delivers R53's core benefit — it doesn't; the value is in **hosting**.
+
 ### Route 53 Routing Policies
 
 | Policy | When to use | Health checks? |
