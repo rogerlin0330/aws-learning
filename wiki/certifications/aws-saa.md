@@ -3,7 +3,7 @@ title: AWS Solutions Architect Associate — Exam Notes
 type: certification
 tags: [iam, vpc, networking, ec2, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, ephemeral, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns, route53, organizations, cost, purchase-options, on-demand, spot, reserved-instances, scheduled-reserved, capacity-reservations, zonal-ri, regional-ri, savings-plans, byol, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, raid0, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, ebs-encryption, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr, scaling, horizontal-scaling, vertical-scaling, stateless, sticky-sessions, elasticity, load-balancer, containers, docker, container-image, container-registry, ecs, eks, kubernetes, k8s, control-plane, etcd, kubelet, pod, ingress, persistent-volume, node-group, fargate-profile, ecr, fargate, task-definition, task-role, cloudtrail, audit, governance, management-events, data-events, insight-events, global-service-events, organizational-trail, log-file-integrity, event-history, eventbridge, control-tower, landing-zone, guardrails, account-factory, iam-identity-center, bootstrapping, cloud-init, boot-time-to-service-time, cloudformation, cfn-init, configsets, cfn-hup, cfn-signal, creation-policy, desired-state, infrastructure-as-code, cloudwatch-agent, cwagent, parameter-store, log-group, log-stream, placement-groups, cluster-placement-group, spread-placement-group, partition-placement-group, hpc, enhanced-networking, topology-aware]
 certs: [aws-saa]
-updated: 2026-06-17
+updated: 2026-06-18
 ---
 
 # AWS Solutions Architect Associate (SAA-C03)
@@ -1422,6 +1422,28 @@ See [Registrar vs DNS Hosting](../services/route53.md#registrar-vs-dns-hosting-i
 
 > [!warning] Gotcha
 > Registration fee (per-year, to the registrar) and hosting fee (monthly, per hosted zone, to the host) are **separate fees**. And R53 registrar-only is the trap answer when a question implies it delivers R53's core benefit — it doesn't; the value is in **hosting**.
+
+### DNS Record Types
+
+See [DNS — Record Types](../concepts/dns.md#dns-record-types) for full details and diagrams.
+
+| Record | Maps / does | Trigger keywords |
+| --- | --- | --- |
+| **NS** | Delegation — parent zone points at the child zone's nameservers | "delegation", "points at the servers hosting the zone" |
+| **A** | Hostname to **IPv4** | "hostname to IPv4" |
+| **AAAA** | Hostname to **IPv6** | "hostname to IPv6" |
+| **CNAME** | Host to **another host (name)** | "alias", "shortcut", "reduce admin overhead" — ⚠️ never an IP |
+| **MX** | Find the **mail server (SMTP)** for a domain | "mail server", "email delivery" |
+| **TXT** | Arbitrary text on a domain | "prove domain ownership", "verification", "SPF / anti-spam" |
+
+- **CNAME → name only, never an IP**, and never at the **zone apex** — use a Route 53 **Alias** for the apex case
+- **MX: lower priority number = higher priority** (tried first). A value with **no trailing dot** is a host inside the same zone (`mail` means `mail.example.com`); a value **with a trailing dot** is an FQDN that can point to an external provider (Office 365, etc.). The host name itself is arbitrary
+- **TXT** is the answer for **domain-ownership verification** (the external service hands you a string to publish) and **SPF/anti-spam** sender authorization
+- **NS records are delegation** at every level (root → TLD → domain) — the answer whenever a question describes a parent zone pointing at the servers that host a child zone
+- **Authoritative** answer = from the domain's source-of-truth nameserver (slower, always current); **non-authoritative** = a cached copy at a resolver (faster, can be stale until TTL expires)
+
+> [!warning] Gotcha
+> Two record-type traps to lock in: **(1)** a CNAME can only point at another name — if an answer has a CNAME pointing straight at an IP, it's wrong. **(2)** MX priority is "lowest number wins", not highest. And the TTL trap: migrating email with a **high MX TTL** leaves old mail servers cached and breaks delivery — **lower the TTL days in advance** of any DNS migration.
 
 ### Route 53 Routing Policies
 

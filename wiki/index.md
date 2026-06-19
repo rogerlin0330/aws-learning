@@ -27,7 +27,7 @@
 
 - [Storage Fundamentals](concepts/storage.md) — Direct-attached vs network-attached; ephemeral vs persistent; block / file / object categories; IOPS, throughput, block size performance triangle; AWS service mapping (instance store, EBS, EFS/FSx, S3)
 - [Networking](concepts/networking.md) — Firewall layers, routing, internet connectivity patterns, ephemeral ports
-- [DNS](concepts/dns.md) — Resolution chain, record types, TTL, caching (generic concepts), split-horizon DNS (one name → different answers inside vs outside a private network; EC2 public DNS + Route 53 split-view PHZ as AWS examples)
+- [DNS](concepts/dns.md) — Resolution chain, record types in depth (NS delegation, A/AAAA host-to-IP, CNAME host-to-host alias with the never-an-IP and zone-apex traps, MX mail-server routing with priority + trailing-dot FQDN rules, TXT for ownership/SPF — each with a diagram), TTL & caching (authoritative vs non-authoritative answers, lower-TTL-before-migration, the high-MX-TTL email trap), split-horizon DNS (one name → different answers inside vs outside a private network; EC2 public DNS + Route 53 split-view PHZ as AWS examples)
 - [TLS/HTTPS](concepts/tls-https.md) — Certificate chain of trust, CA issuance, TLS handshake, ACM integration
 - [Identity and Access](concepts/identity-and-access.md) — Auth vs authz, identity types, policy evaluation, credential types
 - [Resource Policies vs Identity Policies](concepts/resource-vs-identity-policies.md) — Two policy families; cross-account & anonymous access; same-account union vs cross-account intersection

@@ -2,6 +2,18 @@
 
 <!-- markdownlint-disable MD051 -->
 
+## [2026-06-18] ingest | DNS Record Types (NS, A/AAAA, CNAME, MX, TXT, TTL)
+
+Ingested `dns_record_types.md` into the existing [DNS](concepts/dns.md) concept page (the right home for generic DNS record-type concepts, per schema), then added a focused recap to the [SAA cert page](certifications/aws-saa.md). Content verified accurate against AWS/DNS fundamentals — Cantrill-grade course material, filed without correction. Copied six diagrams into `wiki/assets/` (`dns-ns-records.png`, `dns-a-aaaa-records.png`, `dns-cname-records.png`, `dns-mx-records.png`, `dns-txt-records.png`, `dns-ttl.png`) with descriptive alt text.
+
+On `concepts/dns.md`: expanded the thin **DNS Record Types** table into five `###` subsections, each embedding its diagram — **NS** (delegation both ways down root→TLD→domain), **A/AAAA** (host-to-IPv4/IPv6, dual-record pattern), **CNAME** (host-to-host alias, reduce-admin-overhead rationale, the never-an-IP + zone-apex traps folded into one gotcha), **MX** (priority lowest-wins, trailing-dot FQDN vs same-zone host, arbitrary host name, delivery flow), and **TXT** (ownership proof + SPF). Enriched the **Caching and TTL** section with an **Authoritative vs Non-Authoritative** subsection (table + the TTL diagram) and two gotchas: lower-TTL-before-migration / high-MX-TTL email breakage, and resolvers may ignore TTL. Updated frontmatter tags + date.
+
+On `aws-saa.md`: added a **DNS Record Types** subsection under "DNS and Route 53" (before Routing Policies) — a trigger-keyword table plus the high-leverage traps (CNAME never-IP/never-apex, MX lowest-number-wins + trailing-dot FQDN, TXT for verification/SPF, NS as delegation, authoritative vs non-authoritative) and a consolidated gotcha callout. Updated the index DNS entry and both pages' `updated` dates.
+
+Follow-up refinement (same day, prompted by a reader question — "MX only covers sending, what about receiving and IMAP?"): the original MX subsection framed MX purely from the sender's lookup angle. Added to the MX subsection a "MX is the *receiving* side" tip (the record is published by the inbound domain; no DNS record exists for a domain's outbound server — only SPF/DKIM/DMARC authorization) plus a three-phase email table clarifying that IMAP/POP3 are mailbox-access protocols not routed by DNS — SMTP+MX move mail *to* a mailbox, IMAP/POP3 read it *from* the mailbox.
+
+Second refinement (same day, reader asked "shouldn't it be four legs?" with the MUA/MSA/MTA/MDA agent model): reconciled the two framings rather than swapping counts — "3 vs 4" is transport-phase slicing vs software-agent slicing of the same pipeline. Replaced the three-leg table with a four-agent table ([RFC 5598](https://datatracker.ietf.org/doc/html/rfc5598)) mapping each MUA→MSA→MTA→MDA hop to its protocol/port/DNS-record (submission MUA→MSA 587/465, transfer MTA→MTA 25 via MX, local delivery MTA→MDA, retrieval mailbox→MUA IMAP/POP3). Added a gotcha correcting a common muddle (in the source image the user shared): **SPF/DKIM/DMARC are verified by the *receiving* server, not the sender's MSA** — the sender authenticates the user and DKIM-signs; publishing is a sender job, verification a receiver job.
+
 ## [2026-06-18] ingest | Route 53 Fundamentals (two services + global resilience)
 
 Ingested `route53_fundamentals.md` into the existing [Route 53](services/route53.md) page. The page already deep-covered hosted zones, interoperability, routing policies, and health checks, so this added only the foundational framing not yet present, avoiding duplication. Copied two diagrams into `wiki/assets/` (`R53-function-register-domains.png`, `R53-function-hosted-zones.png`) with descriptive alt text.
