@@ -1,7 +1,7 @@
 ---
 title: DNS — Domain Name System
 type: concept
-tags: [dns, networking, split-horizon-dns, split-view-dns, ttl, cname, alias, ns, mx, txt, a-record, aaaa-record, delegation, authoritative]
+tags: [dns, networking, split-horizon-dns, split-view-dns, ttl, cname, alias, ns, mx, txt, a-record, aaaa-record, delegation, authoritative, walking-the-tree, resolver, hosts-file, root-servers, nslookup, dig]
 updated: 2026-06-19
 ---
 
@@ -13,7 +13,9 @@ See [Networking Concepts](networking.md) for broader networking context, and [TL
 
 ## Resolution Chain
 
-When you navigate to a domain, DNS resolution follows a strict delegation chain — but caching short-circuits most of it in practice:
+Strip away the detail and DNS does one job: you hold a **DNS name** (e.g. `www.netflix.com`) and need the **IP address(es)** that serve it. Somewhere in the world a single **zone** holds the record that answers that name. The entire challenge is **finding that one zone** so it can give you an authoritative answer. No single nameserver holds all the answers, but **every query gives you the next step** — and that end-to-end process is called **walking the tree**.
+
+When you navigate to a domain, resolution follows a strict delegation chain — but caching short-circuits most of it in practice:
 
 ```text
 Client
@@ -36,6 +38,69 @@ Client
 The recursive resolver handles steps 3–5 on behalf of the client, caches the result, and returns the answer. The client only ever talks to the recursive resolver.
 
 ![DNS resolution walkthrough: a user computer queries the ISP recursive resolver for www.example.com; the resolver asks the root server (which points to the .com TLD server), then the TLD server (which points to the authoritative server), then the authoritative server (which returns 217.64.213.12); the resolver finally returns that IP to the user](../assets/how-dns-works.png)
+
+### Walking the Tree, Step by Step
+
+The diagram below traces the full walk for `www.netflix.com`: the resolver (bottom-left) does the work on your behalf, climbing the tree tier by tier. Green arrows are queries going out; pink arrows are answers coming back. The trust chain along the top (Root, then the `.com` registry, then `netflix.com`'s nameservers) is a chain of **delegations** — each tier hands control of the level below it down via NS records.
+
+![Walking the DNS tree for www.netflix.com: the client checks its local cache and hosts file, then queries the resolver, which in turn asks the root (returns the .com nameservers), the .com TLD nameservers (return the netflix.com nameservers), and finally the netflix.com nameservers (return the authoritative record); the resolver caches the result and returns it to the client](../assets/dns-walking-the-tree.png)
+
+Following the numbered badges in the diagram:
+
+1. **Client checks its local cache and hosts file.** The OS consults the [hosts file](#hosts-file-the-pre-dns-override) — a static name-to-IP mapping that **overrides DNS** — and any local cache before a query ever leaves the machine.
+2. **Client queries the resolver.**
+3. **Resolver checks its own cache.** A **recursive resolver** typically runs on your home router or at your ISP; it performs the walk for you and caches what it learns.
+4. **Resolver asks a Root server** for `www.netflix.com`. Resolvers ship with the root server IPs **hard-coded** (the list is maintained by the OS vendor — they are not "looked up").
+5. **Root returns the `.com` nameservers** (NS records). Root can't answer the query, but it **delegates `.com`** to VeriSign.
+6. **Resolver asks a `.com` TLD nameserver** for `www.netflix.com`.
+7. **`.com` returns the `netflix.com` nameservers** — the delegation VeriSign created when the domain was registered.
+8. **Resolver asks a `netflix.com` nameserver** for `www.netflix.com`.
+9. **`netflix.com` returns the record** — and it's **authoritative**, because these servers host the zone file *and* are the ones the `.com` zone points at.
+10. **Resolver caches the result** for its [TTL](#caching-and-ttl).
+11. **Resolver returns the result to the client.**
+
+The resolution proper completes at **step 9**, when the authoritative answer arrives; steps 10–11 are just the resolver caching that answer and handing it back. Steps 4–9 are the tree walk itself — three query/response pairs, one per tier (Root, `.com`, `netflix.com`).
+
+> [!tip] Exam framing
+> Everything in the walk exists for one reason — **to find the correct zone**. Trigger keywords map cleanly: "static mapping that overrides DNS" → **hosts file**; "queries on your behalf, runs on a router or ISP" → **resolver**; "hard-coded IPs maintained by the OS vendor" → **root servers**; "points `.com` at VeriSign / points a domain at its nameservers" → **NS records / delegation**; "process from root down to the domain" → **walking the tree**.
+
+#### What the tools show — every referral is an NS record
+
+At each tier the server you ask says, in effect, *"I'm not authoritative for this and can't answer it directly, but here are the nameservers that can"* — and returns the **NS records for the next tier down**. That is what makes "every query gives you the next step" literally true: a referral *is* a set of NS records.
+
+![Three stacked DNS tiers (Root zone, .com zone, netflix.com zone): each upper tier responds non-authoritatively with the NS records of the next tier down (root returns the .com gtld-servers, .com returns the netflix.com awsdns nameservers), and the final netflix.com tier returns an authoritative CNAME record pointing www.netflix.com at www.dradis.netflix.com](../assets/dns-walking-the-tree-tech.png)
+
+> [!warning] Gotcha
+> **The authoritative answer is not always an IP.** Here `www.netflix.com` resolves to a **CNAME** (`www.dradis.netflix.com`) — another DNS name — so the resolver must **walk the tree all over again** for *that* name. Real queries frequently chain through several names like this, and the stacked network latency is a common reason apps feel slow. See [CNAME — Host-to-Host Alias](#cname--host-to-host-alias).
+
+#### Hosts file: the pre-DNS override
+
+The hosts file (`/etc/hosts` on Linux/macOS, `C:\Windows\System32\drivers\etc\hosts` on Windows) is a static name-to-IP map that the OS consults **before** sending any DNS query, so an entry there **wins over DNS entirely**. This is the classic *"why isn't my DNS change taking effect?"* culprit — and, deliberately, a quick way to test a new server by pointing a name at it locally before changing the real record.
+
+### Inspecting DNS — `nslookup` and `dig`
+
+Two command-line tools let you watch the walk yourself. `nslookup` ships on Windows and most Unix systems; `dig` is the richer Unix tool.
+
+```bash
+# Full recursive answer (what your resolver gives you).
+# nslookup prefixes it with "Non-authoritative answer:" because it came from cache.
+nslookup www.netflix.com
+dig +short www.netflix.com
+
+# Ask a specific tier directly, following the delegation by hand:
+dig @a.root-servers.net com. NS        # root returns the .com nameservers (AUTHORITY section)
+dig @a.gtld-servers.net netflix.com. NS # .com returns the netflix.com nameservers
+
+# Ask the delegated nameserver itself — the answer is now authoritative
+# (no "Non-authoritative" tag in nslookup; dig sets the 'aa' flag in its header).
+dig @ns-81.awsdns-10.com www.netflix.com
+
+# Walk the entire tree automatically, printing each referral:
+dig +trace www.netflix.com
+```
+
+> [!tip] Reading the output
+> `nslookup` tags any answer served from a resolver cache with **`Non-authoritative answer:`**; querying the delegated nameserver directly drops that line. In `dig`, an authoritative answer sets the **`aa`** flag in the `flags:` header line, delegations appear in the **AUTHORITY** section, and `dig +trace` makes the whole walk visible at once.
 
 ## Caching and TTL
 
@@ -61,7 +126,7 @@ TTL is what creates the distinction between the two kinds of DNS answer:
 
 ![TTL caching: a client queries the resolver, which walks root, .com, then the amazon.com nameserver for an authoritative answer with TTL 3600; the resolver caches it, and the next client gets a fast non-authoritative answer from cache](../assets/dns-ttl.png)
 
-The first query for a record walks the full [resolution chain](#resolution-chain) and returns an **authoritative** answer. The resolver then caches it for the record's TTL (1 hour for `TTL 3600`), so the **next** client querying the same name gets a **non-authoritative** answer served instantly from cache. TTL is the balance: a **low** TTL means more queries against your nameservers but fast propagation when you change a record; a **high** TTL means fewer queries but stale values linger after a change.
+The first query for a record walks the full [resolution chain](#resolution-chain) and returns an **authoritative** answer. The resolver then caches it for the record's TTL (1 hour for `TTL 3600`), so the **next** client querying the same name gets a **non-authoritative** answer served instantly from cache. A resolver **always** labels its answers non-authoritative — even when the cached value is perfectly current — because only the delegated nameserver is the source of truth; in most cases nobody cares, but the exam expects you to know the distinction. TTL is the balance: a **low** TTL means more queries against your nameservers but fast propagation when you change a record; a **high** TTL means fewer queries but stale values linger after a change.
 
 > [!warning] Gotcha
 > TTL propagation is **not instantaneous**. If you lower TTL from 86400 s (1 day) to 60 s, you must wait the full 24 hours for all resolvers to re-query before the short TTL takes effect. This is why best practice is to **lower TTLs well in advance** of any migration — sometimes days ahead. The classic failure: migrating email to a new provider while the **MX TTL is high**, so resolvers keep using the old cached MX values and mail delivery breaks until the cache expires.
@@ -107,6 +172,8 @@ A **CNAME** maps one name to **another name** — the DNS equivalent of a shortc
 ![CNAME records: an A record `server` points at an IPv4 address; the CNAMEs ftp, mail, and www all point at `server`, so they resolve to the same address](../assets/dns-cname-records.png)
 
 The payoff is **reduced admin overhead**: one host often runs multiple roles (FTP, mail, web). If its IP changes you update **only the A record**, and every CNAME pointing at it follows automatically.
+
+The cost is an **extra round trip**: because a CNAME resolves to another *name*, the resolver must [walk the tree](#walking-the-tree-step-by-step) again for the target before it reaches an IP. Chains of CNAMEs stack network latency and are a common cause of sluggish-feeling apps.
 
 > [!warning] Gotcha
 > A **CNAME can only point at another name — never directly at an IP address.** This is a classic exam trick. Related trap: a **CNAME cannot be used at the zone apex** (`example.com` itself, also called the naked domain) — DNS standards forbid it; only subdomains (e.g. `www.example.com`) can have CNAMEs. [Route 53](../services/route53.md) solves the apex case with its proprietary **Alias record**.

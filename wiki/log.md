@@ -2,6 +2,29 @@
 
 <!-- markdownlint-disable MD051 -->
 
+## [2026-06-19] ingest | DNS 101 — How DNS Works (Walking the Tree)
+
+Ingested `dns_101_how_dns_works.md` into the existing [DNS](concepts/dns.md) concept page (the right home for generic DNS resolution mechanics) plus a focused recap on the [SAA cert page](certifications/aws-saa.md). Content verified accurate against DNS fundamentals — Cantrill-grade material, filed without correction. Copied two diagrams into `wiki/assets/` (`dns-walking-the-tree.png`, `dns-walking-the-tree-tech.png`) with multi-clause descriptive alt text.
+
+The note overlapped the existing **Resolution Chain** and **Authoritative vs Non-Authoritative** material, so the work was additive rather than a rewrite — synthesized the genuinely new depth and avoided duplicating what the record-types ingest already filed.
+
+On `concepts/dns.md`:
+
+- Added a **framing paragraph** atop Resolution Chain: DNS's one job is to **find the single authoritative zone**; "every query gives you the next step"; the end-to-end climb is **walking the tree**.
+- New **`### Walking the Tree, Step by Step`** subsection embedding `dns-walking-the-tree.png` and an **11-step walk numbered to match the diagram's badges** (1–3 cache/hosts-file checks, 4–9 the three query/response tier pairs Root→`.com`→`netflix.com`, 10–11 cache+return), noting the resolution proper completes at **step 9** when the authoritative answer arrives; with an exam-framing trigger-keyword tip.
+- Nested **`#### What the tools show`** (every referral *is* the next tier's NS records) embedding `dns-walking-the-tree-tech.png`, with the **CNAME-is-not-an-IP → walk-the-tree-again** latency gotcha.
+- Nested **`#### Hosts file: the pre-DNS override`** (paths per OS; wins over DNS; the "why isn't my DNS change working?" trap; the local-testing use).
+- New **`### Inspecting DNS — nslookup and dig`** subsection: a `bash` block (recursive answer, per-tier `dig @server NS`, querying the delegated NS directly, `dig +trace`) and a reading-the-output tip (nslookup's `Non-authoritative answer:` tag vs dig's `aa` flag and AUTHORITY section).
+- Enriched the existing **Authoritative vs Non-Authoritative** paragraph: resolvers **always** label answers non-authoritative even when current (only the delegated NS is source of truth).
+- Added a **CNAME re-walk** note to the existing CNAME section (extra round trip; chained CNAMEs stack latency), cross-linked both ways with the walking-the-tree gotcha.
+- Updated frontmatter tags (walking-the-tree, resolver, hosts-file, root-servers, nslookup, dig).
+
+On `aws-saa.md`: new **`### How DNS Resolves (Walking the Tree)`** subsection under "DNS and Route 53" (after the main bullets, before Registrar) — two framing bullets, a six-row trigger-phrase → answer table (hosts file / resolver / root servers / NS=delegation / authoritative / non-authoritative), and a gotcha (authoritative ≠ IP; CNAME forces another walk; hosts file overrides DNS). Added matching frontmatter tags.
+
+Updated [index.md](index.md) DNS entry (prepended a walking-the-tree clause). `concepts/dns.md` and `aws-saa.md` were already dated 2026-06-19. Raw note left in place (it's under `aws-cert-study-notes/`, not `random-thoughts/`).
+
+Followed the [arrow-notation memory](../../../.claude/projects/-Users-rogerlin-SelfProjects-aws-learning/memory/feedback_arrow_notation.md): plain English and numbered lists in prose; arrows kept only inside tables and callouts where idiomatic.
+
 ## [2026-06-18] ingest | DNS Record Types (NS, A/AAAA, CNAME, MX, TXT, TTL)
 
 Ingested `dns_record_types.md` into the existing [DNS](concepts/dns.md) concept page (the right home for generic DNS record-type concepts, per schema), then added a focused recap to the [SAA cert page](certifications/aws-saa.md). Content verified accurate against AWS/DNS fundamentals — Cantrill-grade course material, filed without correction. Copied six diagrams into `wiki/assets/` (`dns-ns-records.png`, `dns-a-aaaa-records.png`, `dns-cname-records.png`, `dns-mx-records.png`, `dns-txt-records.png`, `dns-ttl.png`) with descriptive alt text.
