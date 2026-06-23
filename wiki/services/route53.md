@@ -470,11 +470,60 @@ Two escape hatches override this default behavior:
 
 [DNSSEC](../concepts/dnssec.md) is the secure *add-on* to DNS that adds origin authentication and integrity via a cryptographically verifiable chain of trust. Route 53 implements it on two sides:
 
-- **DNSSEC signing** (authoritative) — Route 53 can sign a **public hosted zone**. You provide an asymmetric **[KMS](kms.md) customer managed key** (ECDSA P-256, in `us-east-1`) that Route 53 uses as the **KSK**; Route 53 generates and manages the **ZSK** internally and produces the RRSIGs. To complete the chain of trust you must add the matching **DS record to the parent zone** — at your registrar, or in the parent hosted zone if it is also in Route 53. Until that DS exists, the zone is signed but not part of any validated chain.
+- **DNSSEC signing** (authoritative) — Route 53 can sign a **public hosted zone**. You provide an asymmetric **[KMS](kms.md) customer managed key** (ECDSA P-256, in `us-east-1`) that backs the **KSK**; Route 53 generates and manages the **ZSK** internally and produces the RRSIGs. To complete the chain of trust you must add the matching **DS record to the parent zone** — at your registrar, or in the parent hosted zone if it is also in Route 53. Until that DS exists, the zone is signed but not part of any validated chain.
 - **DNSSEC validation** (resolver) — the [Route 53 Resolver](#route-53-resolver) can validate signatures for queries from a VPC, rejecting `Bogus` answers.
+
+> [!note] What "backs the KSK" means
+> The KMS key is **not** the KSK — it is the **private-key store and signing engine behind it**. The KSK is the DNSSEC-level role ("the key that signs the DNSKEY RRSET"), surfaced in the zone as the **public** KSK in the `DNSKEY` record (flag 257). The **private** half lives inside KMS and is **never exported to Route 53**. You can read the relationship straight off the key policy Route 53 needs on the KMS key (principal `dnssec-route53.amazonaws.com`): **`kms:GetPublicKey`** (fetch the public half to build the DNSKEY record), **`kms:Sign`** (every signing of the DNSKEY RRSET — initial signing and KSK rotation — is delegated *to* KMS, which performs the ECDSA operation internally and returns just the `RRSIG DNSKEY`), and **`kms:DescribeKey`**. This is exactly why it must be a non-exportable KMS key and why the region is pinned: the signing calls go to KMS in `us-east-1`. Contrast the **ZSK**, which uses **no KMS key** — Route 53 holds that private key internally and signs the zone's ordinary records itself.
+
+The signing process layers onto the normal resolution architecture without replacing it — the [walk down root, TLD, then the four Route 53 name servers](../concepts/dns.md#resolution-chain) is unchanged; DNSSEC only adds the signing records and the parent DS link on top.
+
+![Route 53 DNSSEC implementation overlaid on the resolution architecture: the left green zone shows the normal walk (laptop to ISP DNSSEC resolver to root to .ORG TLD to the four shield-marked Route 53 name servers); the center green panels show the created KSK/ZSK DNSKEY and RRSIG DNSKEY records with ZSK creation and rotation handled by Route 53 internally and a pink Add DS Record arrow to the .ORG TLD; the bottom KMS box holds an asymmetric KSK key pair that must live in us-east-1; the bottom-right CloudWatch box creates alarms for DNSSECInternalFailure and DNSSECKeySigningKeysNeedingAction; the top-right VPC box shows EC2 instances querying via the VPC +2 Resolver with optional DNSSEC validation enabled](../assets/R53-implementing-dnssec.png)
+
+### Enabling signing — the order of operations
+
+Enabling DNSSEC on a public hosted zone (console or CLI) runs through a fixed sequence. The order matters because each step depends on the one before it:
+
+1. **KMS creates an asymmetric key pair** — the process **starts with KMS**, not Route 53. The public/private pair backs the **KSK**. (Strictly, the KSK is *derived from* these keys rather than literally being them — a nuance the diagram reflects by showing both a "Public/Private KEY (KSK)" box and a separate DNSKEY entry.)
+2. **Route 53 creates the ZSK internally** — both creation **and** rotation of the ZSK happen entirely inside Route 53. **KMS is not involved in the ZSK** — it backs only the KSK side.
+3. **Route 53 publishes the DNSKEY record** — the public parts of both keys go into a `DNSKEY` record (**flag 257 = KSK**, **flag 256 = ZSK**), telling validating resolvers which public keys verify the zone's signatures.
+4. **The private KSK signs the DNSKEY record** — producing the `RRSIG DNSKEY`. At this point in-zone signing is configured.
+5. **Establish the chain of trust with the parent** — the parent zone (e.g. the `.org` TLD) must hold a **DS record**, a hash of this zone's public KSK. How it gets there depends on registration (see table below).
+6. **Configure CloudWatch alarms** — for `DNSSECInternalFailure` and `DNSSECKeySigningKeysNeedingAction`.
+7. **(Optional) Enable DNSSEC validation for VPCs** — on DNSSEC-enabled zones, a record that fails validation is **not returned** to the requester.
+
+> [!warning] The KMS key must be in `us-east-1`
+> The asymmetric KMS key backing the KSK is a **hard `us-east-1` (N. Virginia) requirement** and a common exam point — regardless of where the hosted zone's traffic lives.
+
+### Getting the DS record to the parent
+
+The DS record (a hash of the public KSK) lives in the **parent zone**, and how you add it depends on who registered the domain:
+
+| Registration | How the DS record is added |
+| --- | --- |
+| **Registered via Route 53** | Use the **Registered Domains** area of the console (or CLI). Route 53 liaises with the appropriate TLD registry and adds the DS record for you. |
+| **Domain registered elsewhere** (Route 53 only hosts the zone) | You add it **manually** at your external registrar — match the signing algorithm Route 53 reports (e.g. `ECDSAP256SHA256`) and paste in the public KSK. |
+
+### CloudWatch alarms to create
+
+Two alarms signal a DNSSEC problem with the zone, both needing **urgent** attention (e.g. an issue with the KSK itself or with Route 53's interaction with KMS):
+
+- **`DNSSECInternalFailure`**
+- **`DNSSECKeySigningKeysNeedingAction`**
+
+### Verifying with `dig`
+
+Each stage of the rollout is observable with `dig` (allow for caching — empty results immediately after a change are usually propagation, not failure):
+
+- **DNSKEY records** — after signing, `dig <zone> dnskey +dnssec` returns a **257 (KSK)**, a **256 (ZSK)**, and the `RRSIG DNSKEY` signing them. Before signing it returns nothing.
+- **DS at the parent** — list the parent's name servers (`dig org ns +short`), then query one directly: `dig <zone> DS @<one-of-the-.org-nameservers>`. Once propagated (minutes to a few hours), the answer section shows the DS record now living in the parent zone.
+- **A record signed** — `dig test.<zone> A +dnssec` returns the A record **plus an RRSIG** signed by the **private ZSK**, completing the chain from the root down to the individual record. (In the console UI, a signed hosted zone looks unchanged — signing is visible only via `dig +dnssec`.)
 
 > [!warning] Enable/disable ordering
 > Turning DNSSEC on or off follows a strict order so validating resolvers never hit a broken (`Bogus`) zone: when **enabling**, sign the zone *before* adding the parent DS record; when **disabling**, remove the parent DS record and wait out its TTL *before* unsigning. The wrong order makes validating resolvers return **SERVFAIL** for the entire zone.
+
+> [!warning] Production zones: respect the TTLs
+> On a live zone, the **step ordering and TTL-based waiting periods are critical** — you must account for existing TTLs before enabling signing and before each subsequent step, or you risk breaking resolution. A fresh, empty zone needs no such care, but real zones do. AWS publishes time-critical prerequisites; review them before signing a production domain.
 
 See the [DNSSEC concept page](../concepts/dnssec.md) for the full mechanics (RRSET / RRSIG / DNSKEY / ZSK / KSK / DS), the trust anchor and root signing ceremony, a worked `www.icann.org` chain, and `dig` troubleshooting.
 
@@ -499,3 +548,4 @@ See the [DNSSEC concept page](../concepts/dnssec.md) for the full mechanics (RRS
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/route53_multi_value_routing.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/route53_interoperability.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/route53_fundamentals.md`
+- Source: `raw/aws-cert-study-notes/aws-solution-architect/route53_implementing_dnssec.md`

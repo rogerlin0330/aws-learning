@@ -1523,6 +1523,15 @@ See [DNSSEC](../concepts/dnssec.md) for the full mechanics, worked example, and 
 - Four validation outcomes: **Secure** (chain verified, sets the **AD** flag) · **Insecure** (proven gap, e.g. unsigned zone with no DS) · **Bogus** (signatures fail → **SERVFAIL**) · **Indeterminate** (no trust anchor reachable)
 - **On AWS**: [Route 53](../services/route53.md) does **DNSSEC signing** for public hosted zones (you bring an asymmetric **[KMS](../services/kms.md)** key as the KSK in `us-east-1`; Route 53 manages the ZSK; you must add the **DS record to the parent** to complete the chain), and **Route 53 Resolver** can do **DNSSEC validation** per-VPC
 
+Route 53 signing **implementation** specifics (see [Implementing DNSSEC](../services/route53.md#dnssec)):
+
+- The enabling sequence **starts with KMS** (asymmetric key pair backing the KSK), then Route 53 makes the ZSK, publishes the DNSKEY, signs it with the private KSK (`RRSIG DNSKEY`), then you add the parent DS and the CloudWatch alarms
+- The KSK's KMS key **must be in `us-east-1`** — a hard requirement regardless of where the zone serves traffic
+- **ZSK creation *and rotation* are handled internally by Route 53 — KMS is not involved in the ZSK** (KMS backs only the KSK). This KSK↔KMS / ZSK↔R53-internal split is a frequent exam distinction
+- **DS record to the parent**: if the domain is **registered with Route 53**, add it from the **Registered Domains** console (R53 liaises with the TLD); if registered **elsewhere**, you add it **manually** at that registrar
+- Create CloudWatch alarms **`DNSSECInternalFailure`** and **`DNSSECKeySigningKeysNeedingAction`** — both flag an urgent KSK/KMS-level problem with the zone
+- Optional **per-VPC validation**: on a DNSSEC-enabled zone, a record that fails validation is **not returned** (non-DNSSEC zones are unaffected)
+
 | Trigger phrase | Answer |
 | --- | --- |
 | "validate DNS data / detect tampered DNS answers" | **DNSSEC** |
@@ -1532,6 +1541,9 @@ See [DNSSEC](../concepts/dnssec.md) for the full mechanics, worked example, and 
 | "parent holds a hash of the child's key" | **DS record** (hash of the child **KSK**) |
 | "root key, no parent, explicitly trusted" | **trust anchor** (root KSK) |
 | "sign a public hosted zone in AWS" | **Route 53 DNSSEC signing** + a **KMS** KSK + a parent **DS** record |
+| "where must the KMS key for the KSK live?" | **`us-east-1`** |
+| "who creates/rotates the ZSK in Route 53?" | **Route 53 internally** (KMS not involved) |
+| "alarms to set when enabling DNSSEC" | **`DNSSECInternalFailure`**, **`DNSSECKeySigningKeysNeedingAction`** |
 
 > [!warning] DNSSEC Gotchas
 >

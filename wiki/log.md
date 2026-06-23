@@ -2,6 +2,12 @@
 
 <!-- markdownlint-disable MD051 -->
 
+## [2026-06-23] ingest | Implementing DNSSEC with Route 53
+
+Ingested `route53_implementing_dnssec.md` — the **hands-on signing workflow**, complementing the vendor-neutral mechanics already on [DNSSEC](concepts/dnssec.md). Rather than a new page, expanded the existing `## DNSSEC` section on [Route 53](services/route53.md) (it's a Route-53-specific how-to) and added implementation facts to [aws-saa.md](certifications/aws-saa.md). Copied the overlay diagram `R53-implementing-dnssec.png` into `wiki/assets/` with reading-guide alt text.
+
+New facts not previously in the wiki: the **enabling sequence starts with KMS** (asymmetric pair backing the KSK) then Route 53 makes the ZSK, publishes DNSKEY (257/256), signs it (`RRSIG DNSKEY`), adds the parent DS, and creates alarms; the two **CloudWatch alarms** `DNSSECInternalFailure` + `DNSSECKeySigningKeysNeedingAction`; **DS-record routing by registration** (Registered Domains console for R53-registered domains, manual at an external registrar); and the **`dig`-per-stage verification** (DNSKEY 257/256 + RRSIG, parent DS via `@<.org-nameserver>`, A record + ZSK-signed RRSIG). Reinforced two facts already present but exam-critical: KMS key **hard-pinned to `us-east-1`**, and **ZSK creation/rotation is internal to Route 53 with KMS uninvolved**. Also folded the CloudWatch-alarm + DS-routing detail into the concept page's AWS section and added trigger rows to the SAA DNSSEC table. Light editorial: corrected the source's "KMS key *is* the KSK" to "*backs* the KSK" to match the diagram's own KSK-derived-from-KMS nuance. Updated `index.md`.
+
 ## [2026-06-23] ingest | DNSSEC — DNS Security Extensions
 
 Ingested `dnssec.md` as a **new concept page** [DNSSEC](concepts/dnssec.md) rather than a section on the already-large [DNS](concepts/dns.md) page — DNSSEC is a deep, self-contained security topic (in-zone integrity, cross-zone chain of trust, the trust anchor + root signing ceremony, a real worked chain, and `dig` troubleshooting). Copied nine diagrams into `wiki/assets/` (`dnssec-high-level-what-it-is.png`, `dnssec-RRSET.png`, `dnssec-RRSIG-and-zone-signing-key.png`, `dnssec-DNSKEY.png`, `dnssec-key-signing-key.png`, `dnssec-DS-record.png`, `dnssec-validation-flow.png`, `dnssec-the-trust-anchor.png`, `dnssec-root-signing-ceremony.png`) plus `dns-how-it-can-be-disrupted.png` for the cache-poisoning section, each embedded with multi-clause descriptive alt text that doubles as a reading guide.
