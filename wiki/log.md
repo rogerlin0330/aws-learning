@@ -2,6 +2,26 @@
 
 <!-- markdownlint-disable MD051 -->
 
+## [2026-06-23] ingest | DNSSEC — DNS Security Extensions
+
+Ingested `dnssec.md` as a **new concept page** [DNSSEC](concepts/dnssec.md) rather than a section on the already-large [DNS](concepts/dns.md) page — DNSSEC is a deep, self-contained security topic (in-zone integrity, cross-zone chain of trust, the trust anchor + root signing ceremony, a real worked chain, and `dig` troubleshooting). Copied nine diagrams into `wiki/assets/` (`dnssec-high-level-what-it-is.png`, `dnssec-RRSET.png`, `dnssec-RRSIG-and-zone-signing-key.png`, `dnssec-DNSKEY.png`, `dnssec-key-signing-key.png`, `dnssec-DS-record.png`, `dnssec-validation-flow.png`, `dnssec-the-trust-anchor.png`, `dnssec-root-signing-ceremony.png`) plus `dns-how-it-can-be-disrupted.png` for the cache-poisoning section, each embedded with multi-clause descriptive alt text that doubles as a reading guide.
+
+Content was verified accurate before filing — the technical claims all check out (DNSKEY flag 256 = ZSK / 257 = KSK; DS holds a hash of the child **KSK**; root KSK 20326 as the IANA out-of-band trust anchor; the four outcomes Secure/Insecure/Bogus/Indeterminate; NSEC3 proof-of-non-existence; quarterly ceremony alternating El Segundo / Culpeper; 14 Crypto Officers, ≥ 3 attending). Work was synthesis + adaptation to wiki conventions, not correction.
+
+On `concepts/dnssec.md`: full treatment — intro (add-on not replacement, two guarantees, validate-not-correct), **Why DNSSEC / cache poisoning**, **additive & backward compatible** + `dig +dnssec`, **mechanics within a zone** (RRSET / RRSIG+ZSK / DNSKEY / KSK-why-two-keys), **chain of trust between zones** (DS record / root→record validation flow), the **worked `www.icann.org` chain** with real key tags ending in a signed NSEC3 "no A record" proof (kept the author's Mermaid phase diagram), the **verify-the-RRSIG two-hash deep dive** (kept the second Mermaid diagram), **trust anchor + root signing ceremony**, **troubleshooting "no RRSIG"** (three causes + four-outcomes table + `dig` commands), an **exam quick-reference** table, and a **traps/gotchas** callout.
+
+Synthesis additions beyond the raw (vendor-neutral) note:
+
+1. **DNSSEC in AWS — Route 53.** The source is generic Cantrill material with no AWS specifics. Added a section (and a parallel one on the Route 53 page) covering Route 53 **DNSSEC signing** for public hosted zones (asymmetric **KMS** key as the KSK in `us-east-1`, Route 53-managed ZSK, the mandatory parent **DS** record) and **Route 53 Resolver DNSSEC validation** per-VPC, plus the strict enable/disable ordering gotcha (sign-before-DS / remove-DS-before-unsign or the zone goes SERVFAIL). This is the AWS hook the wiki exists for.
+2. **RSA vs ECDSA caveat** on the verify-the-RRSIG deep dive — the two-hash "recover and compare" picture is the RSA model; ECDSA (used by `icann.org` in the worked example) verifies via an elliptic-curve equation with no hash to recover. Added so the deep dive isn't read as universal.
+3. **NSEC3 + AD-flag** added to the exam quick-reference table (the source covered both in prose but not in its summary table).
+
+Converted the note's emoji callouts to wiki `> [!tip]` / `> [!warning]` blocks, added frontmatter + cross-links, and de-arrowed prose per the [arrow-notation memory](../../../.claude/projects/-Users-rogerlin-SelfProjects-aws-learning/memory/feedback_arrow_notation.md) (arrows kept only inside tables, callouts, and the two Mermaid code blocks where idiomatic).
+
+Cross-references: [DNS](concepts/dns.md) gained a **Securing DNS — DNSSEC** pointer section (cache-poisoning link, RRSET/RRSIG framing) + a References link + new tags; [Route 53](services/route53.md) gained a **DNSSEC** section (signing + validation + ordering gotcha), a Resolver-section pointer, References link, tags, and date bump; the [DNS Resolver](services/route53.md#route-53-resolver) section now notes per-VPC validation. Added a `### DNSSEC` subsection to [aws-saa.md](certifications/aws-saa.md) under DNS and Route 53 (bullets + trigger-phrase table + gotchas covering validate-not-correct, RRSET-not-records, DS=hash-of-KSK, Bogus≠Insecure, and the Route 53 enable/disable ordering), plus the deep-dive link bar and frontmatter tags.
+
+Updated [index.md](index.md) (new DNSSEC entry under Concepts + a DNSSEC clause on the Route 53 entry), [overview.md](overview.md) (DNSSEC in the Concepts list + tags + date). Raw note left in place (under `aws-cert-study-notes/`, not `random-thoughts/`).
+
 ## [2026-06-19] ingest | DNS 101 — How DNS Works (Walking the Tree)
 
 Ingested `dns_101_how_dns_works.md` into the existing [DNS](concepts/dns.md) concept page (the right home for generic DNS resolution mechanics) plus a focused recap on the [SAA cert page](certifications/aws-saa.md). Content verified accurate against DNS fundamentals — Cantrill-grade material, filed without correction. Copied two diagrams into `wiki/assets/` (`dns-walking-the-tree.png`, `dns-walking-the-tree-tech.png`) with multi-clause descriptive alt text.

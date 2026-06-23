@@ -1,8 +1,8 @@
 ---
 title: AWS Learning — Overview
 type: overview
-tags: [aws, architecture, iam, vpc, organizations, control-tower, cost, s3, ec2, ecs, eks, kubernetes, containers, cloudwatch, cloudtrail, cloudformation, bootstrapping]
-updated: 2026-06-12
+tags: [aws, architecture, iam, vpc, organizations, control-tower, cost, s3, ec2, ecs, eks, kubernetes, containers, cloudwatch, cloudtrail, cloudformation, bootstrapping, dns, dnssec]
+updated: 2026-06-23
 ---
 
 # AWS Learning Overview
@@ -98,6 +98,7 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 - [Resource Policies vs Identity Policies](concepts/resource-vs-identity-policies.md) — the two policy families; cross-account & anonymous access
 - [Resource Scope](concepts/resource-scope.md) — global / regional / AZ / edge tiers; blast radius and movement cost
 - [DNS](concepts/dns.md) — resolution, record types, TTL
+- [DNSSEC](concepts/dnssec.md) — securing DNS; origin auth + integrity, chain of trust root→record (RRSIG/DNSKEY/ZSK/KSK/DS), trust anchor + root signing ceremony, Route 53 signing + validation
 - [TLS/HTTPS](concepts/tls-https.md) — certificate trust, TLS handshake, ACM
 - [Containers](concepts/containers.md) — container vs VM mental model, Docker image layers, runtime R/W layer, registries, ECS as orchestration
 - [Kubernetes](concepts/kubernetes.md) — cloud-agnostic orchestration; control plane vs nodes, pods/services/ingress, ephemeral vs Persistent Volume storage, mapped to AWS via EKS

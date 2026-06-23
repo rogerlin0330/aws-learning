@@ -1,9 +1,9 @@
 ---
 title: Route 53
 type: service
-tags: [dns, route53, networking, health-checks, routing-policy, weighted-routing, latency-routing, geolocation-routing, geoproximity-routing, multi-value-routing, failover-routing, registrar, dns-hosting, interoperability]
+tags: [dns, route53, networking, health-checks, routing-policy, weighted-routing, latency-routing, geolocation-routing, geoproximity-routing, multi-value-routing, failover-routing, registrar, dns-hosting, interoperability, dnssec, dnssec-signing, dnssec-validation]
 certs: [aws-saa]
-updated: 2026-06-19
+updated: 2026-06-23
 ---
 
 # Route 53
@@ -443,6 +443,8 @@ Every VPC has a built-in DNS resolver reachable at **VPC base IP + 2** (e.g. `10
 
 For hybrid environments, **Resolver Endpoints** (inbound/outbound) allow on-premises networks to resolve Route 53 private zones, and VPCs to resolve on-premises DNS.
 
+The Resolver can also be configured for **[DNSSEC](../concepts/dnssec.md) validation** per-VPC, so it rejects answers whose signatures fail to verify (the `Bogus` outcome). This is the resolver-side complement to Route 53's signing of public hosted zones — see [DNSSEC](#dnssec).
+
 ### How association and namespace resolution work
 
 Associating a VPC with a [private hosted zone](#private-hosted-zone) does **not** copy the zone's records into the VPC. The records never leave Route 53. The `.2` resolver address is not a server living in your subnet — it is a per-VPC doorway into the regional Route 53 Resolver service, and because the doorway is per-VPC, **every query arrives stamped with its origin VPC ID**. Association is just a control-plane authorization entry — a mapping that says *"this VPC may resolve against this private zone."* Resolution is then a live lookup at query time, not a preload.
@@ -464,7 +466,21 @@ Two escape hatches override this default behavior:
 > [!tip] Exam Tip
 > "I created a private zone for my apex domain and now public names under it (like `customer.example.com`) stopped resolving from the VPC" is a classic symptom. The cause is namespace replacement; the fix is to recreate the still-needed public records inside the private zone.
 
+## DNSSEC
+
+[DNSSEC](../concepts/dnssec.md) is the secure *add-on* to DNS that adds origin authentication and integrity via a cryptographically verifiable chain of trust. Route 53 implements it on two sides:
+
+- **DNSSEC signing** (authoritative) — Route 53 can sign a **public hosted zone**. You provide an asymmetric **[KMS](kms.md) customer managed key** (ECDSA P-256, in `us-east-1`) that Route 53 uses as the **KSK**; Route 53 generates and manages the **ZSK** internally and produces the RRSIGs. To complete the chain of trust you must add the matching **DS record to the parent zone** — at your registrar, or in the parent hosted zone if it is also in Route 53. Until that DS exists, the zone is signed but not part of any validated chain.
+- **DNSSEC validation** (resolver) — the [Route 53 Resolver](#route-53-resolver) can validate signatures for queries from a VPC, rejecting `Bogus` answers.
+
+> [!warning] Enable/disable ordering
+> Turning DNSSEC on or off follows a strict order so validating resolvers never hit a broken (`Bogus`) zone: when **enabling**, sign the zone *before* adding the parent DS record; when **disabling**, remove the parent DS record and wait out its TTL *before* unsigning. The wrong order makes validating resolvers return **SERVFAIL** for the entire zone.
+
+See the [DNSSEC concept page](../concepts/dnssec.md) for the full mechanics (RRSET / RRSIG / DNSKEY / ZSK / KSK / DS), the trust anchor and root signing ceremony, a worked `www.icann.org` chain, and `dig` troubleshooting.
+
 ## References
+
+- [DNSSEC](../concepts/dnssec.md) — securing DNS; Route 53 signing + Resolver validation
 
 - [DNS Concepts](../concepts/dns.md)
 - [VPC](vpc.md)

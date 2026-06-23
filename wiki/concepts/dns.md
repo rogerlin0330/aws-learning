@@ -1,8 +1,8 @@
 ---
 title: DNS — Domain Name System
 type: concept
-tags: [dns, networking, split-horizon-dns, split-view-dns, ttl, cname, alias, ns, mx, txt, a-record, aaaa-record, delegation, authoritative, walking-the-tree, resolver, hosts-file, root-servers, nslookup, dig]
-updated: 2026-06-19
+tags: [dns, networking, split-horizon-dns, split-view-dns, ttl, cname, alias, ns, mx, txt, a-record, aaaa-record, delegation, authoritative, walking-the-tree, resolver, hosts-file, root-servers, nslookup, dig, dnssec, cache-poisoning]
+updated: 2026-06-23
 ---
 
 # DNS — Domain Name System
@@ -243,8 +243,13 @@ This avoids two common problems:
 
 The **authoritative DNS server** (nameserver) is the source of truth for a domain's records. All updates happen here. Domains typically have multiple nameservers so that resolution continues if one is unreachable.
 
+## Securing DNS — DNSSEC
+
+Plain DNS has no way to validate the **origin** or **integrity** of an answer, which is what makes [cache poisoning](dnssec.md#why-dnssec-is-needed--cache-poisoning) possible — an attacker races a forged response into a resolver's cache during the [tree walk](#walking-the-tree-step-by-step), and every later client is served the poisoned record until its TTL expires. **[DNSSEC (DNS Security Extensions)](dnssec.md)** is the *add-on* that closes this gap: it layers digital signatures (RRSIG) over [RRSETs](dnssec.md#rrset--resource-record-set) and builds a cryptographically verifiable **chain of trust** from the root down to each record, so a validating resolver can detect and reject forged or altered data. It is additive and backward compatible — DNS-only clients never see the extra records. See the full treatment on the [DNSSEC](dnssec.md) page.
+
 ## References
 
+- [DNSSEC](dnssec.md) — securing DNS with origin authentication + integrity (chain of trust to root)
 - [Route 53](../services/route53.md) — AWS authoritative DNS service
 - [Networking Concepts](networking.md)
 - [TLS/HTTPS](tls-https.md)
