@@ -2,6 +2,16 @@
 
 <!-- markdownlint-disable MD051 -->
 
+## [2026-06-25] ingest | RDS Architecture + ACID vs BASE Transaction Models
+
+Ingested two SAA-C03 source notes — `rds_architecture.md` and `db_transaction_models_acid_vs_base.md` — neither topic had any prior coverage, so both became **new pages**: [RDS](services/rds.md) (service) and [Database Transaction Models](concepts/db-transaction-model.md) (concept). Content verified accurate before filing (RDS billed per second, synchronous standby vs asynchronous read replicas, dedicated-EBS-per-instance vs Aurora's shared-cluster storage, free backup storage equal to DB size; CAP "pick two of three", ACID→consistency/BASE→availability, DynamoDB BASE-by-default + Transactions for ACID) — synthesis, not correction.
+
+On `services/rds.md`: **Part 1 — Databases on EC2** (always architecturally worse + single-AZ-by-nature framing, the single-vs-split architectures, the valid "DB on EC2 is the right answer" cases — unsupported engine/version, specific OS+DB combo, AWS-unsupported replication, genuine OS/root access often softened by RDS Custom — and the negatives), and **Part 2 — RDS proper** ("database server as a service" not DBaaS, no SSH/OS access, the five engines, Aurora-is-separate warning, the architecture diagram with reading-guide alt text, DB subnet groups, the storage/replication/backups table, the cost model, and an exam quick-reference + gotchas). Copied `rds-architecture.png` into `wiki/assets/`.
+
+On `concepts/db-transaction-model.md`: the CAP theorem foundation (pick-two, the consistency-vs-availability collapse under partition), ACID (per-letter table + bank-transfer/valid-state explanations + why it caps scalability), BASE (per-letter table + soft-state/eventual-consistency detail), the DynamoDB straddle (eventual + strongly consistent reads, DynamoDB Transactions), an exam quick-reference, and a traps callout (notably **ACID's C ≠ CAP's C**).
+
+Cross-references: [EC2](services/ec2.md) gained a "databases are the exception" warning in **When to Use EC2** linking to the RDS DB-on-EC2 section; the RDS and db-transaction-model pages link to each other and out to [EC2](services/ec2.md)/[EBS](services/ebs.md)/[VPC](services/vpc.md)/[Resource Scope](concepts/resource-scope.md). Added a `## RDS` section (databases-on-EC2 + core facts + Multi-AZ-vs-read-replica table) and a `## Database Transaction Models` section to [aws-saa.md](certifications/aws-saa.md), plus link-bar entries and frontmatter tags. Updated [index.md](index.md) and [overview.md](overview.md) (new entries under Services + Concepts, tags, date bump). Raw notes left in place under `aws-cert-study-notes/`.
+
 ## [2026-06-23] ingest | Implementing DNSSEC with Route 53
 
 Ingested `route53_implementing_dnssec.md` — the **hands-on signing workflow**, complementing the vendor-neutral mechanics already on [DNSSEC](concepts/dnssec.md). Rather than a new page, expanded the existing `## DNSSEC` section on [Route 53](services/route53.md) (it's a Route-53-specific how-to) and added implementation facts to [aws-saa.md](certifications/aws-saa.md). Copied the overlay diagram `R53-implementing-dnssec.png` into `wiki/assets/` with reading-guide alt text.

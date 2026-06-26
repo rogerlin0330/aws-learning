@@ -757,6 +757,9 @@ Move *away from* EC2 when a niche requirement clearly favours another service:
 > [!tip] Exam framing
 > When a question lists a generic "VM / OS / runtime / per-socket license / long-running server" requirement, the answer is almost always **EC2**. The question shifts to a managed compute service only when it explicitly names an event-driven, container, or no-OS-management constraint. Justify deviations; don't volunteer them.
 
+> [!warning] Databases are the exception, not the rule
+> Running a **database** on EC2 is architecturally worse than using [RDS](rds.md) — chiefly because an EC2-hosted DB is **single-AZ** (instance + EBS volume in one AZ). It's the right answer only for narrow cases: an engine/version AWS doesn't offer, a specific OS+DB combo, an AWS-unsupported replication architecture, or a genuine OS/root-access need. See [RDS — Databases on EC2](rds.md#databases-on-ec2--why-you-usually-shouldnt).
+
 ## Instance Types
 
 Every EC2 instance has an **instance type** — a code like `R5dn.8xlarge` — that determines its vCPU count, memory, local storage presence, network bandwidth, and any specialised hardware (GPUs, FPGAs). Picking the right type is the difference between a well-tuned workload and a performance problem.
