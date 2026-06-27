@@ -1,9 +1,9 @@
 ---
 title: RDS — Relational Database Service
 type: service
-tags: [rds, database, relational, ec2, ebs, vpc, subnet-group, multi-az, multi-az-instance, multi-az-cluster, read-replica, synchronous-replication, semi-synchronous-replication, asynchronous-replication, quorum, failover, reader-endpoint, cluster-endpoint, graviton, nvme, aurora, dr, high-availability, acid, cost]
+tags: [rds, database, relational, ec2, ebs, vpc, subnet-group, multi-az, multi-az-instance, multi-az-cluster, read-replica, synchronous-replication, semi-synchronous-replication, asynchronous-replication, quorum, failover, reader-endpoint, cluster-endpoint, graviton, nvme, aurora, dr, high-availability, acid, cost, backup, snapshot, automated-backup, manual-snapshot, transaction-logs, pitr, point-in-time-recovery, retention, restore, rpo, rto, s3, cross-region-backup]
 certs: [aws-saa]
-updated: 2026-06-26
+updated: 2026-06-27
 ---
 
 # RDS — Relational Database Service
@@ -120,7 +120,7 @@ One **primary** instance holds your databases and, when Multi-AZ is enabled, rep
 - Replication is at the **storage level** — less efficient than cluster mode. The exact mechanism is engine-specific but abstracted away (Amazon failover technology for MariaDB/MySQL/Oracle/PostgreSQL; database mirroring or Always-On availability groups for SQL Server).
 - **Backups and snapshots are taken from the standby**, so there is **no I/O load on the primary** during backup.
 
-**Synchronous replication** means data is written to the primary and immediately replicated to the standby **before the write is viewed as committed**. This gives an effective **RPO of zero** on failover — no committed data is lost.
+**Synchronous replication** means data is written to the primary and immediately replicated to the standby **before the write is viewed as committed**. This gives an effective **Recovery Point Objective (RPO) of zero** on failover — no committed data is lost.
 
 ![RDS Multi-AZ instance failover: the same architecture after failover. The Database CNAME has been repointed across to AZB — the former standby, now promoted to primary — so client traffic now terminates there. The old AZA instance is out of the serving path. Replication and S3 backups are otherwise unchanged.](../assets/rds-multi-AZ-instance-failover.png)
 
@@ -193,7 +193,59 @@ A write is viewed as **committed once at least one reader confirms it has writte
 
 ### Single-AZ (baseline)
 
-For contrast: a **Single-AZ** instance is one managed instance on EBS with **no standby** — so **no automatic failover** during an AZ outage, an **RPO of roughly 5 minutes** (driven by the transaction-log copy interval to S3), and an RTO of minutes to hours. You can still attach read replicas and promote one manually after a failure. Fine for dev/test; **not** appropriate for production HA.
+For contrast: a **Single-AZ** instance is one managed instance on EBS with **no standby** — so **no automatic failover** during an AZ outage, an **RPO of roughly 5 minutes** (driven by the transaction-log copy interval to S3), and a Recovery Time Objective (RTO) of minutes to hours. You can still attach read replicas and promote one manually after a failure. Fine for dev/test; **not** appropriate for production HA.
+
+## Backups, Snapshots & Restore
+
+RDS has **two backup-like mechanisms**: **manual snapshots** (you trigger) and **automated backups** (RDS triggers daily). Both land in **AWS-managed [S3](s3.md) buckets** — visible in the RDS console but **never in your own S3 console** (a classic exam trap). Because the data sits in S3, all backups are **regionally resilient**: S3 replicates them across AZs within the region, so they survive an AZ failure.
+
+![RDS backups in us-east-1: a SingleAZ/Standby RDS instance in AZ-B produces backup data. Three arrows leave it — a blue arrow (manual snapshots) and an orange arrow (the daily automated backup) both write full-first-then-incremental snapshots to AWS-managed S3 buckets, and a third orange arrow streams transaction logs every 5 minutes to S3 for automated backups only. Footer notes automated-backup retention of 0 to 35 days; manual snapshots never expire.](../assets/rds-backups-snapshots-restore.png)
+
+The diagram's three arrows separate the **three data streams** — manual snapshot, automated daily snapshot, and the 5-minute transaction-log stream — but the **full-first-then-incremental** rule is shared by **both** snapshot types (AWS treats an automated backup as an automated snapshot). The transaction-log stream and the 0–35 day retention are **automated-backup-only**.
+
+**Backup performance impact:** on **Single-AZ** the backup is read from the only instance, so you may see an I/O pause; on **Multi-AZ instance** mode the backup is read from the **standby**, so the primary takes no hit (see [Multi-AZ Instance Deployment](#multi-az-instance-deployment)).
+
+### Manual Snapshots
+
+- **Not automatic** — you trigger them explicitly (or via a script). Taken at the **instance level**, so a snapshot captures **all databases** on the instance, not a single database.
+- Stored in AWS-managed S3; behave like [EBS](ebs.md) snapshots. **First snapshot is full** (sized to consumed data); **subsequent are incremental** (changed blocks only). High-change-rate databases can make even incremental snapshots slow.
+- A brief **I/O interruption** occurs (felt on Single-AZ, absorbed by the standby on Multi-AZ).
+- 🎯 **Snapshots never expire.** They **survive deletion of the RDS instance** and are removed only when **you** delete them manually. Heavily tested.
+- **Frequency is your choice** (hourly, daily, weekly). More frequent snapshots mean a **lower RPO** (less maximum data loss). Default quota is **100 manual snapshots per Region**.
+
+### Automated Backups
+
+- Run **once per day** during a defined **backup window** (AWS-chosen at random, or set to fit your business). On Single-AZ schedule it for low-use periods; on Multi-AZ it is a non-issue (runs off the standby).
+- Architecturally an **automated snapshot** — same full-first-then-incremental mechanic as a manual snapshot — **plus transaction logs written to S3 every 5 minutes**. Transaction logs record the actual operations that change data.
+- The daily snapshot plus 5-minute logs together enable **point-in-time recovery (PITR)** with **~5-minute granularity**, giving a theoretical **5-minute RPO**. 🎯
+- **Retention is 0 to 35 days** (per instance). **0 disables automated backups** (and PITR); **35 is the maximum**. Anything older than the retention period is auto-removed.
+
+> [!warning] Gotcha — PITR needs automated backups
+> Only automated backups can do point-in-time recovery, because only they capture the 5-minute transaction-log stream. A **manual snapshot alone** restores to its **single fixed moment** — no PITR.
+
+### Retention on Deletion
+
+- When you delete the database you **can choose to retain automated backups** — but they **still expire** on the retention clock. Retaining them does **not** make them permanent.
+- The **only** way to preserve an instance's contents **beyond the 35-day max** is to take a **final manual snapshot** at deletion. That snapshot is fully yours and must be **manually deleted**.
+
+### Cross-Region Backup Replication
+
+- RDS can **replicate backups to another Region** — both the **snapshots and the transaction logs**.
+- ⚠️ **Not the default** — it must be **explicitly enabled** within automated backups, and **charges apply** for the cross-region copy and for storage in the destination Region.
+
+### Restores
+
+🎯 **A restore always creates a brand-new RDS instance** — true for both snapshot restores and automated-backup PITR. The new instance gets a **new endpoint address**, so you **must re-point applications** at it. A restore never overwrites the existing database.
+
+| Restore source | Recovery point | RPO quality |
+| --- | --- | --- |
+| **Manual snapshot** | Fixed to the **single moment** the snapshot was taken | Often suboptimal unless taken right before failure |
+| **Automated backup (PITR)** | **Any chosen point in time** (~5-min granularity) | Much better — pick minutes before failure |
+
+**How PITR works:** RDS restores the **closest snapshot**, then **replays transaction logs** forward to your chosen time.
+
+> [!warning] Gotcha — restore time is your RTO
+> Restores are **not fast** — restoring a large database takes significant time, and that time **is your RTO**. Backups improve **RPO** (how much data you lose); they do little for RTO. To improve RTO, use a [read replica](#storage-replication--backups) you can promote — backups improve RPO, replicas improve RTO.
 
 ## Cost Model
 
@@ -222,7 +274,13 @@ RDS is **resource-allocation billed** (like [EC2](ec2.md)), *not* usage-billed �
 | Multi-AZ endpoints (cluster) | **Cluster** (writer), **Reader** (read scaling), **Instance** (testing only — no failover) |
 | Read replicas | **Asynchronous**, same- or **cross-region**, read scaling + DR |
 | Storage | Dedicated **EBS per instance** (unlike Aurora) |
-| Backups | Go to **S3** (AWS-managed); Multi-AZ backups run from **standby** |
+| Backups | Go to **S3** (AWS-managed, **invisible in your S3 console**); regionally resilient; Multi-AZ backups run from **standby** |
+| Manual snapshot | Instance-level (all DBs); **never expires**, survives instance deletion, manual delete only; 100/Region |
+| Automated backup | Daily snapshot **+ transaction logs every 5 min**; retention **0–35 days** (0 = disabled) |
+| PITR | Needs **automated backups** (the 5-min logs); ~**5-min RPO**; manual snapshot alone restores only to its fixed moment |
+| Keep data past 35 days on deletion | Take a **final manual snapshot** (retained automated backups still expire) |
+| Cross-region backup replication | **Opt-in**, not default; copies snapshots **and** logs; extra cost |
+| Restore | Always a **new instance + new endpoint** — re-point apps; restore time is your **RTO** |
 | Subnet group | List of subnets RDS may use; required at launch; Multi-AZ → primary + standby in different AZs (random unless specified) |
 | Billing | Resource-allocation (like EC2), hourly rate **billed per second**, not usage-based |
 
@@ -233,9 +291,13 @@ RDS is **resource-allocation billed** (like [EC2](ec2.md)), *not* usage-billed �
 > - **Same-AZ private-IP traffic is free; cross-AZ traffic is charged** — relevant to both EC2-DB and RDS Multi-AZ designs.
 > - **EC2-hosted DB = single AZ** — instance plus EBS volume; an AZ failure can take DB access down.
 > - **Don't confuse RDS storage with Aurora storage** — RDS = dedicated EBS per instance; Aurora differs.
+> - **RDS backup buckets are invisible in your S3 console** — AWS-managed; find them only in the RDS console.
+> - **"Retain automated backups on delete" still expires** — only a **final manual snapshot** is permanent.
+> - **PITR is automated-backups-only** — a manual snapshot restores to its single fixed moment, not an arbitrary time.
+> - **A restore is always a new instance + new endpoint** — it never overwrites the source; re-point apps.
 
 ## References
 
-- Cantrill SAA-C03 study notes — *RDS Architecture (and Databases on EC2)*, *RDS Multi-AZ (Instance and Cluster)*
+- Cantrill SAA-C03 study notes — *RDS Architecture (and Databases on EC2)*, *RDS Multi-AZ (Instance and Cluster)*, *RDS Backups, Snapshots & Restore*
 - [AWS — Choose the right Amazon RDS deployment option: Single-AZ, Multi-AZ instance, or Multi-AZ DB cluster](https://aws.amazon.com/blogs/database/choose-the-right-amazon-rds-deployment-option-single-az-instance-multi-az-instance-or-multi-az-database-cluster/) (semi-synchronous quorum replication, engine restriction, failover-timing ranges, backup mechanics, Single-AZ baseline)
 - Related: [EC2](ec2.md) · [EBS](ebs.md) · [VPC](vpc.md) · [Database Transaction Models (ACID/BASE/CAP)](../concepts/db-transaction-model.md) · [Resource Scope](../concepts/resource-scope.md)
