@@ -1,9 +1,9 @@
 ---
 title: RDS — Relational Database Service
 type: service
-tags: [rds, database, relational, ec2, ebs, vpc, subnet-group, multi-az, read-replica, synchronous-replication, asynchronous-replication, aurora, dr, high-availability, acid, cost]
+tags: [rds, database, relational, ec2, ebs, vpc, subnet-group, multi-az, multi-az-instance, multi-az-cluster, read-replica, synchronous-replication, semi-synchronous-replication, asynchronous-replication, quorum, failover, reader-endpoint, cluster-endpoint, graviton, nvme, aurora, dr, high-availability, acid, cost]
 certs: [aws-saa]
-updated: 2026-06-25
+updated: 2026-06-26
 ---
 
 # RDS — Relational Database Service
@@ -100,6 +100,101 @@ A **DB subnet group** is a named *list of subnets* RDS is allowed to place insta
 > [!tip] Exam Tip
 > Two replication words to keep straight: **standby = synchronous** (HA, identical copy, automatic failover target — *not* readable by your app), **read replica = asynchronous** (read scaling and/or DR, can be cross-region, *is* readable). Mixing these up is a classic trap.
 
+## Multi-AZ Deployments
+
+Multi-AZ is how RDS delivers **high availability**. Historically there was a single "Multi-AZ" option; RDS now offers **two distinct architectures** that differ in topology, replication, failover speed, and — crucially — whether the standby can serve reads:
+
+1. **Multi-AZ instance deployment** — the original. One primary plus **one standby** that **cannot** serve reads or writes; the standby exists only to be failed over to.
+2. **Multi-AZ cluster deployment** — one writer plus **two readable standbys**, with faster failover and read scaling.
+
+> [!warning] Gotcha — Multi-AZ is in-region HA, not DR
+> Both modes span **only availability zones within a single region**. Multi-AZ is **not** a cross-region or disaster-recovery mechanism — for that you need a cross-region [read replica](#storage-replication--backups) (or other DR tooling). "Multi-AZ for DR / cross-region" is a classic distractor.
+
+### Multi-AZ Instance Deployment
+
+![RDS Multi-AZ instance mode: a single client connects through a Database CNAME that resolves to the Primary instance in AZA. The Primary replicates synchronously (green arrow) to a Standby in AZB; AZC is empty. Backups flow from the standby into S3, replicated across AZs in-region. The standby serves no traffic.](../assets/rds-multi-AZ-instance-mode.png)
+
+One **primary** instance holds your databases and, when Multi-AZ is enabled, replicates **synchronously** to a **standby replica** in another AZ. Key mechanics:
+
+- All access (reads **and** writes) goes to the primary via the **database CNAME** — a DNS name that by default resolves to the primary, so clients are never hard-wired to an instance. The standby serves **no traffic, not even reads**; its only job is to wait for a failover.
+- Replication is at the **storage level** — less efficient than cluster mode. The exact mechanism is engine-specific but abstracted away (Amazon failover technology for MariaDB/MySQL/Oracle/PostgreSQL; database mirroring or Always-On availability groups for SQL Server).
+- **Backups and snapshots are taken from the standby**, so there is **no I/O load on the primary** during backup.
+
+**Synchronous replication** means data is written to the primary and immediately replicated to the standby **before the write is viewed as committed**. This gives an effective **RPO of zero** on failover — no committed data is lost.
+
+![RDS Multi-AZ instance failover: the same architecture after failover. The Database CNAME has been repointed across to AZB — the former standby, now promoted to primary — so client traffic now terminates there. The old AZA instance is out of the serving path. Replication and S3 backups are otherwise unchanged.](../assets/rds-multi-AZ-instance-failover.png)
+
+On failure RDS **fails over automatically** (and you can trigger failover manually for testing or maintenance). The standby is promoted to primary and the **CNAME is repointed** to it. Because failover is fundamentally a **DNS change** — the data was already there synchronously — it typically takes **60–120 seconds**, gated by DNS propagation and client-side caching rather than by any data movement.
+
+> [!tip] Exam Tip
+> Failover in instance mode is **a DNS repoint, not a data-recovery operation**. The 60–120 s cost is DNS propagation plus client caching. Reduce the outage window by **disabling DNS caching** for that name in the application so it picks up the new target as soon as failover completes.
+
+Failover triggers include: AZ outage, loss of network connectivity to the primary, primary compute or storage failure, manual failover, instance-type change, and software patching (RDS fails over, patches the now-idle old primary, then can fail back).
+
+Instance-mode quick facts: synchronous replication, **exactly one** standby, standby **cannot** serve reads/writes, **not** in the free tier (extra cost of the standby), failover **60–120 s**, same-region/different-AZ only.
+
+### Multi-AZ Cluster Deployment
+
+![RDS Multi-AZ cluster mode: multiple clients send writes to a single Writer instance in AZA (blue arrow) and reads to either the Writer or one of two Readers in AZB and AZC (pink arrows). The Writer replicates to both readers (green arrows). Three endpoint types are called out: Cluster, Reader, and Instance.](../assets/rds-multi-AZ-cluster-mode.png)
+
+Cluster mode runs **one writer plus two readers**, each in a different AZ.
+
+- **Exactly two readers** — no more, no fewer. (Aurora allows more; this cap is a key exam distinction.)
+- The **writer** handles writes **and** reads; the **readers are usable** for **read operations only** (unlike the instance-mode standby). Using readers requires **application support** — the app must send writes to the writer and reads to the readers.
+- This is what lets cluster mode **scale read workloads**; instance mode cannot.
+- Each instance still has its **own local storage** — contrast with Aurora's shared cluster storage layer.
+
+A write is viewed as **committed once at least one reader confirms it has written the data**, at which point it is resilient across multiple AZs.
+
+> [!warning] Gotcha — "synchronous" vs semi-synchronous
+> Some materials label cluster replication "synchronous." Official AWS documentation describes Multi-AZ DB cluster replication as **semi-synchronous** (engine-native), using a **two-of-three quorum**: a commit needs acknowledgement from **at least one** of the two standbys, after which data is copied **asynchronously** from local SSD to the attached EBS volumes. For the exam, "commit acknowledged by ≥ 1 reader" is the safe mental model; if a question hinges on the exact term, AWS uses **semi-synchronous / quorum**.
+
+> [!tip] Mental model — the readers are read replicas with stronger replication
+> The two readable standbys behave much like [read replicas](#storage-replication--backups): they serve read traffic and each can exhibit its own **replica lag**. The difference is the replication mode. As the AWS deployment-options blog puts it:
+>
+> > The behavior of readable standby instances observed in a Multi-AZ DB cluster with respect to replica lag is similar to what we observe in a Single-AZ or Multi-AZ instance with one or more read replicas, where each read replica may lag by different values. However, unlike standalone read replicas of Single-AZ instances and Multi-AZ instances, where replication is asynchronous, the replication in a Multi-AZ DB cluster from the primary to readable standby instances is semi-synchronous.
+>
+> So a cluster gives you read-replica-style read scaling **and** a quorum-backed commit in a single HA deployment, instead of bolting separate async read replicas onto a Multi-AZ instance.
+
+**Three endpoint types** in cluster mode:
+
+| Endpoint | Points at | Used for |
+| --- | --- | --- |
+| **Cluster endpoint** | The **writer** | Reads, writes, administration (analogous to the database CNAME in instance mode) |
+| **Reader endpoint** | Any available **reader** (sometimes the writer too) | Read scaling — apps balance reads across readers here |
+| **Instance endpoint** | One **specific instance** | **Testing / fault-finding only** — does **not** fail over, so never use in production |
+
+**Hardware and performance:** cluster mode runs on **Graviton** processors with **local NVMe SSD** storage. Writes hit the **local fast SSD first**, then flush through to **EBS** — combining local-storage speed with EBS durability. Readers offload the writer, giving the highest performance of any RDS mode short of Aurora.
+
+**Failover** uses **transaction logs** (more efficient than storage-level replication) and **eliminates the crash-recovery step**, so it is much faster than instance mode — typically quoted at **~35 s** as an optimistic floor, with AWS giving a **25–75 s** typical range depending on replica lag.
+
+### Instance vs Cluster — Comparison
+
+| Feature | Multi-AZ **Instance** | Multi-AZ **Cluster** |
+| --- | --- | --- |
+| Topology | 1 primary + **1 standby** (2 AZs) | 1 writer + **2 readable standbys** (3 AZs) |
+| Standby usable for reads? | **No** — passive, failover only | **Yes** — readers serve read-only traffic |
+| Read scaling? | **No** (need a separate read replica) | **Yes** via the reader endpoint |
+| Write access | Primary only | Writer only |
+| Replication | **Synchronous**, storage-level | **Semi-synchronous** (quorum, ≥ 1 reader ack), transaction-log-based |
+| Commit latency | Higher than Single-AZ | **Up to 2× faster** write commits than instance mode |
+| Failover time | **60–120 s** (DNS change) | **~35 s** floor / **25–75 s** typical (no crash recovery) |
+| RPO on failover | **Zero** (synchronous) | Effectively zero (quorum guarantees commit on ≥ 1 standby) |
+| Storage | EBS | **Local NVMe SSD flushed to EBS**, per-instance |
+| Hardware | Standard | **Graviton** |
+| Supported engines | MariaDB, MySQL, Oracle, PostgreSQL, **SQL Server** | **MySQL & PostgreSQL only** |
+| Backups | Taken from **standby** (no primary I/O hit) | Crash-consistent EBS snapshot, no I/O suspension |
+| Access pattern | Single **database CNAME** | **Cluster / Reader / Instance** endpoints |
+| Free tier | No | No |
+| Region scope | Same region, multi-AZ | Same region, multi-AZ |
+
+> [!tip] Exam Tip
+> Three resilience tools, three jobs: **Multi-AZ instance** = in-region HA with a passive standby; **Multi-AZ cluster** = in-region HA **plus** read scaling and faster failover (MySQL/PostgreSQL only); **[read replica](#storage-replication--backups)** = read scaling and/or **cross-region DR** (asynchronous, app-readable). Trigger words: "readable standby" / "faster failover" / "lower commit latency" → **cluster**; "SQL Server or Oracle + Multi-AZ" → must be **instance** (cluster is MySQL/PostgreSQL only); "read scaling" → cluster **or** read replica, **never** instance mode.
+
+### Single-AZ (baseline)
+
+For contrast: a **Single-AZ** instance is one managed instance on EBS with **no standby** — so **no automatic failover** during an AZ outage, an **RPO of roughly 5 minutes** (driven by the transaction-log copy interval to S3), and an RTO of minutes to hours. You can still attach read replicas and promote one manually after a failure. Fine for dev/test; **not** appropriate for production HA.
+
 ## Cost Model
 
 RDS is **resource-allocation billed** (like [EC2](ec2.md)), *not* usage-billed — you pay for the instance whether or not it's busy.
@@ -122,6 +217,9 @@ RDS is **resource-allocation billed** (like [EC2](ec2.md)), *not* usage-billed �
 | No SSH / no OS access | Exception: **RDS Custom** |
 | Aurora ≠ RDS | Separate product; different (shared-cluster) storage architecture |
 | Multi-AZ replication | **Synchronous**, same region, different AZ, standby identical (and not readable) |
+| Multi-AZ **instance** mode | 1 primary + 1 passive standby; failover = **DNS repoint**, **60–120 s**; all engines incl. SQL Server/Oracle |
+| Multi-AZ **cluster** mode | 1 writer + **2 readable** readers; semi-synchronous quorum; failover **~35 s / 25–75 s**; Graviton + NVMe; **MySQL/PostgreSQL only** |
+| Multi-AZ endpoints (cluster) | **Cluster** (writer), **Reader** (read scaling), **Instance** (testing only — no failover) |
 | Read replicas | **Asynchronous**, same- or **cross-region**, read scaling + DR |
 | Storage | Dedicated **EBS per instance** (unlike Aurora) |
 | Backups | Go to **S3** (AWS-managed); Multi-AZ backups run from **standby** |
@@ -138,5 +236,6 @@ RDS is **resource-allocation billed** (like [EC2](ec2.md)), *not* usage-billed �
 
 ## References
 
-- Cantrill SAA-C03 study notes — *RDS Architecture (and Databases on EC2)*
+- Cantrill SAA-C03 study notes — *RDS Architecture (and Databases on EC2)*, *RDS Multi-AZ (Instance and Cluster)*
+- [AWS — Choose the right Amazon RDS deployment option: Single-AZ, Multi-AZ instance, or Multi-AZ DB cluster](https://aws.amazon.com/blogs/database/choose-the-right-amazon-rds-deployment-option-single-az-instance-multi-az-instance-or-multi-az-database-cluster/) (semi-synchronous quorum replication, engine restriction, failover-timing ranges, backup mechanics, Single-AZ baseline)
 - Related: [EC2](ec2.md) · [EBS](ebs.md) · [VPC](vpc.md) · [Database Transaction Models (ACID/BASE/CAP)](../concepts/db-transaction-model.md) · [Resource Scope](../concepts/resource-scope.md)
