@@ -1,7 +1,7 @@
 ---
 title: RDS — Relational Database Service
 type: service
-tags: [rds, database, relational, ec2, ebs, vpc, subnet-group, multi-az, multi-az-instance, multi-az-cluster, read-replica, synchronous-replication, semi-synchronous-replication, asynchronous-replication, quorum, failover, reader-endpoint, cluster-endpoint, graviton, nvme, aurora, dr, high-availability, acid, cost, backup, snapshot, automated-backup, manual-snapshot, transaction-logs, pitr, point-in-time-recovery, retention, restore, rpo, rto, s3, cross-region-backup]
+tags: [rds, database, relational, ec2, ebs, vpc, subnet-group, multi-az, multi-az-instance, multi-az-cluster, read-replica, synchronous-replication, semi-synchronous-replication, asynchronous-replication, quorum, failover, reader-endpoint, cluster-endpoint, graviton, nvme, aurora, dr, high-availability, acid, cost, backup, snapshot, automated-backup, manual-snapshot, transaction-logs, pitr, point-in-time-recovery, retention, restore, rpo, rto, s3, cross-region-backup, security, encryption, encryption-in-transit, encryption-at-rest, ssl, tls, kms, kms-key, cmk, dek, envelope-encryption, aes-256, tde, transparent-data-encryption, cloudhsm, iam-authentication, generate-db-auth-token, authentication, authorization, credentials-provider-chain, imds, postgresql, jdbc, aws-advanced-jdbc-wrapper, connection-pool, druid, hikaricp, rds-iam, ssl-mode, ca-bundle]
 certs: [aws-saa]
 updated: 2026-06-27
 ---
@@ -247,6 +247,224 @@ The diagram's three arrows separate the **three data streams** — manual snapsh
 > [!warning] Gotcha — restore time is your RTO
 > Restores are **not fast** — restoring a large database takes significant time, and that time **is your RTO**. Backups improve **RPO** (how much data you lose); they do little for RTO. To improve RTO, use a [read replica](#storage-replication--backups) you can promote — backups improve RPO, replicas improve RTO.
 
+## Data Security
+
+RDS data security splits into **four separate concerns**. The exam likes to test whether you can tell them apart — especially authentication from authorization, and in-transit from at-rest encryption.
+
+| Concern | What it covers |
+| --- | --- |
+| **Authentication** | How a user proves who they are when logging in |
+| **Authorization** | What a logged-in user is allowed to do |
+| **Encryption in transit** | Protecting data moving between client and RDS |
+| **Encryption at rest** | Protecting data written to disk |
+
+Authentication and authorization are the [identity-and-access](../concepts/identity-and-access.md) split applied to the database; in-transit protection is ordinary [TLS](../concepts/tls-https.md); at-rest protection leans on [KMS](kms.md) envelope encryption over [EBS](ebs.md).
+
+### Encryption in Transit
+
+- Supported across **all RDS engines**.
+- Traffic between client and instance is encrypted with **SSL/TLS** (see [TLS/HTTPS](../concepts/tls-https.md)).
+- Can be made **mandatory on a per-user basis** — the server rejects any non-TLS connection for that user.
+
+> [!tip] Exam Tip
+> Trigger words *"force / require SSL"* or *"encrypt the connection"* map to **per-user mandatory SSL/TLS**, available on every engine.
+
+### Encryption at Rest
+
+There are two mechanisms, and the whole game is knowing **who does the encrypting** — the host, or the database engine.
+
+#### 1. KMS + EBS encryption (the default, host-side)
+
+This is supported by default across the RDS engines and happens **below the database engine**:
+
+- The **RDS host** (the server the instance runs on) performs encryption and decryption against the underlying [EBS](ebs.md) storage. As far as the engine is concerned it is writing **plaintext** — it has **no encryption awareness**; the host encrypts before data reaches the disk.
+- It uses [KMS](kms.md): you pick a **KMS key** (the course calls it a CMK) — either a **customer managed key** or the **AWS managed key** (`aws/rds`). If you don't specify one at creation, RDS defaults to the AWS managed key.
+- That key generates **data encryption keys (DEKs)** — standard [envelope encryption](kms.md) — which do the bulk **AES-256** work and are loaded onto the hosts as needed.
+- **Coverage is uniform:** storage, logs, snapshots, and read replicas are all encrypted with the **same KMS key**.
+
+> [!warning] Gotcha — encryption is a one-way, create-time-only decision
+> Two linked rules the exam tests hard: **(1)** encryption **cannot be removed** once an instance is encrypted, and **(2)** it can **only be enabled at instance creation** — you can't add it in place to an existing unencrypted instance. The workaround for an existing instance: take a snapshot, **copy the snapshot with encryption enabled**, then restore from the encrypted copy. A read replica's encryption state must also **match its source** — no encrypted replica of an unencrypted instance, or vice versa.
+
+#### 2. TDE — Transparent Data Encryption (engine-native)
+
+- Only **Microsoft SQL Server** and **Oracle** support TDE.
+- Encryption happens **inside the database engine itself**, not on the host. Because the engine encrypts data **before it leaves the instance**, the trust boundary shrinks — data is protected from the moment the engine writes it.
+
+> [!warning] Gotcha — TDE is engine-restricted
+> **MySQL, MariaDB, and PostgreSQL do NOT support TDE** — it only exists where the underlying engine ships it. Those three still get full at-rest protection via the **host-side KMS + EBS** path above; they just can't do engine-native TDE. Don't let "MySQL is encrypted" trick you into "MySQL supports TDE."
+
+Edition nuances (sources disagree — flagged rather than resolved):
+
+- **Oracle:** TDE requires the **Oracle Advanced Security** option on **Oracle Enterprise Edition**.
+- **SQL Server:** AWS docs historically scope TDE to **Enterprise Edition**, but the current RDS security-features page also lists **Standard Edition**. Treat **"SQL Server Enterprise Edition"** as the safe exam answer; be aware Standard may now qualify. On RDS, SQL Server TDE is enabled via an **option group** (the `TDE` option).
+
+#### 3. Oracle + TDE via CloudHSM (strongest key control)
+
+- **RDS Oracle** can additionally use **CloudHSM** for the TDE key material.
+- CloudHSM is managed **entirely by you, with no key exposure to AWS**, enabling a trust chain that **does not involve AWS** — valuable for demanding regulatory scenarios.
+
+> [!tip] Exam Tip
+> *"AWS must have no access to the keys"* or *"no AWS in the chain of trust"* maps to **RDS Oracle + TDE + CloudHSM**. This is Oracle-specific — don't generalize it to other engines.
+
+#### Diagram — KMS encryption vs TDE
+
+![Amazon RDS KMS Encryption and TDE: on the left a CloudHSM appliance connects by a blue arrow to an Oracle instance, illustrating that with RDS Oracle the TDE keys can come from CloudHSM and remove AWS from the chain of trust. Two orange HOST boxes in the middle each run RDS instances (left host: Oracle plus a MySQL; right host: another MySQL), with a small key-lock icon showing DEKs resident on each host. Green double arrows between the MySQL engines and the EBS Volumes strip at the bottom are labelled data is encrypted and decrypted by the host — the KMS host-side path. A red double arrow between the two MySQL instances shows replica traffic is also encrypted with the same key. On the right, a KMS key icon sends red arrows loading DEKs onto the hosts as required, and a snapshot icon at the bottom-right shows snapshots of encrypted instances are also encrypted with the same key. Footer text reiterates TDE is native DB-engine encryption, with data encrypted before leaving the instance.](../assets/rds-kms-encryption-vs-tde.png)
+
+The visual contrast to lock in: the **TDE path encrypts inside the engine** (Oracle, left); the **KMS path encrypts on the host** (the green arrows under the MySQL engines). Everything KMS-encrypted — storage, the cross-instance replica traffic, and the snapshot — uses the **same key**.
+
+### IAM Authentication
+
+**Normal RDS logins** use **local database users** with their own username and password. These are **not** IAM identities and live **outside AWS's control** — one local user is created when you provision the instance, and managing the rest is up to you.
+
+**IAM authentication** lets an [IAM](iam.md) identity log in using a **short-lived AWS token instead of a password**. The mechanics:
+
+1. On the RDS instance, create a **local DB user configured to authenticate via an AWS authentication token** (rather than a password).
+2. Attach a **policy** to an **IAM user or role** (for example an [EC2](ec2.md) instance role) that **maps that IAM identity onto the local RDS database user**.
+3. The identity calls **`GenerateDBAuthToken`** (CLI: `generate-db-auth-token`), which spans IAM and RDS.
+4. That produces a **token valid for 15 minutes**, used in place of the password to log in as the mapped DB user.
+
+IAM authentication only works **if you explicitly enable it** on the instance.
+
+> [!warning] Gotcha — IAM auth is authentication ONLY, never authorization
+> This is *the* exam trap for the topic. IAM gets the identity **in the door**; once inside, **permissions are still governed by the local DB user** in the engine (the SQL `GRANT`s on that user). IAM is never used to authorize what the user can do in the database.
+
+#### Diagram — IAM authentication
+
+![Amazon RDS IAM Authentication: on the left an RDS instance holds a local DB account configured to use an AWS authentication token. A green double arrow between RDS and a central human figure is labelled DBUser and Token — the successful authenticated login path where the user presents the DB username plus token. The human (an IAM user) and a chip icon (an EC2 role) are the IAM identities; each has a checklist (policy) above it, and a red arrow at top-right shows the policy maps the IAM identity onto the local RDS user. Blue arrows along the bottom show the generate-db-auth-token call flowing to IAM (red icon, right) which issues a token with 15-minute validity (key-and-clock icon) that becomes the credential used in the green login path. Top-left text states authorization is controlled by the DB engine and IAM is not used to authorize, only to authenticate.](../assets/rds-iam-authentication.png)
+
+Three arrow colors summarize the flow: **green** = the authenticated DB login (DB user plus token); **blue** = token generation via IAM; **red** = the policy mapping the IAM identity onto the local DB user.
+
+#### Practical mechanics
+
+The piece most people miss is that **`GenerateDBAuthToken` itself needs AWS credentials to sign the token**. The SDK doesn't ask for them — it walks the **default credentials provider chain** and uses the first source that resolves, in roughly this order: JVM system properties (Java only), environment variables, web-identity token (EKS IRSA), the shared `~/.aws/credentials` profile, ECS container credentials, and finally the **EC2 instance profile via [IMDS](ec2.md)**.
+
+The payoff for an app deployed on EC2: set **none** of the earlier sources, attach an **[IAM role to the instance](iam.md)**, and the chain falls through to IMDS and uses the role's **temporary, auto-rotating credentials**. The same binary resolves your local profile on a laptop and the instance role in production — **zero credential code, no long-lived database password anywhere**.
+
+Two practical traps:
+
+- **SSL/TLS is mandatory** for IAM auth — the token travels to the DB as a cleartext password, so without TLS the server rejects it. Always ship the RDS CA bundle.
+- **Generate the token against the real DB instance endpoint**, not a custom Route 53 record, and **mint a fresh token per new connection** — the 15-minute validity only matters at the connection handshake, so connection pools must regenerate it when opening new physical connections.
+
+> [!tip] Exam Tip
+> *"Log in to RDS without a stored database password, using an AWS identity"* maps to **IAM authentication** (`GenerateDBAuthToken`, 15-minute token). If a question then asks *"does IAM control what the user can do in the database?"* the answer is **No** — authorization stays with the local DB user.
+
+#### Wiring IAM auth into a JDBC connection pool (PostgreSQL)
+
+> [!note] Hands-on detail, not exam material
+> SDK and JDBC wiring is **not** tested by the SAA exam — it tests the concepts above. This section is for building real applications. The examples use **PostgreSQL**; MySQL differs in the DB-user setup and TLS handling (noted inline).
+
+**Prerequisites (engine-specific).** Three things must be true before any code connects:
+
+1. **IAM DB authentication enabled** on the instance (a toggle, no downtime).
+2. **A local DB user bound to IAM auth.** On PostgreSQL this is the **`rds_iam` role** — granting it forces token authentication for that user (MySQL instead uses `IDENTIFIED WITH AWSAuthenticationPlugin AS 'RDS'`):
+
+   ```sql
+   -- PostgreSQL
+   CREATE USER app_iam_user;
+   GRANT rds_iam TO app_iam_user;                       -- forces IAM-token auth
+   GRANT SELECT, INSERT, UPDATE, DELETE                 -- authorization = the engine's job, never IAM's
+     ON ALL TABLES IN SCHEMA public TO app_iam_user;
+   ```
+
+3. **An IAM policy** allowing `rds-db:connect` on the specific DB-user resource, attached to the identity (on EC2, the instance role):
+
+   ```json
+   {
+     "Version": "2012-10-17",
+     "Statement": [{
+       "Effect": "Allow",
+       "Action": "rds-db:connect",
+       "Resource": "arn:aws:rds-db:us-east-1:111122223333:dbuser:db-ABCDEFGHIJKL01234/app_iam_user"
+     }]
+   }
+   ```
+
+There are **two ways** to feed the rotating token into a connection pool.
+
+**Approach 1 — AWS Advanced JDBC Wrapper (recommended, least code).** The wrapper is a driver (`software.amazon.jdbc.Driver`) that wraps the real PostgreSQL driver and, via its **`iam` plugin**, signs a fresh 15-minute token for **every new physical connection** using the [default credentials provider chain](#practical-mechanics) — so the pool-expiry problem is handled for you and there is **no password and no callback** to write. Two URL details make it work: the **`jdbc:aws-wrapper:postgresql://`** scheme (the `aws-wrapper:` prefix is what activates the wrapper) and **`wrapperPlugins=iam`**.
+
+```yaml
+spring:
+  datasource:
+    druid:
+      driver-class-name: software.amazon.jdbc.Driver
+      url: jdbc:aws-wrapper:postgresql://appdb.abcdefghijkl.us-east-1.rds.amazonaws.com:5432/appdb?wrapperPlugins=iam&ssl=true&sslmode=verify-full&sslrootcert=/opt/certs/global-bundle.pem
+      username: app_iam_user
+      # no password, no password-callback — the iam plugin mints and refreshes the token
+```
+
+Maven needs `software.amazon.jdbc:aws-advanced-jdbc-wrapper` plus `org.postgresql:postgresql`. As a bonus, the same wrapper offers other plugins (fast failover, read/write splitting) that pair naturally with [Multi-AZ cluster](#multi-az-cluster-deployment) endpoints.
+
+**Approach 2 — manual token via a pool callback (explicit control, no extra driver).** Use the **standard PostgreSQL driver** (`org.postgresql.Driver`) and a hook that mints a token with **`RdsUtilities`** each time the pool opens a physical connection. Druid exposes a clean hook for this (`DruidPasswordCallback`); other pools need their own per-connection refresh mechanism (e.g. HikariCP has no native callback, so you typically wrap the `DataSource` or set the password before each new connection).
+
+```java
+import com.alibaba.druid.pool.DruidPasswordCallback;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.rds.RdsUtilities;
+
+import java.util.Properties;
+
+public class RdsIamPasswordCallback extends DruidPasswordCallback {
+
+    // No explicit credentials → DefaultCredentialsProvider walks the chain;
+    // on EC2 it lands on the instance-profile role via IMDS.
+    private final RdsUtilities rds = RdsUtilities.builder()
+            .credentialsProvider(DefaultCredentialsProvider.create())
+            .region(Region.US_EAST_1)
+            .build();
+
+    private static final String HOST = "appdb.abcdefghijkl.us-east-1.rds.amazonaws.com";
+    private static final int    PORT = 5432;            // PostgreSQL
+    private static final String USER = "app_iam_user";
+
+    @Override
+    public void setProperties(Properties properties) {
+        super.setProperties(properties);
+        // Fresh 15-min token per physical connection → pooled connections stay valid.
+        String token = rds.generateAuthenticationToken(b -> b
+                .hostname(HOST).port(PORT).username(USER));
+        setPassword(token.toCharArray());
+    }
+}
+```
+
+```yaml
+spring:
+  datasource:
+    druid:
+      driver-class-name: org.postgresql.Driver
+      url: jdbc:postgresql://appdb.abcdefghijkl.us-east-1.rds.amazonaws.com:5432/appdb?ssl=true&sslmode=verify-full&sslrootcert=/opt/certs/global-bundle.pem
+      username: app_iam_user
+      # password supplied dynamically by the callback below
+      password-callback-class-name: com.example.config.RdsIamPasswordCallback
+```
+
+| | Approach 1 — JDBC Wrapper | Approach 2 — manual callback |
+| --- | --- | --- |
+| Driver class | `software.amazon.jdbc.Driver` | `org.postgresql.Driver` |
+| URL scheme | `jdbc:aws-wrapper:postgresql://…` | `jdbc:postgresql://…` |
+| Token generation | wrapper `iam` plugin (automatic) | your code via `RdsUtilities` |
+| Refresh on new pool connection | automatic | you mint per connection |
+| Code to write | none | a callback class |
+| Extra capabilities | failover / read-write-split plugins | none — just the token |
+
+> [!warning] Gotcha — TLS is mandatory, and PostgreSQL handles the CA bundle more simply
+> IAM auth requires TLS (the token is sent as a cleartext password). PostgreSQL's JDBC driver reads the **RDS CA PEM bundle directly** via `sslmode=verify-full&sslrootcert=/opt/certs/global-bundle.pem` — **no JKS truststore needed**. (MySQL Connector/J instead needs the bundle imported into a **JKS** file referenced by `trustCertificateKeyStoreUrl`.) Both approaches above also assume the token is generated against the **real instance endpoint**, not a custom Route 53 record.
+
+### Security Exam Quick-Reference
+
+| Trigger / scenario | Answer |
+| --- | --- |
+| Encrypt the client-to-RDS connection, per user | **SSL/TLS in transit** (all engines, can be mandatory) |
+| Default at-rest encryption, host does the work | **KMS + EBS** (KMS key generates DEKs; engine unaware; AES-256) |
+| Engine-native at-rest encryption | **TDE** — **SQL Server and Oracle only** (not MySQL/MariaDB/PostgreSQL) |
+| "AWS must have no key access" / no AWS in the chain of trust | **RDS Oracle + TDE + CloudHSM** |
+| Log in without a DB password, using an AWS identity | **IAM authentication** (`GenerateDBAuthToken`, 15-min token) |
+| "Does IAM control what the user can do in the DB?" | **No** — authorization stays with the local DB user |
+| Storage, logs, snapshots, replicas all encrypted | KMS at-rest, **same key** |
+| Add encryption to an existing unencrypted instance | Snapshot, **copy snapshot with encryption**, restore |
+
 ## Cost Model
 
 RDS is **resource-allocation billed** (like [EC2](ec2.md)), *not* usage-billed — you pay for the instance whether or not it's busy.
@@ -298,6 +516,10 @@ RDS is **resource-allocation billed** (like [EC2](ec2.md)), *not* usage-billed �
 
 ## References
 
-- Cantrill SAA-C03 study notes — *RDS Architecture (and Databases on EC2)*, *RDS Multi-AZ (Instance and Cluster)*, *RDS Backups, Snapshots & Restore*
+- Cantrill SAA-C03 study notes — *RDS Architecture (and Databases on EC2)*, *RDS Multi-AZ (Instance and Cluster)*, *RDS Backups, Snapshots & Restore*, *RDS Data Security*
 - [AWS — Choose the right Amazon RDS deployment option: Single-AZ, Multi-AZ instance, or Multi-AZ DB cluster](https://aws.amazon.com/blogs/database/choose-the-right-amazon-rds-deployment-option-single-az-instance-multi-az-instance-or-multi-az-database-cluster/) (semi-synchronous quorum replication, engine restriction, failover-timing ranges, backup mechanics, Single-AZ baseline)
-- Related: [EC2](ec2.md) · [EBS](ebs.md) · [VPC](vpc.md) · [Database Transaction Models (ACID/BASE/CAP)](../concepts/db-transaction-model.md) · [Resource Scope](../concepts/resource-scope.md)
+- [AWS — Encrypting Amazon RDS resources](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Overview.Encryption.html) (KMS + EBS host-side encryption, AES-256, create-time-only restriction, snapshot-copy workaround, same-key coverage)
+- [AWS — SQL Server Transparent Data Encryption (TDE) option](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Appendix.SQLServer.Options.TDE.html) and [RDS security features](https://aws.amazon.com/rds/features/security/) (engine/edition restrictions, option-group mechanism)
+- [AWS — IAM database authentication](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.html) and the [SDK default credentials-provider chain](https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/credentials-chain.html) (token mechanics, 15-min validity, mandatory TLS, IMDS-on-EC2 resolution)
+- [AWS Advanced JDBC Wrapper — IAM authentication plugin](https://github.com/aws/aws-advanced-jdbc-wrapper) and [`RdsUtilities.generateAuthenticationToken`](https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/rds/RdsUtilities.html) (the two JDBC connection-pool wiring approaches; PostgreSQL `rds_iam` role and `sslmode=verify-full` CA handling)
+- Related: [EC2](ec2.md) · [EBS](ebs.md) · [VPC](vpc.md) · [KMS](kms.md) · [IAM](iam.md) · [Identity and Access](../concepts/identity-and-access.md) · [TLS/HTTPS](../concepts/tls-https.md) · [Database Transaction Models (ACID/BASE/CAP)](../concepts/db-transaction-model.md) · [Resource Scope](../concepts/resource-scope.md)
