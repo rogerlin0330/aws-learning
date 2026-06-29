@@ -1388,10 +1388,16 @@ See [RDS](../services/rds.md) for full details.
 | Replication | **Synchronous** | **Asynchronous** |
 | Scope | Same region, different AZ | Same- **or cross-region** |
 | Purpose | **HA / failover** | **Read scaling + DR** |
-| App-readable? | **No** | **Yes** |
+| App-readable? | **No** | **Yes** (own endpoint) |
+| Automatic failover? | **Yes** (CNAME repoint) | **No** — manual **promotion** only |
+| App changes needed? | No (same CNAME) | **Yes** — point reads at the replica endpoint |
+
+- **Count:** **5** read replicas per instance (the long-standing/course number) or **up to 15** in current AWS docs — know both. **Cascading** replicas (replicas of replicas) are allowed but **lag compounds** at each hop
+- **RPO/RTO:** read replicas give **near-zero RPO and RTO** via fast **promotion** to a standalone read/write instance — but only for **failure recovery**. For **data corruption** the replica holds a copy of the corrupted data, so it's **no defence** (use point-in-time backups instead). Backups improve **RPO**; read replicas improve **RTO**
+- Async means a small **replication lag** (seconds); cross-region replication is **AWS-managed and encrypted in transit**
 
 > [!tip] Exam Tip
-> Pattern-match: *"engine/version AWS doesn't support"* or *"OS/root access required"* → **DB on EC2** (one of the rare cases it's correct). *"automatic failover to an identical copy"* → **Multi-AZ standby (synchronous)**. *"offload read traffic"* or *"read scaling across regions"* → **read replica (asynchronous)**. *"multiple databases on one server"* → RDS (it's a server, not a single DB). *"backups without impacting the primary"* → Multi-AZ runs backups **from the standby**.
+> Pattern-match: *"engine/version AWS doesn't support"* or *"OS/root access required"* → **DB on EC2** (one of the rare cases it's correct). *"automatic failover to an identical copy"* → **Multi-AZ standby (synchronous)**. *"offload read traffic"* or *"read scaling across regions"* → **read replica (asynchronous)**. *"promote to a standalone instance"* / *"low RTO recovery"* → **read replica**, but *"recover from data corruption / deleted data"* → **NOT a replica** (it replicated the bad data) → **PITR backup**. *"app has no knowledge of the replica"* / *"separate endpoint"* → read replicas need **application changes**. *"multiple databases on one server"* → RDS (it's a server, not a single DB). *"backups without impacting the primary"* → Multi-AZ runs backups **from the standby**.
 
 ### Multi-AZ Instance vs Cluster
 

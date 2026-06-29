@@ -3,7 +3,7 @@ title: RDS — Relational Database Service
 type: service
 tags: [rds, database, relational, ec2, ebs, vpc, subnet-group, multi-az, multi-az-instance, multi-az-cluster, read-replica, synchronous-replication, semi-synchronous-replication, asynchronous-replication, quorum, failover, reader-endpoint, cluster-endpoint, graviton, nvme, aurora, dr, high-availability, acid, cost, backup, snapshot, automated-backup, manual-snapshot, transaction-logs, pitr, point-in-time-recovery, retention, restore, rpo, rto, s3, cross-region-backup, security, encryption, encryption-in-transit, encryption-at-rest, ssl, tls, kms, kms-key, cmk, dek, envelope-encryption, aes-256, tde, transparent-data-encryption, cloudhsm, iam-authentication, generate-db-auth-token, authentication, authorization, credentials-provider-chain, imds, postgresql, jdbc, aws-advanced-jdbc-wrapper, connection-pool, druid, hikaricp, rds-iam, ssl-mode, ca-bundle]
 certs: [aws-saa]
-updated: 2026-06-27
+updated: 2026-06-28
 ---
 
 # RDS — Relational Database Service
@@ -108,7 +108,7 @@ Multi-AZ is how RDS delivers **high availability**. Historically there was a sin
 2. **Multi-AZ cluster deployment** — one writer plus **two readable standbys**, with faster failover and read scaling.
 
 > [!warning] Gotcha — Multi-AZ is in-region HA, not DR
-> Both modes span **only availability zones within a single region**. Multi-AZ is **not** a cross-region or disaster-recovery mechanism — for that you need a cross-region [read replica](#storage-replication--backups) (or other DR tooling). "Multi-AZ for DR / cross-region" is a classic distractor.
+> Both modes span **only availability zones within a single region**. Multi-AZ is **not** a cross-region or disaster-recovery mechanism — for that you need a cross-region [read replica](#read-replicas) (or other DR tooling). "Multi-AZ for DR / cross-region" is a classic distractor.
 
 ### Multi-AZ Instance Deployment
 
@@ -150,7 +150,7 @@ A write is viewed as **committed once at least one reader confirms it has writte
 > Some materials label cluster replication "synchronous." Official AWS documentation describes Multi-AZ DB cluster replication as **semi-synchronous** (engine-native), using a **two-of-three quorum**: a commit needs acknowledgement from **at least one** of the two standbys, after which data is copied **asynchronously** from local SSD to the attached EBS volumes. For the exam, "commit acknowledged by ≥ 1 reader" is the safe mental model; if a question hinges on the exact term, AWS uses **semi-synchronous / quorum**.
 
 > [!tip] Mental model — the readers are read replicas with stronger replication
-> The two readable standbys behave much like [read replicas](#storage-replication--backups): they serve read traffic and each can exhibit its own **replica lag**. The difference is the replication mode. As the AWS deployment-options blog puts it:
+> The two readable standbys behave much like [read replicas](#read-replicas): they serve read traffic and each can exhibit its own **replica lag**. The difference is the replication mode. As the AWS deployment-options blog puts it:
 >
 > > The behavior of readable standby instances observed in a Multi-AZ DB cluster with respect to replica lag is similar to what we observe in a Single-AZ or Multi-AZ instance with one or more read replicas, where each read replica may lag by different values. However, unlike standalone read replicas of Single-AZ instances and Multi-AZ instances, where replication is asynchronous, the replication in a Multi-AZ DB cluster from the primary to readable standby instances is semi-synchronous.
 >
@@ -189,11 +189,71 @@ A write is viewed as **committed once at least one reader confirms it has writte
 | Region scope | Same region, multi-AZ | Same region, multi-AZ |
 
 > [!tip] Exam Tip
-> Three resilience tools, three jobs: **Multi-AZ instance** = in-region HA with a passive standby; **Multi-AZ cluster** = in-region HA **plus** read scaling and faster failover (MySQL/PostgreSQL only); **[read replica](#storage-replication--backups)** = read scaling and/or **cross-region DR** (asynchronous, app-readable). Trigger words: "readable standby" / "faster failover" / "lower commit latency" → **cluster**; "SQL Server or Oracle + Multi-AZ" → must be **instance** (cluster is MySQL/PostgreSQL only); "read scaling" → cluster **or** read replica, **never** instance mode.
+> Three resilience tools, three jobs: **Multi-AZ instance** = in-region HA with a passive standby; **Multi-AZ cluster** = in-region HA **plus** read scaling and faster failover (MySQL/PostgreSQL only); **[read replica](#read-replicas)** = read scaling and/or **cross-region DR** (asynchronous, app-readable). Trigger words: "readable standby" / "faster failover" / "lower commit latency" → **cluster**; "SQL Server or Oracle + Multi-AZ" → must be **instance** (cluster is MySQL/PostgreSQL only); "read scaling" → cluster **or** read replica, **never** instance mode.
 
 ### Single-AZ (baseline)
 
-For contrast: a **Single-AZ** instance is one managed instance on EBS with **no standby** — so **no automatic failover** during an AZ outage, an **RPO of roughly 5 minutes** (driven by the transaction-log copy interval to S3), and a Recovery Time Objective (RTO) of minutes to hours. You can still attach read replicas and promote one manually after a failure. Fine for dev/test; **not** appropriate for production HA.
+For contrast: a **Single-AZ** instance is one managed instance on EBS with **no standby** — so **no automatic failover** during an AZ outage, an **RPO of roughly 5 minutes** (driven by the transaction-log copy interval to S3), and a Recovery Time Objective (RTO) of minutes to hours. You can still attach [read replicas](#read-replicas) and promote one manually after a failure. Fine for dev/test; **not** appropriate for production HA.
+
+## Read Replicas
+
+Where Multi-AZ exists for **availability**, read replicas exist for **read scaling** and **cross-region disaster recovery**. A read replica is a **read-only copy of an RDS instance** kept in sync from the primary. It delivers three benefits worth separating in your head:
+
+1. **Read performance / read scaling** — offload read queries from the primary.
+2. **Cross-region resilience** — a replica in another region survives a regional failure.
+3. **Low RTO recovery** — it can be promoted to a standalone instance quickly, *as long as the disaster is a failure and not data corruption*.
+
+The sharpest contrast with [Multi-AZ instance mode](#multi-az-instance-deployment): the instance-mode standby **cannot** be used for anything by default, whereas a read replica **can** — but only for **reads**. ([Multi-AZ cluster mode](#multi-az-cluster-deployment) is conceptually instance-mode HA combined with read-replica-style read scaling, since its standbys are readable.)
+
+![RDS read replicas: two stacked regions. In us-east-1 (a4l-vpc1) across three AZs, a Standby in AZ-A replicates synchronously to the Primary in AZ-B (red dotted arrow, the Multi-AZ relationship), while a same-region Read Replica in AZ-C connects to the Primary by a solid orange Asynchronous Replication line. A second orange Asynchronous Replication line runs from the Primary down into ap-southeast-2 (a4l-vpc10, AZ-B) to a cross-region Read Replica. Orange solid = async read-replica replication; red dotted = synchronous Multi-AZ standby. One primary feeds both a same-region and a cross-region replica at once.](../assets/rds-read-replicas.png)
+
+The diagram's colour code is the thing to lock in: **orange solid = asynchronous read-replica replication**; **red dotted = synchronous Multi-AZ standby replication**. A single primary can feed both a same-region and a cross-region read replica simultaneously, and AWS handles the inter-region link transparently and **encrypted in transit**.
+
+### They Are Separate Things
+
+> [!warning] Gotcha — a read replica does nothing without application support
+> A read replica is **not part of the main DB instance**. It has its **own endpoint address**, so the application must be **changed to point reads at that endpoint** — an app such as WordPress has **zero knowledge** of any read replica by default. There is also **no automatic failover** to a read replica; it just sits off to one side. Without application support, read replicas are functionally inert.
+
+### Asynchronous Replication
+
+Read replicas use **asynchronous** replication. Data is written to the primary **first** and is considered **committed at that point**, and only *then* replicated out to the replicas. The consequence is a small **replication lag** (potentially seconds) that grows with write volume and network distance.
+
+> [!tip] Exam Tip — the keyword mapping
+> For RDS (excluding Aurora): **synchronous maps to Multi-AZ**, **asynchronous maps to read replicas**. Multi-AZ writes the primary and standby as a single conceptual operation; async replication commits on the primary *before* replicating. Trigger words *"async"*, *"potential lag"*, *"offload reads"*, *"another region"* all point at read replicas.
+
+### Same-Region and Cross-Region
+
+Read replicas can live in the **same region** as the primary or in **another region** (cross-region read replicas). For cross-region replicas AWS handles all inter-region networking transparently and **encrypts it in transit** — you don't build the link.
+
+### Read Scaling
+
+- You can create up to **5 read replicas directly per DB instance** *(the long-standing number Cantrill teaches)*, each adding a full instance of read capacity — a simple way to **scale out** reads.
+
+  > [!warning] Gotcha — the "5" figure is dated
+  > Current AWS documentation states **up to 15 read replicas** per source instance for MySQL, MariaDB, PostgreSQL, and SQL Server (Oracle also 15, with 5 recommended to limit lag). The **5** is the older number that may still appear on the exam — know both.
+
+- **Cascading replicas** (replicas of replicas) are possible for further scaling, but because replication is asynchronous, **lag compounds** at each hop. Take that into account before chaining them.
+
+A **cross-region** read replica also serves reads for workloads in *that* region directly, without ever touching the primary — global read performance for free once the replica exists.
+
+### RPO / RTO and Disaster Recovery
+
+Read replicas are a **recovery-time (RTO)** tool, complementing the **recovery-point (RPO)** improvement that [backups](#backups-snapshots--restore) give you:
+
+- **Near-zero RPO** — data is continuously synced from the primary, so little is at risk of loss (assuming the data is sound).
+- **Near-zero RTO** — a replica can be **promoted quickly** to a standalone instance during a disaster, far faster than restoring a large snapshot.
+
+> [!warning] Gotcha — DR only for failure, not corruption
+> Use a read replica for DR **only when recovering from failure**. If you are recovering from **data corruption**, the replica almost certainly holds a **copy of the corrupted data** — it replicated it. Read replicas give a great low RTO for **failure**; they are **not** a defence against bad/deleted/corrupted data (that's what point-in-time [backups](#backups-snapshots--restore) are for).
+
+A cross-region read replica can also act as a **failover region** if AWS suffers a major regional issue.
+
+### Promotion
+
+A read replica is **read-only until promoted**. Once **promoted**, it becomes a normal, fully usable read/write RDS instance and **stops being a replica** of the original — the replication link is severed and it goes its own way.
+
+> [!tip] Exam Tip — three resilience tools, three jobs
+> **Multi-AZ standby** = in-region HA, synchronous, not readable, automatic failover. **Multi-AZ cluster readers** = in-region HA plus read scaling, semi-synchronous. **Read replica** = read scaling and/or **cross-region DR**, asynchronous, app-readable, **manual** promotion, no automatic failover. *"Read scaling"* points at a cluster **or** a read replica, **never** an instance-mode standby; *"cross-region DR"* or *"promote to standalone"* points specifically at a **read replica**.
 
 ## Backups, Snapshots & Restore
 
@@ -245,7 +305,7 @@ The diagram's three arrows separate the **three data streams** — manual snapsh
 **How PITR works:** RDS restores the **closest snapshot**, then **replays transaction logs** forward to your chosen time.
 
 > [!warning] Gotcha — restore time is your RTO
-> Restores are **not fast** — restoring a large database takes significant time, and that time **is your RTO**. Backups improve **RPO** (how much data you lose); they do little for RTO. To improve RTO, use a [read replica](#storage-replication--backups) you can promote — backups improve RPO, replicas improve RTO.
+> Restores are **not fast** — restoring a large database takes significant time, and that time **is your RTO**. Increasing backup frequency improves **RPO** (how much data you lose) but does little for RTO. To improve RTO, use a [read replica](#read-replicas) you can promote — backups improve RPO, replicas improve RTO.
 
 ## Data Security
 
@@ -490,7 +550,10 @@ RDS is **resource-allocation billed** (like [EC2](ec2.md)), *not* usage-billed �
 | Multi-AZ **instance** mode | 1 primary + 1 passive standby; failover = **DNS repoint**, **60–120 s**; all engines incl. SQL Server/Oracle |
 | Multi-AZ **cluster** mode | 1 writer + **2 readable** readers; semi-synchronous quorum; failover **~35 s / 25–75 s**; Graviton + NVMe; **MySQL/PostgreSQL only** |
 | Multi-AZ endpoints (cluster) | **Cluster** (writer), **Reader** (read scaling), **Instance** (testing only — no failover) |
-| Read replicas | **Asynchronous**, same- or **cross-region**, read scaling + DR |
+| Read replicas | **Asynchronous**, same- or **cross-region**, read scaling + DR; **own endpoint**, app must be changed, **no automatic failover** |
+| Read replica count | **5** per instance (course) / **up to 15** (current AWS docs); **cascading** allowed but **lag compounds** |
+| Read replica DR limit | Near-zero **RPO and RTO** via fast **promotion** — but only for **failure**, **not data corruption** (replica holds the corrupted data) |
+| Promotion | Replica is read-only until promoted; once promoted it is a standalone read/write instance and **stops replicating** |
 | Storage | Dedicated **EBS per instance** (unlike Aurora) |
 | Backups | Go to **S3** (AWS-managed, **invisible in your S3 console**); regionally resilient; Multi-AZ backups run from **standby** |
 | Manual snapshot | Instance-level (all DBs); **never expires**, survives instance deletion, manual delete only; 100/Region |
