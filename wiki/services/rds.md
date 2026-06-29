@@ -408,6 +408,54 @@ Two practical traps:
 > [!tip] Exam Tip
 > *"Log in to RDS without a stored database password, using an AWS identity"* maps to **IAM authentication** (`GenerateDBAuthToken`, 15-minute token). If a question then asks *"does IAM control what the user can do in the database?"* the answer is **No** — authorization stays with the local DB user.
 
+#### Quickest manual test — CLI token plus psql
+
+Before wiring any application code, the fastest way to prove IAM auth works end-to-end is to mint a token with the AWS CLI and feed it to the native client. This is also how you connect from a [GUI client](#connecting-from-a-gui-client) that has no built-in IAM support. Prerequisites are the same as below (auth enabled on the instance, an `rds_iam` DB user, an `rds-db:connect` policy on your identity), plus the **RDS CA bundle** downloaded locally:
+
+```bash
+# Download the CA bundle once (used by every engine, every region)
+curl -o /opt/certs/global-bundle.pem \
+  https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
+```
+
+**PostgreSQL.** Mint the token, stash it in `PGPASSWORD`, and connect over TLS:
+
+```bash
+# 1. Sign a 15-minute token using the default credentials chain
+export PGPASSWORD="$(aws rds generate-db-auth-token \
+  --hostname appdb.abcdefghijkl.us-east-1.rds.amazonaws.com \
+  --port 5432 \
+  --region us-east-1 \
+  --username app_iam_user)"
+
+# 2. Present the token as the password; verify-full forces TLS + CA validation
+psql "host=appdb.abcdefghijkl.us-east-1.rds.amazonaws.com \
+      port=5432 dbname=appdb user=app_iam_user \
+      sslmode=verify-full sslrootcert=/opt/certs/global-bundle.pem"
+```
+
+**MySQL.** The token is the password, but the client must be told to send it in cleartext (it is protected by the mandatory TLS, not by MySQL's normal challenge-response):
+
+```bash
+TOKEN="$(aws rds generate-db-auth-token \
+  --hostname appdb.abcdefghijkl.us-east-1.rds.amazonaws.com \
+  --port 3306 --region us-east-1 --username app_iam_user)"
+
+mysql --host=appdb.abcdefghijkl.us-east-1.rds.amazonaws.com --port=3306 \
+      --ssl-ca=/opt/certs/global-bundle.pem --enable-cleartext-plugin \
+      --user=app_iam_user --password="$TOKEN"
+```
+
+Three things to notice, all of which generalize to every IAM-auth client:
+
+- **The CLI uses the same default credentials chain as the SDK** ([Practical mechanics](#practical-mechanics)) — on a laptop it signs with your profile, on EC2 with the instance role. You are not passing a database password anywhere.
+- **Pass the token via an env var, not inline**, because it contains URL-encoded characters (`%`, `/`, `+`) that the shell would otherwise mangle.
+- **The 15-minute clock only matters at the handshake.** Once `psql`/`mysql` is connected the session stays open indefinitely; the expiry just means you must mint a fresh token for the *next* connection — which is exactly why pooled apps need the per-connection refresh covered next.
+
+#### Connecting from a GUI client
+
+GUI clients fall into two camps. **DataGrip** (Authentication: **AWS IAM**) and **DBeaver** (auth model: **AWS IAM**) generate the token for you from a chosen AWS profile and region on every connect, so they handle the 15-minute expiry transparently — you only configure the profile, region, and TLS (point them at `global-bundle.pem`). Clients with **no native support** (pgAdmin, MySQL Workbench) require pasting a CLI-generated token (above) into the password field and re-pasting it whenever it expires. In all cases TLS is mandatory, exactly as in the CLI flow.
+
 #### Wiring IAM auth into a JDBC connection pool (PostgreSQL)
 
 > [!note] Hands-on detail, not exam material
