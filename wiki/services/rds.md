@@ -1,9 +1,9 @@
 ---
 title: RDS — Relational Database Service
 type: service
-tags: [rds, database, relational, ec2, ebs, vpc, subnet-group, multi-az, multi-az-instance, multi-az-cluster, read-replica, synchronous-replication, semi-synchronous-replication, asynchronous-replication, quorum, failover, reader-endpoint, cluster-endpoint, graviton, nvme, aurora, dr, high-availability, acid, cost, backup, snapshot, automated-backup, manual-snapshot, transaction-logs, pitr, point-in-time-recovery, retention, restore, rpo, rto, s3, cross-region-backup, security, encryption, encryption-in-transit, encryption-at-rest, ssl, tls, kms, kms-key, cmk, dek, envelope-encryption, aes-256, tde, transparent-data-encryption, cloudhsm, iam-authentication, generate-db-auth-token, authentication, authorization, credentials-provider-chain, imds, postgresql, jdbc, aws-advanced-jdbc-wrapper, connection-pool, druid, hikaricp, rds-iam, ssl-mode, ca-bundle]
+tags: [rds, rds-custom, database, relational, ec2, ebs, vpc, subnet-group, multi-az, multi-az-instance, multi-az-cluster, read-replica, synchronous-replication, semi-synchronous-replication, asynchronous-replication, quorum, failover, reader-endpoint, cluster-endpoint, graviton, nvme, aurora, dr, high-availability, acid, cost, backup, snapshot, automated-backup, manual-snapshot, transaction-logs, pitr, point-in-time-recovery, retention, restore, rpo, rto, s3, cross-region-backup, security, encryption, encryption-in-transit, encryption-at-rest, ssl, tls, kms, kms-key, cmk, dek, envelope-encryption, aes-256, tde, transparent-data-encryption, cloudhsm, iam-authentication, generate-db-auth-token, authentication, authorization, credentials-provider-chain, imds, postgresql, jdbc, aws-advanced-jdbc-wrapper, connection-pool, druid, hikaricp, rds-iam, ssl-mode, ca-bundle, session-manager, ssh, rdp, shared-responsibility]
 certs: [aws-saa]
-updated: 2026-06-28
+updated: 2026-06-30
 ---
 
 # RDS — Relational Database Service
@@ -60,6 +60,61 @@ There *are* exam questions where "run the database on EC2" is correct. The justi
 
 > [!warning] Aurora ≠ RDS
 > **Amazon Aurora** is a custom AWS-built engine (compatible with some of the above, but designed by AWS). Many RDS features differ for Aurora — treat them as separate products. The most exam-relevant difference is **storage**: RDS gives each instance its **own dedicated EBS volume**; Aurora uses a shared cluster storage layer. Don't carry RDS storage facts over to Aurora.
+
+## RDS Custom
+
+> [!note] Exam scope — awareness only
+> RDS Custom is a **niche** topic. For the SAA exam you only need to know that it **exists** and **what gap it fills**. The detail below is for context; don't over-invest.
+
+RDS Custom is the **middle ground** on the spectrum between the two extremes this page has already drawn: fully managed [standard RDS](#what-rds-actually-is) at one end and a fully self-managed [database on EC2](#databases-on-ec2--why-you-usually-shouldnt) at the other.
+
+| Option | Who manages the OS + engine | Access you get |
+| --- | --- | --- |
+| **Standard RDS** | AWS — fully managed database-server-as-a-service | **No** OS or engine access |
+| **RDS Custom** | Shared — RDS automation **plus** your own customization | **OS + DB engine** access (SSH, RDP, Session Manager) |
+| **DB on [EC2](ec2.md)** | You — fully self-managed | Everything, from the OS up (high overhead) |
+
+RDS Custom keeps the RDS managed-service automation but *also* lets you into the operating system and database engine to customize them — the thing standard RDS deliberately forbids. This is aimed at **legacy, custom, and packaged applications** that need OS/DB-level tweaks (vendor agents, specific patches, native features) yet still want managed-service benefits.
+
+### Key facts
+
+- **Supported engines: Microsoft SQL Server and Oracle only** — the *same pair* that supports engine-native [TDE](#2-tde--transparent-data-encryption-engine-native). MySQL, MariaDB, and PostgreSQL are **not** available on RDS Custom.
+- **OS + engine access via SSH, RDP, and Session Manager** — the distinguishing feature versus standard RDS (which gives no OS access at all).
+- **Resources live in *your* account.** Unlike standard RDS, you **will see** the underlying [EC2](ec2.md) instance, [EBS](ebs.md) volumes, and [S3](s3.md) backups in your own console. Standard RDS hides all of this in an AWS-managed environment and only injects **elastic network interfaces (ENIs)** into your [VPC](vpc.md) for connectivity.
+
+### Customization workflow — pause the automation
+
+Because RDS automation and your manual changes would otherwise fight each other, customizing follows a three-step dance:
+
+1. **Pause** database automation.
+2. Perform your customizations against the OS or engine.
+3. **Resume** (re-enable) automation to make the database production-ready again.
+
+### Shared-responsibility position
+
+![RDS Custom shared-responsibility comparison: four columns from most customer-managed (On-Premises, left) to most AWS-managed (right) — On-Premises, RDS, RDS Custom, EC2. Rows are the stack layers from Hardware at the bottom up to Optimization at the top. Colour legend: blue = customer, orange = AWS, gradient = shared. On-Premises is all-customer; RDS is customer-optimization with everything below it AWS; EC2 is all-customer above AWS-owned hardware; RDS Custom sits in between — AWS owns the hardware, the customer owns application optimization, and every layer between (OS install, OS patches, DB patches, backups, HA, scaling) is shared.](../assets/rds-custom.png)
+
+Read the diagram as four columns from most-customer-managed (left) to most-AWS-managed (right), with each row a layer of the stack. The takeaway: **RDS Custom = AWS owns the hardware, the customer owns application optimization, and everything in between is shared** — RDS automation benefits *plus* the ability to customize.
+
+| Layer (bottom to top) | On-Premises | RDS | **RDS Custom** | EC2 |
+| --- | --- | --- | --- | --- |
+| Optimization | Customer | Customer | Customer | Customer |
+| Scaling | Customer | AWS | **Shared** | Customer |
+| HA | Customer | AWS | **Shared** | Customer |
+| Backups | Customer | AWS | **Shared** | Customer |
+| DB patches | Customer | AWS | **Shared** | Customer |
+| OS patches | Customer | AWS | **Shared** | Customer |
+| OS install | Customer | AWS | **Shared** | Customer |
+| Hardware | Customer | AWS | AWS | AWS |
+
+> [!warning] Gotchas
+>
+> - **Engines: SQL Server + Oracle only** — the same pair as [TDE](#2-tde--transparent-data-encryption-engine-native). Don't confuse with the fuller standard-RDS engine list.
+> - **Visibility:** with **RDS Custom** you *see* the EC2/EBS/S3-backup resources in your account; with **standard RDS** you do **not** (AWS-managed, ENI injection only).
+> - **Access:** SSH / RDP / Session Manager access is the feature that separates RDS Custom from standard RDS (no OS access).
+
+> [!note] Beyond the course — RDS Custom for Oracle end of support
+> AWS has announced that **RDS Custom for Oracle reaches end of support on March 31, 2027**; after that date those resources (instances, snapshots, custom engine versions) become inaccessible, and AWS recommends migrating the workloads to **[EC2](ec2.md)**. This does **not** affect standard RDS for Oracle or **RDS Custom for SQL Server**. Not exam material, but worth knowing the direction of travel.
 
 ## Architecture
 
@@ -593,6 +648,7 @@ RDS is **resource-allocation billed** (like [EC2](ec2.md)), *not* usage-billed �
 | DB on EC2 is the *right* answer | Unsupported engine/version, specific OS+DB combo, genuine OS/root access, AWS-unsupported replication architecture |
 | RDS = "DB **server** as a service" | Not DBaaS — one instance hosts **multiple databases** |
 | No SSH / no OS access | Exception: **RDS Custom** |
+| **RDS Custom** | Middle ground between RDS and DB-on-EC2; **SQL Server + Oracle only**; OS/engine access via **SSH/RDP/Session Manager**; resources (EC2/EBS/S3) **visible in your account**; pause automation to customize |
 | Aurora ≠ RDS | Separate product; different (shared-cluster) storage architecture |
 | Multi-AZ replication | **Synchronous**, same region, different AZ, standby identical (and not readable) |
 | Multi-AZ **instance** mode | 1 primary + 1 passive standby; failover = **DNS repoint**, **60–120 s**; all engines incl. SQL Server/Oracle |

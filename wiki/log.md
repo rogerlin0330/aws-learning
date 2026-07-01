@@ -2,6 +2,18 @@
 
 <!-- markdownlint-disable MD051 -->
 
+## [2026-06-30] ingest | RDS Custom
+
+Ingested `rds_custom.md` into the [RDS](services/rds.md) page as a new **`## RDS Custom`** section placed between *What RDS Actually Is* and *Architecture*, so the page reads as a spectrum: DB-on-EC2 (fully self-managed) → **RDS Custom** (middle ground) → standard RDS (fully managed). RDS Custom was already name-dropped across the page (no-SSH exception, DB-on-EC2 softening) but never had its own coverage. Copied `rds-custom.png` (shared-responsibility comparison) into `wiki/assets/` with reading-guide alt text.
+
+The source note was explicitly flagged as **awareness-only / niche exam scope**, and its facts checked out — synthesis, not correction. Verified before filing: RDS Custom = middle ground giving OS + DB-engine access on top of RDS automation; **SQL Server + Oracle only** (same pair as TDE); access via **SSH / RDP / Session Manager**; resources (**EC2 / EBS / S3 backups**) live in and are visible from the customer account, versus standard RDS which hides them AWS-side and only injects **ENIs** into the VPC; **pause → customize → resume** automation workflow; shared-responsibility position (AWS owns hardware, customer owns application optimization, every layer between is shared). Included the "beyond the course" note that **RDS Custom for Oracle reaches end of support 2027-03-31** (migrate to EC2; does not affect standard RDS for Oracle or RDS Custom for SQL Server) as a `[!note]` callout, clearly marked non-exam.
+
+Section structure: an awareness-only scope `[!note]`; a three-row spectrum table (standard RDS / RDS Custom / DB-on-EC2 by management + access); key facts (engines, access methods, in-your-account visibility); the pause/customize/resume workflow; the shared-responsibility diagram + 8-layer table; a gotchas callout (engines, visibility, access); and the Oracle end-of-support note. Added an **RDS Custom** row to the page's Exam Quick-Reference table.
+
+On [aws-saa.md](certifications/aws-saa.md): new **`### RDS Custom`** subsection after *RDS core facts* — five bullets (middle-ground framing, SQL Server/Oracle-only, SSH/RDP/Session Manager access, in-account visibility vs ENI injection, pause/customize/resume) plus a pattern-match exam tip. Bumped frontmatter date + tags.
+
+Cross-references and index: updated [index.md](index.md) RDS entry (full RDS Custom clause) and [overview.md](overview.md) RDS line + tags + date. New section links inline to [EC2](services/ec2.md), [EBS](services/ebs.md), [VPC](services/vpc.md), [S3](services/s3.md), and back to the page's own DB-on-EC2 / What-RDS-Is / TDE sections. Bumped `updated:` to 2026-06-30 on rds.md, aws-saa.md, overview.md. Followed the [arrow-notation memory](../../../.claude/projects/-Users-rogerlin-SelfProjects-aws-learning/memory/feedback_arrow_notation.md): plain English + numbered lists in prose; arrows kept only inside tables and pattern-match exam tips. Raw note left in place under `aws-cert-study-notes/`.
+
 ## [2026-06-26] ingest | RDS Multi-AZ (Instance and Cluster)
 
 Ingested `rds_multi-AZ_instance_and_cluster.md` into the existing [RDS](services/rds.md) page as a new **`## Multi-AZ Deployments`** section (between Architecture and Cost Model) — the page previously described only synchronous-standby-vs-read-replica at a high level and covered instance mode implicitly; cluster mode was entirely new. Copied three diagrams into `wiki/assets/` (`rds-multi-AZ-instance-mode.png`, `rds-multi-AZ-instance-failover.png`, `rds-multi-AZ-cluster-mode.png`) with multi-clause descriptive alt text that doubles as a reading guide.
