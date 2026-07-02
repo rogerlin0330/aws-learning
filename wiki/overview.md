@@ -2,7 +2,7 @@
 title: AWS Learning — Overview
 type: overview
 tags: [aws, architecture, iam, vpc, organizations, control-tower, cost, s3, ec2, ecs, eks, kubernetes, containers, cloudwatch, cloudtrail, cloudformation, bootstrapping, dns, dnssec, rds, rds-custom, aurora, database, multi-az, high-availability, acid, base, cap-theorem]
-updated: 2026-07-01
+updated: 2026-07-02
 ---
 
 # AWS Learning Overview
@@ -118,7 +118,7 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 
 ## Multi-Account Architecture
 
-Most real-world AWS deployments use **many accounts** — a per-team / per-environment / per-business-unit split provides hard blast-radius isolation that VPCs alone cannot. [AWS Organizations](services/organizations.md) is the glue: one bill, OU-based grouping, [SCP](services/organizations.md#service-control-policies-scps) guardrails, and a single login point that uses [cross-account IAM roles](services/iam.md#cross-account-access) to move between accounts. The cost-side benefit is that [Savings Plans and Reserved Instances pool org-wide](patterns/cost-optimization.md#pooling-across-accounts--aws-organizations) — so multi-account doesn't multiply purchase commitments.
+Most real-world AWS deployments use **many accounts** — a per-team / per-environment / per-business-unit split provides hard blast-radius isolation that VPCs alone cannot. [AWS Organizations](services/organizations.md) is the glue: one bill, OU-based grouping, [SCP](services/organizations.md#service-control-policies-scps) guardrails, and a single login point that uses [cross-account IAM roles](services/iam.md#cross-account-access) to move between accounts. The cost-side benefit is that [Savings Plans and Reserved Instances pool org-wide](patterns/cost-optimization.md#pooling-across-accounts) — so multi-account doesn't multiply purchase commitments.
 
 [AWS Control Tower](services/control-tower.md) sits one layer above Organizations: instead of assembling the governance yourself, it **orchestrates** Organizations, IAM Identity Center, CloudFormation, and Config into a well-architected **landing zone** — default OUs, isolated **Log Archive** and **Audit** foundational accounts, SSO, **guardrails** (preventative SCP vs detective Config rules), and an **Account Factory** for self-service, baselined account provisioning.
 

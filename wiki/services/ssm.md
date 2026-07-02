@@ -3,7 +3,7 @@ title: Systems Manager (SSM)
 type: service
 tags: [ssm, systems-manager, parameter-store, secrets, configuration, security, kms]
 certs: [aws-saa]
-updated: 2026-06-11
+updated: 2026-07-02
 ---
 
 # Systems Manager (SSM)
@@ -144,7 +144,7 @@ The split mirrors the crypto: standard does a direct encrypt, advanced generates
 
 #### Encryption context
 
-KMS operations use an **encryption context** of `PARAMETER_ARN` set to the ARN of the parameter being encrypted. It is cryptographically bound to the data, appears in plaintext in [CloudTrail](cloudtrail.md) logs, and can be referenced in IAM policy `Condition` blocks to scope decrypt permission to a specific parameter — the same `kms:EncryptionContext` mechanism S3 uses for [per-object scoping](s3.md#s3-bucket-keys--sse-kms-cost-optimization).
+KMS operations use an **encryption context** of `PARAMETER_ARN` set to the ARN of the parameter being encrypted. It is cryptographically bound to the data, appears in plaintext in [CloudTrail](cloudtrail.md) logs, and can be referenced in IAM policy `Condition` blocks to scope decrypt permission to a specific parameter — the same `kms:EncryptionContext` mechanism S3 uses for [per-object scoping](s3.md#s3-bucket-keys-for-sse-kms-cost-and-throttling).
 
 ### Standard vs. Advanced Tier
 

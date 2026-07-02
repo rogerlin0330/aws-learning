@@ -2,6 +2,10 @@
 
 <!-- markdownlint-disable MD051 -->
 
+## [2026-07-02] fix | Wiki anchor navigation
+
+Fixed stale section anchors found during the wiki health check. Updated S3 Bucket Keys links to point at a punctuation-stable heading, corrected cross-account S3 access, VPC endpoint, and cost-pooling anchors, and refreshed affected page dates.
+
 ## [2026-06-30] ingest | RDS Custom
 
 Ingested `rds_custom.md` into the [RDS](services/rds.md) page as a new **`## RDS Custom`** section placed between *What RDS Actually Is* and *Architecture*, so the page reads as a spectrum: DB-on-EC2 (fully self-managed) → **RDS Custom** (middle ground) → standard RDS (fully managed). RDS Custom was already name-dropped across the page (no-SSH exception, DB-on-EC2 softening) but never had its own coverage. Copied `rds-custom.png` (shared-responsibility comparison) into `wiki/assets/` with reading-guide alt text.
