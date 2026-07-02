@@ -1,14 +1,14 @@
 ---
 title: AWS Solutions Architect Associate — Exam Notes
 type: certification
-tags: [iam, vpc, networking, ec2, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, ephemeral, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns, route53, organizations, cost, purchase-options, on-demand, spot, reserved-instances, scheduled-reserved, capacity-reservations, zonal-ri, regional-ri, savings-plans, byol, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, raid0, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, ebs-encryption, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr, scaling, horizontal-scaling, vertical-scaling, stateless, sticky-sessions, elasticity, load-balancer, containers, docker, container-image, container-registry, ecs, eks, kubernetes, k8s, control-plane, etcd, kubelet, pod, ingress, persistent-volume, node-group, fargate-profile, ecr, fargate, task-definition, task-role, cloudtrail, audit, governance, management-events, data-events, insight-events, global-service-events, organizational-trail, log-file-integrity, event-history, eventbridge, control-tower, landing-zone, guardrails, account-factory, iam-identity-center, bootstrapping, cloud-init, boot-time-to-service-time, cloudformation, cfn-init, configsets, cfn-hup, cfn-signal, creation-policy, desired-state, infrastructure-as-code, cloudwatch-agent, cwagent, parameter-store, log-group, log-stream, placement-groups, cluster-placement-group, spread-placement-group, partition-placement-group, hpc, enhanced-networking, topology-aware, walking-the-tree, resolver, hosts-file, root-servers, nslookup, dig, dnssec, rrset, rrsig, dnskey, zsk, ksk, ds-record, trust-anchor, root-signing-ceremony, chain-of-trust, nsec3, cache-poisoning, rds, rds-custom, session-manager, database, relational, subnet-group, multi-az, multi-az-instance, multi-az-cluster, read-replica, synchronous-replication, semi-synchronous-replication, asynchronous-replication, quorum, failover, reader-endpoint, cluster-endpoint, graviton, nvme, aurora, acid, base, cap-theorem, consistency, availability, eventual-consistency, dynamodb, nosql, backup, snapshot, automated-backup, manual-snapshot, transaction-logs, pitr, point-in-time-recovery, restore, rpo, rto, cross-region-backup, rds-security, encryption-in-transit, encryption-at-rest, ssl, tls, kms-key, cmk, dek, envelope-encryption, aes-256, tde, transparent-data-encryption, cloudhsm, iam-authentication, generate-db-auth-token, authentication, authorization]
+tags: [iam, vpc, networking, ec2, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, ephemeral, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns, route53, organizations, cost, purchase-options, on-demand, spot, reserved-instances, scheduled-reserved, capacity-reservations, zonal-ri, regional-ri, savings-plans, byol, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, raid0, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, ebs-encryption, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr, scaling, horizontal-scaling, vertical-scaling, stateless, sticky-sessions, elasticity, load-balancer, containers, docker, container-image, container-registry, ecs, eks, kubernetes, k8s, control-plane, etcd, kubelet, pod, ingress, persistent-volume, node-group, fargate-profile, ecr, fargate, task-definition, task-role, cloudtrail, audit, governance, management-events, data-events, insight-events, global-service-events, organizational-trail, log-file-integrity, event-history, eventbridge, control-tower, landing-zone, guardrails, account-factory, iam-identity-center, bootstrapping, cloud-init, boot-time-to-service-time, cloudformation, cfn-init, configsets, cfn-hup, cfn-signal, creation-policy, desired-state, infrastructure-as-code, cloudwatch-agent, cwagent, parameter-store, log-group, log-stream, placement-groups, cluster-placement-group, spread-placement-group, partition-placement-group, hpc, enhanced-networking, topology-aware, walking-the-tree, resolver, hosts-file, root-servers, nslookup, dig, dnssec, rrset, rrsig, dnskey, zsk, ksk, ds-record, trust-anchor, root-signing-ceremony, chain-of-trust, nsec3, cache-poisoning, rds, rds-custom, session-manager, database, relational, subnet-group, multi-az, multi-az-instance, multi-az-cluster, read-replica, synchronous-replication, semi-synchronous-replication, asynchronous-replication, quorum, failover, reader-endpoint, cluster-endpoint, graviton, nvme, aurora, acid, base, cap-theorem, consistency, availability, eventual-consistency, dynamodb, nosql, backup, snapshot, automated-backup, manual-snapshot, transaction-logs, pitr, point-in-time-recovery, restore, rpo, rto, cross-region-backup, rds-security, encryption-in-transit, encryption-at-rest, ssl, tls, kms-key, cmk, dek, envelope-encryption, aes-256, tde, transparent-data-encryption, cloudhsm, iam-authentication, generate-db-auth-token, authentication, authorization, cluster-volume, shared-storage, backtrack, fast-clone, aurora-serverless, acu, scale-to-zero, data-api, global-database, multi-master, switchover, database-savings-plans]
 certs: [aws-saa]
-updated: 2026-06-30
+updated: 2026-07-01
 ---
 
 # AWS Solutions Architect Associate (SAA-C03)
 
-A running collection of exam tips, gotchas, and comparison tables. Deep-dive pages: [IAM](../services/iam.md) · [VPC](../services/vpc.md) · [EC2](../services/ec2.md) · [ECS](../services/ecs.md) · [ECR](../services/ecr.md) · [S3](../services/s3.md) · [RDS](../services/rds.md) · [Route 53](../services/route53.md) · [Organizations](../services/organizations.md) · [Control Tower](../services/control-tower.md) · [CloudWatch](../services/cloudwatch.md) · [KMS](../services/kms.md) · [EKS](../services/eks.md) · [Networking](../concepts/networking.md) · [Identity & Access](../concepts/identity-and-access.md) · [Resource vs Identity Policies](../concepts/resource-vs-identity-policies.md) · [DNS](../concepts/dns.md) · [DNSSEC](../concepts/dnssec.md) · [Database Models](../concepts/db-transaction-model.md) · [TLS/HTTPS](../concepts/tls-https.md) · [Containers](../concepts/containers.md) · [Kubernetes](../concepts/kubernetes.md) · [CloudFormation](../services/cloudformation.md) · [Cost Optimization](../patterns/cost-optimization.md) · [Scaling](../patterns/scaling.md) · [Boot Time to Service Time](../patterns/boot-time-optimization.md).
+A running collection of exam tips, gotchas, and comparison tables. Deep-dive pages: [IAM](../services/iam.md) · [VPC](../services/vpc.md) · [EC2](../services/ec2.md) · [ECS](../services/ecs.md) · [ECR](../services/ecr.md) · [S3](../services/s3.md) · [RDS](../services/rds.md) · [Aurora](../services/aurora.md) · [Route 53](../services/route53.md) · [Organizations](../services/organizations.md) · [Control Tower](../services/control-tower.md) · [CloudWatch](../services/cloudwatch.md) · [KMS](../services/kms.md) · [EKS](../services/eks.md) · [Networking](../concepts/networking.md) · [Identity & Access](../concepts/identity-and-access.md) · [Resource vs Identity Policies](../concepts/resource-vs-identity-policies.md) · [DNS](../concepts/dns.md) · [DNSSEC](../concepts/dnssec.md) · [Database Models](../concepts/db-transaction-model.md) · [TLS/HTTPS](../concepts/tls-https.md) · [Containers](../concepts/containers.md) · [Kubernetes](../concepts/kubernetes.md) · [CloudFormation](../services/cloudformation.md) · [Cost Optimization](../patterns/cost-optimization.md) · [Scaling](../patterns/scaling.md) · [Boot Time to Service Time](../patterns/boot-time-optimization.md).
 
 ## IAM
 
@@ -1436,7 +1436,7 @@ There are **two** Multi-AZ architectures — both **in-region HA only** (not DR)
 > Trigger words: *"readable standby"* / *"faster failover"* / *"lower commit (write) latency"* → **Multi-AZ cluster**. *"SQL Server or Oracle + Multi-AZ"* → must be **instance** mode (cluster is MySQL/PostgreSQL only). *"read scaling"* → **cluster or read replica, never instance mode**. *"Multi-AZ for cross-region / DR"* → wrong — Multi-AZ is in-region; use a **cross-region read replica**.
 
 > [!warning] Gotcha — Aurora ≠ RDS
-> **Amazon Aurora** is a separate AWS-built engine with a **shared-cluster storage** architecture — *not* the dedicated-EBS-per-instance model RDS uses (cluster mode still keeps **per-instance local storage**, and caps at exactly **2 readers** where Aurora allows more). Don't carry RDS storage facts over to Aurora questions.
+> **[Amazon Aurora](../services/aurora.md)** is a separate AWS-built engine with a **shared-cluster storage** architecture — *not* the dedicated-EBS-per-instance model RDS uses (cluster mode still keeps **per-instance local storage**, and caps at exactly **2 readers** where Aurora allows more). Don't carry RDS storage facts over to Aurora questions. See the [Aurora section](#aurora) below.
 
 ### Backups, Snapshots & Restore
 
@@ -1486,6 +1486,54 @@ Four separate concerns — keep **authentication vs authorization** and **in-tra
 > - **Encryption can't be removed, and can't be added in place** after creation — only via **snapshot → copy-with-encryption → restore**; a read replica's encryption state must **match its source**
 > - **CloudHSM "no AWS trust" option is RDS Oracle-specific** — don't generalize it to other engines
 > - **Don't confuse the KMS key (CMK) with the DEK** — the KMS key *generates* DEKs; the DEKs do the actual bulk AES-256 encryption
+
+## Aurora
+
+See [Aurora](../services/aurora.md) for full details. Treat Aurora as a **separate product** from [RDS](../services/rds.md) — different storage model, different endpoints, different billing.
+
+### Core architecture facts
+
+- **Cluster** = 1 primary + **0–15 replicas** + a **shared cluster volume**. Replicas serve **reads and failover simultaneously** (RDS makes you pick standby *or* read replica); any of the 15 can be promoted, and failover is fast because **no storage moves**
+- Storage: **6 copies across 3 AZs**, replicated **synchronously at the storage level** (4-of-6 quorum, no instance CPU cost), **SSD only**, **self-healing** (disk failure rarely needs a restore)
+- **Max volume 128 TiB** on the exam (current AWS: **256 TiB** since Jul 2025 on recent engine versions)
+- Billing: storage is **consumed GB-month** (never allocated) + per-request I/O; compute per second with a **10-minute minimum**; free backup allowance = **100% of cluster storage**; **no free tier** (no micro instances)
+- **Endpoints**: **cluster** (always the primary, R/W) · **reader** (load-balances replicas, auto-updates as they come and go) · custom (subset) · instance (one specific instance)
+
+### Backtrack vs fast clone vs restore
+
+| Feature | What it does | Key limit |
+| --- | --- | --- |
+| **Backtrack** | **In-place rewind** of the *same* cluster to a past time — endpoints unchanged | Enable per cluster; **Aurora MySQL only** |
+| **Fast clone** | New DB **referencing** source storage (copy-on-write) — near-instant, stores **only differences** | — |
+| **Restore** (snapshot/PITR) | Always a **new cluster** + new endpoints | Same as RDS |
+
+### Aurora Serverless
+
+- **ACUs** (~2 GiB memory each); set a **min/max ACU** range; per-second compute billing; **pause to zero = storage-only cost**. "Fargate for databases"
+- Fits: infrequent, new, variable, or unpredictable workloads; dev/test; multi-tenant apps
+- **v1** (what older questions describe): warm pool of shared stateless ACUs + AWS-managed **proxy fleet** brokering connections (scaling never drops connections). **Retired March 31, 2025**
+- **v2** (current): a serverless **instance type inside a normal Aurora cluster**; **0.5-ACU** increments; **0–256 ACUs**; scale-to-zero/auto-pause since Nov 2024 (resume ~15 s); full Multi-AZ/Global Database/reader parity; **Data API supported** (relaunched for v2 *and* provisioned)
+
+> [!warning] Gotcha
+> **Reserved Instances never cover Aurora Serverless** — that answer is a distractor. **Database Savings Plans** (Dec 2025, up to ~35%) are the commitment discount that does cover Serverless v2.
+
+### Aurora Global Database
+
+- 1 primary region (1 writer + up to 15 readers) replicating to **up to 5 (exam) / 10 (current, May 2025) secondary regions**, each with **up to 16 read-only replicas** (the extra slot is the freed writer slot, not a different limit)
+- Replication is **storage-layer** (no performance impact), **~1 s**, **one-way**, and **asynchronous cross-region** — in-region across-AZ replication is the synchronous leg. That async leg is why cross-region **RPO ≈ 1 s, not zero**
+- **Switchover** = planned, syncs first, **RPO 0**; **failover** = unplanned, RPO = replication lag; promote a secondary to read/write
+- Two use cases: **cross-region DR/business continuity** (low RPO + RTO) and **global low-latency reads**
+
+> [!tip] Exam Tip
+> Triggers: *"region-wide outage" / "business continuity" / "low RPO+RTO across regions" / "low-latency reads for international users"* → **Global Database**. Traps: secondaries are **read-only until promoted**; replication is **one-way**, and **async** on the cross-region leg.
+
+### Aurora Multi-Master (retired)
+
+Concept-level only — it existed **only on Aurora MySQL v1 (5.6), EOL Feb 28, 2023**:
+
+- **All instances write**; **no cluster or reader endpoint** — the **application** connects directly and load-balances/reroutes itself
+- Writes are **quorum-based**: storage nodes reject conflicting in-flight changes; a rejected quorum returns an **error the app must handle**
+- Payoff is **fault tolerance** (operate through a writer failure with zero promotion delay), **not write scaling** — and only if the app is designed for it
 
 ## Database Transaction Models — ACID & BASE
 

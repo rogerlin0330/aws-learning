@@ -3,7 +3,7 @@ title: RDS — Relational Database Service
 type: service
 tags: [rds, rds-custom, database, relational, ec2, ebs, vpc, subnet-group, multi-az, multi-az-instance, multi-az-cluster, read-replica, synchronous-replication, semi-synchronous-replication, asynchronous-replication, quorum, failover, reader-endpoint, cluster-endpoint, graviton, nvme, aurora, dr, high-availability, acid, cost, backup, snapshot, automated-backup, manual-snapshot, transaction-logs, pitr, point-in-time-recovery, retention, restore, rpo, rto, s3, cross-region-backup, security, encryption, encryption-in-transit, encryption-at-rest, ssl, tls, kms, kms-key, cmk, dek, envelope-encryption, aes-256, tde, transparent-data-encryption, cloudhsm, iam-authentication, generate-db-auth-token, authentication, authorization, credentials-provider-chain, imds, postgresql, jdbc, aws-advanced-jdbc-wrapper, connection-pool, druid, hikaricp, rds-iam, ssl-mode, ca-bundle, session-manager, ssh, rdp, shared-responsibility]
 certs: [aws-saa]
-updated: 2026-06-30
+updated: 2026-07-01
 ---
 
 # RDS — Relational Database Service
@@ -59,7 +59,7 @@ There *are* exam questions where "run the database on EC2" is correct. The justi
 - **Engines**: MySQL, MariaDB, PostgreSQL, plus commercial Oracle and Microsoft SQL Server (commercial engines carry licensing cost).
 
 > [!warning] Aurora ≠ RDS
-> **Amazon Aurora** is a custom AWS-built engine (compatible with some of the above, but designed by AWS). Many RDS features differ for Aurora — treat them as separate products. The most exam-relevant difference is **storage**: RDS gives each instance its **own dedicated EBS volume**; Aurora uses a shared cluster storage layer. Don't carry RDS storage facts over to Aurora.
+> **[Amazon Aurora](aurora.md)** is a custom AWS-built engine (compatible with some of the above, but designed by AWS). Many RDS features differ for Aurora — treat them as separate products. The most exam-relevant difference is **storage**: RDS gives each instance its **own dedicated EBS volume**; Aurora uses a [shared cluster storage layer](aurora.md#shared-cluster-volume). Don't carry RDS storage facts over to Aurora.
 
 ## RDS Custom
 
@@ -194,7 +194,7 @@ Instance-mode quick facts: synchronous replication, **exactly one** standby, sta
 
 Cluster mode runs **one writer plus two readers**, each in a different AZ.
 
-- **Exactly two readers** — no more, no fewer. (Aurora allows more; this cap is a key exam distinction.)
+- **Exactly two readers** — no more, no fewer. ([Aurora](aurora.md) allows more; this cap is a key exam distinction.)
 - The **writer** handles writes **and** reads; the **readers are usable** for **read operations only** (unlike the instance-mode standby). Using readers requires **application support** — the app must send writes to the writer and reads to the readers.
 - This is what lets cluster mode **scale read workloads**; instance mode cannot.
 - Each instance still has its **own local storage** — contrast with Aurora's shared cluster storage layer.

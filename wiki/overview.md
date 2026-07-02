@@ -1,8 +1,8 @@
 ---
 title: AWS Learning — Overview
 type: overview
-tags: [aws, architecture, iam, vpc, organizations, control-tower, cost, s3, ec2, ecs, eks, kubernetes, containers, cloudwatch, cloudtrail, cloudformation, bootstrapping, dns, dnssec, rds, rds-custom, database, multi-az, high-availability, acid, base, cap-theorem]
-updated: 2026-06-30
+tags: [aws, architecture, iam, vpc, organizations, control-tower, cost, s3, ec2, ecs, eks, kubernetes, containers, cloudwatch, cloudtrail, cloudformation, bootstrapping, dns, dnssec, rds, rds-custom, aurora, database, multi-az, high-availability, acid, base, cap-theorem]
+updated: 2026-07-01
 ---
 
 # AWS Learning Overview
@@ -78,7 +78,8 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 - [IAM](services/iam.md) — users, groups, roles (STS / federation), policies, ARNs
 - [VPC](services/vpc.md) — subnets, routing, IGW, NACL, SG, NAT GW, PrivateLink
 - [EC2](services/ec2.md) — IaaS foundations, hosts vs instances (tenancy + AZ-resilience), instance lifecycle & state-based costs (incl. stop/start vs restart), AMIs, bootstrapping (user data), SSH/RDP access, when-to-use-EC2 decision framing
-- [RDS](services/rds.md) — managed relational database **server** (one instance, many databases); databases-on-EC2 decision (single-AZ by nature; right only for unsupported engine/version, specific OS+DB combo, or OS/root access), **RDS Custom** as the middle ground (SQL Server/Oracle only, OS/engine access via SSH/RDP/Session Manager, resources visible in your account), DB subnet groups, dedicated EBS per instance, **Multi-AZ standby = synchronous** vs **read replica = asynchronous**, **Multi-AZ instance** (passive standby, DNS-repoint failover) vs **Multi-AZ cluster** (2 readable readers, semi-synchronous quorum, faster failover, MySQL/PostgreSQL only), per-second billing; Aurora is a separate product
+- [RDS](services/rds.md) — managed relational database **server** (one instance, many databases); databases-on-EC2 decision (single-AZ by nature; right only for unsupported engine/version, specific OS+DB combo, or OS/root access), **RDS Custom** as the middle ground (SQL Server/Oracle only, OS/engine access via SSH/RDP/Session Manager, resources visible in your account), DB subnet groups, dedicated EBS per instance, **Multi-AZ standby = synchronous** vs **read replica = asynchronous**, **Multi-AZ instance** (passive standby, DNS-repoint failover) vs **Multi-AZ cluster** (2 readable readers, semi-synchronous quorum, faster failover, MySQL/PostgreSQL only), per-second billing; [Aurora](services/aurora.md) is a separate product
+- [Aurora](services/aurora.md) — AWS-built relational engine on a **shared cluster volume** (6 copies / 3 AZs, self-healing, synchronous at the storage level); up to 15 replicas serving reads **and** failover at once, multiple endpoints (cluster / reader / custom / instance), consumed-storage billing, Backtrack + fast clones, **Serverless** (ACUs, scale-to-zero), **Global Database** (async storage-layer cross-region replication for DR + global reads), retired multi-master
 - [CloudFormation](services/cloudformation.md) — infrastructure as code (templates → stacks); cfn-init desired-state bootstrapping, configSets, cfn-hup re-runs, CreationPolicy + cfn-signal completion handshake
 - [ECS](services/ecs.md) — managed container orchestration (AWS-proprietary); task definitions, services, task roles, EC2 launch type vs Fargate
 - [EKS](services/eks.md) — AWS-managed Kubernetes; control plane + etcd (multi-AZ), node options (EC2 / managed node groups / Fargate), two-VPC architecture, ECS-vs-EKS choice
