@@ -1,3 +1,10 @@
+---
+title: Wiki Index
+type: overview
+tags: [index, catalog, wiki]
+updated: 2026-07-02
+---
+
 # Wiki Index
 
 ## Overview

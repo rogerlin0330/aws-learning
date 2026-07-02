@@ -2,6 +2,10 @@
 
 <!-- markdownlint-disable MD051 -->
 
+## [2026-07-02] fix | Index frontmatter
+
+Added YAML frontmatter to `wiki/index.md` so the catalog follows the same page metadata convention as the rest of the wiki.
+
 ## [2026-07-02] fix | Wiki anchor navigation
 
 Fixed stale section anchors found during the wiki health check. Updated S3 Bucket Keys links to point at a punctuation-stable heading, corrected cross-account S3 access, VPC endpoint, and cost-pooling anchors, and refreshed affected page dates.
