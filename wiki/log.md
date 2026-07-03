@@ -2,6 +2,14 @@
 
 <!-- markdownlint-disable MD051 -->
 
+## [2026-07-03] ingest | DMS
+
+Ingested `raw/aws-cert-study-notes/aws-solution-architect/dms.md` into a new [DMS](services/dms.md) service page and copied `dms-architecture.png` into `wiki/assets/`. Kept the course's core exam framing — DMS for managed database migration, Full Load / Full Load + CDC / CDC Only task modes, homogeneous vs heterogeneous migration, and Snowball/S3 for very large migrations — but updated it for the current AWS service surface.
+
+Modernizations applied: framed the old replication-instance diagram as **DMS Standard** rather than the whole service; added **DMS Serverless** and DCUs; replaced "schema conversion is only external SCT" with the current split between managed **DMS Schema Conversion** and downloadable **AWS SCT**; noted that homogeneous DMS migration is serverless in current AWS FAQ wording; and dropped Fleet Advisor as active guidance because AWS ended support on **May 20, 2026**. Preserved the on-premises-to-on-premises restriction with the current FAQ wording that either source or target, or both, must reside in RDS or on EC2.
+
+Added DMS exam coverage to [aws-saa.md](certifications/aws-saa.md), including trigger tables for Full Load + CDC, CDC Only, DMS Standard vs Serverless, homogeneous vs heterogeneous migration, and Snowball/S3 baseline loads. Wired DMS into [index.md](index.md), [overview.md](overview.md), [Resource Scope](concepts/resource-scope.md), [RDS](services/rds.md), and [Aurora](services/aurora.md).
+
 ## [2026-07-02] fix | Index frontmatter
 
 Added YAML frontmatter to `wiki/index.md` so the catalog follows the same page metadata convention as the rest of the wiki.

@@ -1,8 +1,8 @@
 ---
 title: AWS Learning — Overview
 type: overview
-tags: [aws, architecture, iam, vpc, organizations, control-tower, cost, s3, ec2, ecs, eks, kubernetes, containers, cloudwatch, cloudtrail, cloudformation, bootstrapping, dns, dnssec, rds, rds-custom, aurora, database, multi-az, high-availability, acid, base, cap-theorem]
-updated: 2026-07-02
+tags: [aws, architecture, iam, vpc, organizations, control-tower, cost, s3, ec2, ecs, eks, kubernetes, containers, cloudwatch, cloudtrail, cloudformation, bootstrapping, dns, dnssec, rds, rds-custom, aurora, dms, database, database-migration, multi-az, high-availability, acid, base, cap-theorem]
+updated: 2026-07-03
 ---
 
 # AWS Learning Overview
@@ -80,6 +80,7 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 - [EC2](services/ec2.md) — IaaS foundations, hosts vs instances (tenancy + AZ-resilience), instance lifecycle & state-based costs (incl. stop/start vs restart), AMIs, bootstrapping (user data), SSH/RDP access, when-to-use-EC2 decision framing
 - [RDS](services/rds.md) — managed relational database **server** (one instance, many databases); engines include IBM Db2, MariaDB, MySQL, Oracle, PostgreSQL, and SQL Server; databases-on-EC2 decision (single-AZ by nature; right only for unsupported engine/version, specific OS+DB combo, or OS/root access), **RDS Custom** as the middle ground (SQL Server/Oracle only, OS/engine access via SSH/RDP/Session Manager, resources visible in your account), DB subnet groups, dedicated EBS per instance, **Multi-AZ standby = synchronous** vs **read replica = asynchronous** (Db2 standby replicas and Oracle mounted replicas are DR-only), **Multi-AZ instance** (passive standby, DNS-repoint failover) vs **Multi-AZ cluster** (2 readable readers, semi-synchronous quorum, faster failover, MySQL/PostgreSQL only), per-second billing; [Aurora](services/aurora.md) is a separate product
 - [Aurora](services/aurora.md) — AWS-built relational engine on a **shared cluster volume** (6 copies / 3 AZs, self-healing, synchronous at the storage level); up to 15 replicas serving reads **and** failover at once, multiple endpoints (cluster / reader / custom / instance), Standard vs I/O-Optimized storage billing, Backtrack + fast clones, **Aurora serverless** (formerly Serverless v2; ACUs, scale-to-zero), **Global Database** (async storage-layer cross-region replication for DR + global reads, RTO on the order of minutes), retired multi-master
+- [DMS](services/dms.md) — Database Migration Service; managed database and analytics data migration with DMS Standard replication instances or DMS Serverless/DCUs, Full Load / Full Load + CDC / CDC Only task modes, DMS Schema Conversion or AWS SCT for heterogeneous engine changes, and Snowball/S3 bulk-transfer patterns for very large migrations
 - [CloudFormation](services/cloudformation.md) — infrastructure as code (templates → stacks); cfn-init desired-state bootstrapping, configSets, cfn-hup re-runs, CreationPolicy + cfn-signal completion handshake
 - [ECS](services/ecs.md) — managed container orchestration (AWS-proprietary); task definitions, services, task roles, EC2 launch type vs Fargate
 - [EKS](services/eks.md) — AWS-managed Kubernetes; control plane + etcd (multi-AZ), node options (EC2 / managed node groups / Fargate), two-VPC architecture, ECS-vs-EKS choice

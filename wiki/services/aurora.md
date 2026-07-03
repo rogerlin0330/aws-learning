@@ -1,14 +1,16 @@
 ---
 title: Aurora
 type: service
-tags: [aurora, database, relational, rds, cluster, cluster-volume, shared-storage, replicas, failover, cluster-endpoint, reader-endpoint, custom-endpoint, instance-endpoint, storage-billing, high-watermark, dynamic-resizing, backtrack, fast-clone, copy-on-write, serverless, aurora-serverless, acu, proxy-fleet, data-api, scale-to-zero, global-database, cross-region, dr, rpo, rto, switchover, multi-master, quorum, read-scaling, high-availability, mysql, postgresql, savings-plans, reserved-instances]
+tags: [aurora, database, relational, rds, dms, cluster, cluster-volume, shared-storage, replicas, failover, cluster-endpoint, reader-endpoint, custom-endpoint, instance-endpoint, storage-billing, high-watermark, dynamic-resizing, backtrack, fast-clone, copy-on-write, serverless, aurora-serverless, acu, proxy-fleet, data-api, scale-to-zero, global-database, cross-region, dr, rpo, rto, switchover, multi-master, quorum, read-scaling, high-availability, mysql, postgresql, savings-plans, reserved-instances]
 certs: [aws-saa]
-updated: 2026-07-02
+updated: 2026-07-03
 ---
 
 # Aurora
 
 **Amazon Aurora** is AWS's custom-built relational database engine (MySQL- and PostgreSQL-compatible). Officially it is part of [RDS](rds.md), but its architecture is different enough that it should be treated as its own product: where RDS gives each instance its own dedicated [EBS](ebs.md) storage, Aurora is built around a **cluster** of instances sharing a single distributed **cluster volume**. Like the rest of RDS it is a relational, [ACID](../concepts/db-transaction-model.md) database product.
+
+For migrations into Aurora, [DMS](dms.md) moves and replicates data while DMS Schema Conversion or AWS SCT handles schema/code conversion when the source engine changes.
 
 Aurora comes in two compute models sharing the same storage architecture:
 
@@ -227,3 +229,4 @@ In default **single-master** Aurora, a failover still takes time: a replica must
 - [Aurora Serverless v1 end of support (Mar 31, 2025)](https://repost.aws/questions/QUhcMVoChXRm2HLi8F-yih1g/announcement-support-for-aurora-serverless-v1-ending-soon)
 - [Data API for Aurora Serverless v2 and provisioned clusters](https://aws.amazon.com/blogs/database/introducing-the-data-api-for-amazon-aurora-serverless-v2-and-amazon-aurora-provisioned-clusters/) (includes April 2026 rename note)
 - [Database Savings Plans announcement (Dec 2025)](https://aws.amazon.com/about-aws/whats-new/2025/12/database-savings-plans-savings/)
+- Related: [RDS](rds.md) · [DMS](dms.md) · [Database Transaction Models](../concepts/db-transaction-model.md) · [Resource Scope](../concepts/resource-scope.md)

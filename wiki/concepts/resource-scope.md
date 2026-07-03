@@ -1,9 +1,9 @@
 ---
 title: Resource Scope (Global / Regional / AZ / Edge)
 type: concept
-tags: [scope, regions, availability-zones, global, edge, dr, resilience]
+tags: [scope, regions, availability-zones, global, edge, dr, resilience, dms]
 certs: [aws-saa]
-updated: 2026-06-09
+updated: 2026-07-03
 ---
 
 # Resource Scope (Global / Regional / AZ / Edge)
@@ -61,6 +61,7 @@ Live in exactly one region. Most managed services are multi-AZ resilient within 
 | Auto Scaling Group | Regional; can launch instances across multiple AZs within the region |
 | EFS file system | Regional service (the file system itself), but **mount targets** are AZ-scoped (see below) |
 | RDS DB instance | The DB resource is regional in terms of API, but the primary instance is placed in **one AZ** — Multi-AZ adds a standby in another AZ |
+| [DMS](../services/dms.md) replication instance | DMS is a regional service; a DMS Standard replication instance is placed in VPC subnets and Multi-AZ adds a standby in another AZ. DMS Serverless hides the instance placement behind serverless replications |
 | [SSM Parameter Store](../services/ssm.md) | Regional; multi-AZ resilient within the Region but **no built-in cross-Region replication** — recreate the parameter in each Region (one `put-parameter` per Region) |
 
 ## AZ-scoped resources

@@ -1,9 +1,9 @@
 ---
 title: RDS — Relational Database Service
 type: service
-tags: [rds, rds-custom, database, relational, db2, ec2, ebs, vpc, subnet-group, multi-az, multi-az-instance, multi-az-cluster, read-replica, synchronous-replication, semi-synchronous-replication, asynchronous-replication, quorum, failover, reader-endpoint, cluster-endpoint, graviton, nvme, aurora, dr, high-availability, acid, cost, backup, snapshot, automated-backup, manual-snapshot, transaction-logs, pitr, point-in-time-recovery, retention, restore, rpo, rto, s3, cross-region-backup, security, encryption, encryption-in-transit, encryption-at-rest, ssl, tls, kms, kms-key, cmk, dek, envelope-encryption, aes-256, tde, transparent-data-encryption, cloudhsm, iam-authentication, generate-db-auth-token, authentication, authorization, credentials-provider-chain, imds, postgresql, jdbc, aws-advanced-jdbc-wrapper, connection-pool, druid, hikaricp, rds-iam, ssl-mode, ca-bundle, session-manager, ssh, rdp, shared-responsibility]
+tags: [rds, rds-custom, database, relational, db2, ec2, ebs, vpc, subnet-group, multi-az, multi-az-instance, multi-az-cluster, read-replica, synchronous-replication, semi-synchronous-replication, asynchronous-replication, quorum, failover, reader-endpoint, cluster-endpoint, graviton, nvme, aurora, dms, dr, high-availability, acid, cost, backup, snapshot, automated-backup, manual-snapshot, transaction-logs, pitr, point-in-time-recovery, retention, restore, rpo, rto, s3, cross-region-backup, security, encryption, encryption-in-transit, encryption-at-rest, ssl, tls, kms, kms-key, cmk, dek, envelope-encryption, aes-256, tde, transparent-data-encryption, cloudhsm, iam-authentication, generate-db-auth-token, authentication, authorization, credentials-provider-chain, imds, postgresql, jdbc, aws-advanced-jdbc-wrapper, connection-pool, druid, hikaricp, rds-iam, ssl-mode, ca-bundle, session-manager, ssh, rdp, shared-responsibility]
 certs: [aws-saa]
-updated: 2026-07-02
+updated: 2026-07-03
 ---
 
 # RDS — Relational Database Service
@@ -11,6 +11,8 @@ updated: 2026-07-02
 RDS is AWS's **managed database server** product. AWS owns the hardware, OS, engine installation, and most of the engine maintenance, so you operate a database without operating its host. This page also covers the prior question every architect must answer first: **should the database run on plain [EC2](ec2.md) at all?**
 
 RDS databases are almost always relational and use the [ACID transaction model](../concepts/db-transaction-model.md) — which is the exam's default assumption whenever it says "ACID".
+
+For migration into or out of RDS with minimal downtime, use [DMS](dms.md) with change data capture rather than trying to invent database replication yourself.
 
 ## Databases on EC2 — Why You Usually Shouldn't
 
@@ -693,4 +695,4 @@ RDS is **resource-allocation billed** (like [EC2](ec2.md)), *not* usage-billed �
 - [AWS — SQL Server Transparent Data Encryption (TDE) option](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Appendix.SQLServer.Options.TDE.html) and [RDS security features](https://aws.amazon.com/rds/features/security/) (engine/edition restrictions, option-group mechanism)
 - [AWS — IAM database authentication](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.html) and the [SDK default credentials-provider chain](https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/credentials-chain.html) (token mechanics, 15-min validity, mandatory TLS, IMDS-on-EC2 resolution)
 - [AWS Advanced JDBC Wrapper — IAM authentication plugin](https://github.com/aws/aws-advanced-jdbc-wrapper) and [`RdsUtilities.generateAuthenticationToken`](https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/rds/RdsUtilities.html) (the two JDBC connection-pool wiring approaches; PostgreSQL `rds_iam` role and `sslmode=verify-full` CA handling)
-- Related: [EC2](ec2.md) · [EBS](ebs.md) · [VPC](vpc.md) · [KMS](kms.md) · [IAM](iam.md) · [Identity and Access](../concepts/identity-and-access.md) · [TLS/HTTPS](../concepts/tls-https.md) · [Database Transaction Models (ACID/BASE/CAP)](../concepts/db-transaction-model.md) · [Resource Scope](../concepts/resource-scope.md)
+- Related: [EC2](ec2.md) · [EBS](ebs.md) · [VPC](vpc.md) · [KMS](kms.md) · [IAM](iam.md) · [DMS](dms.md) · [Identity and Access](../concepts/identity-and-access.md) · [TLS/HTTPS](../concepts/tls-https.md) · [Database Transaction Models (ACID/BASE/CAP)](../concepts/db-transaction-model.md) · [Resource Scope](../concepts/resource-scope.md)
