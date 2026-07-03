@@ -1376,7 +1376,7 @@ See [RDS](../services/rds.md) for full details.
 
 - RDS = **"database server as a service"**, not "database as a service" — **one instance hosts multiple databases**. This phrasing is a deliberate exam trap
 - **No SSH / no OS access** — exception: **RDS Custom**
-- **Engines**: MySQL, MariaDB, PostgreSQL, Oracle, SQL Server (the last two carry licensing cost)
+- **Engines**: IBM Db2, MySQL, MariaDB, PostgreSQL, Oracle, SQL Server (Oracle and SQL Server carry licensing cost)
 - RDS runs **inside a [VPC](../services/vpc.md)** (not a public-zone service); you **must pick a DB subnet group** at launch — a list of subnets RDS may use. Multi-AZ places primary + standby in **different AZs**, chosen at random unless specified
 - **Each instance has its own dedicated [EBS](../services/ebs.md) storage** (primary and standby each separate) — relational DBs here use the **[ACID model](../concepts/db-transaction-model.md)**
 - Billing is **resource-allocation** (like EC2), hourly rate **billed per second** — not usage-based. Snapshot storage **equal to DB storage is free**
@@ -1406,11 +1406,12 @@ Niche topic — **awareness only** (know it exists and what gap it fills). See [
 | App changes needed? | No (same CNAME) | **Yes** — point reads at the replica endpoint |
 
 - **Count:** **5** read replicas per instance (the long-standing/course number) or **up to 15** in current AWS docs — know both. **Cascading** replicas (replicas of replicas) are allowed but **lag compounds** at each hop
+- **Db2/Oracle exception:** RDS for Db2 standby replicas and RDS for Oracle mounted replicas don't accept user connections, so they are **DR-only** rather than read-scaling targets
 - **RPO/RTO:** read replicas give **near-zero RPO and RTO** via fast **promotion** to a standalone read/write instance — but only for **failure recovery**. For **data corruption** the replica holds a copy of the corrupted data, so it's **no defence** (use point-in-time backups instead). Backups improve **RPO**; read replicas improve **RTO**
 - Async means a small **replication lag** (seconds); cross-region replication is **AWS-managed and encrypted in transit**
 
 > [!tip] Exam Tip
-> Pattern-match: *"engine/version AWS doesn't support"* or *"OS/root access required"* → **DB on EC2** (one of the rare cases it's correct). *"automatic failover to an identical copy"* → **Multi-AZ standby (synchronous)**. *"offload read traffic"* or *"read scaling across regions"* → **read replica (asynchronous)**. *"promote to a standalone instance"* / *"low RTO recovery"* → **read replica**, but *"recover from data corruption / deleted data"* → **NOT a replica** (it replicated the bad data) → **PITR backup**. *"app has no knowledge of the replica"* / *"separate endpoint"* → read replicas need **application changes**. *"multiple databases on one server"* → RDS (it's a server, not a single DB). *"backups without impacting the primary"* → Multi-AZ runs backups **from the standby**.
+> Pattern-match: *"engine/version AWS doesn't support"* or *"OS/root access required"* → **DB on EC2** (one of the rare cases it's correct). *"automatic failover to an identical copy"* → **Multi-AZ standby (synchronous)**. *"offload read traffic"* or *"read scaling across regions"* → **read replica (asynchronous)**, except Db2 standby replicas and Oracle mounted replicas are DR-only. *"promote to a standalone instance"* / *"low RTO recovery"* → **read replica**, but *"recover from data corruption / deleted data"* → **NOT a replica** (it replicated the bad data) → **PITR backup**. *"app has no knowledge of the replica"* / *"separate endpoint"* → read replicas need **application changes**. *"multiple databases on one server"* → RDS (it's a server, not a single DB). *"backups without impacting the primary"* → Multi-AZ standby-sourced backups for MariaDB/MySQL/Oracle/PostgreSQL; **SQL Server still briefly suspends I/O**.
 
 ### Multi-AZ Instance vs Cluster
 
@@ -1424,7 +1425,7 @@ There are **two** Multi-AZ architectures — both **in-region HA only** (not DR)
 | Replication | **Synchronous**, storage-level | **Semi-synchronous** quorum (≥ 1 reader ack), transaction-log |
 | Failover | **60–120 s** (DNS repoint) | **~35 s** floor / **25–75 s** typical (no crash recovery) |
 | Storage / HW | EBS, standard | **Local NVMe SSD flushed to EBS**, **Graviton** |
-| Engines | All five (incl. **SQL Server / Oracle**) | **MySQL & PostgreSQL only** |
+| Engines | Db2, MariaDB, MySQL, Oracle, PostgreSQL, **SQL Server** | **MySQL & PostgreSQL only** |
 | Endpoints | Single **database CNAME** | **Cluster** (writer) / **Reader** / **Instance** (test-only) |
 
 - Instance-mode failover is a **DNS repoint**, not a data-recovery op — the standby already holds a synchronous copy, so the 60–120 s is DNS propagation + client caching. **Disable app-side DNS caching** to shorten it
@@ -1455,7 +1456,7 @@ Two mechanisms, both stored in **AWS-managed [S3](../services/s3.md)** (regional
 - **Keep data past the 35-day max on deletion** → take a **final manual snapshot**. "Retain automated backups on delete" **still expires** them
 - **Cross-region backup replication** (snapshots + logs) is **opt-in, not default**, and costs extra
 - A **restore always creates a new instance with a new endpoint** — re-point apps; it never overwrites the source. Restore **time is your Recovery Time Objective (RTO)** (slow for large DBs); backups improve **RPO**, **read replicas** improve **RTO**
-- On **Multi-AZ instance** mode backups run from the **standby** (no primary I/O hit); on **Single-AZ** the sole instance takes a brief I/O pause
+- On **Multi-AZ instance** mode, MariaDB/MySQL/Oracle/PostgreSQL backups run from the **standby** (no primary I/O suspension); **SQL Server still briefly suspends I/O**. On **Single-AZ** the sole instance takes a brief I/O pause
 
 > [!tip] Exam Tip
 > Pattern-match: *"backups not in my S3 buckets"* → **AWS-managed, RDS console only**. *"restore to the exact moment before failure"* → **automated-backup PITR**, not a manual snapshot. *"keep the data after deleting the instance / past 35 days"* → **final manual snapshot**. *"first backup full, then incremental"* → **both** snapshot types. *"5 minutes"* → **transaction-log interval** / achievable PITR RPO. *"replicate backups to another region"* → opt-in, extra cost. *"restore is slow / improve recovery time (RTO)"* → that's the **restore window**; use a **read replica**, not bigger/faster backups.
@@ -1496,7 +1497,7 @@ See [Aurora](../services/aurora.md) for full details. Treat Aurora as a **separa
 - **Cluster** = 1 primary + **0–15 replicas** + a **shared cluster volume**. Replicas serve **reads and failover simultaneously** (RDS makes you pick standby *or* read replica); any of the 15 can be promoted, and failover is fast because **no storage moves**
 - Storage: **6 copies across 3 AZs**, replicated **synchronously at the storage level** (4-of-6 quorum, no instance CPU cost), **SSD only**, **self-healing** (disk failure rarely needs a restore)
 - **Max volume 128 TiB** on the exam (current AWS: **256 TiB** since Jul 2025 on recent engine versions)
-- Billing: storage is **consumed GB-month** (never allocated) + per-request I/O; compute per second with a **10-minute minimum**; free backup allowance = **100% of cluster storage**; **no free tier** (no micro instances)
+- Billing: storage is **consumed GB-month** (never allocated). **Aurora Standard** adds per-request read/write I/O charges; **Aurora I/O-Optimized** has no separate read/write I/O operation charges. Compute is per second with a **10-minute minimum**; free backup allowance = **100% of cluster storage**; **no free tier** (no micro instances)
 - **Endpoints**: **cluster** (always the primary, R/W) · **reader** (load-balances replicas, auto-updates as they come and go) · custom (subset) · instance (one specific instance)
 
 ### Backtrack vs fast clone vs restore
@@ -1512,16 +1513,16 @@ See [Aurora](../services/aurora.md) for full details. Treat Aurora as a **separa
 - **ACUs** (~2 GiB memory each); set a **min/max ACU** range; per-second compute billing; **pause to zero = storage-only cost**. "Fargate for databases"
 - Fits: infrequent, new, variable, or unpredictable workloads; dev/test; multi-tenant apps
 - **v1** (what older questions describe): warm pool of shared stateless ACUs + AWS-managed **proxy fleet** brokering connections (scaling never drops connections). **Retired March 31, 2025**
-- **v2** (current): a serverless **instance type inside a normal Aurora cluster**; **0.5-ACU** increments; **0–256 ACUs**; scale-to-zero/auto-pause since Nov 2024 (resume ~15 s); full Multi-AZ/Global Database/reader parity; **Data API supported** (relaunched for v2 *and* provisioned)
+- **v2 / Aurora serverless** (AWS renamed v2 to Aurora serverless in April 2026): a serverless **instance type inside a normal Aurora cluster**; **0.5-ACU** increments; **0–256 ACUs**; scale-to-zero/auto-pause since Nov 2024 (resume ~15 s); full Multi-AZ/Global Database/reader parity; **Data API supported** (relaunched for v2 *and* provisioned)
 
 > [!warning] Gotcha
-> **Reserved Instances never cover Aurora Serverless** — that answer is a distractor. **Database Savings Plans** (Dec 2025, up to ~35%) are the commitment discount that does cover Serverless v2.
+> **Reserved Instances never cover Aurora Serverless** — that answer is a distractor. **Database Savings Plans** (Dec 2025, up to ~35%) are the commitment discount that does cover Aurora serverless.
 
 ### Aurora Global Database
 
 - 1 primary region (1 writer + up to 15 readers) replicating to **up to 5 (exam) / 10 (current, May 2025) secondary regions**, each with **up to 16 read-only replicas** (the extra slot is the freed writer slot, not a different limit)
 - Replication is **storage-layer** (no performance impact), **~1 s**, **one-way**, and **asynchronous cross-region** — in-region across-AZ replication is the synchronous leg. That async leg is why cross-region **RPO ≈ 1 s, not zero**
-- **Switchover** = planned, syncs first, **RPO 0**; **failover** = unplanned, RPO = replication lag; promote a secondary to read/write
+- **Switchover** = planned, syncs first, **RPO 0**; **failover** = unplanned, RPO = replication lag and RTO on the order of **minutes**; promote a secondary to read/write
 - Two use cases: **cross-region DR/business continuity** (low RPO + RTO) and **global low-latency reads**
 
 > [!tip] Exam Tip

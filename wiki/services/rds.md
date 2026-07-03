@@ -1,9 +1,9 @@
 ---
 title: RDS — Relational Database Service
 type: service
-tags: [rds, rds-custom, database, relational, ec2, ebs, vpc, subnet-group, multi-az, multi-az-instance, multi-az-cluster, read-replica, synchronous-replication, semi-synchronous-replication, asynchronous-replication, quorum, failover, reader-endpoint, cluster-endpoint, graviton, nvme, aurora, dr, high-availability, acid, cost, backup, snapshot, automated-backup, manual-snapshot, transaction-logs, pitr, point-in-time-recovery, retention, restore, rpo, rto, s3, cross-region-backup, security, encryption, encryption-in-transit, encryption-at-rest, ssl, tls, kms, kms-key, cmk, dek, envelope-encryption, aes-256, tde, transparent-data-encryption, cloudhsm, iam-authentication, generate-db-auth-token, authentication, authorization, credentials-provider-chain, imds, postgresql, jdbc, aws-advanced-jdbc-wrapper, connection-pool, druid, hikaricp, rds-iam, ssl-mode, ca-bundle, session-manager, ssh, rdp, shared-responsibility]
+tags: [rds, rds-custom, database, relational, db2, ec2, ebs, vpc, subnet-group, multi-az, multi-az-instance, multi-az-cluster, read-replica, synchronous-replication, semi-synchronous-replication, asynchronous-replication, quorum, failover, reader-endpoint, cluster-endpoint, graviton, nvme, aurora, dr, high-availability, acid, cost, backup, snapshot, automated-backup, manual-snapshot, transaction-logs, pitr, point-in-time-recovery, retention, restore, rpo, rto, s3, cross-region-backup, security, encryption, encryption-in-transit, encryption-at-rest, ssl, tls, kms, kms-key, cmk, dek, envelope-encryption, aes-256, tde, transparent-data-encryption, cloudhsm, iam-authentication, generate-db-auth-token, authentication, authorization, credentials-provider-chain, imds, postgresql, jdbc, aws-advanced-jdbc-wrapper, connection-pool, druid, hikaricp, rds-iam, ssl-mode, ca-bundle, session-manager, ssh, rdp, shared-responsibility]
 certs: [aws-saa]
-updated: 2026-07-01
+updated: 2026-07-02
 ---
 
 # RDS — Relational Database Service
@@ -56,7 +56,7 @@ There *are* exam questions where "run the database on EC2" is correct. The justi
 
 - **Managed**: AWS handles hardware, OS, install, and much of the engine upkeep.
 - **No SSH and no OS access.** The exception is **RDS Custom**, a variant that grants more low-level access.
-- **Engines**: MySQL, MariaDB, PostgreSQL, plus commercial Oracle and Microsoft SQL Server (commercial engines carry licensing cost).
+- **Engines**: IBM Db2, MySQL, MariaDB, PostgreSQL, plus commercial Oracle and Microsoft SQL Server (commercial engines carry licensing cost).
 
 > [!warning] Aurora ≠ RDS
 > **[Amazon Aurora](aurora.md)** is a custom AWS-built engine (compatible with some of the above, but designed by AWS). Many RDS features differ for Aurora — treat them as separate products. The most exam-relevant difference is **storage**: RDS gives each instance its **own dedicated EBS volume**; Aurora uses a [shared cluster storage layer](aurora.md#shared-cluster-volume). Don't carry RDS storage facts over to Aurora.
@@ -113,9 +113,6 @@ Read the diagram as four columns from most-customer-managed (left) to most-AWS-m
 > - **Visibility:** with **RDS Custom** you *see* the EC2/EBS/S3-backup resources in your account; with **standard RDS** you do **not** (AWS-managed, ENI injection only).
 > - **Access:** SSH / RDP / Session Manager access is the feature that separates RDS Custom from standard RDS (no OS access).
 
-> [!note] Beyond the course — RDS Custom for Oracle end of support
-> AWS has announced that **RDS Custom for Oracle reaches end of support on March 31, 2027**; after that date those resources (instances, snapshots, custom engine versions) become inaccessible, and AWS recommends migrating the workloads to **[EC2](ec2.md)**. This does **not** affect standard RDS for Oracle or **RDS Custom for SQL Server**. Not exam material, but worth knowing the direction of travel.
-
 ## Architecture
 
 ![RDS architecture diagram: VPC1 in us-east-1 spanning three AZ columns (AZA/AZB/AZC). A subnet group defines which subnets RDS may use. A Primary instance replicates synchronously (green) to a Standby in another AZ, and asynchronously (orange) to a cross-region Read Replica in ap-southeast-2. Backups and snapshots flow to an AWS-managed S3 bucket. Each instance has its own dedicated EBS storage. RDS sits inside the VPC, reachable privately from on-premises over VPN/Direct Connect, or optionally given public addressing for internet access.](../assets/rds-architecture.png)
@@ -150,7 +147,7 @@ A **DB subnet group** is a named *list of subnets* RDS is allowed to place insta
 | **Storage** | Each instance has its **own dedicated [EBS](ebs.md) storage**; in a Multi-AZ pair, primary and standby each have separate storage. ⚠️ Differs from Aurora |
 | **Multi-AZ replication** | **Synchronous** primary → standby — data replicated as soon as the primary receives it; standby is an identical copy |
 | **Read replicas** | **Asynchronous** replication; same-region or **cross-region**; used to **scale read load** or add **DR** resilience in another region |
-| **Backups** | Go to AWS-managed **S3**, replicated across AZs in the region (survive an AZ failure). In **Multi-AZ mode, backups run from the standby** — no performance hit on the primary |
+| **Backups** | Go to AWS-managed **S3**, replicated across AZs in the region (survive an AZ failure). In **Multi-AZ instance** mode, backups for MariaDB/MySQL/Oracle/PostgreSQL are taken from the standby so the primary avoids I/O suspension; **SQL Server still briefly suspends I/O** during backup |
 
 > [!tip] Exam Tip
 > Two replication words to keep straight: **standby = synchronous** (HA, identical copy, automatic failover target — *not* readable by your app), **read replica = asynchronous** (read scaling and/or DR, can be cross-region, *is* readable). Mixing these up is a classic trap.
@@ -173,7 +170,7 @@ One **primary** instance holds your databases and, when Multi-AZ is enabled, rep
 
 - All access (reads **and** writes) goes to the primary via the **database CNAME** — a DNS name that by default resolves to the primary, so clients are never hard-wired to an instance. The standby serves **no traffic, not even reads**; its only job is to wait for a failover.
 - Replication is at the **storage level** — less efficient than cluster mode. The exact mechanism is engine-specific but abstracted away (Amazon failover technology for MariaDB/MySQL/Oracle/PostgreSQL; database mirroring or Always-On availability groups for SQL Server).
-- **Backups and snapshots are taken from the standby**, so there is **no I/O load on the primary** during backup.
+- For **MariaDB, MySQL, Oracle, and PostgreSQL**, backups and snapshots are taken from the standby, so the primary avoids I/O suspension. **SQL Server is the exception**: AWS still briefly suspends I/O during Multi-AZ backup.
 
 **Synchronous replication** means data is written to the primary and immediately replicated to the standby **before the write is viewed as committed**. This gives an effective **Recovery Point Objective (RPO) of zero** on failover — no committed data is lost.
 
@@ -237,8 +234,8 @@ A write is viewed as **committed once at least one reader confirms it has writte
 | RPO on failover | **Zero** (synchronous) | Effectively zero (quorum guarantees commit on ≥ 1 standby) |
 | Storage | EBS | **Local NVMe SSD flushed to EBS**, per-instance |
 | Hardware | Standard | **Graviton** |
-| Supported engines | MariaDB, MySQL, Oracle, PostgreSQL, **SQL Server** | **MySQL & PostgreSQL only** |
-| Backups | Taken from **standby** (no primary I/O hit) | Crash-consistent EBS snapshot, no I/O suspension |
+| Supported engines | Db2, MariaDB, MySQL, Oracle, PostgreSQL, **SQL Server** | **MySQL & PostgreSQL only** |
+| Backups | Standby-sourced for MariaDB/MySQL/Oracle/PostgreSQL; **SQL Server briefly suspends I/O** | Crash-consistent EBS snapshot, no I/O suspension |
 | Access pattern | Single **database CNAME** | **Cluster / Reader / Instance** endpoints |
 | Free tier | No | No |
 | Region scope | Same region, multi-AZ | Same region, multi-AZ |
@@ -252,7 +249,7 @@ For contrast: a **Single-AZ** instance is one managed instance on EBS with **no 
 
 ## Read Replicas
 
-Where Multi-AZ exists for **availability**, read replicas exist for **read scaling** and **cross-region disaster recovery**. A read replica is a **read-only copy of an RDS instance** kept in sync from the primary. It delivers three benefits worth separating in your head:
+Where Multi-AZ exists for **availability**, read replicas exist for **read scaling** and **cross-region disaster recovery**. A read replica is usually a **read-only copy of an RDS instance** kept in sync from the primary, with two engine-specific DR exceptions called out below. It delivers three benefits worth separating in your head:
 
 1. **Read performance / read scaling** — offload read queries from the primary.
 2. **Cross-region resilience** — a replica in another region survives a regional failure.
@@ -268,6 +265,9 @@ The diagram's colour code is the thing to lock in: **orange solid = asynchronous
 
 > [!warning] Gotcha — a read replica does nothing without application support
 > A read replica is **not part of the main DB instance**. It has its **own endpoint address**, so the application must be **changed to point reads at that endpoint** — an app such as WordPress has **zero knowledge** of any read replica by default. There is also **no automatic failover** to a read replica; it just sits off to one side. Without application support, read replicas are functionally inert.
+
+> [!warning] Gotcha — Db2 and Oracle have DR-only replica modes
+> Current AWS docs call out two exceptions to the "read replica = read-only workload target" rule: **RDS for Db2 standby replicas** and **RDS for Oracle mounted replicas** don't accept user connections, so they can't serve read traffic. Their main purpose is **cross-region disaster recovery**, not read scaling.
 
 ### Asynchronous Replication
 
@@ -285,7 +285,7 @@ Read replicas can live in the **same region** as the primary or in **another reg
 - You can create up to **5 read replicas directly per DB instance** *(the long-standing number Cantrill teaches)*, each adding a full instance of read capacity — a simple way to **scale out** reads.
 
   > [!warning] Gotcha — the "5" figure is dated
-  > Current AWS documentation states **up to 15 read replicas** per source instance for MySQL, MariaDB, PostgreSQL, and SQL Server (Oracle also 15, with 5 recommended to limit lag). The **5** is the older number that may still appear on the exam — know both.
+  > Current AWS documentation states a default quota of **up to 15 read replicas per primary DB instance**. For Oracle, AWS also recommends limiting replicas to **5** to minimize replication lag. The **5** is the older number that may still appear on the exam — know both.
 
 - **Cascading replicas** (replicas of replicas) are possible for further scaling, but because replication is asynchronous, **lag compounds** at each hop. Take that into account before chaining them.
 
@@ -318,13 +318,13 @@ RDS has **two backup-like mechanisms**: **manual snapshots** (you trigger) and *
 
 The diagram's three arrows separate the **three data streams** — manual snapshot, automated daily snapshot, and the 5-minute transaction-log stream — but the **full-first-then-incremental** rule is shared by **both** snapshot types (AWS treats an automated backup as an automated snapshot). The transaction-log stream and the 0–35 day retention are **automated-backup-only**.
 
-**Backup performance impact:** on **Single-AZ** the backup is read from the only instance, so you may see an I/O pause; on **Multi-AZ instance** mode the backup is read from the **standby**, so the primary takes no hit (see [Multi-AZ Instance Deployment](#multi-az-instance-deployment)).
+**Backup performance impact:** on **Single-AZ** the backup is read from the only instance, so you may see an I/O pause. On **Multi-AZ instance** mode, MariaDB/MySQL/Oracle/PostgreSQL backups are read from the **standby**, so the primary avoids I/O suspension; **SQL Server still briefly suspends I/O** during backup (see [Multi-AZ Instance Deployment](#multi-az-instance-deployment)).
 
 ### Manual Snapshots
 
 - **Not automatic** — you trigger them explicitly (or via a script). Taken at the **instance level**, so a snapshot captures **all databases** on the instance, not a single database.
 - Stored in AWS-managed S3; behave like [EBS](ebs.md) snapshots. **First snapshot is full** (sized to consumed data); **subsequent are incremental** (changed blocks only). High-change-rate databases can make even incremental snapshots slow.
-- A brief **I/O interruption** occurs (felt on Single-AZ, absorbed by the standby on Multi-AZ).
+- A brief **I/O interruption** occurs (felt on Single-AZ, absorbed by the standby on Multi-AZ for MariaDB/MySQL/Oracle/PostgreSQL; SQL Server still briefly suspends I/O).
 - 🎯 **Snapshots never expire.** They **survive deletion of the RDS instance** and are removed only when **you** delete them manually. Heavily tested.
 - **Frequency is your choice** (hourly, daily, weekly). More frequent snapshots mean a **lower RPO** (less maximum data loss). Default quota is **100 manual snapshots per Region**.
 
@@ -408,10 +408,10 @@ This is supported by default across the RDS engines and happens **below the data
 > [!warning] Gotcha — TDE is engine-restricted
 > **MySQL, MariaDB, and PostgreSQL do NOT support TDE** — it only exists where the underlying engine ships it. Those three still get full at-rest protection via the **host-side KMS + EBS** path above; they just can't do engine-native TDE. Don't let "MySQL is encrypted" trick you into "MySQL supports TDE."
 
-Edition nuances (sources disagree — flagged rather than resolved):
+Edition nuances:
 
 - **Oracle:** TDE requires the **Oracle Advanced Security** option on **Oracle Enterprise Edition**.
-- **SQL Server:** AWS docs historically scope TDE to **Enterprise Edition**, but the current RDS security-features page also lists **Standard Edition**. Treat **"SQL Server Enterprise Edition"** as the safe exam answer; be aware Standard may now qualify. On RDS, SQL Server TDE is enabled via an **option group** (the `TDE` option).
+- **SQL Server:** RDS supports TDE on **SQL Server 2022 Standard and Enterprise**, **2019 Standard and Enterprise**, and **2017/2016 Enterprise**. On RDS, SQL Server TDE is enabled via an **option group** (the `TDE` option).
 
 #### 3. Oracle + TDE via CloudHSM (strongest key control)
 
@@ -659,7 +659,7 @@ RDS is **resource-allocation billed** (like [EC2](ec2.md)), *not* usage-billed �
 | Read replica DR limit | Near-zero **RPO and RTO** via fast **promotion** — but only for **failure**, **not data corruption** (replica holds the corrupted data) |
 | Promotion | Replica is read-only until promoted; once promoted it is a standalone read/write instance and **stops replicating** |
 | Storage | Dedicated **EBS per instance** (unlike Aurora) |
-| Backups | Go to **S3** (AWS-managed, **invisible in your S3 console**); regionally resilient; Multi-AZ backups run from **standby** |
+| Backups | Go to **S3** (AWS-managed, **invisible in your S3 console**); regionally resilient; Multi-AZ instance backups are standby-sourced for MariaDB/MySQL/Oracle/PostgreSQL, but SQL Server briefly suspends I/O |
 | Manual snapshot | Instance-level (all DBs); **never expires**, survives instance deletion, manual delete only; 100/Region |
 | Automated backup | Daily snapshot **+ transaction logs every 5 min**; retention **0–35 days** (0 = disabled) |
 | PITR | Needs **automated backups** (the 5-min logs); ~**5-min RPO**; manual snapshot alone restores only to its fixed moment |
@@ -684,7 +684,11 @@ RDS is **resource-allocation billed** (like [EC2](ec2.md)), *not* usage-billed �
 ## References
 
 - Cantrill SAA-C03 study notes — *RDS Architecture (and Databases on EC2)*, *RDS Multi-AZ (Instance and Cluster)*, *RDS Backups, Snapshots & Restore*, *RDS Data Security*
+- [AWS — What is Amazon RDS?](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Welcome.html) (current RDS engine list including IBM Db2)
+- [AWS — Working with DB instance read replicas](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_ReadRepl.html) and [RDS quotas](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_Limits.html) (asynchronous replication, Db2/Oracle non-readable exceptions, read-replica quota)
+- [AWS — Creating a DB snapshot](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_CreateSnapshot.html) (Single-AZ I/O suspension and SQL Server Multi-AZ backup exception)
 - [AWS — Choose the right Amazon RDS deployment option: Single-AZ, Multi-AZ instance, or Multi-AZ DB cluster](https://aws.amazon.com/blogs/database/choose-the-right-amazon-rds-deployment-option-single-az-instance-multi-az-instance-or-multi-az-database-cluster/) (semi-synchronous quorum replication, engine restriction, failover-timing ranges, backup mechanics, Single-AZ baseline)
+- [AWS — Amazon RDS Custom](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/rds-custom.html) (RDS Custom supports Oracle Database and Microsoft SQL Server)
 - [AWS — Encrypting Amazon RDS resources](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Overview.Encryption.html) (KMS + EBS host-side encryption, AES-256, create-time-only restriction, snapshot-copy workaround, same-key coverage)
 - [AWS — SQL Server Transparent Data Encryption (TDE) option](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Appendix.SQLServer.Options.TDE.html) and [RDS security features](https://aws.amazon.com/rds/features/security/) (engine/edition restrictions, option-group mechanism)
 - [AWS — IAM database authentication](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.html) and the [SDK default credentials-provider chain](https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/credentials-chain.html) (token mechanics, 15-min validity, mandatory TLS, IMDS-on-EC2 resolution)

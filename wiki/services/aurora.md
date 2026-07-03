@@ -3,7 +3,7 @@ title: Aurora
 type: service
 tags: [aurora, database, relational, rds, cluster, cluster-volume, shared-storage, replicas, failover, cluster-endpoint, reader-endpoint, custom-endpoint, instance-endpoint, storage-billing, high-watermark, dynamic-resizing, backtrack, fast-clone, copy-on-write, serverless, aurora-serverless, acu, proxy-fleet, data-api, scale-to-zero, global-database, cross-region, dr, rpo, rto, switchover, multi-master, quorum, read-scaling, high-availability, mysql, postgresql, savings-plans, reserved-instances]
 certs: [aws-saa]
-updated: 2026-07-01
+updated: 2026-07-02
 ---
 
 # Aurora
@@ -81,7 +81,9 @@ Unlike RDS's single database CNAME, an Aurora cluster exposes **multiple endpoin
 
 ## Billing Model
 
-- **Storage is not allocated** — unlike RDS you never pick a storage size. You're billed on **GB-month consumed** (up to the volume maximum) plus an **I/O cost per request**.
+- **Storage is not allocated** — unlike RDS you never pick a storage size. Aurora has two storage configurations:
+  - **Aurora Standard** bills consumed GB-month storage plus per-request read/write I/O.
+  - **Aurora I/O-Optimized** bills usage and storage with **no separate read/write I/O operation charges**; AWS positions it for workloads where I/O is at least 25% of Aurora database spend.
 - **Compute** — hourly rate per instance, **billed per second with a 10-minute minimum**.
 - **Backup allowance** — free backup storage equal to **100% of the cluster's consumed storage**; for most low/medium-churn workloads backups are effectively included.
 - **No free tier** — Aurora doesn't support micro instances. Beyond a single-AZ micro RDS instance, though, it generally offers better value.
@@ -111,6 +113,9 @@ Unlike RDS's single database CNAME, an Aurora cluster exposes **multiple endpoin
 
 **Aurora Serverless is to Aurora what Fargate is to [ECS](ecs.md)**: same product, but you stop provisioning and managing instances. You still create a cluster, but compute is measured in **ACUs (Aurora Capacity Units)** — an ACU is a certain amount of compute plus a matching amount of memory (roughly **2 GiB per ACU**). You set a **minimum and maximum ACU**, and the cluster scales between them with load. Compute is **billed per second**; the storage layer is the same 6-copies-across-AZs cluster volume as Provisioned, billed the same way.
 
+> [!note] Naming
+> AWS renamed **Aurora Serverless v2** to **Aurora serverless** in April 2026. The older "v2" wording still appears in docs, blogs, consoles, and exam material, so this page keeps "Serverless v2" when contrasting it with retired Serverless v1.
+
 ### v1 architecture (what the course diagram shows)
 
 ![Aurora Serverless v1 architecture: a user's application connects to an AWS-managed proxy fleet (a red strip of proxy instances) rather than to database compute directly; below it an Aurora Serverless cluster spans AZ-A, AZ-B and AZ-C with a band of differently-sized ACUs on top of cluster storage replicated across the AZs; on the right a warm pool of AWS-managed ACUs is shown being allocated into the cluster on demand](../assets/aurora-serverless-architecture.png)
@@ -127,9 +132,9 @@ The classic exam-tested architecture is **Serverless v1**:
 
 ### v1 vs v2
 
-**Serverless v2** (GA 2022, the current product) is architected differently — it's an **instance type inside a normal Aurora cluster**, not a separate cluster type:
+**Serverless v2** (GA 2022; now branded **Aurora serverless**) is architected differently — it's an **instance type inside a normal Aurora cluster**, not a separate cluster type:
 
-| Aspect | Serverless v1 (legacy) | Serverless v2 (current) |
+| Aspect | Serverless v1 (legacy) | Serverless v2 / Aurora serverless (current) |
 | --- | --- | --- |
 | Implementation | Dedicated cluster type | A serverless **instance type** in a standard Aurora cluster |
 | Scaling granularity | Capacity doubles (e.g. 8 to 16 ACU) | Fine-grained **0.5 ACU** increments, in place |
@@ -140,7 +145,7 @@ The classic exam-tested architecture is **Serverless v1**:
 | Data API | Yes (HTTP endpoint) | **Yes** — relaunched for Serverless v2 **and provisioned** clusters (PostgreSQL first, then MySQL), without v1's 1,000 requests/second cap |
 
 > [!warning] Gotcha — cost-commitment discounts
-> **Reserved Instances never apply to Aurora Serverless** (RIs cover provisioned instance types only) — "buy an RI to save on the serverless workload" is a distractor. Since **December 2025**, **Database Savings Plans** (1-year, no-upfront, up to ~35%) do cover Aurora Serverless v2 alongside provisioned Aurora, RDS, DynamoDB and other database services. See [Cost Optimization](../patterns/cost-optimization.md).
+> **Reserved Instances never apply to Aurora Serverless** (RIs cover provisioned instance types only) — "buy an RI to save on the serverless workload" is a distractor. Since **December 2025**, **Database Savings Plans** (1-year, no-upfront, up to ~35%) do cover Aurora serverless alongside provisioned Aurora, RDS, DynamoDB and other database services. See [Cost Optimization](../patterns/cost-optimization.md).
 
 ### When Serverless fits
 
@@ -166,7 +171,7 @@ The classic exam-tested architecture is **Serverless v1**:
 - **Primary region**: 1 read/write instance plus up to 15 read replicas (16 instances total). **Each secondary region**: up to **16 read-only replicas** — the extra slot exists because there's no writer occupying it, not because the limit differs.
 - Secondaries are **entirely read-only until promoted**. On a region failure you **promote** a secondary to a full read/write cluster.
 - The two "storage-layer" legs differ: **in-region replication across AZs is synchronous** (6 copies, 4-of-6 quorum, zero in-region data loss); **cross-region replication is asynchronous** — which is exactly why the cross-region **RPO is roughly 1 second, not zero**.
-- AWS distinguishes **switchover** (planned, syncs first, **RPO 0**) from **failover** (unplanned, RPO = replication lag at failure time, typically about 1 second; RTO on the order of a minute or less).
+- AWS distinguishes **switchover** (planned, syncs first, **RPO 0**) from **failover** (unplanned, RPO = replication lag at failure time, typically about 1 second; RTO can be **on the order of minutes**).
 
 ### Use cases
 
@@ -198,7 +203,7 @@ In default **single-master** Aurora, a failover still takes time: a replica must
 | Replicas | Serve **reads and failover simultaneously** |
 | Storage | **6 copies across 3 AZs**, synchronous, storage-level, self-healing, SSD-only |
 | Max volume | **128 TiB** (exam) / 256 TiB (current, recent engines) |
-| Storage billing | Consumed GB-month + per-request I/O; high watermark (exam) vs dynamic resizing (current) |
+| Storage billing | **Standard** = consumed GB-month + per-request I/O; **I/O-Optimized** = no separate read/write I/O charges; high watermark (exam) vs dynamic resizing (current) |
 | Backups | Free allowance = 100% of cluster storage |
 | Compute billing | Per-second, **10-minute minimum**; **no free tier** |
 | Endpoints | **Cluster** (primary, R/W) · **Reader** (round-robin DNS load-balancing **per connection**, auto-updates) · custom · instance |
@@ -206,19 +211,19 @@ In default **single-master** Aurora, a failover still takes time: a replica must
 | Fast clone | Copy-on-write clone; stores **only differences**; near-instant |
 | Serverless | **ACUs** (~2 GiB each), min/max range, per-second billing, pause to zero = storage-only cost |
 | Serverless v1 | Warm pool + proxy fleet; **retired March 2025** |
-| Serverless v2 | Instance type in a normal cluster; 0.5-ACU steps; 0–**256 ACUs**; scale-to-zero since Nov 2024; Data API supported |
+| Serverless v2 / Aurora serverless | Instance type in a normal cluster; 0.5-ACU steps; 0–**256 ACUs**; scale-to-zero since Nov 2024; Data API supported |
 | Global Database | 1 primary region + up to **5 (exam) / 10 (current)** secondaries; storage-layer, **async**, ~1 s, one-way; secondaries **read-only, up to 16 replicas**; promote on disaster |
 | Multi-master | All instances write; **no cluster endpoint**; app load-balances; quorum writes with conflict rejection; **Aurora MySQL 5.6 only, EOL Feb 2023** |
 
 ## References
 
 - Adrian Cantrill SAA course — Aurora Architecture, Aurora Serverless, Aurora Global Database, Aurora Multi-Master lessons (`raw/aws-cert-study-notes/aws-solution-architect/`)
-- [Amazon Aurora storage and reliability](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/Aurora.Overview.StorageReliability.html)
+- [Amazon Aurora storage and reliability](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/Aurora.Overview.StorageReliability.html) (cluster volume, Standard vs I/O-Optimized storage configurations, automatic resizing)
 - [Aurora MySQL 256 TiB announcement (Jul 2025)](https://aws.amazon.com/about-aws/whats-new/2025/07/amazon-aurora-mysql-database-clusters-256-tib-storage/) · [Aurora PostgreSQL 256 TiB announcement](https://aws.amazon.com/about-aws/whats-new/2025/07/amazon-aurora-postgresql-database-clusters-256-tib-storage-volume/)
 - [Amazon Aurora high availability](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/Concepts.AuroraHighAvailability.html)
 - [Reader endpoints for Amazon Aurora](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/Aurora.Endpoints.Reader.html) · [Aurora MySQL DBA Handbook — Connection Management (whitepaper)](https://d1.awsstatic.com/whitepapers/RDS/amazon-aurora-mysql-database-administrator-handbook.pdf)
 - [Using Amazon Aurora Global Database](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-global-database.html) · [Global Database switchover and failover](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-global-database-disaster-recovery.html) · [10 secondary Regions (May 2025)](https://aws.amazon.com/blogs/database/amazon-aurora-global-database-introduces-support-for-up-to-10-secondary-regions/)
 - [Aurora Serverless v2 scaling to zero (Nov 2024)](https://aws.amazon.com/blogs/database/introducing-scaling-to-0-capacity-with-amazon-aurora-serverless-v2/) · [Automatic pause and resume](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless-v2-auto-pause.html)
 - [Aurora Serverless v1 end of support (Mar 31, 2025)](https://repost.aws/questions/QUhcMVoChXRm2HLi8F-yih1g/announcement-support-for-aurora-serverless-v1-ending-soon)
-- [Data API for Aurora Serverless v2 and provisioned clusters](https://aws.amazon.com/blogs/database/introducing-the-data-api-for-amazon-aurora-serverless-v2-and-amazon-aurora-provisioned-clusters/)
+- [Data API for Aurora Serverless v2 and provisioned clusters](https://aws.amazon.com/blogs/database/introducing-the-data-api-for-amazon-aurora-serverless-v2-and-amazon-aurora-provisioned-clusters/) (includes April 2026 rename note)
 - [Database Savings Plans announcement (Dec 2025)](https://aws.amazon.com/about-aws/whats-new/2025/12/database-savings-plans-savings/)
