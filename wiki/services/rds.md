@@ -3,7 +3,7 @@ title: RDS — Relational Database Service
 type: service
 tags: [rds, rds-custom, database, relational, db2, ec2, ebs, vpc, subnet-group, multi-az, multi-az-instance, multi-az-cluster, read-replica, synchronous-replication, semi-synchronous-replication, asynchronous-replication, quorum, failover, reader-endpoint, cluster-endpoint, graviton, nvme, aurora, dms, dr, high-availability, acid, cost, backup, snapshot, automated-backup, manual-snapshot, transaction-logs, pitr, point-in-time-recovery, retention, restore, rpo, rto, s3, cross-region-backup, security, encryption, encryption-in-transit, encryption-at-rest, ssl, tls, kms, kms-key, cmk, dek, envelope-encryption, aes-256, tde, transparent-data-encryption, cloudhsm, iam-authentication, generate-db-auth-token, authentication, authorization, credentials-provider-chain, imds, postgresql, jdbc, aws-advanced-jdbc-wrapper, connection-pool, druid, hikaricp, rds-iam, ssl-mode, ca-bundle, session-manager, ssh, rdp, shared-responsibility]
 certs: [aws-saa]
-updated: 2026-07-03
+updated: 2026-07-07
 ---
 
 # RDS — Relational Database Service
@@ -314,7 +314,7 @@ A read replica is **read-only until promoted**. Once **promoted**, it becomes a 
 
 ## Backups, Snapshots & Restore
 
-RDS has **two backup-like mechanisms**: **manual snapshots** (you trigger) and **automated backups** (RDS triggers daily). Both land in **AWS-managed [S3](s3.md) buckets** — visible in the RDS console but **never in your own S3 console** (a classic exam trap). Because the data sits in S3, all backups are **regionally resilient**: S3 replicates them across AZs within the region, so they survive an AZ failure.
+RDS has **two backup-like mechanisms**: **manual snapshots** (you trigger) and **automated backups** (RDS triggers daily). Both land in **AWS-managed [S3](s3.md) buckets** — visible in the RDS console but **never in your own S3 console** (a classic exam trap). Because the data sits in S3, all backups are **regionally resilient**: S3 replicates them across AZs within the region, so they survive an AZ failure. When a scenario asks for **centralized backup management across services or accounts** (RDS alongside EBS, EFS, DynamoDB, S3), that's [AWS Backup](aws-backup.md), not per-service configuration.
 
 ![RDS backups in us-east-1: a SingleAZ/Standby RDS instance in AZ-B produces backup data. Three arrows leave it — a blue arrow (manual snapshots) and an orange arrow (the daily automated backup) both write full-first-then-incremental snapshots to AWS-managed S3 buckets, and a third orange arrow streams transaction logs every 5 minutes to S3 for automated backups only. Footer notes automated-backup retention of 0 to 35 days; manual snapshots never expire.](../assets/rds-backups-snapshots-restore.png)
 

@@ -3,7 +3,7 @@ title: EFS
 type: service
 tags: [efs, storage, file-storage, nfs, linux, posix, mount-target, hybrid]
 certs: [aws-saa]
-updated: 2026-07-06
+updated: 2026-07-07
 ---
 
 # EFS (Elastic File System)
@@ -66,6 +66,7 @@ The course teaches two classes:
 
 - Conceptually these mirror the [S3 storage class](s3.md#storage-classes) trade-offs: pay less per GB for data you rarely touch.
 - **Lifecycle policies** can move data between classes automatically, just like [S3 lifecycle configuration](s3.md#lifecycle-configuration).
+- For backing up EFS file systems, [AWS Backup](aws-backup.md) is the native mechanism — and EFS is one of the resource types eligible for AWS Backup's [cold-storage tier](aws-backup.md#lifecycle-and-cold-storage).
 
 > [!warning] Gotcha — course vs current AWS
 > EFS now offers more than two classes: the **Regional** classes above (**Standard** / **Standard-IA**, replicated across multiple AZs) plus **One Zone** classes (**One Zone** / **One Zone-IA** — single-AZ, cheaper, lower resilience), and an **Archive** class for rarely-accessed data ([EFS storage classes docs](https://docs.aws.amazon.com/efs/latest/ug/storage-classes.html)). The course's two-class model still covers the exam's core comparison.
