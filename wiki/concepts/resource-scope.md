@@ -59,7 +59,7 @@ Live in exactly one region. Most managed services are multi-AZ resilient within 
 | SNS topics, SQS queues | Regional |
 | ELB (ALB / NLB / CLB) | Regional load balancer; targets can span multiple AZs in the region |
 | Auto Scaling Group | Regional; can launch instances across multiple AZs within the region |
-| EFS file system | Regional service (the file system itself), but **mount targets** are AZ-scoped (see below) |
+| [EFS](../services/efs.md) file system | Regional service (the file system itself), but **mount targets** are AZ-scoped (see below) |
 | RDS DB instance | The DB resource is regional in terms of API, but the primary instance is placed in **one AZ** — Multi-AZ adds a standby in another AZ |
 | [DMS](../services/dms.md) replication instance | DMS is a regional service; a DMS Standard replication instance is placed in VPC subnets and Multi-AZ adds a standby in another AZ. DMS Serverless hides the instance placement behind serverless replications |
 | [SSM Parameter Store](../services/ssm.md) | Regional; multi-AZ resilient within the Region but **no built-in cross-Region replication** — recreate the parameter in each Region (one `put-parameter` per Region) |
@@ -77,7 +77,7 @@ Pinned to a single Availability Zone. Lose the AZ, lose the resource. To move ac
 | [VPC](../services/vpc.md) subnet | Each subnet is in exactly one AZ; CIDR cannot span AZs |
 | [EC2](../services/ec2.md) ENI | Lives in one subnet, so one AZ; can be detached and reattached to a different instance in the same AZ |
 | NAT Gateway (zonal mode) | Default mode: deployed into one subnet, dies with the AZ. Regional NAT Gateway is the multi-AZ alternative |
-| EFS mount target | One per AZ; the file system is regional, but you need a mount target in each AZ you want to mount from |
+| [EFS](../services/efs.md) mount target | One per AZ; the file system is regional, but you need a mount target in each AZ you want to mount from |
 | RDS DB instance (primary) | The actual running database process is in one AZ. Multi-AZ is a deployment option, not the default |
 
 ## Edge resources

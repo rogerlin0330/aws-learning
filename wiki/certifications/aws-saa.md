@@ -1362,6 +1362,33 @@ A single DEK threads through: **original volume → its snapshots → restored v
 > [!warning] Gotcha — KMS key region scope flows to EBS encryption
 > KMS keys are **regional**. The account-level default-encryption setting and any customer-managed key referenced by EBS must exist in **every region** where you want encrypted volumes. Copying an encrypted snapshot to another region requires the destination region to have access to a KMS key (the source key's region won't decrypt it).
 
+## EFS
+
+See [EFS](../services/efs.md) for full details.
+
+- **Network file system for Linux** — AWS's implementation of **NFS v4** (current docs: v4.0 and v4.1). Mounted by **many EC2 instances simultaneously, across AZs**; contrast with [EBS](../services/ebs.md) = block, one instance, one AZ
+- **Linux only** — a question mentioning **Windows** shared file storage disqualifies EFS; the answer is **FSx for Windows File Server**
+- Uses **POSIX permissions**; created **inside a [VPC](../services/vpc.md)**
+- **Access is via mount targets**, never directly to the file system — mount targets live in **subnets** and take an **IP from the subnet's range**
+- **HA rule:** a mount target in **every AZ the VPC uses** (same rule as NAT gateways). One mount target in one AZ is **not** highly available
+- **Private by default** (VPC-isolated), but reachable from on-premises over **VPN / Direct Connect / VPC peering** if configured — don't assume EFS is unreachable from on-prem
+- Enables **stateless EC2 instances** — media/files live outside the instance, supporting [scaling](../patterns/scaling.md) and self-healing
+
+### EFS cheat sheet
+
+| Attribute | Course answer | Current AWS reality |
+| --- | --- | --- |
+| Performance modes | **General Purpose** *(default)* / **Max I/O** (parallel workloads, higher latency) | Max I/O is **previous-generation**; AWS recommends General Purpose for all file systems |
+| Throughput modes | **Bursting** *(default; scales with size, like GP2)* / **Provisioned** (size-independent, like IO1) | A third mode, **Elastic** (auto-scales to demand), is now the **console default** |
+| Storage classes | **Standard** *(default)* / **Infrequent Access** | Plus **One Zone / One Zone-IA** and **Archive** |
+| Cost optimization | **Lifecycle policies** move data between classes (like [S3](../services/s3.md#lifecycle-configuration)) | Same |
+
+> [!tip] Exam Tip
+> Pattern-match: *"shared file storage across multiple Linux instances"* means **EFS**. *"Latency-sensitive general file serving"* means **General Purpose**; *"highly parallel big-data / media processing"* means **Max I/O**. *"Throughput scales with stored data"* means **Bursting**; *"throughput independent of size"* means **Provisioned**. *"Automatically move rarely-used files to a cheaper tier"* means **lifecycle policy to IA**.
+
+> [!warning] Gotcha — shifted defaults
+> The course says the default throughput mode is **Bursting** and teaches 2 performance / 2 throughput / 2 storage-class options. Current AWS: default throughput is **Elastic**, Max I/O is previous-generation, and there are additional storage classes (One Zone, Archive). Older exam questions follow the course framing; watch the phrasing.
+
 ## RDS
 
 See [RDS](../services/rds.md) for full details.

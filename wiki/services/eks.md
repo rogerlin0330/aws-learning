@@ -91,7 +91,7 @@ An **EKS cluster** is the AWS-managed **control plane** plus the **worker nodes*
 Recall from [Kubernetes](../concepts/kubernetes.md#storage-and-state) that storage is **ephemeral by default**. For [Persistent Volumes](../concepts/kubernetes.md#storage-and-state), EKS can use these storage providers:
 
 - **EBS**
-- **EFS**
+- **[EFS](efs.md)**
 - **FSx**
 
 ## Architecture Walkthrough

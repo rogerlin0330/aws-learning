@@ -1378,3 +1378,7 @@ Follow-up to the Aurora ingest, prompted by a user question on how the reader en
 ## [2026-07-02] update | RDS and Aurora current-doc corrections
 
 Updated the RDS and Aurora wiki pages, SAA notes, overview, and index after checking current AWS docs: added RDS for Db2 to the engine list, removed an unsupported RDS Custom for Oracle EOL note, documented Db2/Oracle read-replica exceptions, called out SQL Server's Multi-AZ backup I/O suspension, tightened SQL Server TDE edition/version coverage, added Aurora Standard vs I/O-Optimized billing, noted the Aurora Serverless v2 rename, and corrected Aurora Global Database RTO wording.
+
+## [2026-07-06] ingest | EFS service page
+
+Ingested `raw/aws-cert-study-notes/aws-solution-architect/efs.md` into a new `services/efs.md` page: NFS v4 shared file storage for Linux, EBS-vs-EFS framing, mount-target architecture (per-AZ, subnet IPs, one-per-AZ HA rule) with the architecture diagram copied to `wiki/assets/efs-architecture.png`, private-by-default with hybrid access (VPN / Direct Connect / VPC peering), and three course-vs-current-AWS discrepancy callouts with inline doc citations: Max I/O is now previous-generation (General Purpose recommended for all), Elastic throughput exists and is the new console default (not Bursting), and storage classes now include One Zone and Archive beyond Standard/IA. Added a `## EFS` section with cheat sheet to `certifications/aws-saa.md`; wired inbound links from `concepts/storage.md`, `concepts/resource-scope.md`, `services/s3.md`, and `services/eks.md`. Updated index.

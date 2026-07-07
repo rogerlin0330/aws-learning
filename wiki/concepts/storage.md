@@ -3,13 +3,13 @@ title: Storage Fundamentals
 type: concept
 tags: [storage, block-storage, file-storage, object-storage, ebs, instance-store, s3, efs, fsx, iops, throughput, ephemeral, persistent, direct-attached, network-attached]
 certs: [aws-saa]
-updated: 2026-06-04
+updated: 2026-07-06
 ---
 
 # Storage Fundamentals
 
 A cross-cutting reference for storage terminology, the three storage categories, and performance mechanics.
-AWS services map directly onto these general concepts: [EC2 instance store](../services/ec2.md#storage-options) = direct-attached ephemeral block; [EBS](../services/ec2.md#storage-options) = network-attached persistent block; [S3](../services/s3.md) = object; EFS/FSx = file.
+AWS services map directly onto these general concepts: [EC2 instance store](../services/ec2.md#storage-options) = direct-attached ephemeral block; [EBS](../services/ec2.md#storage-options) = network-attached persistent block; [S3](../services/s3.md) = object; [EFS](../services/efs.md)/FSx = file.
 
 ## Delivery Mode
 
@@ -56,7 +56,7 @@ Storage created independently and accessed over a network fabric.
 - Access by traversing the directory tree (NFS, SMB/CIFS paths).
 - Typically delivered over a network from a dedicated file server.
 - **Can be mounted** but **cannot be booted from** — the OS doesn't get low-level block access.
-- **AWS services:** EFS (Linux NFS), FSx (Windows / Lustre / NetApp / OpenZFS).
+- **AWS services:** [EFS](../services/efs.md) (Linux NFS), FSx (Windows / Lustre / NetApp / OpenZFS).
 
 ### Object Storage
 
@@ -73,7 +73,7 @@ Storage created independently and accessed over a network fabric.
 | --- | --- | --- |
 | Boot volume for an OS | Block | EBS |
 | High-performance disk inside an OS | Block | EBS / instance store |
-| Shared file system across multiple servers | File | EFS (Linux), FSx (Windows/Lustre) |
+| Shared file system across multiple servers | File | [EFS](../services/efs.md) (Linux), FSx (Windows/Lustre) |
 | Whole-object HTTP access, data lake, web-scale | Object | S3 |
 
 > [!tip] Exam Tip
