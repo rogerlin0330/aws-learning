@@ -1390,3 +1390,7 @@ Ingested `raw/aws-cert-study-notes/aws-solution-architect/aws_backup.md` (Cantri
 ## [2026-07-07] update | Glacier "Bulk" tier clarification
 
 Added a gotcha callout to `services/s3.md` (Retrieval tiers): "Bulk" is just the name of a speed/price tier — it does not indicate it is the only tier that can retrieve objects in bulk; all tiers support bulk retrieval. Each `RestoreObject` request targets exactly one object, so restoring many objects means many requests or an S3 Batch Operations Restore job.
+
+## [2026-07-08] update | VPC router & DNS nameserver clarifications
+
+Expanded the reserved-IPs table in `services/vpc.md`: the VPC router row now explains it is the implicit AWS-managed default gateway for every instance, and the DNS nameserver row identifies it as the Amazon-provided Route 53 Resolver. Added a Route Tables bullet clarifying the mental model that route tables (and subnet associations) are configuration the VPC router reads — edits take effect immediately and the router itself is never directly configured; gateway targets (IGW, NAT GW, peering, TGW) are likewise just next-hop instructions.

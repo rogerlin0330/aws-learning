@@ -65,13 +65,16 @@ When `enableDnsSupport = false`, the `.2` resolver (and `169.254.169.253`) goes 
 - **Valid subnet CIDR sizes: `/16` (largest) to `/28` (smallest — 16 IPs, 11 usable after the 5 AWS-reserved addresses)** ([AWS docs: Subnet CIDR blocks](https://docs.aws.amazon.com/vpc/latest/userguide/subnet-sizing.html))
 - **5 reserved IPs** in every subnet (e.g. `10.16.16.0/20`) ([AWS docs: Subnet CIDR blocks](https://docs.aws.amazon.com/vpc/latest/userguide/subnet-sizing.html)):
 
-| Address | Purpose |
-| --- | --- |
-| `10.16.16.0` | Network address |
-| `10.16.16.1` | VPC router |
-| `10.16.16.2` | DNS nameserver |
-| `10.16.16.3` | Reserved for future use |
-| `10.16.31.255` | Broadcast address |
+| Address        | Purpose                 |
+| -------------- | ----------------------- |
+| `10.16.16.0`   | Network address         |
+| `10.16.16.1`   | VPC router              |
+| `10.16.16.2`   | DNS nameserver          |
+| `10.16.16.3`   | Reserved for future use |
+| `10.16.31.255` | Broadcast address       |
+
+- **VPC router** (`network + 1`) — the implicit AWS-managed router that every instance uses as its default gateway; it routes traffic between subnets and out of the VPC according to the subnet's [route table](#route-tables).
+- **DNS nameserver** (`network + 2`) — the Amazon-provided DNS resolver (Route 53 Resolver); instances send DNS queries here to resolve public domains and private hosted zone / VPC-internal names.
 
 A typical VPC subnet design uses tiers (WEB, APP, DB, Spare) across AZs, each tier getting a `/20` per AZ:
 
@@ -81,6 +84,7 @@ A typical VPC subnet design uses tiers (WEB, APP, DB, Spare) across AZs, each ti
 
 - Every subnet is associated with a route table that controls where traffic is directed.
 - The VPC router (at `network + 1`) handles inter-subnet and egress routing.
+- Route tables are the configuration the VPC router (at `network + 1`) reads — editing routes or subnet associations changes the router's forwarding behavior immediately; the router itself is never directly configured. Gateway targets in routes (IGW, NAT gateway, peering, Transit Gateway) are likewise just instructions telling the router where to hand packets off next.
 - Route tables operate at **Layer 3 only** — they deal purely with IP destinations and next hops; no awareness of ports or protocols.
 - **A subnet can only be associated with 1 route table at a time, but you can associate multiple subnets with the same subnet route table.** ([AWS docs: Subnet route tables](https://docs.aws.amazon.com/vpc/latest/userguide/subnet-route-tables.html))
 
@@ -112,13 +116,13 @@ A typical VPC subnet design uses tiers (WEB, APP, DB, Spare) across AZs, each ti
 
 ## Stateful vs Stateless Firewalls
 
-| | Stateless | Stateful |
-| --- | --- | --- |
-| AWS implementation | NACL | Security Group |
-| OSI layer | 3/4 | 3/4 |
-| Attaches to | Subnet | ENI |
-| Tracks connections? | No | Yes |
-| Return traffic | Must be explicitly allowed | Automatically allowed |
+|                     | Stateless                  | Stateful              |
+| ------------------- | -------------------------- | --------------------- |
+| AWS implementation  | NACL                       | Security Group        |
+| OSI layer           | 3/4                        | 3/4                   |
+| Attaches to         | Subnet                     | ENI                   |
+| Tracks connections? | No                         | Yes                   |
+| Return traffic      | Must be explicitly allowed | Automatically allowed |
 
 Both operate at **Layer 3/4** — they filter by IP/CIDR (L3) and by protocol + port (L4). A rule for ICMP (no ports) is purely L3; a rule for TCP/UDP with a port range is L4. Neither inspects application-layer content (HTTP headers, URLs, etc.) — that is AWS WAF's job (Layer 7).
 
@@ -176,33 +180,33 @@ In complex multi-subnet scenarios, rule pairs are needed for every communication
 
 The correct mental model: **SG attaches to ENIs**. Any resource that creates an ENI inside your VPC can have a SG. The "server/instance" heuristic is mostly right but breaks for some serverless services:
 
-| Resource | Has SG? | Reason |
-| --- | --- | --- |
-| EC2 | Yes | Has ENI |
-| RDS | Yes | Has ENI |
-| ALB / NLB | Yes | Has ENI |
-| MSK | Yes | Has ENI |
-| ECS Fargate | Yes | Has ENI (serverless, but VPC-attached) |
-| Lambda (in VPC) | Yes | Gets an ENI when deployed in a VPC |
-| Lambda (no VPC) | No | No ENI |
-| S3, DynamoDB | No | Live outside your VPC; use resource-based policies instead |
+| Resource        | Has SG? | Reason                                                     |
+| --------------- | ------- | ---------------------------------------------------------- |
+| EC2             | Yes     | Has ENI                                                    |
+| RDS             | Yes     | Has ENI                                                    |
+| ALB / NLB       | Yes     | Has ENI                                                    |
+| MSK             | Yes     | Has ENI                                                    |
+| ECS Fargate     | Yes     | Has ENI (serverless, but VPC-attached)                     |
+| Lambda (in VPC) | Yes     | Gets an ENI when deployed in a VPC                         |
+| Lambda (no VPC) | No      | No ENI                                                     |
+| S3, DynamoDB    | No      | Live outside your VPC; use resource-based policies instead |
 
 > [!warning] Gotcha
 > SGs cannot block a specific bad IP — use a NACL with an explicit Deny for that.
 
 ## NACL vs Security Group
 
-| Feature | NACL | Security Group |
-| --- | --- | --- |
-| OSI layer | 3/4 | 3/4 |
-| Attaches to | Subnet (L3 construct) | ENI (L3/4 construct) |
-| Stateful? | No (stateless) | Yes (stateful) |
-| Rule types | Allow + Deny | Allow only |
-| Rule evaluation | Ordered (stops at first match) | All rules evaluated |
-| Explicit Deny | Yes | No |
-| Return traffic | Must be explicitly allowed | Automatic |
-| Logical resource references | No | Yes |
-| Best use | Block bad IPs; subnet-level baseline | Fine-grained per-resource control |
+| Feature                     | NACL                                 | Security Group                    |
+| --------------------------- | ------------------------------------ | --------------------------------- |
+| OSI layer                   | 3/4                                  | 3/4                               |
+| Attaches to                 | Subnet (L3 construct)                | ENI (L3/4 construct)              |
+| Stateful?                   | No (stateless)                       | Yes (stateful)                    |
+| Rule types                  | Allow + Deny                         | Allow only                        |
+| Rule evaluation             | Ordered (stops at first match)       | All rules evaluated               |
+| Explicit Deny               | Yes                                  | No                                |
+| Return traffic              | Must be explicitly allowed           | Automatic                         |
+| Logical resource references | No                                   | Yes                               |
+| Best use                    | Block bad IPs; subnet-level baseline | Fine-grained per-resource control |
 
 ## NAT & NAT Gateway
 
@@ -215,24 +219,24 @@ NAT Gateways have two independent dimensions:
 
 ### Connectivity Type
 
-| | Public NAT GW | Private NAT GW |
-| --- | --- | --- |
-| Lives in | Public subnet (zonal) or VPC-level (regional) | Private subnet |
-| Has Elastic IP? | Yes | No |
-| Use case | Private instances → internet | VPC-to-VPC or hybrid (overlapping CIDRs via TGW/VGW) |
+|                 | Public NAT GW                                 | Private NAT GW                                       |
+| --------------- | --------------------------------------------- | ---------------------------------------------------- |
+| Lives in        | Public subnet (zonal) or VPC-level (regional) | Private subnet                                       |
+| Has Elastic IP? | Yes                                           | No                                                   |
+| Use case        | Private instances → internet                  | VPC-to-VPC or hybrid (overlapping CIDRs via TGW/VGW) |
 
 ### Availability Mode
 
-| | Zonal NAT GW | Regional NAT GW (RNAT) |
-| --- | --- | --- |
-| Introduced | Original | Nov 2025 |
-| Scope | Single AZ | VPC-level (all AZs) |
-| Public subnet required? | Yes | **No** |
-| High availability | Manual — deploy one per AZ, route each AZ to its local NAT GW | **Automatic** — expands/contracts across AZs based on workload ENI presence |
-| Route table | One entry per AZ pointing to local NAT GW | **Single NAT GW ID** shared across all AZs |
-| Max IPs per AZ | 8 | 32 |
-| Private NAT support | Yes | **No** — use zonal for private NAT |
-| Use when | Private NAT; strict per-AZ IP control | Most public egress use cases; simplified architecture |
+|                         | Zonal NAT GW                                                  | Regional NAT GW (RNAT)                                                      |
+| ----------------------- | ------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Introduced              | Original                                                      | Nov 2025                                                                    |
+| Scope                   | Single AZ                                                     | VPC-level (all AZs)                                                         |
+| Public subnet required? | Yes                                                           | **No**                                                                      |
+| High availability       | Manual — deploy one per AZ, route each AZ to its local NAT GW | **Automatic** — expands/contracts across AZs based on workload ENI presence |
+| Route table             | One entry per AZ pointing to local NAT GW                     | **Single NAT GW ID** shared across all AZs                                  |
+| Max IPs per AZ          | 8                                                             | 32                                                                          |
+| Private NAT support     | Yes                                                           | **No** — use zonal for private NAT                                          |
+| Use when                | Private NAT; strict per-AZ IP control                         | Most public egress use cases; simplified architecture                       |
 
 #### Zonal NAT GW
 
@@ -294,13 +298,13 @@ The packet translation steps are the same for both zonal and regional:
 
 ### NAT GW vs NAT Instance
 
-| | NAT Gateway | NAT Instance |
-| --- | --- | --- |
-| Managed by | AWS | You |
-| Availability | Zonal (AZ-resilient) or Regional (auto multi-AZ) | Single EC2 instance |
-| Security Groups | Not supported (use NACLs only) | Supported |
-| Cost model | Duration + data volume | EC2 instance cost |
-| Best when | High availability needed | High data volume, cost-sensitive |
+|                 | NAT Gateway                                      | NAT Instance                     |
+| --------------- | ------------------------------------------------ | -------------------------------- |
+| Managed by      | AWS                                              | You                              |
+| Availability    | Zonal (AZ-resilient) or Regional (auto multi-AZ) | Single EC2 instance              |
+| Security Groups | Not supported (use NACLs only)                   | Supported                        |
+| Cost model      | Duration + data volume                           | EC2 instance cost                |
+| Best when       | High availability needed                         | High data volume, cost-sensitive |
 
 ![Full NAT GW vs NAT Instance comparison: availability, bandwidth, maintenance, performance, cost, security groups, network ACLs, flow logs, port forwarding, bastion server support — bottom note: disable Source/Destination Checks for NAT instance](../assets/vpc-nat-gw-vs-nat-instance.png)
 
