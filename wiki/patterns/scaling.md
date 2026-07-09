@@ -3,7 +3,7 @@ title: Scaling — Horizontal vs Vertical
 type: pattern
 tags: [scaling, horizontal-scaling, vertical-scaling, scale-out, scale-in, elasticity, load-balancer, sessions, stateless, sticky-sessions, ha]
 certs: [aws-saa]
-updated: 2026-06-02
+updated: 2026-07-09
 ---
 
 # Scaling — Horizontal vs Vertical
@@ -59,7 +59,7 @@ Because there are now many running copies of the application, traffic must be di
 
 A load balancer is an appliance that sits **between customers and your instances**, distributing incoming requests across all available instances. For a single customer, consecutive requests may land on the **same instance or a different one** depending on the load-balancing algorithm.
 
-In AWS, this is delivered by **Elastic Load Balancing (ELB)** — Application Load Balancer for HTTP / HTTPS, Network Load Balancer for TCP / UDP. ELB and Auto Scaling pages will follow in the wiki; for now, the conceptual role is enough.
+In AWS, this is delivered by **[Elastic Load Balancing (ELB)](../services/elb.md)** — Application Load Balancer for HTTP / HTTPS, Network Load Balancer for TCP / UDP. See the [ELB page](../services/elb.md) for the architecture: nodes, listeners, internet-facing vs internal, and cross-zone load balancing.
 
 ### The Critical Consideration — Sessions
 
@@ -124,7 +124,7 @@ Picture a worker named Bob:
 
 Horizontal scaling is the foundation that AWS's **elasticity** primitives sit on top of:
 
-1. **Elastic Load Balancing (ELB)** distributes traffic across the fleet (Application Load Balancer for HTTP / HTTPS, Network Load Balancer for TCP / UDP).
+1. **[Elastic Load Balancing (ELB)](../services/elb.md)** distributes traffic across the fleet (Application Load Balancer for HTTP / HTTPS, Network Load Balancer for TCP / UDP).
 2. **Auto Scaling Groups (ASG)** add and remove instances **automatically** in response to metrics (CPU, request count, custom [CloudWatch](../services/cloudwatch.md) alarms) or schedules.
 3. **Stateless application design** is the precondition that makes both useful.
 

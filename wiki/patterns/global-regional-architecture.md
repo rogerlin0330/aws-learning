@@ -3,7 +3,7 @@ title: Global & Regional AWS Architecture
 type: pattern
 tags: [architecture, foundations, global, regional, tiers, route53, cloudfront, cdn, dns, health-checks, failover, multi-region, dr, web-tier, compute-tier, caching, database-tier, storage-tier, app-services, decoupling]
 certs: [aws-saa]
-updated: 2026-07-08
+updated: 2026-07-09
 ---
 
 # Global & Regional AWS Architecture
@@ -46,7 +46,7 @@ How to read the diagram: the dotted box labelled "AWS Region" encloses the regio
 
 ### Web Tier
 
-The **regional entry point** — typically a regional AWS service such as an **Application Load Balancer** or **API Gateway**. Its job is to **abstract customers away from the underlying infrastructure**, so that the infrastructure behind it can scale, fail, or change without impacting customers. This abstraction is what makes [horizontal scaling](scaling.md) possible.
+The **regional entry point** — typically a regional AWS service such as an **[Application Load Balancer](../services/elb.md)** or **API Gateway**. Its job is to **abstract customers away from the underlying infrastructure**, so that the infrastructure behind it can scale, fail, or change without impacting customers. This abstraction is what makes [horizontal scaling](scaling.md) possible.
 
 ### Compute Tier
 

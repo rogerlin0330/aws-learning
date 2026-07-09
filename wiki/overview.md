@@ -2,7 +2,7 @@
 title: AWS Learning — Overview
 type: overview
 tags: [aws, architecture, iam, vpc, organizations, control-tower, cost, s3, ec2, ecs, eks, kubernetes, containers, cloudwatch, cloudtrail, cloudformation, bootstrapping, dns, dnssec, rds, rds-custom, aurora, dms, database, database-migration, multi-az, high-availability, acid, base, cap-theorem, global, regional, tiers, cloudfront]
-updated: 2026-07-08
+updated: 2026-07-09
 ---
 
 # AWS Learning Overview
@@ -69,7 +69,7 @@ Every AWS service operates at a specific resilience scope. Knowing this is criti
 
 ### The ENI is the Networking Atom
 
-The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental networking unit in AWS. Security Groups attach to ENIs, not to instances or subnets. Any resource that has an ENI in your VPC can have a Security Group — including [EC2](services/ec2.md), RDS, ALB, Fargate, and Lambda-in-VPC.
+The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental networking unit in AWS. Security Groups attach to ENIs, not to instances or subnets. Any resource that has an ENI in your VPC can have a Security Group — including [EC2](services/ec2.md), RDS, [ALB](services/elb.md), Fargate, and Lambda-in-VPC.
 
 ### Compute Packaging Changes the Management Line
 
@@ -82,6 +82,7 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 - [IAM](services/iam.md) — users, groups, roles (STS / federation), policies, ARNs
 - [VPC](services/vpc.md) — subnets, routing, IGW, NACL, SG, NAT GW, PrivateLink
 - [EC2](services/ec2.md) — IaaS foundations, hosts vs instances (tenancy + AZ-resilience), instance lifecycle & state-based costs (incl. stop/start vs restart), AMIs, bootstrapping (user data), SSH/RDP access, when-to-use-EC2 decision framing
+- [ELB](services/elb.md) — Elastic Load Balancer family (CLB legacy, ALB for HTTP/S, NLB for TCP/TLS/UDP); a load balancer is really auto-scaling **nodes** behind one DNS A record; internet-facing vs internal (node addressing only), listeners, subnet rules (one per AZ, 2+ AZs, /27 recommended), cross-zone load balancing; the abstraction layer that decouples tiers and enables [horizontal scaling](patterns/scaling.md)
 - [RDS](services/rds.md) — managed relational database **server** (one instance, many databases); engines include IBM Db2, MariaDB, MySQL, Oracle, PostgreSQL, and SQL Server; databases-on-EC2 decision (single-AZ by nature; right only for unsupported engine/version, specific OS+DB combo, or OS/root access), **RDS Custom** as the middle ground (SQL Server/Oracle only, OS/engine access via SSH/RDP/Session Manager, resources visible in your account), DB subnet groups, dedicated EBS per instance, **Multi-AZ standby = synchronous** vs **read replica = asynchronous** (Db2 standby replicas and Oracle mounted replicas are DR-only), **Multi-AZ instance** (passive standby, DNS-repoint failover) vs **Multi-AZ cluster** (2 readable readers, semi-synchronous quorum, faster failover, MySQL/PostgreSQL only), per-second billing; [Aurora](services/aurora.md) is a separate product
 - [Aurora](services/aurora.md) — AWS-built relational engine on a **shared cluster volume** (6 copies / 3 AZs, self-healing, synchronous at the storage level); up to 15 replicas serving reads **and** failover at once, multiple endpoints (cluster / reader / custom / instance), Standard vs I/O-Optimized storage billing, Backtrack + fast clones, **Aurora serverless** (formerly Serverless v2; ACUs, scale-to-zero), **Global Database** (async storage-layer cross-region replication for DR + global reads, RTO on the order of minutes), retired multi-master
 - [DMS](services/dms.md) — Database Migration Service; managed database and analytics data migration with DMS Standard replication instances or DMS Serverless/DCUs, Full Load / Full Load + CDC / CDC Only task modes, DMS Schema Conversion or AWS SCT for heterogeneous engine changes, and Snowball/S3 bulk-transfer patterns for very large migrations
@@ -132,7 +133,7 @@ Most real-world AWS deployments use **many accounts** — a per-team / per-envir
 
 - EC2: placement groups (user-data & bootstrapping now covered on the [EC2 page](services/ec2.md#bootstrapping); IMDS / IMDSv2 on the [IMDS section](services/ec2.md#instance-metadata-service-imds))
 - CloudFormation: the full surface beyond cfn-init — parameters, mappings, outputs, intrinsic functions, change sets, nested stacks / StackSets, drift detection (the [CloudFormation page](services/cloudformation.md) currently covers only the bootstrapping features)
-- ELB / Auto Scaling: ALB vs NLB, target groups, scaling policies — builds directly on the [Scaling pattern](patterns/scaling.md)
+- ELB deep dives + Auto Scaling: listeners in depth, target groups, health checks, scaling policies — the [ELB architecture page](services/elb.md) now covers the foundations
 - Container services: ELB integration patterns and App Mesh / service discovery — builds on [ECS](services/ecs.md), [EKS](services/eks.md), [ECR](services/ecr.md), and the [Containers](concepts/containers.md) / [Kubernetes](concepts/kubernetes.md) concept pages
 - AWS AI services (for AI Practitioner cert)
 - Architecture patterns: HA, multi-AZ, disaster recovery tiers
