@@ -2,7 +2,7 @@
 title: Wiki Index
 type: overview
 tags: [index, catalog, wiki]
-updated: 2026-07-07
+updated: 2026-07-08
 ---
 
 # Wiki Index
@@ -51,6 +51,7 @@ updated: 2026-07-07
 
 ## Patterns
 
+- [Global & Regional AWS Architecture](patterns/global-regional-architecture.md) — Foundational mental model: global components (Route 53 discovery + health-check failover, CloudFront CDN) deliver customers to regional applications built from standard tiers (web / compute / caching / database / storage / app services); three architecture types (single-region, single-region + DR, multi-region); why cache in front of the DB; app services for decoupling (SQS)
 - [Cost Optimization](patterns/cost-optimization.md) — Savings Plans (Compute / EC2 Instance), Reserved Instances, Spot; decision tree; pooling via Organizations
 - [Boot Time to Service Time](patterns/boot-time-optimization.md) — AMI baking vs bootstrapping vs combined; boot-time-to-service-time = provisioning time + post-launch config time; bake the slow/stable part and bootstrap the fast-changing part (the **optimal** combined pattern); exam pattern "minimize boot time while keeping flexibility" → combine both; matters for Auto Scaling responsiveness
 - [Scaling — Horizontal vs Vertical](patterns/scaling.md) — bigger box vs more boxes; vertical = simple, monolith-friendly, but stop/start disruption and hard upper cap; horizontal = no upper limit, no disruption, finer granularity, cheaper commodity instances — but requires a load balancer (ELB / ALB / NLB) and stateless application design with sessions stored off-host (ElastiCache / DynamoDB / RDS); sticky sessions are a migration aid, not the proper fix; foundation for ELB + Auto Scaling Groups across multi-AZ HA

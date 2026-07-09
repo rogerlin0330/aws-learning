@@ -1,8 +1,8 @@
 ---
 title: AWS Learning — Overview
 type: overview
-tags: [aws, architecture, iam, vpc, organizations, control-tower, cost, s3, ec2, ecs, eks, kubernetes, containers, cloudwatch, cloudtrail, cloudformation, bootstrapping, dns, dnssec, rds, rds-custom, aurora, dms, database, database-migration, multi-az, high-availability, acid, base, cap-theorem]
-updated: 2026-07-03
+tags: [aws, architecture, iam, vpc, organizations, control-tower, cost, s3, ec2, ecs, eks, kubernetes, containers, cloudwatch, cloudtrail, cloudformation, bootstrapping, dns, dnssec, rds, rds-custom, aurora, dms, database, database-migration, multi-az, high-availability, acid, base, cap-theorem, global, regional, tiers, cloudfront]
+updated: 2026-07-08
 ---
 
 # AWS Learning Overview
@@ -52,6 +52,10 @@ This distinction recurs across AWS — understanding it once unlocks many servic
 - [NACLs](services/vpc.md#network-acl-nacl) are **stateless** → must explicitly allow return traffic (ephemeral ports)
 - [Security Groups](services/vpc.md#security-groups-sg) are **stateful** → return traffic automatic
 - [NAT GW](services/vpc.md#nat--nat-gateway) is **stateful** → tracks connections to map return traffic
+
+### Global Components vs Regional Tiers
+
+Large systems split into **global components** that get the customer to a healthy region (Route 53 for discovery and health-check failover, CloudFront for content delivery) and **regional applications** built from standard tiers (web, compute, caching, database, storage, app services). What looks like one global application — Netflix, say — is really a collection of regional applications duplicated across regions. See [Global & Regional AWS Architecture](patterns/global-regional-architecture.md) for the full model, including the three architecture types (single-region, single-region + DR, multi-region).
 
 ### Resilience Tiers
 
@@ -109,6 +113,7 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 
 ### Patterns
 
+- [Global & Regional AWS Architecture](patterns/global-regional-architecture.md) — the foundational mental model: global components (Route 53, CloudFront) deliver customers to regional applications built from standard tiers (web / compute / caching / database / storage / app services); three architecture types (single-region, +DR, multi-region)
 - [Cost Optimization](patterns/cost-optimization.md) — Savings Plans, RIs, Spot, decision tree, pooling via Organizations
 - [Scaling — Horizontal vs Vertical](patterns/scaling.md) — bigger box vs more boxes; the session problem; stateless design; how horizontal scaling combines with ELB + Auto Scaling for HA
 - [Boot Time to Service Time](patterns/boot-time-optimization.md) — AMI baking vs bootstrapping vs combined; minimizing post-launch time while keeping flexibility

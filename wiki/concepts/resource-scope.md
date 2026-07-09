@@ -3,12 +3,14 @@ title: Resource Scope (Global / Regional / AZ / Edge)
 type: concept
 tags: [scope, regions, availability-zones, global, edge, dr, resilience, dms]
 certs: [aws-saa]
-updated: 2026-07-03
+updated: 2026-07-08
 ---
 
 # Resource Scope (Global / Regional / AZ / Edge)
 
 Every AWS resource lives somewhere in a 4-tier hierarchy. Knowing the tier for a given service tells you three things at once: its **blast radius** when something fails, whether you need to **copy or replicate** it to use it elsewhere, and which **DR pattern** applies.
+
+This page catalogs *where each service lives*; the design-side companion is [Global & Regional AWS Architecture](../patterns/global-regional-architecture.md), which covers *how to assemble* global components (Route 53, CloudFront) and regional application tiers into an architecture.
 
 This page is the canonical scope reference. When a new service page is added to the wiki, append its scope here.
 
