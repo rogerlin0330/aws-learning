@@ -1,7 +1,7 @@
 ---
 title: Elastic Load Balancer (ELB)
 type: service
-tags: [elb, alb, nlb, clb, load-balancing, networking, ha, scaling]
+tags: [elb, alb, nlb, clb, gwlb, load-balancing, networking, ha, scaling, sni, listener-rules, end-to-end-encryption, privatelink]
 certs: [aws-saa]
 updated: 2026-07-10
 ---
@@ -25,7 +25,7 @@ v2 load balancers are faster and support **target groups and rules**, so one loa
 > [!tip] Exam Tip
 > There is **no scenario** where a v1 CLB is the right answer for a new deployment. The real exam skill is **picking ALB vs NLB** for a given protocol: HTTP/HTTPS/WebSocket means ALB; TCP/TLS/UDP (email, SSH, gaming, anything non-HTTP) means NLB.
 
-There is also a fourth member the course does not cover: the **Gateway Load Balancer (GWLB)**, which operates at Layer 3 and is used to insert fleets of third-party security/inspection appliances into the traffic path ([GWLB docs](https://docs.aws.amazon.com/elasticloadbalancing/latest/gateway/introduction.html)). It appears occasionally in SAA-adjacent questions but is out of scope for this page.
+There is also a fourth member the course does not cover: the **Gateway Load Balancer (GWLB)**, introduced at re:Invent 2020, which operates at Layer 3 using the **GENEVE protocol on port 6081** and is used to insert fleets of third-party security/inspection appliances (firewalls, IDS/IPS, deep-packet inspection) into the traffic path as a transparent "bump-in-the-wire" ([GWLB docs](https://docs.aws.amazon.com/elasticloadbalancing/latest/gateway/introduction.html)). It appears occasionally in SAA-adjacent questions but is out of scope for this page. The complete family: **ALB (L7), NLB (L4), GWLB (L3), CLB (legacy)**.
 
 ## Architecture — It's Nodes, Not a Box
 
@@ -117,6 +117,126 @@ Cross-zone load balancing lets **every node distribute across all registered ins
 > [!warning] Gotcha — node distribution vs instance distribution
 > DNS responses tend to distribute clients across **nodes**; over many clients, that approximates an even split. Cross-zone only changes what each node does **after** it receives its share — whether it can reach instances in other AZs.
 
+## ALB vs NLB — Why v2 Exists: Consolidation
+
+The original CLB pain point that motivated v2: **CLBs do not support SNI** (Server Name Indication, see [TLS/HTTPS](../concepts/tls-https.md)), and **a single CLB cannot hold multiple SSL certificates**. Every unique HTTPS application therefore needs its own CLB — two HTTPS apps (`catagram.io` and `dogagram.io`) means two CLBs; 100 legacy apps means 100 load balancers.
+
+A single ALB can front both applications instead:
+
+- **Listener rules**, each able to carry its own SSL certificate (via SNI), handle HTTPS for both domains.
+- **Host-header rules** direct connections to **multiple target groups**, each forwarding to its own Auto Scaling group.
+
+That is a 2:1 consolidation for two apps, and the savings compound dramatically across a large legacy estate. **Consolidation is one of the headline advantages of moving from v1 (CLB) to v2 (ALB).**
+
+## ALB Deep Dive — a True Layer 7 Load Balancer
+
+An ALB listens on **HTTP or HTTPS only**, and because it understands those protocols it can inspect and make decisions on **content type, cookies, custom headers, user location, and application behaviour** — none of which an NLB can see.
+
+> [!warning] Gotcha — HTTP/HTTPS only
+> The flip side of being a true L7 device: an ALB understands *only* HTTP/HTTPS. It **cannot** handle other Layer 7 protocols (SMTP, SSH, custom gaming protocols), and it **cannot** listen directly on TCP, UDP, or TLS. A non-web protocol in the scenario rules the ALB out.
+
+### SSL/TLS is always terminated on the ALB
+
+Any incoming HTTPS connection is **terminated on the ALB**, and a **new, separate connection** is made from the ALB to the backend targets (which can itself be HTTPS, but it is still a different connection — hop-by-hop, never unbroken).
+
+> [!warning] Gotcha — no unbroken end-to-end encryption through an ALB
+> You **cannot** have an unbroken end-to-end SSL/TLS connection from client through to the application instances with an ALB. This matters to strict security teams and can, on its own, exclude the ALB from consideration. Consequence: **every HTTPS ALB must have an SSL certificate installed on the load balancer**, because the connection terminates there. The canonical unbroken-encryption answer is an [NLB with a TCP listener](#unbroken-end-to-end-encryption-tcp-pass-through).
+
+### Performance and health checks
+
+ALBs are **slower than NLBs** — more layers of the networking stack must be processed, and more layers means more latency. In exchange, ALB health checks are **application-aware**: the ALB can make an actual application-layer request and confirm the app responds correctly, not merely that a network connection succeeds.
+
+### Rules — the core of ALB flexibility
+
+Connections arriving at a listener are handled according to **rules**, processed in **priority order**; the last rule is always the **default rule** (a catch-all), and you add higher-priority rules above it.
+
+Rule **conditions** can match on:
+
+- Host header (which domain)
+- HTTP headers
+- HTTP request method
+- Path pattern (for example `/images` vs `/api`)
+- Query string
+- **Source IP**
+
+Rule **actions** can:
+
+- **Forward** to a target group
+- **Redirect** elsewhere (for example to another domain)
+- Return a **fixed HTTP response** (a specific status code)
+- **Authenticate** — using **OpenID Connect** or **Amazon Cognito**
+
+Worked examples: a host-header rule forwards `catagram.io` traffic to the Catagram target group; a source-IP rule sends one corporate client (say `1.3.3.7`) to a dedicated target group running an alternative version; a host-header rule for `dogagram.io` **redirects** to `catagram.io` instead of forwarding.
+
+> [!tip] Exam Tip
+> Routing decisions based on **path, headers, cookies, host, HTTP redirects, or built-in authentication** are **ALB** territory — an NLB can do none of these.
+
+## NLB Deep Dive — Layer 4
+
+An NLB operates at **Layer 4**, interpreting **TCP, TLS, and UDP** (plus the combined `TCP_UDP` listener). It has **no visibility into HTTP/HTTPS**: it cannot interpret headers or cookies, and has no concept of HTTP session stickiness (which relies on cookies at Layer 7).
+
+- **Extremely fast** — NLBs can handle **millions of requests per second** with roughly **25% of the latency of an ALB** (the course's "about 4 times lower latency" framing; AWS no longer publishes a hard number), because they skip the computationally heavy upper layers.
+- **Ideal for non-HTTP(S) protocols** — SMTP email, SSH, game servers on custom protocols, financial applications not using HTTP/HTTPS. Protocol-agnostic at Layer 4.
+- **Shallower health checks** — the course frames NLB health checks as ICMP and basic TCP handshaking only, not application-aware. (Current AWS docs actually allow **HTTP/HTTPS health check protocols on NLB target groups** ([NLB health checks](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/target-group-health-checks.html)), but the exam-level contrast stands: the ALB is the application-aware option.)
+- **Static IP addresses** — one Elastic IP per subnet/AZ, extremely useful for **whitelisting** through corporate firewalls (see [subnet selection rules](#subnet-selection-rules) above; ALB and CLB have no static IPs).
+
+### Unbroken end-to-end encryption (TCP pass-through)
+
+Because an NLB does not understand HTTP/HTTPS, a **TCP listener** forwards TCP **straight through** to the instances. Anything layered on top of TCP — TLS, and therefore HTTPS — is **never terminated** on the load balancer.
+
+> [!tip] Exam Tip — the canonical end-to-end encryption answer
+> **Unbroken, end-to-end encryption from client to instance means an NLB with a TCP listener** — never an ALB. If a question requires forwarding encrypted connections to instances *without terminating them on the load balancer*, the answer is NLB.
+
+> [!warning] Gotcha — TCP listener vs TLS listener
+> An NLB *also* supports a **TLS listener**, which **does terminate** TLS on the NLB (and therefore needs a certificate) — useful for TLS offload. The unbroken end-to-end behaviour is specific to the **TCP listener**, where the NLB never decrypts. Don't conflate the two ([NLB listeners](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/load-balancer-listeners.html)).
+
+### PrivateLink
+
+NLBs are the load balancer used with **[AWS PrivateLink](vpc.md)** to expose a service to other VPCs.
+
+> [!tip] Exam Tip
+> Any scenario involving **PrivateLink** means **NLB**. This is a common, high-value exam fact.
+
+## The Decision Framework (Memorise This)
+
+Memorise the short list of **reasons to choose an NLB**. If the scenario matches none of them, **default to ALB**.
+
+Choose an **NLB** when you need:
+
+1. **Unbroken / end-to-end encryption** between client and instances (TCP listener pass-through).
+2. **Static IPs** for whitelisting.
+3. **Absolute best performance** — millions of requests per second, lowest latency.
+4. **Protocols that are not HTTP or HTTPS** (SMTP, SSH, game/financial protocols).
+5. **PrivateLink** — exposing a service to other VPCs.
+
+Otherwise choose an **ALB**: its Layer 7 features (rules, host/path routing, header/cookie awareness, redirects, authentication, application-aware health checks, certificate consolidation) win in most web scenarios.
+
+> [!warning] Gotcha — you can't have both
+> Don't be fooled by "performance-critical" wording *and* "path-based routing" in the same question — path routing forces **ALB**; you cannot have NLB speed and Layer 7 routing on one load balancer.
+
+### ALB vs NLB quick comparison
+
+| Attribute | ALB | NLB |
+| --- | --- | --- |
+| OSI layer | **Layer 7** (application) | **Layer 4** (transport) |
+| Listener protocols | **HTTP, HTTPS** only | **TCP, UDP, TCP_UDP, TLS** |
+| Understands HTTP / headers / cookies | Yes | No |
+| Host / path / header / query / source-IP routing | Yes (rules) | No |
+| SSL/TLS behaviour | **Always terminated** on the LB (cert required) | **TCP listener = pass-through** (unbroken); **TLS listener = terminates** |
+| Unbroken end-to-end encryption to instances | No | Yes (TCP listener) |
+| Performance / latency | Higher latency | Much lower latency; millions of requests/sec |
+| Static IP addresses | No (DNS name only) | Yes (Elastic IP; whitelisting) |
+| Health checks | **Application-aware** (L7 request) | Basic (course framing; HTTP/HTTPS checks exist today) |
+| Redirects, fixed responses, OIDC/Cognito auth | Yes | No |
+| PrivateLink support | No | **Yes** |
+| Non-HTTP protocols (SMTP, SSH, game, finance) | No | Yes |
+| Certificate consolidation (SNI, many domains) | Yes | N/A (no L7) |
+
+### Course vs current AWS
+
+- **NLBs support security groups since 10 Aug 2023** ([announcement](https://aws.amazon.com/about-aws/whats-new/2023/08/network-load-balancer-supports-security-groups/)). Older material claiming "NLBs have no security group — control access at the instance level" is outdated. Quirk: security groups can only be associated **at NLB creation time**; an NLB created without them cannot have them added later (you would have to replace the NLB).
+- NLB target-group **health checks support HTTP/HTTPS protocols today**, not just TCP (noted above).
+
 ## Quick Reference
 
 | Topic | Key fact |
@@ -134,12 +254,18 @@ Cross-zone load balancing lets **every node distribute across all registered ins
 | Subnet count | **One subnet per AZ**, **2+ AZs** (ALB requires it) |
 | Subnet size | **8+ free IPs**; recommend **/27 or larger**; /28 is the strict minimum |
 | Cross-zone | Fixes uneven load; distributes across **all** instances in **all** AZs |
+| ALB SSL/TLS | **Always terminated** on the LB; cert required on the LB; never unbroken end-to-end |
+| NLB TCP listener | **Pass-through** — the unbroken end-to-end encryption answer |
+| PrivateLink | **NLB only** |
+| Decision rule | Memorise the 5 NLB reasons (E2E encryption, static IPs, performance, non-HTTP, PrivateLink); otherwise **ALB** |
 
 ## References
 
 - [Scaling — Horizontal vs Vertical](../patterns/scaling.md) — why a load balancer is the price of admission for horizontal scaling
 - [Global & Regional AWS Architecture](../patterns/global-regional-architecture.md) — the load balancer as the web-tier regional entry point
-- [VPC](vpc.md) — subnets, reserved IPs, public vs private subnet mechanics
+- [VPC](vpc.md) — subnets, reserved IPs, public vs private subnet mechanics, PrivateLink
 - [Networking](../concepts/networking.md) — ENIs, firewall layers
-- AWS docs: [Application Load Balancers](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/application-load-balancers.html) · [NLB availability zones](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/availability-zones.html) · [CLB subnets](https://docs.aws.amazon.com/elasticloadbalancing/latest/classic/elb-manage-subnets.html) · [ALB target group attributes](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/edit-target-group-attributes.html#modify-target-group-attributes) · [ELB scaling strategies blog](https://aws.amazon.com/blogs/networking-and-content-delivery/scaling-strategies-for-elastic-load-balancing/)
+- [TLS/HTTPS](../concepts/tls-https.md) — certificates, SNI, TLS termination
+- AWS docs: [Application Load Balancers](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/application-load-balancers.html) · [NLB availability zones](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/availability-zones.html) · [NLB listeners](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/load-balancer-listeners.html) · [NLB health checks](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/target-group-health-checks.html) · [CLB subnets](https://docs.aws.amazon.com/elasticloadbalancing/latest/classic/elb-manage-subnets.html) · [ALB target group attributes](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/edit-target-group-attributes.html#modify-target-group-attributes) · [ELB scaling strategies blog](https://aws.amazon.com/blogs/networking-and-content-delivery/scaling-strategies-for-elastic-load-balancing/)
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/elb_architecture.md` (Adrian Cantrill AWS SAA — "Evolution of the ELB", "ELB Architecture Part 1 & 2"; diagrams © learn.cantrill.io)
+- Source: `raw/aws-cert-study-notes/aws-solution-architect/alb_vs_nlb.md` (Adrian Cantrill AWS SAA — "Application Load Balancing (ALB) vs Network Load Balancing (NLB)")
