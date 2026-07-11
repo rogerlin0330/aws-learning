@@ -1406,3 +1406,7 @@ Ingested `raw/aws-cert-study-notes/aws-solution-architect/elb_architecture.md` (
 ## [2026-07-09] update | ELB node distribution — AWS-managed, statistical DNS spread
 
 Follow-up to the ELB ingest, prompted by a user question on whether the equal spread across nodes is controllable. Added a note callout to the Architecture section of `services/elb.md`: the spread is delivered at the DNS layer (A record returns node IPs with a 60-second TTL, cited inline to the How-Elastic-Load-Balancing-works doc), is not user-configurable (no per-node weighting; only indirect levers are subnet/AZ selection and cross-zone load balancing, which affects node-to-target only), and is statistical rather than guaranteed — DNS-caching clients (JVM) pin to one node, cross-linked to the Aurora reader-endpoint connection-level balancing section.
+
+## [2026-07-10] update | ELB lint fixes
+
+Fixed follow-up review findings in `services/elb.md`, `certifications/aws-saa.md`, and `index.md`: clarified that ALB requires 2+ AZs while NLB can technically run single-AZ; softened DNS node-distribution wording from deterministic/even to statistical/client-dependent; replaced the stale ALB cross-zone link with the current target-group attributes doc and noted that ALB target groups can override the load-balancer-level inherited setting. Left the static-IP exam wording unchanged for now.
