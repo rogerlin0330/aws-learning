@@ -125,7 +125,7 @@ Picture a worker named Bob:
 Horizontal scaling is the foundation that AWS's **elasticity** primitives sit on top of:
 
 1. **[Elastic Load Balancing (ELB)](../services/elb.md)** distributes traffic across the fleet (Application Load Balancer for HTTP / HTTPS, Network Load Balancer for TCP / UDP).
-2. **Auto Scaling Groups (ASG)** add and remove instances **automatically** in response to metrics (CPU, request count, custom [CloudWatch](../services/cloudwatch.md) alarms) or schedules.
+2. **Auto Scaling Groups (ASG)** add and remove instances **automatically** in response to metrics (CPU, request count, custom [CloudWatch](../services/cloudwatch.md) alarms) or schedules. The instance configuration an ASG launches from is defined in advance by a [launch template](../services/ec2.md#launch-configurations--launch-templates) (or its deprecated predecessor, the launch configuration).
 3. **Stateless application design** is the precondition that makes both useful.
 
 Combine these and the architecture is not only **scalable** but **highly available** (multi-AZ) and **fault-tolerant** (a failed instance is replaced without human intervention). Vertical scaling cannot reach this property — a single instance always inherits the resilience tier of its AZ. See [Overview — Resilience Tiers](../overview.md#resilience-tiers).

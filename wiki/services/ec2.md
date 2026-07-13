@@ -1,9 +1,9 @@
 ---
 title: EC2 — Elastic Compute Cloud
 type: service
-tags: [ec2, compute, iaas, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, ssh, rdp, instance-lifecycle, shared-responsibility, ebs, key-pair, host, tenancy, dedicated-host, dedicated-instance, instance-store, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, security-group, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns, containers, bootstrapping, cloud-init, boot-time-to-service-time, cfn-init, cloudformation, instance-role, instance-profile, iam-role, sts, credential-provider-chain, cloudwatch-agent, cwagent, parameter-store, log-group, log-stream, placement-groups, cluster-placement-group, spread-placement-group, partition-placement-group, hpc, enhanced-networking, topology-aware, ebs-optimized, sr-iov, ena, pps]
+tags: [ec2, compute, iaas, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, ssh, rdp, instance-lifecycle, shared-responsibility, ebs, key-pair, host, tenancy, dedicated-host, dedicated-instance, instance-store, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, security-group, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns, containers, bootstrapping, cloud-init, boot-time-to-service-time, cfn-init, cloudformation, instance-role, instance-profile, iam-role, sts, credential-provider-chain, cloudwatch-agent, cwagent, parameter-store, log-group, log-stream, placement-groups, cluster-placement-group, spread-placement-group, partition-placement-group, hpc, enhanced-networking, topology-aware, ebs-optimized, sr-iov, ena, pps, launch-template, launch-configuration, auto-scaling, mixed-instances-policy]
 certs: [aws-saa]
-updated: 2026-06-13
+updated: 2026-07-11
 ---
 
 # EC2 — Elastic Compute Cloud
@@ -1023,6 +1023,76 @@ The real point is **topology awareness**: the group exposes **which instances ar
 > [!tip] Exam Tip
 > Choose by what the question emphasises: *highest performance, lowest latency, HPC, scientific* — **Cluster**. *Small number of critical instances, maximum availability, separate blast radius* — **Spread**. *Large-scale distributed or replicated app, more than 7 instances, HDFS / HBase / Cassandra, topology-aware* — **Partition**. The most common trap is spread vs partition: *"need separation **and** lots of instances"* points at **Partition**.
 
+## Launch Configurations & Launch Templates
+
+**Launch Configurations (LC)** and **Launch Templates (LT)** are both *documents* that capture the configuration of an EC2 instance **in advance**, so it can be reused instead of re-entered at every launch. Everything you would normally set when launching an instance can live in the document:
+
+- The **[AMI](#ami--amazon-machine-image)** to use
+- **Instance type and size**
+- **Storage** configuration ([EBS](ebs.md) volumes / [instance store](#instance-store))
+- The **key pair** used to [connect to the instance](#connecting-to-instances)
+- **Networking** configuration and **[Security Groups](vpc.md#security-groups-sg)**
+- **[User data](#bootstrapping)** for bootstrapping
+- The **[IAM role](#instance-roles--instance-profiles)** attached to the instance
+
+The two do fundamentally the same job, but **launch templates are the newer, superset technology** — everything launch configurations offer plus more — and AWS recommends (and by now effectively mandates, see the deprecation warning below) using them.
+
+![Two-lane comparison of Launch Configurations and Launch Templates: the top lane shows a Launch Configuration document with a "Not Editable / No Versioning" callout looping back onto it and a single arrow feeding only Auto Scaling Groups; the bottom lane shows a Launch Template document with one arrow feeding Auto Scaling Groups and a second arrow launching EC2 instances directly, with a callout noting templates save time when provisioning instances from the console UI or CLI](../assets/ec2-launch-configuration-and-template-architecture.png)
+
+### Neither is editable — the single most important behavioural fact
+
+Once defined, the configuration is **locked**. To change anything, you create a *new* document and point whatever consumes it (for example an Auto Scaling Group) at the new one:
+
+- **Launch Configuration** — not editable and **no versioning**: one immutable document. A change means a brand-new LC.
+- **Launch Template** — still not editable *in place*, but it **supports versions**: related configurations live under one template as version 1, 2, 3, and so on, with a designated default version. A template can also serve as a base that other templates or versions extend.
+
+> [!warning] Gotcha — "edit the existing launch configuration/template"
+> Any answer option implying an in-place edit is wrong. You create a **new LC** or a **new LT version** — never modify the existing document.
+
+### What each can feed
+
+- **Launch Configuration has exactly one use:** providing the instance configuration that an **Auto Scaling Group** uses to launch instances. Nothing else consumes it.
+- **Launch Template has two uses:** the same Auto Scaling Group role, *plus* launching EC2 instances **directly from the console or CLI** — an operator defines the config once and reuses it for one-off manual launches.
+
+### Launch-Template-only capabilities
+
+Launch templates expose newer instance features that launch configurations never gained:
+
+- **T2/T3 Unlimited** CPU options (burst credits beyond the baseline)
+- **[Placement groups](#placement-groups)**
+- **[Capacity Reservations](../patterns/ec2-purchase-options.md#capacity-reservations)**
+- **Elastic Graphics** (note: the Elastic Graphics service itself reached end of life on January 8, 2024 — what survives for the exam is the pattern "newer features are LT-only")
+- **Mixed Instances Policy** — a single Auto Scaling Group can combine **multiple instance types** and mix **Spot and On-Demand** purchasing ([AWS EC2 Auto Scaling docs](https://docs.aws.amazon.com/autoscaling/ec2/userguide/ec2-auto-scaling-mixed-instances-groups.html)); launch configurations cannot do this
+
+> [!warning] Gotcha — Launch Configurations are deprecated, not just "less recommended"
+> The course era presented LC and LT as coexisting choices. AWS has since formally retired launch configurations ([AWS EC2 Auto Scaling — Launch configurations](https://docs.aws.amazon.com/autoscaling/ec2/userguide/launch-configurations.html)):
+>
+> - **January 1, 2023** — new EC2 instance types are no longer supported in launch configurations
+> - **June 1, 2023** — accounts created on or after this date cannot create LCs from the **console**
+> - **October 1, 2024** — accounts created on or after this date cannot create LCs by **any method** (console, API, CLI, or CloudFormation — the API returns `UnsupportedOperationException`)
+>
+> Existing LCs and the Auto Scaling Groups using them keep working, but AWS strongly recommends migrating; the console offers a "Copy to launch template" migration tool.
+
+### LC vs LT — quick reference
+
+| Attribute | Launch Configuration (LC) | Launch Template (LT) |
+| --- | --- | --- |
+| Purpose | Pre-define EC2 config for reuse | Pre-define EC2 config for reuse |
+| Editable? | No | No (create a new version) |
+| Versioning? | No | Yes |
+| Used by Auto Scaling Groups? | Yes (its **only** use) | Yes |
+| Launch instances directly (console/CLI)? | No | Yes |
+| Newer-instance features (T2/T3 Unlimited, placement groups, Capacity Reservations)? | No | Yes |
+| Mixed Instances Policy (multi-type, Spot + On-Demand)? | No | Yes |
+| Feature relationship | Subset | **Superset** of LC |
+| AWS recommendation | Legacy / **deprecated** | Use this |
+| Can new accounts create it? | Not since Oct 1, 2024 (any method) | Yes |
+
+**One-line takeaway:** launch templates are launch configurations plus versioning, direct launching, and newer-instance features — and are now the only supported option going forward.
+
+> [!tip] Exam Tip
+> The SAA exam still tests the conceptual comparison, but the trigger keywords all point one way: "versions", "launch directly from console/CLI", "mixed instance types", "Spot + On-Demand in one ASG", "newest instance types", "recommended/modern approach" — all mean **launch template**. "Only used by Auto Scaling Groups", "no versioning", "older mechanism" mean **launch configuration**.
+
 ## Scaling EC2 — Vertical vs Horizontal
 
 EC2 capacity grows in two fundamentally different ways. The choice cascades into every other architectural decision (load balancing, session storage, availability tier, cost shape):
@@ -1064,7 +1134,8 @@ The agent needs a **configuration** (which metrics and log files to collect) and
 19. **System & application logging** — standard CloudWatch can't see inside the OS (no memory, no disk-used, no logs). The **[CloudWatch Agent](cloudwatch.md#cloudwatch-agent)** runs in-guest to capture OS metrics and logs; it needs a config plus an **instance role** (`CloudWatchAgentServerPolicy`), writes **one log group per file / one log stream per instance**, surfaces metrics under the **`CWAgent`** namespace, and reads a log file only if its **run-as user** (`cwagent` by default) has read permission. See [System & Application Logging](#system--application-logging-cloudwatch-agent)
 20. **Placement groups** influence physical placement: **Cluster** = same rack (often same host) for 10 Gbps single-stream, lowest latency — single AZ only, little resilience, HPC; **Spread** = 1 instance per isolated rack, max **7 running instances per AZ *per group*** (per-group, not account-wide — use multiple groups for more, with no cross-group spread guarantee), can span AZs — small sets of critical instances; **Partition** = up to 7 partitions per AZ each with isolated racks, unlimited instances, topology visibility for HDFS / HBase / Cassandra. See [Placement Groups](#placement-groups)
 21. **Enhanced networking** uses **SR-IOV** to make the host's physical NIC virtualization-aware, giving each instance its **own logical card** and taking the **host CPU out of the packet path**. The payoff: more bandwidth, **higher PPS**, and **consistent low latency**. Enabled by default / free on most modern instance types (via the **ENA**); it's the **prerequisite for [cluster placement groups](#cluster-placement-groups)**. Exam triggers: "consistent low latency," "high PPS," "required for cluster placement groups." See [Enhanced Networking](#enhanced-networking)
-22. **EBS-optimized instances** give EBS traffic a **dedicated network lane** instead of sharing one stack with regular data networking, so the two stop contending. Because [EBS is network-attached](ebs.md), this is what lets an instance actually *receive* high throughput / IOPS — it's the instance-side half of the [EBS per-instance ceiling](ebs.md#the-two-ceiling-rule). A per-instance on/off flag; **default-on and free on most modern types** (disabling does nothing), opt-in-for-a-fee on some older ones. See [EBS-Optimized Instances](#ebs-optimized-instances)
+22. **Launch Configurations & Launch Templates** — both are **immutable documents** that pre-define EC2 instance config (AMI, type, storage, key pair, networking, user data, IAM role). **Neither is editable** — a change means a new LC or a new **LT version** (versioning is LT-only). An **LC feeds exactly one thing: an Auto Scaling Group**; an **LT feeds ASGs *and* launches instances directly** from the console/CLI, and is the only one supporting newer features (T2/T3 Unlimited, placement groups, Capacity Reservations, Mixed Instances Policy). **LCs are deprecated** — accounts created since Oct 1, 2024 cannot create them at all. See [Launch Configurations & Launch Templates](#launch-configurations--launch-templates)
+23. **EBS-optimized instances** give EBS traffic a **dedicated network lane** instead of sharing one stack with regular data networking, so the two stop contending. Because [EBS is network-attached](ebs.md), this is what lets an instance actually *receive* high throughput / IOPS — it's the instance-side half of the [EBS per-instance ceiling](ebs.md#the-two-ceiling-rule). A per-instance on/off flag; **default-on and free on most modern types** (disabling does nothing), opt-in-for-a-fee on some older ones. See [EBS-Optimized Instances](#ebs-optimized-instances)
 
 ## Quick Reference
 
@@ -1124,6 +1195,8 @@ The agent needs a **configuration** (which metrics and log files to collect) and
 | Partition placement | **Max 7 partitions per AZ**, unlimited instances; each partition on isolated racks; pick the partition or let EC2 decide; topology visibility for HDFS / HBase / Cassandra |
 | Enhanced networking | **SR-IOV** makes the host NIC virtualization-aware; each instance gets its **own logical card**, host CPU out of the path. Delivers more bandwidth, **higher PPS**, **consistent low latency**. Default / free on most modern types (ENA); **required for [cluster placement groups](#cluster-placement-groups)** — see [Enhanced Networking](#enhanced-networking) |
 | EBS-optimized instance | Per-instance on/off flag giving **EBS its own dedicated network lane** (vs sharing one stack with data networking → contention). Needed to reach high throughput / IOPS; the instance-side half of the [EBS per-instance ceiling](ebs.md#the-two-ceiling-rule). Default-on + free on most modern types (disabling does nothing); paid opt-in on some older ones — see [EBS-Optimized Instances](#ebs-optimized-instances) |
+| Launch Configuration (LC) | Immutable pre-defined instance config; **no versioning**; **only consumer = Auto Scaling Groups**; **deprecated** — new accounts (Oct 1, 2024+) cannot create them — see [Launch Configurations & Launch Templates](#launch-configurations--launch-templates) |
+| Launch Template (LT) | **Superset of LC**: versioned (not editable in place — new version instead), feeds ASGs **and** launches instances directly from console/CLI, supports newer features (T2/T3 Unlimited, placement groups, Capacity Reservations, Mixed Instances Policy) — the recommended option |
 
 ## References
 
@@ -1152,5 +1225,6 @@ The agent needs a **configuration** (which metrics and log files to collect) and
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_system_and_application_logging.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_enhanced_networking.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_ebs_optimized_instances.md`
+- Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2-launch-configuration-and-template.md`
 - [EC2 Instance Types — official AWS docs](https://aws.amazon.com/ec2/instance-types/)
 - [ec2instances.info (Vantage)](https://instances.vantage.sh/) — sortable reference with pricing

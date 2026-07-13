@@ -52,7 +52,7 @@ This keeps launches fast (most work is pre-baked) while staying flexible (the vo
 > Whenever a question pairs **"minimize boot time to service time"** with **"keep flexibility / still apply per-launch config,"** the answer is **combine AMI baking with bootstrapping** — bake the slow, stable part; bootstrap the fast-changing part. "Bake everything" loses flexibility; "bootstrap everything" stays slow on every launch.
 
 > [!tip] Why this matters for scaling
-> In an Auto Scaling Group, boot time to service time *is* your responsiveness to load. A 20-minute bootstrap means new capacity is 20 minutes late to every traffic spike; a baked AMI that is ready in 2 minutes lets the group track demand far more tightly. This is a frequent reason to favour AMI baking for fleet members. See [Scaling](scaling.md).
+> In an Auto Scaling Group, boot time to service time *is* your responsiveness to load. A 20-minute bootstrap means new capacity is 20 minutes late to every traffic spike; a baked AMI that is ready in 2 minutes lets the group track demand far more tightly. This is a frequent reason to favour AMI baking for fleet members — the baked AMI and any residual user data are captured in the group's [launch template](../services/ec2.md#launch-configurations--launch-templates). See [Scaling](scaling.md).
 
 ## References
 
