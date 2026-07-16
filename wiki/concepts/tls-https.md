@@ -140,7 +140,7 @@ With TLS 1.3, the server sends its `key_share` in ServerHello, and the client re
 > ACM certificates used with **CloudFront must be in `us-east-1`** (N. Virginia), regardless of where your CloudFront distribution serves traffic. ALB certificates must be in the **same region as the ALB**.
 
 > [!warning] Gotcha
-> **TLS termination at ALB** means traffic between ALB and EC2 targets is plaintext by default. To encrypt the backend leg, configure HTTPS on the target group and install a cert on the EC2 instance (can be self-signed for this leg).
+> **TLS termination at ALB** means traffic between ALB and EC2 targets is plaintext by default. To encrypt the backend leg, configure HTTPS on the target group and install a cert on the EC2 instance (can be self-signed for this leg). These arrangements have names — bridging (re-encrypt), offload (plain HTTP), pass-through (never decrypted, NLB TCP listener only) — covered in [ELB SSL/TLS connection modes](../services/elb.md#ssltls-connection-modes--bridging-pass-through-offload).
 
 ## References
 

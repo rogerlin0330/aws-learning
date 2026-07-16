@@ -1,9 +1,9 @@
 ---
 title: Elastic Load Balancer (ELB)
 type: service
-tags: [elb, alb, nlb, clb, gwlb, load-balancing, networking, ha, scaling, sni, listener-rules, end-to-end-encryption, privatelink]
+tags: [elb, alb, nlb, clb, gwlb, load-balancing, networking, ha, scaling, sni, listener-rules, end-to-end-encryption, privatelink, ssl-tls, ssl-bridging, ssl-offload, tls-termination, stickiness, sticky-sessions, target-group]
 certs: [aws-saa]
-updated: 2026-07-15
+updated: 2026-07-16
 ---
 
 # Elastic Load Balancer (ELB)
@@ -137,7 +137,7 @@ An ALB listens on **HTTP or HTTPS only**, and because it understands those proto
 
 ### SSL/TLS is always terminated on the ALB
 
-Any incoming HTTPS connection is **terminated on the ALB**, and a **new, separate connection** is made from the ALB to the backend targets (which can itself be HTTPS, but it is still a different connection — hop-by-hop, never unbroken).
+Any incoming HTTPS connection is **terminated on the ALB**, and a **new, separate connection** is made from the ALB to the backend targets (which can itself be HTTPS, but it is still a different connection — hop-by-hop, never unbroken). In the vocabulary of the [SSL/TLS connection modes](#ssltls-connection-modes--bridging-pass-through-offload) below: an ALB always operates in **bridging** mode (backend leg re-encrypted) or **offload** mode (backend leg plain HTTP) — never pass-through.
 
 > [!warning] Gotcha — no unbroken end-to-end encryption through an ALB
 > You **cannot** have an unbroken end-to-end SSL/TLS connection from client through to the application instances with an ALB. This matters to strict security teams and can, on its own, exclude the ALB from consideration. Consequence: **every HTTPS ALB must have an SSL certificate installed on the load balancer**, because the connection terminates there. The canonical unbroken-encryption answer is an [NLB with a TCP listener](#unbroken-end-to-end-encryption-tcp-pass-through).
@@ -173,7 +173,7 @@ Worked examples: a host-header rule forwards `catagram.io` traffic to the Catagr
 
 ## NLB Deep Dive — Layer 4
 
-An NLB operates at **Layer 4**, interpreting **TCP, TLS, and UDP** (plus the combined `TCP_UDP` listener). It has **no visibility into HTTP/HTTPS**: it cannot interpret headers or cookies, and has no concept of HTTP session stickiness (which relies on cookies at Layer 7).
+An NLB operates at **Layer 4**, interpreting **TCP, TLS, and UDP** (plus the combined `TCP_UDP` listener). It has **no visibility into HTTP/HTTPS**: it cannot interpret headers or cookies, and has no concept of HTTP [session stickiness](#session-stickiness) (which relies on cookies at Layer 7).
 
 - **Extremely fast** — NLBs can handle **millions of requests per second** with roughly **25% of the latency of an ALB** (the course's "about 4 times lower latency" framing; AWS no longer publishes a hard number), because they skip the computationally heavy upper layers.
 - **Ideal for non-HTTP(S) protocols** — SMTP email, SSH, game servers on custom protocols, financial applications not using HTTP/HTTPS. Protocol-agnostic at Layer 4.
@@ -196,6 +196,116 @@ NLBs are the load balancer used with **[AWS PrivateLink](vpc.md)** to expose a s
 
 > [!tip] Exam Tip
 > Any scenario involving **PrivateLink** means **NLB**. This is a common, high-value exam fact.
+
+## SSL/TLS Connection Modes — Bridging, Pass-Through, Offload
+
+There are three ways an ELB can handle encrypted connections, and the exam tests them at the **architecture level**: *who holds the certificate*, *who does the crypto work*, and *what the load balancer can see*. (Certificate mechanics — chains of trust, SNI, ACM — are covered in [TLS/HTTPS](../concepts/tls-https.md).)
+
+![Three SSL connection modes compared: bridging terminates HTTPS on the ELB and re-encrypts to instances (certs on both), pass-through sends one unbroken encrypted TCP tunnel through an NLB to the instance (cert on instances only), and offload terminates HTTPS on the ELB then forwards plain HTTP to instances (cert on the ELB only)](../assets/elb-ssl-connection-modes.png)
+
+### Bridging (ALB default)
+
+- Client to ELB: **HTTPS listener** — the connection is **terminated** (decrypted) on the ELB, which therefore needs a certificate for the domain.
+- ELB to instances: **new, separate HTTPS connections**, so **every instance also needs a certificate** plus the CPU for crypto.
+
+Bridging is the ALB default because terminating the connection strips the SSL wrapper off the HTTP inside, letting the ALB **see and act on the HTTP** — the entire basis of the [L7 rules](#rules--the-core-of-alb-flexibility) above. An ALB cannot route on content it cannot read.
+
+| Pros | Cons |
+| --- | --- |
+| ELB sees plaintext HTTP, enabling L7 routing decisions | Certificate stored on the ELB, so **AWS has some level of access** to it |
+| | Certs must be distributed and maintained on every instance (admin overhead) |
+| | Every instance performs crypto — CPU overhead, significant at high volume |
+
+### Pass-through (NLB, TCP listener)
+
+- **NLB with a TCP listener**: the NLB **never decrypts anything** — one encrypted tunnel from client to backend instance, end to end (the same behaviour described under [unbroken end-to-end encryption](#unbroken-end-to-end-encryption-tcp-pass-through) above).
+- Certificate lives on the **instances only** — never on the load balancer, **never exposed to AWS**. For stronger key control it can pair with **CloudHSM**.
+- The NLB balances on what it *can* see: source/destination IP and port.
+
+| Pros | Cons |
+| --- | --- |
+| **No certificate exposure to AWS** — fully self-managed | **No HTTP-based load balancing** — the L7 data is never decrypted |
+| Can pair with **CloudHSM** for stronger key control | Instances still need certs **and** the compute for crypto |
+
+The security-framework angle is why this mode matters on the exam: pass-through is the only one of the three where **AWS never touches your private key**.
+
+### SSL offload
+
+- Client to ELB: **HTTPS listener**, terminated on the ELB — **certificate required on the ELB**.
+- ELB to instances: **plain HTTP**, never re-encrypted.
+
+| Pros | Cons |
+| --- | --- |
+| **No certificates on instances** | Data crosses the **AWS network in plaintext** |
+| **No crypto compute on instances** — lower per-instance overhead, potentially **smaller instance types** | Cert still stored on the ELB (AWS access) |
+| Encrypted across the public internet, where it matters most | |
+
+### Connection modes quick reference
+
+| | **Bridging** | **Pass-through** | **Offload** |
+| --- | --- | --- | --- |
+| Typical LB | **ALB (default)** | **NLB** | ALB (or NLB with TLS listener) |
+| Listener protocol | HTTPS | **TCP** | HTTPS |
+| Terminated on LB? | Yes | No | Yes |
+| Cert on LB? | Yes | No | Yes |
+| Cert on instances? | Yes | Yes | No |
+| Crypto on instances? | Yes | Yes | No |
+| LB can see HTTP? | Yes | No | Yes |
+| Cert exposed to AWS? | Yes | No | Yes |
+| Encrypted LB to instance? | Yes | Yes (never decrypted) | No — **plaintext** |
+
+> [!warning] Gotcha — the listener protocol determines the mode, not the load balancer type
+> The course presents NLB as *the* pass-through option, but NLB has supported **TLS termination since January 2019**, with ACM integration and optional re-encryption to targets ([AWS What's New](https://aws.amazon.com/about-aws/whats-new/2019/01/network-load-balancer-now-supports-tls-termination/)). So: **NLB + TCP listener = pass-through; NLB + TLS listener (or any HTTPS listener) = terminated on the LB.** Pass-through is a choice, not a limitation.
+
+> [!tip] Exam Tip — connection mode traps
+>
+> - **Bridging requires certs in *two* places** — the ELB *and* every instance. Easy to forget the second half.
+> - **"Certificate must not be exposed to AWS"** (or regulatory control of private keys, or **CloudHSM** in the scenario) means **pass-through**, always — the only mode where the private key stays entirely yours.
+> - **Offload's cost is plaintext on the AWS network.** If compliance requires encryption in transit *end-to-end* or *at all times*, offload is wrong.
+> - **"Reduce instance CPU / use smaller instances" plus HTTPS** means **offload** — removing crypto from the backend is its headline benefit.
+
+## Session Stickiness
+
+By default there is **no stickiness**: every request is routed independently across all **in-service** (health-checked) targets — a fair, even spread. That is fine *only* if the application is **stateless**. If session state lives on the instance itself, every hop to a new instance looks like a fresh start: re-login, empty shopping cart (see [sessions in horizontal scaling](../patterns/scaling.md#the-critical-consideration--sessions)).
+
+![ALB connection stickiness: without stickiness one user's connections spread across all three EC2 instances; with stickiness a cookie locks the other user's sessions to EC2-2 only, for a configurable duration of 1 second to 7 days](../assets/alb-connection-stickiness.png)
+
+**With stickiness enabled:**
+
+1. On the first request, the load balancer picks a target and returns a cookie named **`AWSALB`**.
+2. Subsequent requests carry the cookie, and the load balancer routes them to **the same instance** every time.
+3. Stickiness is enabled at the **target group** level — not the listener, not the load balancer.
+4. The duration is configurable from **1 second to 7 days**.
+
+**Stickiness breaks when one of two things happens:**
+
+- **Instance failure** — the target fails health checks and the user is moved to a different instance. The load balancer then **keeps the session on the new target even if the original recovers** ([sticky sessions docs](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/sticky-sessions.html)).
+- **Cookie expiry** — the cookie lapses; the process restarts with a new cookie and a possibly different instance.
+
+> [!warning] Gotcha — stickiness causes uneven backend load
+> A single heavy user is pinned to one server for the duration. Stickiness undermines the fair balancing you deployed a load balancer to get — on the exam, "uneven load across backend instances" with stickiness in the scenario points at stickiness as the **cause**.
+
+**The architect's answer:** design **stateless instances** and externalise session state — DynamoDB (the course's canonical example) or ElastiCache. Then there are no cookies, no pinning, fully fair balancing, and instances become disposable, which is what [Auto Scaling](ec2-auto-scaling.md) needs anyway. This is the same conclusion as the [scaling pattern page](../patterns/scaling.md): sticky sessions are a migration aid, not the proper fix.
+
+### Two stickiness types, not one
+
+The course covers only the load-balancer-generated cookie, but the ALB supports **two types**, mixable across target groups ([sticky sessions docs](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/sticky-sessions.html)):
+
+- **Duration-based** — the `AWSALB` cookie, LB-generated, 1 second to 7 days. This is the course's version.
+- **Application-based** — added February 2021; the ALB tracks a **custom cookie set by your application**, with the cookie name configured per target group, allowing stickiness to survive **chained load balancers** ([AWS What's New](https://aws.amazon.com/about-aws/whats-new/2021/02/application-load-balancer-supports-application-cookie-stickiness/)). The client-visible cookie is named **`AWSALBAPP-`** plus a fragment number.
+- **CLB** uses a different cookie name: **`AWSELB`** ([CLB sticky sessions docs](https://docs.aws.amazon.com/elasticloadbalancing/latest/classic/elb-sticky-sessions.html)).
+
+> [!warning] Gotcha — the "1 second to 7 days" number is the stickiness *duration*, not the cookie's expiry
+> The `AWSALB` cookie itself has a **non-configurable 7-day expiry**; your configured duration controls how long the load balancer keeps routing to the same target ([sticky sessions docs](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/sticky-sessions.html)). The exam almost certainly wants "1 second to 7 days" — answer that; just don't be surprised by a 7-day `Expires` header in the real world.
+
+Other current-reality footnotes ([sticky sessions docs](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/sticky-sessions.html)):
+
+- **Enabling stickiness fails if cross-zone load balancing is disabled.**
+- **Application-based stickiness does not work with weighted target groups.**
+- **WebSocket connections are inherently sticky.**
+
+> [!tip] Exam Tip — lost carts have two answers
+> A question describing **lost shopping carts or repeated logins** has two possible answers: **stickiness** is the *quick fix*; **externalising state** (DynamoDB / ElastiCache) is the *well-architected* answer. Read for which one the question wants — "best practice", "scalable", or "even load distribution" wording points to stateless.
 
 ## The Decision Framework (Memorise This)
 
@@ -256,6 +366,9 @@ Otherwise choose an **ALB**: its Layer 7 features (rules, host/path routing, hea
 | Cross-zone | Fixes uneven load; distributes across **all** instances in **all** AZs |
 | ALB SSL/TLS | **Always terminated** on the LB; cert required on the LB; never unbroken end-to-end |
 | NLB TCP listener | **Pass-through** — the unbroken end-to-end encryption answer |
+| SSL modes | **Bridging** = terminate + re-encrypt (certs on LB **and** instances); **pass-through** = never decrypted (certs on instances only, no AWS exposure); **offload** = terminate + plain HTTP behind (cert on LB only, no instance crypto) |
+| Mode selector | The **listener protocol** decides: TCP listener = pass-through; HTTPS/TLS listener = terminated |
+| Stickiness | **Target-group** setting; `AWSALB` cookie; duration **1 second to 7 days**; breaks on instance failure or cookie expiry; causes uneven load — stateless + external state is the proper fix |
 | PrivateLink | **NLB only** |
 | Decision rule | Memorise the 5 NLB reasons (E2E encryption, static IPs, performance, non-HTTP, PrivateLink); otherwise **ALB** |
 
@@ -266,6 +379,7 @@ Otherwise choose an **ALB**: its Layer 7 features (rules, host/path routing, hea
 - [VPC](vpc.md) — subnets, reserved IPs, public vs private subnet mechanics, PrivateLink
 - [Networking](../concepts/networking.md) — ENIs, firewall layers
 - [TLS/HTTPS](../concepts/tls-https.md) — certificates, SNI, TLS termination
-- AWS docs: [Application Load Balancers](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/application-load-balancers.html) · [NLB availability zones](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/availability-zones.html) · [NLB listeners](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/load-balancer-listeners.html) · [NLB health checks](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/target-group-health-checks.html) · [CLB subnets](https://docs.aws.amazon.com/elasticloadbalancing/latest/classic/elb-manage-subnets.html) · [ALB target group attributes](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/edit-target-group-attributes.html#modify-target-group-attributes) · [ELB scaling strategies blog](https://aws.amazon.com/blogs/networking-and-content-delivery/scaling-strategies-for-elastic-load-balancing/)
+- AWS docs: [Application Load Balancers](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/application-load-balancers.html) · [NLB availability zones](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/availability-zones.html) · [NLB listeners](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/load-balancer-listeners.html) · [NLB health checks](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/target-group-health-checks.html) · [CLB subnets](https://docs.aws.amazon.com/elasticloadbalancing/latest/classic/elb-manage-subnets.html) · [ALB target group attributes](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/edit-target-group-attributes.html#modify-target-group-attributes) · [ALB sticky sessions](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/sticky-sessions.html) · [ELB scaling strategies blog](https://aws.amazon.com/blogs/networking-and-content-delivery/scaling-strategies-for-elastic-load-balancing/)
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/elb_architecture.md` (Adrian Cantrill AWS SAA — "Evolution of the ELB", "ELB Architecture Part 1 & 2"; diagrams © learn.cantrill.io)
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/alb_vs_nlb.md` (Adrian Cantrill AWS SAA — "Application Load Balancing (ALB) vs Network Load Balancing (NLB)")
+- Source: `raw/aws-cert-study-notes/aws-solution-architect/elb_ssl_offload_and_session_stickiness.md` (Adrian Cantrill AWS SAA — "SSL Offload & Session Stickiness"; diagrams © learn.cantrill.io)
