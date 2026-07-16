@@ -3,7 +3,7 @@ title: AWS Solutions Architect Associate — Exam Notes
 type: certification
 tags: [iam, vpc, networking, ec2, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, ephemeral, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns, route53, organizations, cost, purchase-options, on-demand, spot, reserved-instances, scheduled-reserved, capacity-reservations, zonal-ri, regional-ri, savings-plans, byol, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, raid0, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, ebs-encryption, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr, scaling, horizontal-scaling, vertical-scaling, stateless, sticky-sessions, elasticity, load-balancer, containers, docker, container-image, container-registry, ecs, eks, kubernetes, k8s, control-plane, etcd, kubelet, pod, ingress, persistent-volume, node-group, fargate-profile, ecr, fargate, task-definition, task-role, cloudtrail, audit, governance, management-events, data-events, insight-events, global-service-events, organizational-trail, log-file-integrity, event-history, eventbridge, control-tower, landing-zone, guardrails, account-factory, iam-identity-center, bootstrapping, cloud-init, boot-time-to-service-time, cloudformation, cfn-init, configsets, cfn-hup, cfn-signal, creation-policy, desired-state, infrastructure-as-code, cloudwatch-agent, cwagent, parameter-store, log-group, log-stream, placement-groups, cluster-placement-group, spread-placement-group, partition-placement-group, hpc, enhanced-networking, topology-aware, walking-the-tree, resolver, hosts-file, root-servers, nslookup, dig, dnssec, rrset, rrsig, dnskey, zsk, ksk, ds-record, trust-anchor, root-signing-ceremony, chain-of-trust, nsec3, cache-poisoning, rds, rds-custom, session-manager, database, relational, subnet-group, multi-az, multi-az-instance, multi-az-cluster, read-replica, synchronous-replication, semi-synchronous-replication, asynchronous-replication, quorum, failover, reader-endpoint, cluster-endpoint, graviton, nvme, aurora, dms, database-migration, cdc, full-load, replication-instance, replication-task, dms-serverless, dcu, schema-conversion, dms-schema-conversion, sct, homogeneous-migration, heterogeneous-migration, acid, base, cap-theorem, consistency, availability, eventual-consistency, dynamodb, nosql, backup, snapshot, automated-backup, manual-snapshot, transaction-logs, pitr, point-in-time-recovery, restore, rpo, rto, cross-region-backup, rds-security, encryption-in-transit, encryption-at-rest, ssl, tls, kms-key, cmk, dek, envelope-encryption, aes-256, tde, transparent-data-encryption, cloudhsm, iam-authentication, generate-db-auth-token, authentication, authorization, cluster-volume, shared-storage, backtrack, fast-clone, aurora-serverless, acu, scale-to-zero, data-api, global-database, multi-master, switchover, database-savings-plans, architecture-fundamentals, global-components, regional-tiers, cloudfront, cdn, web-tier, compute-tier, caching-tier, elasticache, dax, app-services, decoupling, sqs-decoupling, elb, alb, nlb, clb, cross-zone-load-balancing, listeners, internet-facing, internal-load-balancer, sni, listener-rules, end-to-end-encryption, tls-termination, tcp-pass-through, privatelink, oidc, cognito, gwlb, launch-template, launch-configuration, auto-scaling, mixed-instances-policy]
 certs: [aws-saa]
-updated: 2026-07-11
+updated: 2026-07-15
 ---
 
 # AWS Solutions Architect Associate (SAA-C03)
@@ -1726,6 +1726,54 @@ See [ELB](../services/elb.md) for the full treatment.
 
 > [!warning] Gotcha — node distribution vs instance distribution
 > DNS responses tend to distribute clients across **nodes**; over many clients, that approximates an even split. Cross-zone only changes what a node does with its share — whether it can send to instances in other AZs.
+
+## EC2 Auto Scaling — Auto Scaling Groups (ASG)
+
+See [EC2 Auto Scaling](../services/ec2-auto-scaling.md) for the full treatment.
+
+- **Division of labour**: the ASG controls the **when** and **where** (launch timing, subnets/AZs); the [launch template](../services/ec2.md#launch-configurations--launch-templates) controls the **what** (AMI, type, bootstrap). Hooks and policies attach to the **ASG**, not the template.
+- **Min / Desired / Max** = floor / target / ceiling. The ASG's one job: keep running count equal to desired. **Min/max always clamp** whatever a policy calculates.
+- **Scaling policies are optional** — a policy-free ASG just holds static values. Manual scaling = editing min/desired/max yourself (also a cost-control pin).
+- **Scheduled scaling** for predictable patterns ("every day at 9am", "sales event").
+- **Dynamic scaling hierarchy — target tracking first, then step, then simple**: target tracking holds a metric at an ideal value ("thermostat": 4 predefined metrics — `ASGAverageCPUUtilization`, `ASGAverageNetworkIn`/`Out`, `ALBRequestCountPerTarget` which is **ALB only** and needs `ResourceLabel`); step scaling reacts in graduated steps by breach size; simple scaling is legacy — fixed adjustment and **cooldown blocks further response** while an activity runs (step keeps responding — why AWS recommends step over simple even for a single adjustment).
+- **Who owns the alarm?** You create/manage alarms for simple and step; **AWS creates and manages target tracking's alarms** — never touch them.
+- **Cooldown vs instance warmup**: cooldown (default 300 s) is **simple-scaling-specific**; target tracking and step use **default instance warmup** (delay before a new instance counts toward metrics), falling back to the cooldown value if unset.
+- **SQS worker pool**: scale on `ApproximateNumberOfMessagesVisible`.
+- **Self-healing**: failed (or manually terminated) instances are replaced to restore desired capacity. **Cheap HA trick**: min = desired = max = 1 across multiple AZs relaunches a lone instance, potentially in another AZ — unlike [EC2 auto recovery](../services/ec2.md#status-checks-and-auto-recovery), which is same-AZ only.
+- **ELB integration**: instances are auto-registered/deregistered with the target group; the ASG can use **application-aware ELB health checks** instead of infrastructure-only EC2 status checks.
+- **Lifecycle hooks**: pause the launch or terminate transition (`Pending:Wait`, `Terminating:Wait`) for custom actions. Only 2 transitions: `EC2_INSTANCE_LAUNCHING` and `EC2_INSTANCE_TERMINATING`. Default timeout **3600 s** (`HeartbeatTimeout` range 30–7200 s; global cap 48 h or 100 times the heartbeat, whichever is smaller). Resume early with `CompleteLifecycleAction`; extend with `RecordLifecycleActionHeartbeat`. `DefaultResult` API default is **`ABANDON`**, and **`ABANDON` never rescues an instance** — on launch it terminates and replaces it; on terminate it just skips remaining hooks. Notifications go to **SNS or SQS**; **EventBridge** for event-driven automation.
+- **Standby** exempts 1 instance from all ASG activity (maintenance); individual scaling **processes** (Launch, Terminate, AZRebalance, HealthCheck, ReplaceUnhealthy, …) can be suspended and resumed.
+- **Cost**: the ASG itself is free; prefer **more, smaller instances** for granular scaling steps.
+
+### ASG — pattern-match cheat-sheet
+
+| Question pattern | Answer |
+| --- | --- |
+| "Maintain average CPU at 40%" / "keep metric at a value" / "set and forget" / "thermostat" | **Target tracking** |
+| "Respond differently by how large the breach is" / "graduated response" / "granular control" | **Step scaling** |
+| "Policy stopped responding while a scaling activity was in progress" | **Simple scaling** cooldown is the culprit; recommend **step** |
+| "Known/predictable traffic pattern" / "every day at 9am" | **Scheduled scaling** |
+| "Worker pool" / "queue depth" / "process backlog" | **SQS-based scaling** on `ApproximateNumberOfMessagesVisible` |
+| "Requests per instance behind an ALB" | **Target tracking** with `ALBRequestCountPerTarget` (ALB only) |
+| "AWS manages the alarm for you" | **Target tracking** (you own simple/step alarms) |
+| "Scaling keeps flapping/thrashing" | Widen the **dead band** between scale-out and scale-in thresholds |
+| "Warm-up delay before a new instance counts toward metrics" (target tracking/step) | **Default instance warmup**, not cooldown |
+| "Cheapest HA for a single EC2 instance" | ASG with **min = desired = max = 1** across multiple AZs |
+| "Run a script before the instance receives traffic" / "pre-load or warm cache" | **Launch lifecycle hook** (`Pending:Wait`) |
+| "Copy logs off / back up / drain / graceful shutdown before termination" | **Terminate lifecycle hook** (`Terminating:Wait`) |
+| "Need more time in the hook wait state" | `RecordLifecycleActionHeartbeat` |
+| "Signal the hook is done / resume immediately" | `CompleteLifecycleAction` |
+| "Maintenance on one ASG instance without termination or scaling interference" | Set the instance to **Standby** |
+| "Notify a topic when scaling occurs" / "event-driven response to scaling" | Lifecycle hooks with **SNS** / **EventBridge** |
+| "Pre-initialised instances kept stopped and ready" | **Warm pools** (not plain lifecycle hooks) |
+
+> [!warning] Gotcha — ASG traps
+>
+> - **`ABANDON` on a terminate hook does not save the instance** — both results terminate it; `ABANDON` only skips remaining hooks.
+> - Hook timeout numbers: default **3600 s**, single-window max **7200 s**, global max **48 h or 100 times the heartbeat, whichever is smaller** — three different numbers, don't conflate.
+> - A health check that depends on a downstream database means a **DB outage churns the whole fleet** — the ASG replaces healthy instances while the real problem goes unaddressed.
+> - AZ balance is **best-effort**, not guaranteed.
+> - Lifecycle hooks are not user data: user data runs at boot with no coordination; a hook **holds the ASG state machine** until signalled.
 
 ## DNS and Route 53
 

@@ -3,7 +3,7 @@ title: Elastic Load Balancer (ELB)
 type: service
 tags: [elb, alb, nlb, clb, gwlb, load-balancing, networking, ha, scaling, sni, listener-rules, end-to-end-encryption, privatelink]
 certs: [aws-saa]
-updated: 2026-07-10
+updated: 2026-07-15
 ---
 
 # Elastic Load Balancer (ELB)
@@ -82,7 +82,7 @@ The following provisioning rules are verified against current AWS documentation 
 
 Internal load balancers are what let **each tier scale independently**. In the three-tier picture (WEB, APP, DB across two AZs):
 
-1. The user connects to the **internet-facing load balancer**, which forwards to a web instance in the WEB Auto Scaling group.
+1. The user connects to the **internet-facing load balancer**, which forwards to a web instance in the WEB [Auto Scaling group](ec2-auto-scaling.md).
 2. The web instance talks to an **internal load balancer**, which forwards to an app instance in the APP Auto Scaling group — possibly in a different AZ.
 3. The app instance talks to the DB tier ([Aurora](aurora.md)) for persistent storage.
 
