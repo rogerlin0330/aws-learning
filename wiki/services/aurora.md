@@ -79,7 +79,7 @@ Unlike RDS's single database CNAME, an Aurora cluster exposes **multiple endpoin
 - Aurora DNS zones use a **5-second TTL**; clients must not cache DNS longer or the rotation is defeated and connections pile onto one replica — the JVM is called out as notorious for caching DNS indefinitely unless configured otherwise (same whitepaper).
 
 > [!warning] Gotcha
-> A long-lived connection pool that opens all its connections at startup (or a client that caches DNS) can end up **unevenly distributed** — every statement on an established connection stays on the replica it landed on. For per-query distribution AWS suggests a new connection per query, or **RDS Proxy** read-only endpoints in front of the cluster.
+> A long-lived connection pool that opens all its connections at startup (or a client that caches DNS) can end up **unevenly distributed** — every statement on an established connection stays on the replica it landed on. For per-query distribution AWS suggests a new connection per query, or [**RDS Proxy**](rds-proxy.md#read-only-endpoints-aurora-only) read-only endpoints in front of the cluster.
 
 ## Billing Model
 
@@ -140,7 +140,7 @@ The classic exam-tested architecture is **Serverless v1**:
 | --- | --- | --- |
 | Implementation | Dedicated cluster type | A serverless **instance type** in a standard Aurora cluster |
 | Scaling granularity | Capacity doubles (e.g. 8 to 16 ACU) | Fine-grained **0.5 ACU** increments, in place |
-| Connection layer | AWS-managed **proxy fleet** | Direct, or optional **RDS Proxy** |
+| Connection layer | AWS-managed **proxy fleet** | Direct, or optional [**RDS Proxy**](rds-proxy.md) |
 | Scale to zero / auto-pause | Native (pause on inactivity) | Added **Nov 2024** (min 0 ACU on recent engine versions); resume takes up to ~15 seconds; storage still billed while paused |
 | Max capacity | Lower ceiling (64/128 ACU by engine) | **256 ACUs** (~512 GiB) |
 | Multi-AZ / Global Database / readers | Limited | Full parity with Provisioned (failover, [Global Database](#aurora-global-database), up to 15 readers) |

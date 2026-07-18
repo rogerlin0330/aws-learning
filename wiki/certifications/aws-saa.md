@@ -1552,6 +1552,24 @@ Four separate concerns — keep **authentication vs authorization** and **in-tra
 > - **CloudHSM "no AWS trust" option is RDS Oracle-specific** — don't generalize it to other engines
 > - **Don't confuse the KMS key (CMK) with the DEK** — the KMS key *generates* DEKs; the DEKs do the actual bulk AES-256 encryption
 
+### RDS Proxy
+
+Fully managed database proxy for [RDS and Aurora](../services/rds-proxy.md) that pools and multiplexes connections. Core exam facts:
+
+- **Connection pooling + multiplexing** — many client-to-proxy connections onto **fewer** proxy-to-database connections. Fixes **"too many connections"** on small/burstable (t2, t3) instances and eliminates Lambda per-invocation connection overhead
+- **Transparent failover** — clients hold the **proxy endpoint** and **wait** rather than error; the proxy re-points its pool to the new primary in the background, **bypassing DNS caching** to cut failover time **up to ~66%**
+- **Fully managed** — auto-scaling and HA by default; you don't size, scale, or patch it
+- **VPC-only** — never publicly accessible; reach it from within a VPC or a VPN/Direct Connect network
+- **Engines** — RDS MySQL/MariaDB/PostgreSQL/SQL Server + Aurora MySQL/PostgreSQL. **No Oracle**, no self-managed EC2 databases
+- **Secrets Manager is required** for the proxy-to-database credentials, even when clients authenticate via IAM — the pairing behind *"no hard-coded credentials"*
+- **Aurora read-only endpoints** pool across replicas; plain-RDS proxies target the **primary only** (not read replicas)
+
+> [!tip] Exam Tip
+> Pattern-match: *"too many connections" / burstable instance connection exhaustion* → **RDS Proxy**. *"Lambda + RDS connection overhead"* → **RDS Proxy**. *"reduce/transparent failover without app changes"* → **RDS Proxy**. *"no hard-coded DB credentials"* → **RDS Proxy + Secrets Manager (+ IAM auth)**. *"publicly accessible proxy"* or *"Oracle + proxy"* → **NOT RDS Proxy**.
+
+> [!warning] Gotcha
+> **Multiplexing isn't guaranteed** — **session pinning** (session-state changes, prepared statements, temp tables, statements over 16 KB) disables it for the rest of the session, silently negating the pooling benefit.
+
 ## DMS
 
 See [DMS](../services/dms.md) for full details.

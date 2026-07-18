@@ -181,7 +181,7 @@ One **primary** instance holds your databases and, when Multi-AZ is enabled, rep
 On failure RDS **fails over automatically** (and you can trigger failover manually for testing or maintenance). The standby is promoted to primary and the **CNAME is repointed** to it. Because failover is fundamentally a **DNS change** — the data was already there synchronously — it typically takes **60–120 seconds**, gated by DNS propagation and client-side caching rather than by any data movement.
 
 > [!tip] Exam Tip
-> Failover in instance mode is **a DNS repoint, not a data-recovery operation**. The 60–120 s cost is DNS propagation plus client caching. Reduce the outage window by **disabling DNS caching** for that name in the application so it picks up the new target as soon as failover completes.
+> Failover in instance mode is **a DNS repoint, not a data-recovery operation**. The 60–120 s cost is DNS propagation plus client caching. Reduce the outage window by **disabling DNS caching** for that name in the application so it picks up the new target as soon as failover completes. To take the client's DNS layer out of the failover path entirely — and hide the failover from the application — front the database with [**RDS Proxy**](rds-proxy.md), which holds a stable endpoint and re-points its own connection pool in the background (up to ~66% faster failover).
 
 Failover triggers include: AZ outage, loss of network connectivity to the primary, primary compute or storage failure, manual failover, instance-type change, and software patching (RDS fails over, patches the now-idle old primary, then can fail back).
 

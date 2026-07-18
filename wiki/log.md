@@ -2,6 +2,12 @@
 
 <!-- markdownlint-disable MD051 -->
 
+## [2026-07-17] ingest | RDS Proxy
+
+Ingested `raw/aws-cert-study-notes/aws-solution-architect/rds_proxy.md` into a new [RDS Proxy](services/rds-proxy.md) service page and copied `rds-proxy-architecture.png` into `wiki/assets/`. The note was rich and self-contained, so it earned a standalone service page rather than a section on [RDS](services/rds.md). Verified the note's facts against current AWS before filing — synthesis, not correction: connection pooling + multiplexing (many client-to-proxy connections onto fewer proxy-to-database connections), transparent failover by holding a stable proxy endpoint and bypassing DNS caching (up to ~66% faster), fully managed/auto-scaling/HA, VPC-only, engine support (RDS MySQL/MariaDB/PostgreSQL/SQL Server + Aurora MySQL/PostgreSQL, **no Oracle**), Aurora-only read-only endpoints, session pinning as the multiplexing gotcha (incl. >16 KB statements), and Secrets Manager as a hard requirement for DB credentials even under IAM client auth. Rewrote the note's arrow-notation architecture sketch as plain prose per style preference, and converted its emoji markers (📚/⚠️/🎯) into proper `[!tip]`/`[!warning]` callouts. Dropped the note's "Open Questions for Roger" section (not wiki content).
+
+Added a `### RDS Proxy` subsection to [aws-saa.md](certifications/aws-saa.md) under `## RDS` (after Data Security) with core facts, an exam-tip pattern-match block, and a session-pinning gotcha. Wired cross-references: [Aurora](services/aurora.md) reader-endpoint gotcha and comparison table now link to the proxy's read-only endpoints; [RDS](services/rds.md) Multi-AZ failover exam tip now points to RDS Proxy as the way to take the client DNS layer out of the failover path. Updated [index.md](index.md) (new Services entry).
+
 ## [2026-07-03] ingest | DMS
 
 Ingested `raw/aws-cert-study-notes/aws-solution-architect/dms.md` into a new [DMS](services/dms.md) service page and copied `dms-architecture.png` into `wiki/assets/`. Kept the course's core exam framing — DMS for managed database migration, Full Load / Full Load + CDC / CDC Only task modes, homogeneous vs heterogeneous migration, and Snowball/S3 for very large migrations — but updated it for the current AWS service surface.
