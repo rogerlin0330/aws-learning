@@ -3,7 +3,7 @@ title: EC2 — Elastic Compute Cloud
 type: service
 tags: [ec2, compute, iaas, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, ssh, rdp, instance-lifecycle, shared-responsibility, ebs, key-pair, host, tenancy, dedicated-host, dedicated-instance, instance-store, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, security-group, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns, containers, bootstrapping, cloud-init, boot-time-to-service-time, cfn-init, cloudformation, instance-role, instance-profile, iam-role, sts, credential-provider-chain, cloudwatch-agent, cwagent, parameter-store, log-group, log-stream, placement-groups, cluster-placement-group, spread-placement-group, partition-placement-group, hpc, enhanced-networking, topology-aware, ebs-optimized, sr-iov, ena, pps, launch-template, launch-configuration, auto-scaling, mixed-instances-policy]
 certs: [aws-saa]
-updated: 2026-07-15
+updated: 2026-07-21
 ---
 
 # EC2 — Elastic Compute Cloud
@@ -257,7 +257,7 @@ EC2 uses **on-demand billing** — you pay only for what you consume — with th
 
 Billing granularity is **per second** or **per hour**, depending on the software running on the instance (Linux/most Windows AMIs bill per second with a 60-second minimum; some commercial licenses bill per hour).
 
-For multi-year predictable workloads, EC2 is the canonical target of the [Cost Optimization](../patterns/cost-optimization.md) commitment ladder — Compute Savings Plans, EC2 Instance Savings Plans, Reserved Instances, and Spot Instances. See [EC2 Purchase Options](../patterns/ec2-purchase-options.md) for the full set (On-Demand Instances, Spot Instances, Standard & Scheduled Reserved Instances, On-Demand Capacity Reservations, Savings Plans, Dedicated Instances, Dedicated Hosts) and the discount/capacity decision matrix.
+For multi-year predictable workloads, EC2 is the canonical target of the [Cost Optimization](../patterns/cost-optimization.md) commitment ladder — Compute Savings Plans, EC2 Instance Savings Plans, Reserved Instances, and Spot Instances. See [EC2 Purchase Options](../patterns/ec2-purchase-options.md) for the full set (On-Demand Instances, Spot Instances, Standard/Convertible Reserved Instances, retired Scheduled Reserved Instances, On-Demand Capacity Reservations, Savings Plans, Dedicated Instances, Dedicated Hosts) and the discount/capacity decision matrix.
 
 ### Storage options
 
@@ -286,7 +286,7 @@ Intermediate states exist (`pending`, `stopping`, `shutting-down`) but rarely ap
 | CPU | 💰 Charged | ✅ Free | ✅ Free |
 | Memory | 💰 Charged | ✅ Free | ✅ Free |
 | Networking | 💰 Charged | ✅ Free | ✅ Free |
-| [EBS](#storage-options) storage | 💰 Charged | 💰 **Still charged** | ✅ Free (volumes deleted) |
+| [EBS](#storage-options) storage | 💰 Charged | 💰 **Still charged** | Root volume usually deleted by default; other EBS volumes follow their `DeleteOnTermination` setting |
 | Public IPv4 (auto-assigned) | Assigned | Released | Released |
 | Instance store data | Present | **Lost** | Lost |
 | Elastic IP (if attached) | Free while attached to running instance | **Small hourly charge** while detached/idle | Charge continues until released |

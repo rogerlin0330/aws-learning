@@ -3,7 +3,7 @@ title: EC2 Purchase Options
 type: pattern
 tags: [ec2, purchase-options, on-demand, spot, reserved-instances, standard-ri, convertible-ri, scheduled-reserved, capacity-reservations, zonal-ri, regional-ri, savings-plans, dedicated-hosts, dedicated-instances, tenancy, cost, byol]
 certs: [aws-saa]
-updated: 2026-06-02
+updated: 2026-07-21
 ---
 
 # EC2 Purchase Options
@@ -20,7 +20,7 @@ The mental model: **start with On-Demand Instances as the default, then move to 
 | Purchase option | Commitment | Discount | Capacity reserved? | Interruption risk | Tenancy | Primary use |
 | --- | --- | --- | --- | --- | --- | --- |
 | **On-Demand Instances** | None | None | No | None (barring HW failure) | Shared | Default; short or unknown duration |
-| **Spot Instances** | None | Up to ~90% | No | **Yes** — terminated if Spot price exceeds your max | Shared | Interruption-tolerant, stateless, parallel work |
+| **Spot Instances** | None | Up to ~90% | No | **Yes** — AWS can interrupt for capacity or price; terminate/stop/hibernate depends on configuration | Shared | Interruption-tolerant, stateless, parallel work |
 | **Standard Reserved Instances (Regional)** | 1 or 3 yr | Up to ~72% | No | None | Shared | Steady, long-term workloads; AZ flexibility |
 | **Standard Reserved Instances (Zonal)** | 1 or 3 yr | Up to ~72% | **Yes — one AZ** | None | Shared | Steady, long-term workloads with a capacity guarantee |
 | **Convertible Reserved Instances** | 1 or 3 yr | Up to ~54% | Optional (Regional = no, Zonal = yes — same scope choice as Standard) | None | Shared | Steady workload whose family/OS/tenancy may change; exchangeable for an RI of equal or greater value |
@@ -47,7 +47,7 @@ The default. Deliberately unremarkable — **On-Demand Instances** have no stron
 ### On-Demand Instance billing
 
 - **Per-second compute billing while the instance is running.** Stop the instance and compute charges stop.
-- **No capacity reservation.** Under a Regional capacity shortage, On-Demand Instances have no priority over [Reserved Instances](#reserved-instances) — see [Capacity priority order under shortage](#capacity-priority-order-under-shortage).
+- **No capacity reservation by default.** Under a Regional or AZ capacity shortage, an On-Demand launch can fail unless you already hold reserved capacity through a [Zonal Reserved Instance](#scope-zonal-vs-regional-reserved-instances) or [On-Demand Capacity Reservation](#capacity-reservations).
 - No discount, no upfront commitment.
 
 > [!warning] Gotcha — stopped ≠ free
@@ -63,18 +63,18 @@ The default. Deliberately unremarkable — **On-Demand Instances** have no stron
 
 **Spot Instances** are the **cheapest** way to get EC2 capacity — **up to ~90% off** On-Demand — by buying spare host capacity that would otherwise sit idle. The trade-off is the defining one: **Spot capacity is not reliable.**
 
-![EC2 Spot purchase option diagram: two EC2 hosts with a vertical price ladder on the left; the bottom pink tier carries a banknote icon labelled ON-DEMAND representing the normal, reliable, higher price; grey tiers above are spare capacity sold as Spot, marked with coins instead of a banknote because they are cheaper; a red arrow points to the current published spot price at the top; two coin stacks below illustrate two customers' maximum prices (a 2-coin max and a 4-coin max) — when the spot price sits at the lower level both run and both pay 2 (you always pay the current price, never your max); when AWS raises the spot price to 4 to free capacity for incoming On-Demand demand, the 2-coin customer is terminated while the 4-coin customer keeps running, now paying 4; the empty grey tier at the very top is the capacity freed up in the process](../assets/ec2-purchase-option-spot-instances.png)
+![EC2 Spot purchase option diagram: two EC2 hosts with a vertical price ladder on the left; the bottom pink tier carries a banknote icon labelled ON-DEMAND representing the normal, reliable, higher price; grey tiers above are spare capacity sold as Spot, marked with coins instead of a banknote because they are cheaper; a red arrow points to the current published spot price at the top; two coin stacks below illustrate two customers' maximum prices (a 2-coin max and a 4-coin max); when capacity is available, both pay the same current Spot price, never their maximum; when AWS needs capacity back or price exceeds a configured maximum, a Spot Instance can be interrupted](../assets/ec2-purchase-option-spot-instances.png)
 
 ### How the Spot price works
 
 - For each instance type, in each Region, there is some amount of unused host capacity at any moment.
 - AWS publishes a **Spot price** for that spare capacity; the price rises and falls with how much spare capacity is available.
 - You set a **maximum price** you are willing to pay. This is a *ceiling*, **not what you pay** — you always pay the **current Spot price**, never more than your max.
-- **If the Spot price rises above your maximum, your Spot Instances are terminated.** This is the defining trade-off.
+- **AWS can interrupt Spot Instances** when it needs the capacity back, or when the Spot price rises above a maximum price that you explicitly configured. Interruption behavior can be **terminate**, **stop**, or **hibernate**, depending on the Spot request/instance configuration.
 
 ### Key consequence of the pricing model
 
-Two customers running the same instance type in the same Region pay the *same* current Spot price, regardless of their differing maximums. A **higher maximum buys you more tolerance before termination — not a different rate.**
+Two customers running the same instance type in the same Region pay the *same* current Spot price, regardless of their differing maximums. A **higher maximum buys you more price tolerance before interruption — not a different rate**. It does not protect you from capacity reclaim.
 
 ### Good for (Spot Instances — anything interruption-tolerant)
 
@@ -173,13 +173,19 @@ When a Region or AZ runs short on capacity (e.g. after a major failure), AWS han
 
 ![EC2 Capacity Reservations diagram: a single region with two AZs (AZA and AZB); a Regional Reservation arrow at the top gives a billing discount to valid instances in any AZ but reserves no capacity — flagged as risky during major faults when capacity is scarce; a Zonal Reservation arrow on the lower-left gives both the billing discount and reserved capacity but only in that one AZ; instances elsewhere get full price and no capacity reservation; treasure-chest + instance pairs in AZB illustrate On-Demand Capacity Reservations — capacity booked in a specific AZ that you pay for at full On-Demand price whether consumed or not, with one greyed-out instance representing reserved-but-unused capacity you're still billed for; battery icons (full vs near-empty) hint at how much guaranteed capacity each approach leaves you during a shortage](../assets/ec2-purchase-option-capacity-reservations.png)
 
-### Capacity priority order under shortage
+### Capacity assurance under shortage
 
-1. **Reserved Instances** first.
-2. **On-Demand Instances** next.
-3. **Spot Instances** get whatever is left.
+The old shortcut "Reserved Instances first, then On-Demand, then Spot" is too broad. **Discount alone is not capacity.** What matters is whether capacity is actually reserved in the AZ where you need to run.
 
-This is *the* reason capacity reservations exist: a discount alone gives you no priority on scarce capacity.
+| Situation | Capacity effect |
+| --- | --- |
+| **Zonal Reserved Instance** | Discount + capacity reservation in one AZ |
+| **Regional Reserved Instance** | Discount only; no launch guarantee |
+| **On-Demand Capacity Reservation** | Capacity reservation in one AZ; no discount by itself |
+| **On-Demand launch without a reservation** | Uses available On-Demand capacity; can fail during shortage |
+| **Spot Instance** | Uses spare capacity only; can be interrupted |
+
+This is *the* reason capacity reservations exist: a discount alone gives you no claim on scarce capacity.
 
 ### The two separate components
 
@@ -317,13 +323,13 @@ The Shared model underpins ~99% of usage. Dedicated Instances and Dedicated Host
 - **Dedicated Instances** → no-shared-hardware requirement without managing a host.
 
 > [!tip] Reminder
-> Capacity priority under shortage: **Reserved Instances → On-Demand Instances → Spot Instances.** Discount is not capacity — to guarantee a launch, you need a Zonal Reserved Instance or an On-Demand Capacity Reservation.
+> Capacity under shortage: **reserved capacity first**, then ordinary On-Demand if capacity is available, then Spot only from spare capacity. A Regional Reserved Instance is only a discount, not a launch guarantee. To guarantee a launch, you need a Zonal Reserved Instance or an On-Demand Capacity Reservation.
 
 ## Key Takeaways
 
 1. **"Purchase options" is the official term** — *launch types* is the common but informal alternative.
 2. **On-Demand Instances are the baseline.** No commitment, no discount, per-second compute billing while running, storage bills regardless. **No capacity priority** under shortage.
-3. **Spot Instances ≠ a discount tier; Spot ≠ reliable.** You always pay the *current* Spot price (not your max), and you're terminated if the price climbs above your max. The max sets termination tolerance, not your rate.
+3. **Spot Instances ≠ a discount tier; Spot ≠ reliable.** You always pay the *current* Spot price (not your max), and AWS can interrupt the instance when capacity is reclaimed or when price exceeds a configured max. The max sets price tolerance, not your rate.
 4. **Reserved Instances are a billing discount, not a capacity object.** Zonal Reserved Instances happen to bundle a capacity reservation; Regional Reserved Instances do not. Reserved Instances are billed whether you use them or not.
 5. **3-year + All Upfront = the biggest Reserved Instance discount.**
 6. **Three Reserved Instance offering classes:**
@@ -332,7 +338,7 @@ The Shared model underpins ~99% of usage. Dedicated Instances and Dedicated Host
    - **Scheduled Reserved Instances** — **retired 2024-09-03**; use On-Demand Capacity Reservations for new recurring-window capacity guarantees
    Both Standard and Convertible can be Regional or Zonal in scope (orthogonal axes).
 7. **Discount and capacity are independent axes.** Regional Reserved Instance = discount only; On-Demand Capacity Reservation = capacity only; Regional Reserved Instance + On-Demand Capacity Reservation = both; Zonal Reserved Instance = both bundled. **Discount stacking only works with Regional Reserved Instances**, not Zonal.
-8. **Capacity priority order under shortage: Reserved Instances → On-Demand Instances → Spot Instances.** Discount alone gives you no priority on scarce capacity.
+8. **Capacity assurance under shortage:** Zonal Reserved Instances and On-Demand Capacity Reservations reserve capacity in an AZ. Regional Reserved Instances and Savings Plans are discounts only.
 9. **Savings Plans** — commit on $/hour. **Compute Savings Plans** (~66%) cover EC2/Fargate/Lambda; **EC2 Instance Savings Plans** (~72%) are locked to a family+Region. No capacity component — pair with an On-Demand Capacity Reservation if you need both.
 10. **Dedicated Hosts** = pay per host, host targeting, BYOL per-socket/per-core licensing. **Dedicated Instances** = no-shared-hardware guarantee, host opaque, per-Region hourly fee. Easy to confuse — see [the "Dedicated is two things" gotcha](../services/ec2.md#tenancy-shared-vs-dedicated).
 
@@ -341,13 +347,13 @@ The Shared model underpins ~99% of usage. Dedicated Instances and Dedicated Host
 | Concept | Detail |
 | --- | --- |
 | Official term | **Purchase options** (informally "launch types") |
-| Default option | **On-Demand Instances** — no commitment, no discount, no capacity priority |
-| Cheapest option | **Spot Instances** (~90% off) — terminated when Spot price > your max |
+| Default option | **On-Demand Instances** — no commitment, no discount, no reserved capacity |
+| Cheapest option | **Spot Instances** (~90% off) — interruptible for capacity reclaim or price, with terminate/stop/hibernate behavior depending on configuration |
 | Biggest Reserved Instance discount | **3-year, All Upfront Standard Reserved Instance** |
 | Reserved Instance offering class | **Standard** (~72%, no family/OS/tenancy changes) or **Convertible** (~54%, exchange for equal/greater value) |
 | Reserved Instance scope | **Zonal Reserved Instance** (one AZ, includes capacity) or **Regional Reserved Instance** (any AZ, no capacity) — orthogonal to offering class |
 | Scheduled Reserved Instances | **Retired 2024-09-03** — use On-Demand Capacity Reservations for recurring-window capacity guarantees |
-| Capacity priority under shortage | **Reserved Instances → On-Demand Instances → Spot Instances** |
+| Capacity assurance under shortage | **Zonal RI or ODCR reserves capacity**; Regional RI/Savings Plan discounts do not |
 | Pure capacity, no commitment | **On-Demand Capacity Reservation** — billed even idle, no discount |
 | Discount stacking with capacity | **Regional Reserved Instance + On-Demand Capacity Reservation** (Zonal Reserved Instance cannot stack) |
 | Compute Savings Plans | ~66%; EC2 any family/Region + Fargate + Lambda |
@@ -367,3 +373,5 @@ The Shared model underpins ~99% of usage. Dedicated Instances and Dedicated Host
 - [Capacity Reservation pricing and billing — AWS docs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/capacity-reservations-pricing-billing.html)
 - [Regional and zonal Reserved Instances (scope) — AWS docs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/reserved-instances-scope.html)
 - [How Reserved Instance discounts are applied — AWS docs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/apply_ri.html)
+- [EC2 purchasing options — AWS docs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-purchasing-options.html)
+- [Spot Instance interruptions — AWS docs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-interruptions.html)

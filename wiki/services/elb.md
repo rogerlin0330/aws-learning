@@ -3,7 +3,7 @@ title: Elastic Load Balancer (ELB)
 type: service
 tags: [elb, alb, nlb, clb, gwlb, load-balancing, networking, ha, scaling, sni, listener-rules, end-to-end-encryption, privatelink, ssl-tls, ssl-bridging, ssl-offload, tls-termination, stickiness, sticky-sessions, target-group]
 certs: [aws-saa]
-updated: 2026-07-16
+updated: 2026-07-21
 ---
 
 # Elastic Load Balancer (ELB)
@@ -357,7 +357,7 @@ Otherwise choose an **ALB**: its Layer 7 features (rules, host/path routing, hea
 | CLB | v1 legacy; 1 SSL certificate per LB; avoid |
 | Real object | Multiple **nodes** in each chosen subnet, auto-scaling |
 | DNS | Single **A record** resolving to **all** nodes |
-| Node distribution | Traffic split evenly across nodes: 100% divided by the number of nodes |
+| Node distribution | DNS tends to spread clients statistically across nodes; heavy client-side DNS caching can skew traffic |
 | Internet-facing | Nodes get **public + private** IPs; can reach **public and private** targets |
 | Internal | Nodes get **private** IPs only; used to separate tiers |
 | Listener | Front-side configuration: protocol + port the LB accepts on |

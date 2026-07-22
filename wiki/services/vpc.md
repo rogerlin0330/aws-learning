@@ -3,7 +3,7 @@ title: VPC — Virtual Private Cloud
 type: service
 tags: [vpc, networking, subnets, route-tables, internet-gateway, nacl, security-groups, nat-gateway, private-link, dns]
 certs: [aws-saa]
-updated: 2026-06-04
+updated: 2026-07-21
 ---
 
 # VPC — Virtual Private Cloud
@@ -13,7 +13,7 @@ A VPC is a **private, isolated network** within AWS. It lives within **1 account
 ## VPC Basics
 
 - Two types: **Default VPC** and **Custom VPC**
-- A region can have at most 1 default VPC and unlimited custom VPCs
+- A region can have at most 1 default VPC. Custom VPCs are quota-limited per account per region; the default quota is **5 VPCs per region** and is adjustable
 - Custom VPCs are **private by default** (no internet access until you configure it)
 - Default VPC: CIDR `172.31.0.0/16`, a `/20` subnet in each AZ, with a default IGW and NACL attached
 - **Valid VPC CIDR sizes: `/16` (largest — 65,536 IPs) to `/28` (smallest — 16 IPs)** ([AWS docs: VPC CIDR blocks](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-cidr-blocks.html))
@@ -25,7 +25,7 @@ A VPC is a **private, isolated network** within AWS. It lives within **1 account
 > Avoid the default VPC in production — its `172.31.0.0/16` range can overlap with Azure's default VPC and on-premises networks.
 
 > [!tip] Exam Tip
-> Memorize these default-vs-custom facts: 1 default VPC max per region; unlimited custom VPCs; default has a fixed scheme; custom is flexible; default VPCs can be recreated; some services behave oddly without one.
+> Memorize these default-vs-custom facts: 1 default VPC max per region; custom VPCs are quota-limited but adjustable; default has a fixed scheme; custom is flexible; default VPCs can be recreated; some services behave oddly without one.
 
 ### Designing VPC IP Ranges
 
@@ -327,6 +327,7 @@ An **endpoint** is an object within your VPC that connects to AWS services or ot
 - [No Default VPC in my Account — AWS re:Post](https://repost.aws/questions/QUxzdux0ntQTat1v68CLgdnQ/no-default-vpc-in-my-account)
 - [Subnet route tables — Amazon VPC](https://docs.aws.amazon.com/vpc/latest/userguide/subnet-route-tables.html)
 - [Configure route tables — Amazon VPC](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Route_Tables.html)
+- [Amazon VPC quotas — Amazon VPC](https://docs.aws.amazon.com/vpc/latest/userguide/amazon-vpc-limits.html)
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/vpc.md`
 - Source: `raw/web-clippings/Introducing Amazon VPC Regional NAT Gateway.md` (AWS blog, Nov 2025)
 - Source: `raw/web-clippings/Regional NAT gateways for automatic multi-AZ expansion - Amazon Virtual Private Cloud.md` (AWS docs)

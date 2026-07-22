@@ -3,7 +3,7 @@ title: AWS Solutions Architect Associate — Exam Notes
 type: certification
 tags: [iam, vpc, networking, ec2, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, ephemeral, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns, route53, organizations, cost, purchase-options, on-demand, spot, reserved-instances, scheduled-reserved, capacity-reservations, zonal-ri, regional-ri, savings-plans, byol, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, raid0, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, ebs-encryption, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr, scaling, horizontal-scaling, vertical-scaling, stateless, sticky-sessions, elasticity, load-balancer, containers, docker, container-image, container-registry, ecs, eks, kubernetes, k8s, control-plane, etcd, kubelet, pod, ingress, persistent-volume, node-group, fargate-profile, ecr, fargate, task-definition, task-role, cloudtrail, audit, governance, management-events, data-events, insight-events, global-service-events, organizational-trail, log-file-integrity, event-history, eventbridge, control-tower, landing-zone, guardrails, account-factory, iam-identity-center, bootstrapping, cloud-init, boot-time-to-service-time, cloudformation, cfn-init, configsets, cfn-hup, cfn-signal, creation-policy, desired-state, infrastructure-as-code, cloudwatch-agent, cwagent, parameter-store, log-group, log-stream, placement-groups, cluster-placement-group, spread-placement-group, partition-placement-group, hpc, enhanced-networking, topology-aware, walking-the-tree, resolver, hosts-file, root-servers, nslookup, dig, dnssec, rrset, rrsig, dnskey, zsk, ksk, ds-record, trust-anchor, root-signing-ceremony, chain-of-trust, nsec3, cache-poisoning, rds, rds-custom, session-manager, database, relational, subnet-group, multi-az, multi-az-instance, multi-az-cluster, read-replica, synchronous-replication, semi-synchronous-replication, asynchronous-replication, quorum, failover, reader-endpoint, cluster-endpoint, graviton, nvme, aurora, dms, database-migration, cdc, full-load, replication-instance, replication-task, dms-serverless, dcu, schema-conversion, dms-schema-conversion, sct, homogeneous-migration, heterogeneous-migration, acid, base, cap-theorem, consistency, availability, eventual-consistency, dynamodb, nosql, backup, snapshot, automated-backup, manual-snapshot, transaction-logs, pitr, point-in-time-recovery, restore, rpo, rto, cross-region-backup, rds-security, encryption-in-transit, encryption-at-rest, ssl, tls, kms-key, cmk, dek, envelope-encryption, aes-256, tde, transparent-data-encryption, cloudhsm, iam-authentication, generate-db-auth-token, authentication, authorization, cluster-volume, shared-storage, backtrack, fast-clone, aurora-serverless, acu, scale-to-zero, data-api, global-database, multi-master, switchover, database-savings-plans, architecture-fundamentals, global-components, regional-tiers, cloudfront, cdn, web-tier, compute-tier, caching-tier, elasticache, dax, app-services, decoupling, sqs-decoupling, elb, alb, nlb, clb, cross-zone-load-balancing, listeners, internet-facing, internal-load-balancer, sni, listener-rules, end-to-end-encryption, tls-termination, tcp-pass-through, privatelink, oidc, cognito, gwlb, launch-template, launch-configuration, auto-scaling, mixed-instances-policy, ssl-bridging, ssl-offload, session-stickiness, awsalb-cookie]
 certs: [aws-saa]
-updated: 2026-07-16
+updated: 2026-07-21
 ---
 
 # AWS Solutions Architect Associate (SAA-C03)
@@ -81,10 +81,10 @@ See [Resource Policies vs Identity Policies](../concepts/resource-vs-identity-po
 See [S3 — Foundations](../services/s3.md#foundations) for full details.
 
 - S3 is **object storage** — distinct from **file** (EFS / FSx) and **block** ([EBS](../services/ec2.md)). The access verb in the question picks the family: *mount* / *drive* / *volume* → not S3; *shared file share between EC2s* → EFS or FSx; *whole-object HTTP* / *data lake* / *land service output* → S3
-- Buckets are **regional** but bucket names are **globally unique** across all AWS accounts and all regions
-- Bucket name rules: **3–63 chars**, lowercase letters + digits + hyphens only, must start with a letter or digit, **cannot be IP-address-shaped** (`10.0.0.1` is invalid), **no underscores**
+- Buckets are **regional**. Classic S3 bucket names live in a **shared global namespace** across all AWS accounts and regions; newer bucket creation flows can also choose an **account-scoped regional namespace**
+- Bucket name rules: **3–63 chars**, lowercase letters + digits + hyphens + periods only, must start with a letter or digit, **cannot be IP-address-shaped** (`10.0.0.1` is invalid), **no underscores**. Avoid periods for Transfer Acceleration
 - **Object size: 0 B – 5 TB.** Single PUT cap is 5 GB → use [multipart upload](../services/s3.md#upload-performance) above that
-- **Bucket count is per account, not per region:** soft limit **100**, hard limit **1,000** via Support. This is why "one bucket per user" doesn't scale — use **one bucket + per-user prefixes** instead
+- **Bucket count is per account, not per region:** current general-purpose bucket default is **10,000** per account and adjustable. Older notes that say **100 default / 1,000 via Support** are outdated. "One bucket per user" still does not scale cleanly — use **one bucket + per-user prefixes** instead
 - **Objects per bucket: unlimited.** Object count is never a reason to need more buckets
 - **Flat namespace.** What looks like a folder in the console is a **prefix** on the object key. There is no rename-a-directory; "moving a folder" rewrites every key
 - **Regional resilience.** S3 replicates across **AZs within the home region** automatically; an AZ failure is transparent. A **region-wide failure is not** — that's what [CRR](../services/s3.md#replication) and [MRAP](../services/s3.md#multi-region-access-points-mrap--single-global-endpoint-over-a-replicated-bucket-fleet) are for
@@ -99,8 +99,8 @@ See [S3 — Foundations](../services/s3.md#foundations) for full details.
 | Max object size | **5 TB** (multipart above 5 GB) |
 | Min object size | **0 bytes** |
 | Max objects per bucket | **Unlimited** |
-| Default bucket limit per account | **100** (soft) |
-| Hard bucket limit per account | **1,000** (via Support) |
+| Default general-purpose bucket quota per account | **10,000** |
+| Higher bucket quota | **Adjustable** via quota increase |
 | "Thousands of users, one bucket each" | ❌ Use **one bucket + per-user prefix** |
 | "Mount as a drive / volume" | ❌ Not S3 — use **EBS** (block) or **EFS / FSx** (file) |
 | "Network file share for Windows / Linux" | ❌ Not S3 — use **FSx** or **EFS** |
@@ -204,7 +204,7 @@ See [S3 — Versioning and MFA Delete](../services/s3.md#versioning-and-mfa-dele
 See [S3 — Object Lock](../services/s3.md#object-lock) for full details.
 
 - **Object Lock = WORM (Write-Once-Read-Many)** layered on top of [versioning](../services/s3.md#versioning-and-mfa-delete). Protects object **versions** from delete/overwrite for a defined retention period
-- **Must be enabled at bucket creation** by default; to enable on an **existing bucket**, **contact AWS Support**
+- Can be enabled at bucket creation **or on an existing bucket** through the console, CLI, API, or SDK. Older "contact AWS Support" notes are outdated
 - Enabling Object Lock **auto-enables versioning**; once enabled, neither Object Lock nor the auto-enabled versioning can be disabled — both are **one-way doors**
 - **Two retention methods** that compose as an OR (either restriction blocks the action):
   - **Retention period** (days and/or years) with one of two modes — **Governance** or **Compliance**
@@ -229,7 +229,7 @@ See [S3 — Object Lock](../services/s3.md#object-lock) for full details.
 | Add or remove a legal hold | `s3:PutObjectLegalHold` |
 
 > [!tip] Exam Tip
-> Pattern-match: *"WORM" / "immutable storage" / "regulatory retention"* → **Object Lock**. *"no one, including the root user, can delete or modify for N years"* → **Compliance mode** (the "even root" wording is the giveaway — MFA Delete won't satisfy this; only Compliance does). *"admins must be able to override the lock for emergencies"* → **Governance mode** + scoped `s3:BypassGovernanceRetention`. *"indefinite hold with no defined end date — active legal case"* → **Legal Hold**. *"enable Object Lock on an existing bucket"* → **Contact AWS Support**. *"Object Lock applies to objects or to versions?"* → **versions**. *"object lock + MFA Delete"* — these solve different problems: MFA Delete gates the bucket-versioning toggle and per-version permanent delete with a second factor (compromised-IAM-admin scenario); Object Lock is the WORM/regulatory-retention answer (no-one-can-touch-this-version-period scenario).
+> Pattern-match: *"WORM" / "immutable storage" / "regulatory retention"* → **Object Lock**. *"no one, including the root user, can delete or modify for N years"* → **Compliance mode** (the "even root" wording is the giveaway — MFA Delete won't satisfy this; only Compliance does). *"admins must be able to override the lock for emergencies"* → **Governance mode** + scoped `s3:BypassGovernanceRetention`. *"indefinite hold with no defined end date — active legal case"* → **Legal Hold**. *"enable Object Lock on an existing bucket"* → **console, CLI, API, or SDK**; the old Support-only answer is outdated. *"Object Lock applies to objects or to versions?"* → **versions**. *"object lock + MFA Delete"* — these solve different problems: MFA Delete gates the bucket-versioning toggle and per-version permanent delete with a second factor (compromised-IAM-admin scenario); Object Lock is the WORM/regulatory-retention answer (no-one-can-touch-this-version-period scenario).
 
 > [!warning] Common Object Lock Gotchas
 >
@@ -411,6 +411,7 @@ See [S3 — Replication](../services/s3.md#replication) for full details.
 See [S3 — Server-Side Filtering](../services/s3.md#server-side-filtering--s3-select--glacier-select) for full details.
 
 - **S3 Select** and **Glacier Select** push a SQL-like filter **into the storage service** so the application only retrieves the rows/columns it actually needs — not the whole object
+- **S3 Select is no longer available to new customers**. Keep the concept for legacy/exam recognition and existing customers; do not treat it as a first-choice feature for new designs
 - The architectural win: filtering moves **from the application to S3**, so the network only carries the bytes the app uses. Up to **400% faster**, up to **80% cheaper** on data transfer
 - **Supported formats**: **CSV**, **JSON**, **Parquet** (S3 Select); **BZIP2** compression for CSV and JSON
 - **One object at a time** — no joins, no aggregations across objects. Multi-object queries belong on **Athena**, not S3 Select
@@ -487,7 +488,7 @@ See [S3 — Access Logging](../services/s3.md#access-logging) for full details.
 | Compliance evidence of every read/write at minimal cost | **S3 Access Logs** + lifecycle to Glacier |
 
 > [!tip] Exam Tip
-> Pattern-match: *"who accessed which objects in my bucket, cheapest option"* → **S3 Access Logs**. *"where do I enable logging / where do logs go"* → enable on **source bucket**, delivered to **target bucket**. *"target bucket constraints"* → **same region and same account**, no Object Lock default retention, no Requester Pays. *"how does S3 get permission to write into the target bucket"* → **bucket policy** granting `s3:PutObject` to **`logging.s3.amazonaws.com`**. *"why is logging not showing up immediately"* → **best-efforts; can take hours**. *"record / attribute delimiter"* → **newline / space**. *"log retention"* → **your responsibility — use Lifecycle**. *"need real-time / structured / IAM-context-rich logs for security automation"* → **CloudTrail data events**, not access logs. *"need to trigger Lambda on object upload"* → **Event Notifications**, not access logs (access logs are batch/delayed).
+> Pattern-match: *"who accessed which objects in my bucket, cheapest option"* → **S3 Access Logs**. *"where do I enable logging / where do logs go"* → enable on **source bucket**, delivered to **target bucket**. *"target bucket constraints"* → **same region and same account**, destination bucket must not have Object Lock enabled, no Requester Pays. *"how does S3 get permission to write into the target bucket"* → **bucket policy** granting `s3:PutObject` to **`logging.s3.amazonaws.com`**. *"why is logging not showing up immediately"* → **best-efforts; can take hours**. *"record / attribute delimiter"* → **newline / space**. *"log retention"* → **your responsibility — use Lifecycle**. *"need real-time / structured / IAM-context-rich logs for security automation"* → **CloudTrail data events**, not access logs. *"need to trigger Lambda on object upload"* → **Event Notifications**, not access logs (access logs are batch/delayed).
 
 > [!warning] Gotcha — ACLs disabled changes the answer
 > Modern S3 defaults to ACLs disabled (Object Ownership = Bucket owner enforced). In that mode, an ACL grant to the S3 Log Delivery Group cannot work. The fix is a target-bucket policy granting `s3:PutObject` to `logging.s3.amazonaws.com`, not re-enabling ACLs.
@@ -2056,7 +2057,7 @@ See [Cost Optimization](../patterns/cost-optimization.md) for the decision tree 
 > **Savings Plans do NOT cover RDS, ElastiCache, Redshift, OpenSearch, or DynamoDB.** For long-running databases, the answer is a **Reserved Instance / Reserved Capacity**, not a Savings Plan.
 
 > [!warning] Gotcha — capacity priority under shortage
-> If a Region or AZ runs short on EC2 capacity (e.g. after a major fault), AWS allocates remaining capacity in this order: **Reserved Instances → On-Demand Instances → Spot Instances.** A *discount* (Regional Reserved Instance, Savings Plan) gives you **no** capacity priority — only a Zonal Reserved Instance or an On-Demand Capacity Reservation does.
+> If a Region or AZ runs short on EC2 capacity (e.g. after a major fault), the safe mental model is **reserved capacity first**, then ordinary On-Demand if capacity exists, then Spot only from spare capacity. A *discount* (Regional Reserved Instance, Savings Plan) gives you **no** capacity claim — only a Zonal Reserved Instance or an On-Demand Capacity Reservation does.
 
 > [!tip] Exam Tip
 > Pattern-match purchase plans: workload moves between EC2/Fargate/Lambda → **Compute Savings Plans**. Pinned `m5` in `us-east-1` → **EC2 Instance Savings Plans** (deeper discount). Long-running RDS → **Reserved DB Instance**. Batch / CI / checkpointable → **Spot Instances**. Many accounts → consolidate via **AWS Organizations** so Savings Plans / Reserved Instances pool automatically. **BYOL per-socket / per-core licensing** → **Dedicated Host** (pay per host, host targeting). **"No other customer's hardware" but don't need to target the host** → **Dedicated Instance**. **Need cheapest 24/7/365 EC2 long-term** → **3-year All-Upfront Standard Reserved Instance**. **Need a Reserved Instance but workload family/OS/tenancy may change** → **Convertible Reserved Instance** (smaller ~54% discount but exchangeable for equal/greater value). **Recurring time window, not 24/7** → historically **Scheduled Reserved Instances** (retired 2024-09-03); for current designs use **On-Demand Capacity Reservations** in the window.
@@ -2085,8 +2086,8 @@ A reservation has a **billing component** and a **capacity component**, and they
 | --- | --- |
 | "Default — short or unknown duration, cannot tolerate interruption" | **On-Demand Instances** |
 | "Cheapest possible — can resume from checkpoint / stateless / batch" | **Spot Instances** |
-| "Spot terminates when ___" | Spot price rises **above your maximum** |
-| "Two customers both running Spot Instances at different max prices — what do they pay?" | **Same current Spot price** — max only sets termination tolerance |
+| "Spot can be interrupted when ___" | AWS needs capacity back, or Spot price rises **above your configured maximum** |
+| "Two customers both running Spot Instances at different max prices — what do they pay?" | **Same current Spot price** — max only sets price tolerance |
 | "Long-running 24/7/365, lowest possible cost" | **3-year All-Upfront Standard Reserved Instance** |
 | "Long-running, but workload family/OS/tenancy might change mid-term" | **Convertible Reserved Instance** (~54% discount but exchangeable) |
 | "Convertible RI exchange — can I downgrade?" | **No** — exchange requires equal or greater value |
@@ -2096,14 +2097,14 @@ A reservation has a **billing component** and a **capacity component**, and they
 | "Discount locked to `m5` in `us-east-1`, deepest possible Savings Plan" | **EC2 Instance Savings Plans** |
 | "BYOL Oracle / SQL Server / Windows per-socket licensing" | **Dedicated Hosts** |
 | "No co-tenant hardware, don't need to target the host" | **Dedicated Instances** |
-| "Region-wide capacity shortage — who gets capacity first?" | **Reserved Instances → On-Demand Instances → Spot Instances** |
+| "Region-wide capacity shortage — what guarantees launch?" | **Reserved capacity** — Zonal RI or On-Demand Capacity Reservation |
 | "Reserved Instance bought in account A, account A doesn't use it" | Floats automatically to a sibling account with matching usage (default org behaviour) |
 | "Unused Reserved Instance or Capacity Reservation costs anything?" | **Yes — billed whether used or not** |
 
 > [!warning] Common purchase-option gotchas
 >
-> - **On-Demand Instances have no capacity priority.** Discount and capacity are separate — On-Demand Instances and Spot Instances both get whatever Reserved Instances didn't claim
-> - **"You always pay the current Spot price, not your maximum."** Higher max = more termination tolerance, *not* a higher price
+> - **On-Demand Instances have no capacity guarantee by default.** Discount and capacity are separate — use Zonal RI or On-Demand Capacity Reservation when launchability matters
+> - **"You always pay the current Spot price, not your maximum."** Higher max = more price tolerance, *not* a higher price, and it does not protect against capacity reclaim
 > - **Reserved Instances are billed if idle.** Plan reservations carefully; an unused 3-year All-Upfront Reserved Instance is wasted money (mitigated within an AWS Organization by automatic floating)
 > - **Convertible Reserved Instance exchanges go up, not down.** The new RI(s) must be of equal or greater value than the current one — you cannot downgrade via exchange. Useful for *shape changes* (M-family → Graviton, OS swap, Shared → Dedicated tenancy mid-term), not for shrinking commitments
 > - **Scheduled Reserved Instances were retired on 2024-09-03** — no longer purchasable; AWS recommends On-Demand Capacity Reservations instead. Historical minimums were 1,200 hr/year + 1-year commitment. Source: the in-post 2024-09-03 update on the [original launch announcement](https://aws.amazon.com/blogs/aws/new-scheduled-reserved-instances/) (the product shipped with only a 5–10% discount on legacy C3/C4/M4/R3 families — narrow enough that Savings Plans and On-Demand Capacity Reservations made it redundant)
@@ -2166,7 +2167,7 @@ See [CloudTrail](../services/cloudtrail.md) for full details.
 
 - CloudTrail records **API / account activity** as **events** — who did what, when, from where. This is the **audit** service; [CloudWatch](../services/cloudwatch.md) is the **health/telemetry** service, and **AWS Config** is the **resource-configuration/compliance** service
 - **Event History** is on **by default, free, 90 days, management events only** — no S3 storage. For retention beyond 90 days, data events, or log delivery you must create a **trail**
-- **Three event types**: **Management** (control-plane, on by default), **Data** (S3 object access, Lambda invokes — **opt-in, extra cost, high volume**), **Insight** (anomaly detection over management-event activity — opt-in)
+- **Four event types**: **Management** (control-plane, on by default), **Data** (S3 object access, Lambda invokes — **opt-in, extra cost, high volume**), **Network activity** (supported VPC endpoint activity — opt-in, extra cost), **Insight** (anomaly detection over management-event activity — opt-in)
 - **Trail scope**: **single-region** or **all-regions** (the latter auto-adds new regions). All-regions is the recommended default
 - **Global service events** — **IAM, STS, CloudFront** (and **Route 53**) have no region, so their events deliver to **`us-east-1`**. The trail setting must be enabled (console default)
 - **Destinations**: an **[S3](../services/s3.md) bucket** (compressed JSON, retained indefinitely, optional **SSE-KMS**) and/or **[CloudWatch Logs](../services/cloudwatch.md)** (unlocks search + metric filters + alarms)
@@ -2175,12 +2176,12 @@ See [CloudTrail](../services/cloudtrail.md) for full details.
 - **Not real-time** — log files are delivered ~every **15 minutes**. For fast automated reactions, match **management events in EventBridge** rather than polling delivered files
 
 > [!tip] Exam Tip
-> Pattern-match: *"who made this API call / who deleted the bucket"* → **CloudTrail**. *"keep audit logs longer than 90 days / deliver to S3"* → **create a trail** (Event History isn't enough). *"audit S3 object-level access / Lambda invokes"* → **data events** (opt-in, extra cost). *"missing IAM / STS / CloudFront logs"* → **global service events → `us-east-1`**. *"audit every account in the org centrally"* → **organizational trail from the management account**. *"prove logs weren't altered"* → **log file integrity validation**. *"react in real time to an API call"* → **EventBridge on CloudTrail events**, not the ~15-min log files. *"detect unusual API activity automatically"* → **CloudTrail Insights**.
+> Pattern-match: *"who made this API call / who deleted the bucket"* → **CloudTrail**. *"keep audit logs longer than 90 days / deliver to S3"* → **create a trail** (Event History isn't enough). *"audit S3 object-level access / Lambda invokes"* → **data events** (opt-in, extra cost). *"audit supported AWS API calls through VPC endpoints"* → **network activity events**. *"missing IAM / STS / CloudFront logs"* → **global service events → `us-east-1`**. *"audit every account in the org centrally"* → **organizational trail from the management account**. *"prove logs weren't altered"* → **log file integrity validation**. *"react in real time to an API call"* → **EventBridge on CloudTrail events**, not the ~15-min log files. *"detect unusual API activity automatically"* → **CloudTrail Insights**.
 
 > [!warning] Common CloudTrail Gotchas
 >
 > - **Event History ≠ a trail.** It's free but capped at **90 days** and **management events only** — no data events, no S3 archive.
-> - **Data events are off by default and cost extra** — management events are the free default.
+> - **Data and network activity events are off by default and cost extra** — management events are the free default.
 > - **CloudTrail is not real-time** for log delivery (~15 min). Any "instant" requirement points to EventBridge, not delivered log files.
 > - **Global service events go to `us-east-1`** — if IAM/STS/CloudFront logs are "missing," check that setting / that region.
 > - **Don't confuse CloudTrail with CloudWatch Logs, VPC Flow Logs, or S3 access logs** — CloudTrail = AWS API/account audit, not application/OS/network logs.

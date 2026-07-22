@@ -1,9 +1,9 @@
 ---
 title: AWS CloudTrail
 type: service
-tags: [cloudtrail, audit, governance, logging, security, observability, management-events, data-events, insight-events, global-service-events, organizational-trail, log-file-integrity, eventbridge, s3, cloudwatch, kms]
+tags: [cloudtrail, audit, governance, logging, security, observability, management-events, data-events, network-activity-events, insight-events, global-service-events, organizational-trail, log-file-integrity, eventbridge, s3, cloudwatch, kms]
 certs: [aws-saa]
-updated: 2026-06-08
+updated: 2026-07-21
 ---
 
 # AWS CloudTrail
@@ -31,12 +31,13 @@ To do anything beyond the rolling 90-day window — long-term retention, deliver
 
 ## Event Types
 
-CloudTrail events come in three types. Knowing which are on by default — and which cost extra — is a recurring exam theme.
+CloudTrail events come in four types. Older notes that list only management, data, and Insights events are outdated; **network activity events** are now a separate CloudTrail event category. Knowing which are on by default — and which cost extra — is a recurring exam theme.
 
 | Type | What it captures | Examples | Default? |
 | --- | --- | --- | --- |
 | **Management events** | Control-plane operations *on* resources | Create/terminate EC2 instance, create a VPC, console logins, attach an IAM policy | Logged by default |
 | **Data events** | Data-plane operations performed *on or in* a resource | [S3](s3.md) object GET/PUT, Lambda function invocation, DynamoDB item activity | Off by default — opt-in, extra cost |
+| **Network activity events** | AWS API activity that traverses supported VPC endpoints | PrivateLink/VPC endpoint calls to supported AWS services | Off by default — opt-in, extra cost |
 | **Insight events** | Anomaly detection over management-event volume (unusual call rates / error spikes) | Sudden surge in `TerminateInstances`, spike in throttling errors | Off by default — opt-in, extra cost |
 
 > [!tip] Why data events are off by default
@@ -144,6 +145,7 @@ CloudTrail also underpins finer-grained audit stories on other pages: it is the 
 | **Trail needed for** | Long-term retention, S3/CloudWatch delivery, data events, customization |
 | **Default event type** | Management events (includes console logins) |
 | **Data events** | Opt-in, extra cost, high volume (S3 objects, Lambda invokes) |
+| **Network activity events** | Opt-in, extra cost, supported VPC endpoint activity |
 | **Insight events** | Opt-in anomaly detection over management-event activity |
 | **Trail scope** | Single-region **or** all-regions (auto-adds new regions) |
 | **Global services** | IAM, STS, CloudFront (and Route 53) deliver to **`us-east-1`** as global service events |
@@ -165,3 +167,4 @@ CloudTrail also underpins finer-grained audit stories on other pages: it is the 
 - [Resource Scope](../concepts/resource-scope.md) — CloudTrail as a regional service; global service events to `us-east-1`
 - Source note: `raw/aws-cert-study-notes/aws-solution-architect/cloudtrail_101.md`
 - [AWS CloudTrail User Guide](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-user-guide.html)
+- [AWS CloudTrail events — event categories](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-events.html)
