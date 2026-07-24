@@ -1,9 +1,9 @@
 ---
 title: Elastic Load Balancer (ELB)
 type: service
-tags: [elb, alb, nlb, clb, gwlb, load-balancing, networking, ha, scaling, sni, listener-rules, end-to-end-encryption, privatelink, ssl-tls, ssl-bridging, ssl-offload, tls-termination, stickiness, sticky-sessions, target-group]
+tags: [elb, alb, nlb, clb, gwlb, load-balancing, networking, ha, scaling, sni, listener-rules, end-to-end-encryption, privatelink, ssl-tls, ssl-bridging, ssl-offload, tls-termination, stickiness, sticky-sessions, target-group, geneve, ingress-routing, network-inspection, security-appliance]
 certs: [aws-saa]
-updated: 2026-07-21
+updated: 2026-07-23
 ---
 
 # Elastic Load Balancer (ELB)
@@ -25,7 +25,7 @@ v2 load balancers are faster and support **target groups and rules**, so one loa
 > [!tip] Exam Tip
 > There is **no scenario** where a v1 CLB is the right answer for a new deployment. The real exam skill is **picking ALB vs NLB** for a given protocol: HTTP/HTTPS/WebSocket means ALB; TCP/TLS/UDP (email, SSH, gaming, anything non-HTTP) means NLB.
 
-There is also a fourth member the course does not cover: the **Gateway Load Balancer (GWLB)**, introduced at re:Invent 2020, which operates at Layer 3 using the **GENEVE protocol on port 6081** and is used to insert fleets of third-party security/inspection appliances (firewalls, IDS/IPS, deep-packet inspection) into the traffic path as a transparent "bump-in-the-wire" ([GWLB docs](https://docs.aws.amazon.com/elasticloadbalancing/latest/gateway/introduction.html)). It appears occasionally in SAA-adjacent questions but is out of scope for this page. The complete family: **ALB (L7), NLB (L4), GWLB (L3), CLB (legacy)**.
+There is also a fourth member: the **Gateway Load Balancer (GWLB)**, introduced at re:Invent 2020, which operates at Layer 3 using the **GENEVE protocol on port 6081** and is used to insert fleets of third-party security/inspection appliances (firewalls, IDS/IPS, deep-packet inspection) into the traffic path as a transparent "bump-in-the-wire" ([GWLB docs](https://docs.aws.amazon.com/elasticloadbalancing/latest/gateway/introduction.html)). It is a different beast from the other three — it steers packets *through* appliances rather than balancing connections *to* backends — and gets its own full treatment in [Gateway Load Balancer (GWLB) — Deep Dive](#gateway-load-balancer-gwlb--deep-dive) below. The complete family: **ALB (L7), NLB (L4), GWLB (L3), CLB (legacy)**.
 
 ## Architecture — It's Nodes, Not a Box
 
@@ -347,6 +347,261 @@ Otherwise choose an **ALB**: its Layer 7 features (rules, host/path routing, hea
 - **NLBs support security groups since 10 Aug 2023** ([announcement](https://aws.amazon.com/about-aws/whats-new/2023/08/network-load-balancer-supports-security-groups/)). Older material claiming "NLBs have no security group — control access at the instance level" is outdated. Quirk: security groups can only be associated **at NLB creation time**; an NLB created without them cannot have them added later (you would have to replace the NLB).
 - NLB target-group **health checks support HTTP/HTTPS protocols today**, not just TCP (noted above).
 
+## Gateway Load Balancer (GWLB) — Deep Dive
+
+A **Gateway Load Balancer (GWLB)** lets you run and scale **third-party network security appliances** — firewalls, IDS/IPS, deep packet inspection, data-analysis tools — transparently, horizontally, and decoupled from the application it protects. The problem it solves is architectural, not functional. You can already put a security appliance inline by running it on an [EC2](ec2.md) instance; what you *can't* easily do is make that arrangement elastic. Once your application scales in and out you need a matching, independently scaling fleet of appliances, and hand-wiring that fleet into the traffic path is complex and failure-prone. The naive design is **tightly coupled** — application and security instances are tied together, and the failure of one impacts the other. GWLB breaks that coupling.
+
+Two components make it work:
+
+| Component | Lives in | Role |
+| --- | --- | --- |
+| **Gateway Load Balancer Endpoint (GWLBE)** | The VPC whose traffic you want inspected (consumer VPC) | A VPC endpoint that **can be used as a route table target**, so it can be injected into traffic flows |
+| **Gateway Load Balancer (GWLB)** | The VPC hosting the appliances (provider/security VPC) | Load balances packets across backend appliance instances, encapsulating with GENEVE |
+
+Per AWS, GWLB operates at layer 3 of the OSI model, listens for all IP packets across all ports, forwards traffic to the target group specified in the listener rule, maintains flow stickiness to a specific target appliance using 5-tuple (default), 3-tuple, or 2-tuple, and exchanges application traffic with its registered appliance instances using the GENEVE protocol on port 6081 ([ELB — What is a Gateway Load Balancer?](https://docs.aws.amazon.com/elasticloadbalancing/latest/gateway/introduction.html)).
+
+> [!warning] Gotcha — layer classification (course vs reality)
+> The course describes GWLB as "layer three and four devices, similar in many ways to a network load balancer." Current AWS ELB documentation states GWLB operates at the third layer, the network layer. However, [AWS Prescriptive Guidance](https://docs.aws.amazon.com/prescriptive-guidance/latest/inline-traffic-inspection-third-party-appliances/welcome.html) takes the course's position: GWLBs work at layer 3 and layer 4 — at layer 3 transparently routing the packet from source to third-party appliances before sending it to the destination symmetrically, and at layer 4 providing highly-available and scalable load balancing to the endpoints plus health checks. Both framings appear in AWS's own material. **For exam purposes, "Layer 3" is the safer single answer** (it is what the primary [ELB service doc](https://docs.aws.amazon.com/elasticloadbalancing/latest/gateway/introduction.html) says), but understand the L4 claim refers to the load-balancing/health-check plane, not packet routing.
+
+> [!warning] Gotcha — flow stickiness tuple options (course vs reality)
+> The course says only that "one flow of data will always use one appliance." Current AWS docs specify this is configurable: 5-tuple (default), 3-tuple, or 2-tuple. The 2-tuple option is a later addition not present when the course was recorded ([ELB — Introduction](https://docs.aws.amazon.com/elasticloadbalancing/latest/gateway/introduction.html)).
+
+### GWLB Diagram Walkthrough
+
+![Gateway Load Balancer end-to-end packet flow: a consumer VPC (catagramVPC) and a security VPC side by side, with a numbered 1-to-16 request/response trace weaving between the internet gateway, GWLB endpoints, the Gateway Load Balancer, and the appliance fleet over GENEVE tunnels](../assets/gwlb-architecture.png)
+
+**How to read this diagram.** The layout is not a left-to-right flow — it is two VPC containers side by side with a numbered packet trace (1 through 16) weaving between them. Read it in three passes.
+
+**Context bar (top).** Outside both VPCs sits the client laptop and the internet gateway, joined by arrows `1` (inbound, pink) and `16` (outbound, blue). **Pink arrows are the inbound/request direction; blue arrows are the return/response direction** — this colour coding holds throughout the diagram and is the fastest way to orient yourself in the middle of the trace. To the right of the IGW is the **ingress (gateway) route table** — three rows, with `10.16.0.0/16 → LOCAL`, `10.16.32.0/20 → GWLBE1`, and `10.16.96.0/20 → GWLBE2`. The callout beside it states the rule this table implements: traffic destined for the ALB subnets is directed to the Gateway Endpoint **in the same AZ**. This table is attached to the IGW, not to a subnet — that is what makes it a *gateway* route table.
+
+**Main objects (middle band).** Two VPC boxes:
+
+- **catagramVPC** (left, larger) contains two AZ columns. Each column is a vertical stack of three subnets, colour-coded: **green = public, blue = private**. Top to bottom in each column: the GWLBE subnet, the ALB subnet, the application instance subnet. The left column is AZ-A (GWLBE1 `10.16.48.0/20`, ALB `10.16.32.0/20`, app `10.16.80.0/20`); the right column is AZ-B (GWLBE2 `10.16.112.0/20`, ALB `10.16.96.0/20`, app `10.16.144.0/20`). Note the diagram draws the ALB icon in *both* columns — that is one ALB spanning two AZs, not two load balancers.
+- **securityVPC** (right) contains the GWLB icon at top and, below it, a pair of subnets holding the appliance instances. The **pink/salmon triangle** fanning down from the GWLB to the appliances represents the GENEVE tunnels — the callout beside it reads "Packets are encapsulated through to the appliances," and "Original SRC and DST are maintained."
+
+Three route tables float in the middle of the catagramVPC box, each a two-row table. Match each to its subnet by position, not by proximity alone:
+
+- Far left (`10.16.0.0/16 → LOCAL`, `0.0.0.0/0 → IGW`) and the one to its right in the second AZ column: **the GWLBE subnet route tables** — default route points at the **IGW**.
+- The lower table (`10.16.0.0/16 → LOCAL`, `0.0.0.0/0 → GWLBE1` / `GWLBE2`): **the ALB subnet route tables** — default route points at the **GWLB endpoint in the same AZ**. The callout on the far left spells this out: any outbound return traffic from the ALB is sent via default route to the Gateway LB endpoint.
+
+#### The numbered trace: steps 1–16
+
+The whole diagram is one request/response pair for a single client. Steps **1 through 8 are the inbound request** (pink arrows); steps **9 through 16 are the response** (blue arrows). Everything happens in the AZ-B column — the AZ-A column (GWLBE1, `10.16.32.0/20`) is drawn to show the architecture is multi-AZ, but this particular flow never touches it.
+
+Before starting, fix three addresses in mind: the **client's public IP** (source), the **ALB's public IP** (original destination), and the **ALB's private IP** in `10.16.96.0/20` (the destination after the IGW's NAT).
+
+**Inbound: request (pink).**
+
+**Step 1 — Client to Internet Gateway.** The client browses `catagram.io`. DNS resolves to the ALB's public IP, so the packet leaves the laptop with SRC = client public IP, DST = ALB public IP, and arrives at the IGW. Nothing AWS-specific has happened yet.
+
+**Step 2 — Internet Gateway to GWLBE2.** Two things happen at the IGW, **in this order**:
+
+1. First, the IGW performs its normal destination NAT: DST is rewritten from the ALB's public IP to the ALB's **private** IP inside `10.16.96.0/20`.
+2. Then the **ingress (gateway) route table** — the three-row table drawn to the right of the IGW — is consulted against that now-private destination. `10.16.96.0/20 → GWLBE2` is a more specific match than `10.16.0.0/16 → LOCAL`, so it wins.
+
+> [!tip] The NAT precedes the route lookup
+> This is why the ingress table lists private subnet CIDRs rather than public IPs, and it is the single most commonly misread step in this diagram. The packet is now heading to the GWLB endpoint in the **same AZ** as the ALB subnet it was destined for.
+
+**Step 3 — GWLBE2 to GWLB.** The endpoint hands the packet across the VPC boundary into securityVPC. Note what does *not* happen here: **no route table is consulted**. This hop is [PrivateLink](vpc.md) — a bound association between the endpoint and the GWLB's endpoint service. The packet still carries its original SRC (client public IP) and DST (ALB private IP), which is why the callout on the right reads "Original SRC and DST are maintained."
+
+**Step 4 — GWLB to appliance (encapsulated).** The GWLB selects an appliance from its target group using flow stickiness (5-tuple by default), wraps the original packet in a **GENEVE header (UDP 6081)**, and sends it down the tunnel. This is the pink side of the salmon triangle in the diagram. Encapsulation is what allows a packet addressed `client-public-IP → 10.16.96.x` to traverse securityVPC, whose CIDR may be entirely different or even overlapping.
+
+**Step 5 — Appliance to GWLB (inspected, re-encapsulated).** The appliance decapsulates, inspects the *original* packet — firewall rules, IDS signatures, whatever the vendor does — and decides to allow or drop. Assuming allow, it re-wraps the packet in GENEVE and returns it. The GWLB strips the outer header.
+
+> [!warning] Steps 4 and 5 are where a drop would occur
+> The diagram only depicts the allow path; a blocked packet simply never produces a step 6.
+
+**Step 6 — GWLB to GWLBE2.** The packet goes back to the endpoint it came from. Critically, the GWLB knows *which* endpoint that is from **GENEVE header metadata**, not from a routing decision. There is no lookup here that could send it somewhere wrong.
+
+**Step 7 — GWLBE2 to ALB.** Now the packet is back in catagramVPC, decapsulated, and exposed to normal VPC routing for the first time since step 2. It consults the **GWLBE subnet's own route table** (`10.16.0.0/16 → LOCAL`, `0.0.0.0/0 → IGW`). DST is `10.16.96.x`, inside the VPC CIDR, so the **LOCAL** route matches and the packet moves to the ALB subnet.
+
+> [!tip] This is the loop-prevention step
+> That table contains **no route pointing at GWLBE2** — the route that sent traffic *to* the endpoint lives in the IGW's ingress table, a different table entirely. The packet cannot be re-captured.
+
+**Step 8 — ALB to application instance.** Standard ALB behaviour: it terminates the connection, picks a target from its target group, and forwards to the app instance in `10.16.144.0/20`. Everything from here down is ordinary application architecture — GWLB is finished with the inbound leg.
+
+**Outbound: response (blue).**
+
+**Step 9 — Application instance to ALB.** The app generates its response and sends it back to the ALB, which is the only thing it ever talked to. The instance has no idea inspection occurred.
+
+**Step 10 — ALB to GWLBE2.** The ALB's subnet route table (`10.16.0.0/16 → LOCAL`, `0.0.0.0/0 → GWLBE2`) is consulted. The response is headed for the client's **public** IP, which is outside the VPC CIDR, so the **default route** matches and sends it to the GWLB endpoint. This is the callout on the far left of the diagram: outbound return traffic from the ALB goes via default route to the Gateway LB endpoint.
+
+> [!warning] Asymmetric steering, symmetric path
+> Inbound was captured by a **specific** route in the IGW's ingress table; outbound is captured by the **default** route in the ALB subnet's table. The *how* differs even though the *path* is symmetric.
+
+**Step 11 — GWLBE2 to GWLB.** PrivateLink again, no route lookup. Same as step 3, opposite direction.
+
+**Step 12 — GWLB to appliance (encapsulated).** The GWLB matches this packet to the existing flow and sends it to **the same appliance** that handled steps 4 and 5. This is flow stickiness doing its job.
+
+> [!tip] This is the reason stickiness exists
+> A stateful firewall that saw only the response half of a TCP conversation would drop it as an unsolicited packet. Both directions must land on the same appliance.
+
+**Step 13 — Appliance to GWLB.** Outbound inspection — data exfiltration checks, DLP, C2 beaconing detection. The course's phrase for this is filtering traffic on the way back out, for example detecting and preventing information leakage. Re-encapsulated and returned; GWLB strips the header.
+
+**Step 14 — GWLB to GWLBE2.** Return to the originating endpoint via GENEVE metadata, as in step 6.
+
+**Step 15 — GWLBE2 to Internet Gateway.** Decapsulated, the packet consults the **GWLBE subnet route table** — the same table used at step 7, but this time producing a different result. DST is the client's public IP, outside the VPC CIDR, so `0.0.0.0/0 → IGW` matches. This is the "GWLBE subnet uses IGW as default outbound target" callout.
+
+> [!note] Steps 7 and 15 are the same table consulted twice with opposite outcomes
+> The table does not know or care whether a packet has been inspected — it just does longest-prefix matching. Inbound-after-inspection matches LOCAL; outbound-after-inspection matches the default route. **Nothing in this design tracks inspection state; correctness comes purely from the fact that the endpoint is never a target in its own table.**
+
+**Step 16 — Internet Gateway to client.** The IGW performs source NAT in reverse: SRC is rewritten from the ALB's private IP back to its public IP, and the response reaches the client. The client has no idea any of steps 2 through 15 happened.
+
+**What the trace teaches:**
+
+- **Symmetry is the headline.** Steps 1 through 8 and 9 through 16 are mirror images, and the same appliance handles both — that is what makes stateful inspection possible.
+- **Four VPC boundary crossings** for one request/response pair (steps 3, 6, 11, 14). This is not inefficiency: each crossing is a PrivateLink hop over the AWS backbone, never the public internet.
+- **Only three routing decisions in the whole trace** — steps 2, 7/15, and 10. Every other hop is either PrivateLink, GENEVE metadata, or ordinary ALB target selection. If you can name which table is consulted at each of those three points, you understand GWLB routing.
+
+### GENEVE Encapsulation and Why It's Necessary
+
+The whole architecture rests on one requirement: **the appliance must see the packet exactly as it was sent**. Source IP, destination IP, source port, destination port, payload — all unaltered. Otherwise the appliance cannot make meaningful security decisions.
+
+But the packet has to travel from the consumer VPC into the security VPC, which may use a different or even overlapping CIDR range. Routing an unmodified packet with a foreign IP into that VPC would be nonsense.
+
+GENEVE solves this by **encapsulation**: the original packet is wrapped intact inside a new outer packet addressed within the security VPC. GWLB encapsulates the original packets using GENEVE, and the GENEVE header uses a Type-Length-Value (TLV) format (Option Class 0x0108); appliances must decapsulate the TLV pairs to process the original packets. The appliance strips the outer wrapper, inspects the real packet, then re-wraps it and sends it back.
+
+Key operational facts:
+
+- Protocol **GENEVE**, port **6081** — security groups for appliance instances must allow UDP traffic on port 6081.
+- Target group protocol must be **GENEVE on port 6081**; target type is `instance` or `ip`.
+- A maximum transmission unit (MTU) size of 8500 bytes is supported.
+
+### The GWLB Endpoint: What Makes It Special
+
+A standard interface endpoint is a *destination*: you resolve a DNS name to it and send traffic there deliberately. A GWLB endpoint is a **next hop**: traffic to and from a Gateway Load Balancer endpoint is configured using route tables, and it can be named as the target of a route. That means traffic gets steered through it **without the sender knowing or cooperating** — which is exactly what "transparent" inspection requires.
+
+A structural constraint follows directly: you must create the GWLB endpoint and the application servers in **different subnets**, which is what enables you to configure the endpoint as the next hop in the route table for the application subnet.
+
+> [!tip] Why the subnet-separation requirement exists
+> If the GWLBE and the application shared a subnet they would share a route table, and the route pointing at the endpoint would apply to the endpoint's own traffic — an infinite loop. The requirement *is* the loop prevention (see [How GWLB Avoids Routing Loops](#how-gwlb-avoids-routing-loops)).
+
+### Ingress Routing (Gateway Route Tables)
+
+The inbound leg depends on a feature separate from GWLB itself: **VPC ingress routing**, which lets you associate a route table with the **internet gateway** rather than with a subnet. This is the table drawn top-right in the diagram. It answers the question "as traffic arrives at this VPC from outside, where should it go first?" — and the answer is: to the GWLBE, before it reaches anything else.
+
+Order of operations at the IGW on the inbound leg:
+
+1. IGW performs its normal public-to-private destination NAT (public IP of the ALB to private IP in `10.16.96.0/20`).
+2. *Then* the ingress route table is consulted against that now-private destination.
+3. Most specific match (`10.16.96.0/20 → GWLBE2`) wins over `10.16.0.0/16 → LOCAL`.
+
+> [!tip] The NAT happens before the ingress route lookup
+> This is why the ingress route table contains private subnet CIDRs rather than public IPs.
+
+### GWLB vs WAF — Complementary, Not Substitutes
+
+A useful intuition: **WAF is the security guard at the building's front door**, checking only the people arriving to browse the website; **GWLB plus a third-party appliance is the full-body scanner in the basement**, through which every package and person — inbound *and* outbound, web or not — must pass. They inspect different things at different layers, and they are not alternatives.
+
+| | **AWS WAF** | **Gateway Load Balancer** |
+| --- | --- | --- |
+| **What it is** | A managed AWS service (a rule engine) | A traffic-steering mechanism for *your* appliances |
+| **OSI layer** | Layer 7 — HTTP/HTTPS | Layer 3 (packet level) |
+| **What it inspects** | Request URI, headers, body, query strings, cookies | Every IP packet, all ports, all protocols |
+| **What it understands** | Web requests | Nothing — it delegates understanding to the appliance |
+| **Who writes the logic** | You (rules) or AWS/vendors (managed rule groups) | The third-party vendor (Palo Alto, Fortinet, Check Point, etc.) |
+| **Where it attaches** | CloudFront, ALB, API Gateway, AppSync, Cognito | A route table, as a next hop |
+| **Protocol coverage** | HTTP/HTTPS only | Any IP traffic — SSH, RDP, SMTP, database protocols, custom TCP/UDP |
+| **Traffic direction** | Inbound requests to the protected resource | Both directions, inbound and outbound |
+
+Unlike traditional network firewalls that operate at the network layer, WAF operates at the application layer (Layer 7), providing granular control over HTTP and HTTPS traffic, using customizable rules that inspect IP addresses, HTTP headers, HTTP body, URI strings, SQL injection patterns, and cross-site scripting ([AWS WAF FAQs](https://aws.amazon.com/waf/faqs/)).
+
+Concretely: a bank running an online portal plus an SFTP batch flow to a clearing house needs **both**. WAF on the ALB catches a `' OR '1'='1` SQL-injection login POST before it reaches the targets — GWLB could never do that cleanly, since at layer 3 the request is just opaque (often encrypted) TCP segments. But WAF structurally *cannot* help with the three things GWLB is for: (1) the **SFTP flow is not HTTP**, so WAF has nothing to attach to; (2) **compliance mandates a specific vendor** (regulator-approved Palo Alto rule set, audit evidence, runbooks) that "we used AWS WAF instead" does not satisfy; and (3) **egress inspection** — catching a compromised instance beaconing out to a command-and-control server on an arbitrary port, which WAF is not in the path for at all.
+
+> [!tip] Exam Tip — WAF vs GWLB
+> They are complementary layers of defence in depth. A question about **SQL injection or XSS** wants **WAF**. A question about a **third-party firewall vendor, IDS/IPS, non-HTTP protocols, or egress inspection** wants **GWLB**.
+
+**Why not just run the appliance on an inline EC2 instance?** You can, and it degrades predictably: **scaling mismatch** (ten app instances become a hundred; appliance capacity must be wired in manually), **tight coupling** (appliance dies and the application behind it is unreachable), **route table churn** (steering means pointing routes at specific ENIs, edited every time the fleet changes), and **impractical multi-tenancy** (sharing one appliance fleet across many application VPCs needs a stable, VPC-crossing insertion point — precisely what GWLBE plus PrivateLink provides). GWLB replaces per-instance wiring with a stable endpoint that never changes, while the fleet behind it scales freely in an [Auto Scaling group](ec2-auto-scaling.md).
+
+### What GWLB Inspects: Ingress, Egress, and East-West
+
+The [16-step trace](#the-numbered-trace-steps-116) above is a **north-south ingress** flow (internet to application), but the GWLBE-as-next-hop trick works for **any traffic you can route**. The same endpoint mechanism handles three directions:
+
+- **North-south ingress** — inbound internet traffic, captured by the IGW ingress route table (the diagram).
+- **Egress** — outbound traffic to the internet, captured by a `0.0.0.0/0 → GWLBE` default route in the workload subnet.
+- **East-west** — traffic between VPCs (or between subnets/tiers), captured by routing the inter-VPC path through a GWLBE. Centralising this across many VPCs is the classic **appliance/inspection-VPC behind a Transit Gateway** pattern.
+
+Two worked examples show why an appliance behind GWLB catches what port/IP firewalls and WAF cannot:
+
+**East-west — cross-VPC traffic audit (the port-allow-list trap).** A bank runs a front-office VPC (mobile-banking app tier) and an isolated core-data VPC (databases). Compliance forbids letting the app tier reach the DB on a simple "allow port 3306" rule, because a **compromised app server can tunnel an attack over the very port you allowed** — a [security group](vpc.md) or NACL only ever sees the 5-tuple, never the payload. So all front-to-data traffic is routed through a GWLBE to a Palo Alto appliance, which does **application-layer identification (App-ID)**: a genuine SQL query is allowed; a packet on port 3306 carrying an exploit is dropped and alerted. The app and DB never know the firewall was in the path.
+
+> [!tip] Why GWLB and not just a security group
+> Security groups and NACLs filter on **IP and port only**. The moment the requirement is "inspect the *content* of otherwise-allowed traffic" — malware signatures, exploit payloads, App-ID — you need an appliance in the path, and GWLB is how you insert one transparently and at scale.
+
+**Egress — patch-download antivirus (supply-chain defence).** A fleet of 100 Linux servers runs `yum update` / `apt-get upgrade` weekly against public repos, where a poisoned upstream package is a real supply-chain risk. A `0.0.0.0/0 → GWLBE` route sends all outbound traffic to a Fortinet FortiGate appliance whose AV and IPS engines scan the download; a payload matching a known malicious signature has its TCP connection reset (the server sees "connection reset", the download fails) before anything reaches the workload. This is the same **non-HTTP, arbitrary-port egress** case that WAF cannot touch at all.
+
+> [!tip] High availability is a headline GWLB reason, not a footnote
+> GWLB **health-checks the appliance fleet** and reroutes flows away from an unhealthy appliance automatically. The alternative — hardcoding one appliance's ENI as a route-table next hop — means that single appliance's failure takes out inspection (or connectivity) for everything behind it. GWLB turns a fragile single box into an [Auto Scaling](ec2-auto-scaling.md) fleet reachable through one stable endpoint.
+
+### How GWLB Avoids Routing Loops
+
+The sharpest question about GWLB is why inspected traffic is not simply re-captured and sent back to the GWLBE forever. Two independent mechanisms do the work, plus a third fact (stickiness) that keeps stateful inspection viable.
+
+**Mechanism 1 — The GWLB-to-GWLBE path is not routed traffic.** The hop from the endpoint to the GWLB and back is not a VPC route table decision at all. GWLB endpoints provide private connectivity between the appliances in the provider VPC and the application servers in the consumer VPC — this is **[PrivateLink](vpc.md)**, a bound, bidirectional association, not a routing lookup. When the packet returns from the appliance, the GWLB removes the GENEVE header and forwards it to the appropriate endpoint using **metadata in the GENEVE headers** to find the matching endpoint the traffic was sourced from ([AWS Networking Blog — Scaling network traffic inspection using AWS GWLB](https://aws.amazon.com/blogs/networking-and-content-delivery/scaling-network-traffic-inspection-using-aws-gateway-load-balancer/)). There is no lookup that could send it somewhere wrong.
+
+**Mechanism 2 — The endpoint consults a *different* route table on the way out.** Once back at the GWLBE, decapsulated and re-exposed to normal VPC routing, the packet uses the route table **of the GWLBE's own subnet** — `10.16.0.0/16 → LOCAL`, `0.0.0.0/0 → IGW` — which has no route pointing at the GWLBE. The route that sent traffic *to* the endpoint lives in a completely different table (the IGW's ingress table inbound, or the ALB subnet's table outbound).
+
+> [!tip] The endpoint is never a target in its own subnet's route table
+> This is the whole reason the subnet-separation requirement exists. If the GWLBE and ALB shared a subnet, they would share a table containing `0.0.0.0/0 → GWLBE`; post-inspection traffic sitting at the endpoint would match that default route and be sent back to the endpoint — an infinite loop.
+
+Trace it with the diagram's numbering:
+
+| Step | Packet at | Table consulted | Result |
+| --- | --- | --- | --- |
+| 2 | IGW, inbound | **Ingress (gateway) route table** | `10.16.96.0/20 → GWLBE2` |
+| 3 | GWLBE2 | *none — PrivateLink* | to GWLB |
+| 6 | GWLB, post-inspection | *none — GENEVE metadata* | to GWLBE2 |
+| 7 | GWLBE2, decapsulated | **GWLBE subnet route table** | `10.16.0.0/16 → LOCAL`, to ALB subnet |
+| 10 | ALB subnet, outbound | **ALB subnet route table** | `0.0.0.0/0 → GWLBE2` |
+| 11 | GWLBE2 | *none — PrivateLink* | to GWLB |
+| 14 | GWLB, post-inspection | *none — GENEVE metadata* | to GWLBE2 |
+| 15 | GWLBE2, decapsulated | **GWLBE subnet route table** | `0.0.0.0/0 → IGW` |
+
+At step 7 the destination is the ALB's private IP (inside the VPC CIDR) so **LOCAL** matches; at step 15 it is the client's public IP so the **default route to the IGW** matches. In neither case is the GWLBE a candidate target — it does not appear in that table.
+
+**Mechanism 3 — Flow stickiness and symmetry.** Not loop prevention, but the other half of "why does this not break." Because GWLB maintains flow stickiness (5-tuple by default), both directions of a conversation land on the **same** appliance. Since firewalls are stateful, the source-to-destination flow and its return must stay on the same appliance — a firewall that saw only the response half of a TCP conversation would drop it as unsolicited.
+
+### GWLB Exam Traps
+
+> [!warning] Trap — GWLB vs NLB
+> Both are low-layer and both use target groups. The distinguishing signal is **third-party appliance** or **transparent inspection**. [NLB](#nlb-deep-dive--layer-4) terminates flows and load balances *to* targets; GWLB passes packets *through* targets and gets them back.
+
+> [!warning] Trap — "Which endpoint type can be a route table target?"
+> Gateway endpoints (S3/DynamoDB) are route table targets too, but they use a **prefix list** destination and are not a next hop for arbitrary traffic. The **GWLB endpoint** is the one that can be a next hop for any destination. Interface endpoints cannot be route table targets at all (see [VPC / PrivateLink](vpc.md)).
+
+> [!warning] Trap — Where does the GWLB live?
+> The GWLB and its appliances live in the **security/provider VPC**. Only the **endpoint** lives in the consumer VPC. A question describing "load balancer deployed in the application VPC" alongside GWLB is likely wrong.
+
+> [!warning] Trap — GENEVE port 6081/UDP
+> If a question shows a security group on the appliances that omits UDP 6081, that is the fault.
+
+> [!warning] Trap — source IP preservation
+> GWLB preserves original source and destination IP. But NLB client IP preservation is **not** supported when traffic is routed through a GWLB endpoint, even if the target is in the same VPC as the NLB ([PrivateLink — GWLB endpoints](https://docs.aws.amazon.com/vpc/latest/privatelink/gateway-load-balancer-endpoints.html)).
+
+> [!warning] Trap — IPv6 with egress-only IGW
+> If you use a GWLB with an egress-only internet gateway, the IPv6 traffic is dropped — use an internet gateway and inbound firewall rules instead ([PrivateLink — GWLB endpoints](https://docs.aws.amazon.com/vpc/latest/privatelink/gateway-load-balancer-endpoints.html)).
+
+> [!warning] Trap — same-AZ endpoint selection
+> Route to the GWLBE **in the same AZ** as the traffic. Cross-AZ hops cost money and add latency; the diagram's ingress route table exists specifically to enforce this.
+
+### GWLB Quick Reference
+
+| Attribute | Value |
+| --- | --- |
+| OSI layer | 3 (ELB docs); L3+L4 per Prescriptive Guidance — see gotcha above |
+| Protocol to targets | GENEVE, UDP **6081** |
+| MTU | 8500 bytes |
+| Flow stickiness | 5-tuple (default), 3-tuple, or 2-tuple |
+| Target types | `instance` or `ip` (private IPs) |
+| Target group protocol | GENEVE / port 6081 |
+| Listener | Single default action, forwards to one target group |
+| Endpoint type | Gateway Load Balancer Endpoint (PrivateLink), usable as route table next hop |
+| Subnet constraint | GWLBE and application servers must be in **different subnets** |
+| Packet alteration | None — original SRC/DST IP and ports preserved |
+| Access logs | Not produced by GWLB (transparent); enable on appliances or use VPC Flow Logs |
+| Primary use case | Scaling third-party inline security appliances |
+| Typical vendors | Palo Alto, Fortinet, Check Point, Cisco, Trend Micro |
+
 ## Quick Reference
 
 | Topic | Key fact |
@@ -355,6 +610,7 @@ Otherwise choose an **ALB**: its Layer 7 features (rules, host/path routing, hea
 | ALB | L7; HTTP/HTTPS/WebSocket; cross-zone **on** by default at the LB level; target groups can override |
 | NLB | L4; TCP/TLS/UDP; static IPs (Elastic IP); can technically run in 1 AZ |
 | CLB | v1 legacy; 1 SSL certificate per LB; avoid |
+| GWLB | L3; **GENEVE / UDP 6081**; steers packets *through* third-party appliances via a route-table-target endpoint; see [GWLB Deep Dive](#gateway-load-balancer-gwlb--deep-dive) |
 | Real object | Multiple **nodes** in each chosen subnet, auto-scaling |
 | DNS | Single **A record** resolving to **all** nodes |
 | Node distribution | DNS tends to spread clients statistically across nodes; heavy client-side DNS caching can skew traffic |
@@ -379,7 +635,10 @@ Otherwise choose an **ALB**: its Layer 7 features (rules, host/path routing, hea
 - [VPC](vpc.md) — subnets, reserved IPs, public vs private subnet mechanics, PrivateLink
 - [Networking](../concepts/networking.md) — ENIs, firewall layers
 - [TLS/HTTPS](../concepts/tls-https.md) — certificates, SNI, TLS termination
+- [VPC / PrivateLink](vpc.md) — GWLB endpoints, VPC ingress routing, route tables, IGW and NAT mechanics
 - AWS docs: [Application Load Balancers](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/application-load-balancers.html) · [NLB availability zones](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/availability-zones.html) · [NLB listeners](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/load-balancer-listeners.html) · [NLB health checks](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/target-group-health-checks.html) · [CLB subnets](https://docs.aws.amazon.com/elasticloadbalancing/latest/classic/elb-manage-subnets.html) · [ALB target group attributes](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/edit-target-group-attributes.html#modify-target-group-attributes) · [ALB sticky sessions](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/sticky-sessions.html) · [ELB scaling strategies blog](https://aws.amazon.com/blogs/networking-and-content-delivery/scaling-strategies-for-elastic-load-balancing/)
+- GWLB docs: [What is a Gateway Load Balancer?](https://docs.aws.amazon.com/elasticloadbalancing/latest/gateway/introduction.html) · [AWS Prescriptive Guidance — Inline traffic inspection](https://docs.aws.amazon.com/prescriptive-guidance/latest/inline-traffic-inspection-third-party-appliances/welcome.html) · [PrivateLink — GWLB endpoints](https://docs.aws.amazon.com/vpc/latest/privatelink/gateway-load-balancer-endpoints.html) · [Networking Blog — Scaling network traffic inspection using AWS GWLB](https://aws.amazon.com/blogs/networking-and-content-delivery/scaling-network-traffic-inspection-using-aws-gateway-load-balancer/) · [AWS WAF FAQs](https://aws.amazon.com/waf/faqs/)
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/elb_architecture.md` (Adrian Cantrill AWS SAA — "Evolution of the ELB", "ELB Architecture Part 1 & 2"; diagrams © learn.cantrill.io)
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/alb_vs_nlb.md` (Adrian Cantrill AWS SAA — "Application Load Balancing (ALB) vs Network Load Balancing (NLB)")
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/elb_ssl_offload_and_session_stickiness.md` (Adrian Cantrill AWS SAA — "SSL Offload & Session Stickiness"; diagrams © learn.cantrill.io)
+- Source: `raw/aws-cert-study-notes/aws-solution-architect/gateway_load_balancer.md` (Adrian Cantrill AWS SAA — "Gateway Load Balancer"; diagram © learn.cantrill.io)
