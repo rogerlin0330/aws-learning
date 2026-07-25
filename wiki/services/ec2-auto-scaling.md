@@ -113,7 +113,7 @@ Target tracking also **prioritizes availability**: it scales in more gradually w
 
 #### Scaling based on SQS
 
-Scale on **`ApproximateNumberOfMessagesVisible`** in an SQS queue — the classic **worker pool** architecture. As messages pile up the ASG scales out to process them; as the queue drains it scales back in to reduce cost.
+Scale on **`ApproximateNumberOfMessagesVisible`** in an SQS queue — the classic **worker pool** architecture (see [Architecture Evolution — Queue-Decoupled (Worker Fleet)](../patterns/architecture-evolution.md#stage-4--queue-decoupled-worker-fleet) for how the queue decouples the producer and lets this fleet scale from zero). As messages pile up the ASG scales out to process them; as the queue drains it scales back in to reduce cost.
 
 > [!tip] Exam Tip
 > "Worker pool," "queue depth," "process backlog," "decoupled" all point to **SQS-based scaling**.

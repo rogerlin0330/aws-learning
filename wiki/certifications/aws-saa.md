@@ -21,6 +21,18 @@ See [Global & Regional AWS Architecture](../patterns/global-regional-architectur
 - "Decouple components" is the trigger phrase for the app-services tier (SQS queues)
 - Core takeaway: most AWS services are **regional**; very few are truly global — classify a service by **tier** and by **global vs regional** before anything else
 
+## Architecture Evolution — Coupling, Queues & Event-Driven
+
+See [Architecture Evolution](../patterns/architecture-evolution.md) for the full progression (monolithic to event-driven) and the CatTube worked example.
+
+- The whole topic is one axis: **coupling** (tight to loose), **communication** (synchronous to asynchronous), **billing** (always-on to only-while-working). Place the scenario on that axis.
+- **Monolith signature** = "fails together / scales together / bills together" — any of the three phrases points at a monolith and its cost/availability downsides; it can only scale **vertically** as a unit
+- **Tiered (even with load balancers) is still synchronous and coupled** — the upstream tier *waits*, so it **cannot scale to zero** and a downstream failure **cascades upstream**. Load balancers add HA + horizontal scaling, not decoupling
+- **Load balancer ≠ decoupling.** A **queue** is what decouples a producer from a consumer and makes communication **asynchronous**
+- **Worker fleet** = consumer [Auto Scaling Group](../services/ec2-auto-scaling.md) polling a queue, Min/Desired **0**, scales 0 to near-infinite on **queue length** (`ApproximateNumberOfMessagesVisible`), **not CPU**; producer writes the object to [S3](../services/s3.md) + a job message, then its transaction is done
+- **Do not assume queues are FIFO.** SQS **Standard** = best-effort ordering + at-least-once (default) → make consumers **idempotent**; **SQS FIFO** = strict ordering + exactly-once (name ends `.fifo`), the explicit choice when "ordering matters / no duplicates"
+- **Event-driven** = producers emit on occurrence, a highly available **event router** (maps to **EventBridge**) delivers events to consumers via an **event bus**; nothing polls, resources are consumed **only while handling events** → strongly tied to **serverless** and cost efficiency for spiky/idle-heavy workloads
+
 ## IAM
 
 See [IAM](../services/iam.md) and [Identity and Access Concepts](../concepts/identity-and-access.md) for full details.

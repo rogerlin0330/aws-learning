@@ -116,6 +116,7 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 ### Patterns
 
 - [Global & Regional AWS Architecture](patterns/global-regional-architecture.md) — the foundational mental model: global components (Route 53, CloudFront) deliver customers to regional applications built from standard tiers (web / compute / caching / database / storage / app services); three architecture types (single-region, +DR, multi-region)
+- [Architecture Evolution — Coupling, Queues & Event-Driven](patterns/architecture-evolution.md) — the monolithic-to-event-driven progression as one axis (coupling, communication, billing); monolith signature (fails/scales/bills together), load-balancer ≠ decoupling, the queue as the decoupler, the worker-fleet ASG scaling on queue length, SQS Standard vs FIFO, and the event router/bus (EventBridge) as a serverless building block
 - [Cost Optimization](patterns/cost-optimization.md) — Savings Plans, RIs, Spot, decision tree, pooling via Organizations
 - [Scaling — Horizontal vs Vertical](patterns/scaling.md) — bigger box vs more boxes; the session problem; stateless design; how horizontal scaling combines with ELB + Auto Scaling for HA
 - [Boot Time to Service Time](patterns/boot-time-optimization.md) — AMI baking vs bootstrapping vs combined; minimizing post-launch time while keeping flexibility
