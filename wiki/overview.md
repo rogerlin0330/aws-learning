@@ -99,6 +99,7 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 - [Control Tower](services/control-tower.md) — "Organizations with superpowers"; orchestrates a well-architected landing zone (foundational OUs + Audit/Log Archive accounts), guardrails (preventative SCP / detective Config), and Account Factory self-service provisioning
 - [CloudWatch](services/cloudwatch.md) — monitoring & observability; log groups, metric filters, alarms, and the **CloudWatch Agent** for in-guest EC2 metrics + OS/application logs
 - [CloudTrail](services/cloudtrail.md) — audit & governance; API/account-activity events, Event History vs trails, management/data/Insight events, global service events, organizational trail, log file integrity
+- [EventBridge](services/eventbridge.md) — serverless event bus (formerly CloudWatch Events); "if X happens, or at time Y, then do Z" — producers emit events, rules match on content or schedule, targets (Lambda and others) receive the JSON; the AWS implementation of the [event-driven](patterns/architecture-evolution.md#stage-6--event-driven) router/bus pattern, distinct from CloudWatch Alarms (metric thresholds)
 - [KMS](services/kms.md) — key management; envelope encryption, key policies + IAM + grants
 
 ### Concepts

@@ -59,6 +59,9 @@ Metric filters let you **generate numeric metrics from log content**:
 
 This pipeline is how AWS converts unstructured logs into actionable telemetry without exporting data to a separate tool.
 
+> [!warning] Gotcha — Alarms vs EventBridge
+> A CloudWatch **Alarm** reacts to a **metric crossing a threshold**. [Amazon EventBridge](eventbridge.md) (formerly CloudWatch Events, which split out of CloudWatch) reacts instead to **state-change events** and **schedules**. Same family, different triggers — don't blur them on the exam.
+
 The canonical example of the alarm + **EC2 action** pipeline is the [EC2 Status Check Alarm](ec2.md#status-checks-and-auto-recovery) — a built-in alarm on either of EC2's two instance status checks that can notify via SNS and optionally **Reboot / Stop / Terminate / Recover** the instance (the **Recover** action triggers [EC2 auto recovery](ec2.md#ec2-auto-recovery)).
 
 ## CloudWatch Logs as the Logging Backbone
@@ -146,5 +149,6 @@ CloudWatch is a **regional service** — log groups and their data are region-sc
 - [EC2](ec2.md) — OS and app logs via the [CloudWatch Agent](#cloudwatch-agent); [instance roles](ec2.md#instance-roles--instance-profiles) supply the agent's permissions
 - [Systems Manager (SSM)](ssm.md#parameter-store) — Parameter Store holds the agent config for fleet-wide reuse
 - [CloudTrail](cloudtrail.md) — API/account-activity audit; delivers events to CloudWatch Logs for search + alarms
+- [EventBridge](eventbridge.md) — CloudWatch Events' successor; event bus reacting to state changes and schedules (vs Alarms' metric thresholds)
 - [Organizations](organizations.md) — CloudTrail integration context
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_system_and_application_logging.md`

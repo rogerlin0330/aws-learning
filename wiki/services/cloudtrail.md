@@ -112,7 +112,9 @@ CloudTrail **log delivery is not real-time**. Log files are typically delivered 
 > [!warning] Gotcha
 > Any question that requires **real-time** logging or instantaneous reaction to an API call → **CloudTrail's log delivery is the wrong answer.** Do not treat Event History or delivered log files as an up-to-the-second list.
 
-There is an important nuance, though. The ~15-minute figure applies to **log file delivery** to S3 and CloudWatch Logs. CloudTrail **also emits management events to [Amazon EventBridge](cloudwatch.md)**, where rules can match them with much lower latency. So the pattern "react automatically and quickly when a specific API call happens" is solved with **EventBridge rules on CloudTrail management events**, not by polling delivered log files.
+There is an important nuance, though. The ~15-minute figure applies to **log file delivery** to S3 and CloudWatch Logs. CloudTrail **also surfaces API-call events onto [Amazon EventBridge](eventbridge.md)**, where rules can match them with much lower latency. So the pattern "react automatically and quickly when a specific API call happens" is solved with **EventBridge rules on CloudTrail events**, not by polling delivered log files.
+
+These CloudTrail-sourced events carry `detail-type: "AWS API Call via CloudTrail"` and — unlike a service's **native** EventBridge event — **include the requesting IAM principal**, so a rule can react based on *who* made the call. **Management events** reach EventBridge **without a trail**; **data events** (S3 object-level, Lambda `Invoke`) require a **configured trail** first, and even then delivery is best-effort and scoped to the selected resources. See [EventBridge — CloudTrail as an Event Source](eventbridge.md#cloudtrail-as-an-event-source) for the native-path-vs-CloudTrail-path comparison.
 
 ## Reading the Diagram
 
@@ -161,6 +163,7 @@ CloudTrail also underpins finer-grained audit stories on other pages: it is the 
 ## References
 
 - [CloudWatch](cloudwatch.md) — metrics, CloudWatch Logs, the alarm pipeline CloudTrail feeds into
+- [EventBridge](eventbridge.md) — rules on CloudTrail management events for near real-time reactions (vs the ~15-min log delivery)
 - [S3](s3.md) — default log destination; access logging vs CloudTrail data events
 - [IAM](iam.md) — principals recorded in events; global service events
 - [Organizations](organizations.md) — organizational trail; SCPs that protect CloudTrail

@@ -119,7 +119,7 @@ The architecture has three zones:
 The key visual message is that **nothing is drawn as a loop**. No component is spinning, waiting, or polling. Resources are consumed **only when an event is being handled**, then the system returns to a dormant, low-or-no-resource state.
 
 > [!tip] AWS mapping — EventBridge
-> The generic "event router with an event bus" maps directly to **Amazon EventBridge**, a serverless event bus that ingests events from your apps, SaaS apps, and AWS services and routes them to targets (Lambda, SQS, SNS, Step Functions, and others) via rules. The lesson stays vendor-neutral on purpose, but EventBridge is the service this pattern is named after in practice. Source: [Amazon EventBridge](https://aws.amazon.com/eventbridge/).
+> The generic "event router with an event bus" maps directly to **[Amazon EventBridge](../services/eventbridge.md)**, a serverless event bus that ingests events from your apps, SaaS apps, and AWS services and routes them to targets (Lambda, SQS, SNS, Step Functions, and others) via rules. The lesson stays vendor-neutral on purpose, but EventBridge is the service this pattern is named after in practice. Source: [Amazon EventBridge](https://aws.amazon.com/eventbridge/).
 
 ## Why "Only Consume When Working" Matters
 
