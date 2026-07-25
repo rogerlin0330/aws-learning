@@ -1869,24 +1869,24 @@ See [EventBridge](../services/eventbridge.md) for full details.
 
 - **Mental model:** *"if X happens, or at time Y, then do Z."* X = a producer service emitting an event; Y = a schedule; Z = a target (commonly [Lambda](../services/lambda.md))
 - **EventBridge = CloudWatch Events "v2"** — same API, superset of features. Treat them as the **same service, different name**; EventBridge is the current/preferred name and gets all new features. It is the **evolution** of CloudWatch Events, **not** a deprecation of the API
-- **Third-party / SaaS / custom-app events** points to **EventBridge, never CloudWatch Events** — the flagship discriminator
-- **Multiple / custom event buses** points to **EventBridge**; CloudWatch Events has exactly **one** implicit bus
+- **Third-party / SaaS partner events** points to **EventBridge, never CloudWatch Events** — the flagship discriminator
+- **Multiple / custom event buses** points to **EventBridge**; CloudWatch Events has exactly **one** default bus. Custom app events can use the default bus/API; custom buses are the EventBridge discriminator
 - **Rule types:** **event pattern rule** (matches event *content*) vs **schedule rule** (matches a time)
-- **Schedule expressions:** *"every N minutes"* = **rate**; *"at 8am first Monday"* = **cron**. Scheduled rules are now **"(legacy)"** — **EventBridge Scheduler** is the newer standalone scheduler and **needs no event bus**
+- **Schedule expressions:** *"every N minutes"* = **rate**; *"at 8am first Monday"* = **cron**. Scheduled rules are now **"(legacy)"**, run only on the **default event bus**, and **EventBridge Scheduler** is the newer standalone scheduler that **needs no event bus**
 - **Events are JSON**, delivered to the target, which can act on the contents
 - **Players:** *event bus* = the stream · *rule* = the matcher · *target* = the receiver. EventBridge **observes** the bus; it is not the bus
 - **CloudTrail as a source:** an API call reaches EventBridge tagged **`AWS API Call via CloudTrail`**. If the question needs the **IAM caller identity**, it must come via **CloudTrail**, not the native service event (the native event omits the principal)
-- **Management vs data events reaching EventBridge:** **management** events reach EventBridge **by default**; **data** events (S3 object-level, Lambda `Invoke`) require a **configured trail** first, and delivery is then best-effort + resource-scoped
+- **CloudTrail events reaching EventBridge:** the CloudTrail path requires an **active trail with logging enabled**. Management events are the trail default; data and network activity events need explicit selectors. **Write/mutating** management events match an ordinary `ENABLED` EventBridge rule; **read-only** (`Describe`/`Get`/`List`) management events match only a rule set to `ENABLED_WITH_ALL_CLOUDTRAIL_MANAGEMENT_EVENTS`
 
 | If the question says... | Think... |
 | --- | --- |
 | react when an EC2/resource changes state | **EventBridge event pattern rule** |
 | run a Lambda nightly / on a cron | **EventBridge schedule rule (or Scheduler)** |
-| SaaS partner or custom-app events | **EventBridge** (not CloudWatch Events) |
+| SaaS partner events | **EventBridge** (not CloudWatch Events) |
 | multiple / custom event buses | **EventBridge** |
-| react fast to an API call | **EventBridge on [CloudTrail](../services/cloudtrail.md) events** |
+| react fast to an API call | **EventBridge on [CloudTrail](../services/cloudtrail.md) events from an active trail** |
 | react based on *who* made the API call | **CloudTrail-path event** (`AWS API Call via CloudTrail`), not the native event |
-| react to S3 object-level / Lambda-invoke calls | **configure a trail for data events first**, then EventBridge |
+| react to S3 object-level / Lambda-invoke calls | **configure trail data-event selectors first**, then EventBridge |
 | metric crosses a threshold | **[CloudWatch Alarm](../services/cloudwatch.md#metric-filters-and-alarms)** (not EventBridge) |
 
 ## DNS and Route 53

@@ -20,7 +20,7 @@ This is the AWS implementation of the generic **event router + event bus** stage
 
 ## EventBridge is "CloudWatch Events v2"
 
-EventBridge uses the **same underlying APIs** and the **same basic architecture** as CloudWatch Events, but adds a superset of functionality — most notably the ability to ingest events from **third-party / SaaS providers** and **custom applications**, which CloudWatch Events cannot do. AWS recommends EventBridge by default for any new deployment. The default event bus and the rules you created in CloudWatch Events also display in the EventBridge console, and [EventBridge uses the same CloudWatch Events API so existing code keeps working](https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-what-is.html).
+EventBridge uses the **same underlying APIs** and the **same basic architecture** as CloudWatch Events, but adds a superset of functionality — most notably **third-party / SaaS partner event sources**, **custom event buses**, richer integrations, and newer scheduling via EventBridge Scheduler. AWS recommends EventBridge by default for any new deployment. The default event bus and the rules you created in CloudWatch Events also display in the EventBridge console, and [EventBridge uses the same CloudWatch Events API so existing code keeps working](https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-what-is.html).
 
 > [!warning] Course-vs-reality — naming & "deprecation"
 > Older courses describe CloudWatch Events as *"the service which is replacing"* and say AWS *"are now starting to encourage a migration."* That framing is dated. AWS now describes EventBridge as **the evolution of Amazon CloudWatch Events**, and [new features are added only to EventBridge](https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-what-is.html), not to CloudWatch Events. But AWS's own FAQ is explicit that [they are *not* deprecating the API or the service itself — EventBridge uses the same API and the CloudWatch Events name is being replaced over time](https://aws.amazon.com/eventbridge/faqs/). So "CloudWatch Events is deprecated" (a claim common in third-party blogs) is **stronger than AWS's official wording**. For the exam: treat them as **the same service, different name**, with EventBridge as the current and preferred name.
@@ -48,17 +48,19 @@ The horizontal band packed with small coloured blocks at the bottom is the **Def
 
 - A **bus** is a **stream of events** from any supported service in the account.
 - Every account has a **default event bus**.
-- **CloudWatch Events:** exactly **one** event bus exists, and it is **implicit** — not exposed in the UI. You just look for events and send them to targets.
-- **EventBridge:** you can create **additional custom buses** — for your own applications or for third-party / SaaS products — and interact with them the same way as the default bus. **This ability to have multiple buses is EventBridge-only.**
+- **CloudWatch Events:** exactly **one** default event bus exists. AWS service events and custom application events sent through the API land on that default bus; you just look for events and send them to targets.
+- **EventBridge:** you still have the default bus, but can create **additional custom buses** for your own applications and use **partner event sources** for third-party / SaaS products. **Multiple buses and SaaS partner sources are EventBridge-only.**
 
 ### Rules
 
-You create **rules**, each **linked to a specific event bus** (the default unless you say otherwise). There are two types:
+You create **rules** that match events or schedules:
 
 | Rule type | Matches on | Trigger source |
 | --- | --- | --- |
-| **Event pattern rule** | The **pattern / content** of events on the bus | An event that matches the pattern |
+| **Event pattern rule** | The **pattern / content** of events on a specific bus | An event that matches the pattern |
 | **Schedule rule** | A **schedule expression** (specific times or ranges) | The clock reaching the specified time |
+
+Event-pattern rules are linked to a specific event bus (the default unless you say otherwise). Scheduled rules are different: legacy scheduled rules run only on the **default event bus**. [EventBridge Scheduler](#scheduling-rules-vs-eventbridge-scheduler) is the newer bus-less scheduler.
 
 When a rule matches, it **delivers the matched event to one or more targets** defined on that rule. A common target is **invoke a [Lambda](lambda.md) function** — non-exhaustive: [S3](s3.md), SQS, Step Functions, SNS, Kinesis, and many others are also valid targets.
 
@@ -70,7 +72,7 @@ Every event is a **JSON structure**, and the **target consumes the JSON**. For a
 
 There are **two independent relationships** between EventBridge and [CloudTrail](cloudtrail.md); keep them separate.
 
-1. **CloudTrail as a source (CloudTrail feeds EventBridge).** Many AWS services surface their events onto the EventBridge bus **via CloudTrail**. When CloudTrail records an API call, that call can appear on the bus so a rule can react to it. These events carry the field [`detail-type: "AWS API Call via CloudTrail"`](https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-service-event.html) — that exact string is the tell that the event reached EventBridge through CloudTrail.
+1. **CloudTrail as a source (CloudTrail feeds EventBridge).** Many AWS services surface API-call events onto the EventBridge bus **via CloudTrail**. For events with a CloudTrail `detail-type` value such as [`AWS API Call via CloudTrail`](https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-service-event.html), AWS requires an **active CloudTrail trail with logging enabled**. That exact `detail-type` string is the tell that the event reached EventBridge through CloudTrail.
 2. **EventBridge as a subject (CloudTrail audits EventBridge).** Separately, CloudTrail audits API calls made **to EventBridge itself** (`PutRule`, `PutTargets`, `DeleteRule`, and so on) — who created or changed a rule. This is just the normal "CloudTrail audits every service" relationship. Don't blur it with the first.
 
 ### Native path vs CloudTrail path
@@ -91,13 +93,43 @@ The same underlying action can reach EventBridge by **two different routes**, ca
 
 Whether a CloudTrail-sourced event reaches EventBridge depends on whether CloudTrail is **capturing** it in the first place (see [CloudTrail event categories](cloudtrail.md#event-types)):
 
-- **Management events** (config-level API calls — create IAM role, launch instance, modify RDS) are captured by default, so they reach EventBridge **without** needing a trail.
-- **Data events** (high-volume, object-level — S3 `GetObject` / `PutObject`, Lambda `Invoke`) are **not** logged by default, so you must **configure a trail** that logs them before EventBridge rules can fire.
+- **Management events** (config-level API calls — create IAM role, launch instance, modify RDS) are the default event category for trails, but the EventBridge CloudTrail path still depends on an **active trail with logging enabled**. **Write / mutating** management events (for example `StopInstances`, `CreateBucket`) match an EventBridge rule in the ordinary `ENABLED` state — no special configuration beyond the trail. **Read-only** management events (`Describe*` / `Get*` / `List*`, a far higher volume) match *only* when the rule state is set to `ENABLED_WITH_ALL_CLOUDTRAIL_MANAGEMENT_EVENTS`.
+- **Data events** (high-volume, object-level — S3 `GetObject` / `PutObject`, Lambda `Invoke`) are **not** logged by default, so you must configure a trail with event selectors for the relevant data resources before EventBridge rules can fire.
+- **Network activity events** are also opt-in CloudTrail events; treat them like data events for EventBridge purposes: no selector, no CloudTrail-sourced event.
 
 > [!warning] Gotcha — data events need a trail, and delivery is best-effort
 > Once you opt in (a trail is configured to log those data events **for the relevant resources — right region, right bucket/prefix selectors**), CloudTrail records them and delivers them to EventBridge as `AWS API Call via CloudTrail` events that a rule can match. Two caveats: delivery is **best-effort**, not guaranteed, and data-event logging is **scoped to the resources you select**, not a blanket account-wide switch.
 
-**One-line model:** an API call happens, CloudTrail records it (management by default; data events only if a trail selects them), it appears on the EventBridge bus tagged `AWS API Call via CloudTrail`, and a rule matches it. CloudTrail answers *what happened and who did it*; EventBridge answers *do something about it now*.
+**One-line model:** an API call happens, an enabled trail records it (management events by default for that trail; data/network activity events only when selected), it appears on the EventBridge bus tagged `AWS API Call via CloudTrail`, and a rule that is enabled for that event class matches it. CloudTrail answers *what happened and who did it*; EventBridge answers *do something about it now*.
+
+### How a rule matches CloudTrail events
+
+An EventBridge rule has two separate attributes. Both must be satisfied for the rule to fire, and they do different jobs.
+
+**1. Event pattern** — a JSON filter tested against the fields of each event. This performs the actual matching. In a CloudTrail-sourced event, the `source` field is the service that made the API call (for example `aws.ec2`), **not** `cloudtrail`; the `AWS API Call via CloudTrail` value in `detail-type` is what marks the CloudTrail path. A pattern matching the `StopInstances` API call:
+
+```json
+{
+  "source": ["aws.ec2"],
+  "detail-type": ["AWS API Call via CloudTrail"],
+  "detail": {
+    "eventSource": ["ec2.amazonaws.com"],
+    "eventName": ["StopInstances"]
+  }
+}
+```
+
+**2. State** — determines which events the rule is evaluated against; it does not perform matching:
+
+- `DISABLED` — the rule is never evaluated.
+- `ENABLED` — the rule is evaluated against every event **except** read-only management events delivered via CloudTrail.
+- `ENABLED_WITH_ALL_CLOUDTRAIL_MANAGEMENT_EVENTS` — the rule is evaluated against those read-only management events as well.
+
+Consequences of the two-attribute design:
+
+- A **write / mutating** management event is evaluated by an `ENABLED` rule, and fires if the event pattern matches it.
+- A **read-only** management event is excluded from an `ENABLED` rule's evaluation regardless of the event pattern; it reaches the rule only when the state is `ENABLED_WITH_ALL_CLOUDTRAIL_MANAGEMENT_EVENTS`. AWS excludes these by default because they occur at far higher volume (for example `DescribeKey`, `GetKeyPolicy`, `GetRole`).
+- An event pattern is always required; no rule matches every event implicitly. A pattern can, however, be broad — `{"detail-type": ["AWS API Call via CloudTrail"]}` matches every CloudTrail API-call event across all services.
 
 ## Scheduling: rules vs EventBridge Scheduler
 
@@ -125,8 +157,8 @@ Different services, different triggers. (For the reverse relationship — reacti
 
 > [!tip] Exam Tip — trigger keywords
 >
-> - **Third-party / SaaS / custom-application events** points to **EventBridge**, never CloudWatch Events. Ingesting non-AWS events (Zendesk, Shopify, a custom app) is the flagship capability that distinguishes EventBridge.
-> - **Multiple / custom event buses** points to **EventBridge**. CloudWatch Events has exactly one implicit bus.
+> - **Third-party / SaaS partner events** points to **EventBridge**, never CloudWatch Events. Ingesting partner-source events (Zendesk, Shopify, and similar) is a flagship capability that distinguishes EventBridge.
+> - **Multiple / custom event buses** points to **EventBridge**. CloudWatch Events has exactly one default bus; custom application events can use that default bus, but custom buses are EventBridge-only.
 > - **"If X happens then do Z"** (react to a resource state change, e.g. "run a Lambda when an EC2 instance enters `stopped`") points to an **EventBridge event pattern rule**.
 > - **"Run something on a schedule / cron"** (nightly Lambda, scheduled snapshots, cron-style automation) points to an **EventBridge schedule rule** or **EventBridge Scheduler**.
 > - **Events are JSON** and the **payload is delivered to the target** — targets can act on the event's contents.
@@ -142,7 +174,7 @@ Different services, different triggers. (For the reverse relationship — reacti
 | Event buses | **One**, implicit, not in UI | **Default + custom** buses |
 | AWS service events | Yes | Yes |
 | Third-party / SaaS events | No | Yes |
-| Custom application events | No | Yes |
+| Custom application events | Yes, on the default bus | Yes, including custom buses |
 | Rule types | Event pattern, Schedule | Event pattern, Schedule |
 | Schedule expression forms | cron / rate | cron / rate (or **EventBridge Scheduler**) |
 | Event format | JSON | JSON |
