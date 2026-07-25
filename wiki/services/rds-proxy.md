@@ -10,7 +10,7 @@ updated: 2026-07-16
 
 **RDS Proxy** is a **fully managed database proxy** that sits between your clients and your [RDS](rds.md) or [Aurora](aurora.md) database instances. Instead of every client opening its own connection straight to the database, clients connect to the proxy, and the proxy maintains a **long-lived pool of connections** to the database that it reuses and multiplexes across many client connections.
 
-It matters for the exam in its own right and because it underpins many other RDS architectures — especially serverless ones built on Lambda.
+It matters for the exam in its own right and because it underpins many other RDS architectures — especially serverless ones built on [Lambda](lambda.md).
 
 ## Why It Exists — Three Problems
 

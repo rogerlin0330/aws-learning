@@ -99,7 +99,7 @@ Full table and exam tip in [IAM — Policy JSON Case Sensitivity](../services/ia
 
 - **[S3 bucket policies](../services/s3.md#bucket-policies)** are the canonical resource policy: every example above maps directly to S3.
 - **[IAM role trust policies](../services/iam.md#trust-policy-vs-permissions-policy)** are a resource policy in disguise — they live on the role (the resource) and name who is allowed to assume it (the principal).
-- **[KMS key policies](../services/kms.md#key-policies)**, **SNS / SQS access policies**, **Lambda function policies** (for invoke permissions), and **ECR repository policies** all follow the same pattern. KMS adds a twist: the key policy is **mandatory** and must explicitly trust the account before IAM policies in that account can grant any access — there is no "IAM-only" path to a KMS key.
+- **[KMS key policies](../services/kms.md#key-policies)**, **SNS / SQS access policies**, **[Lambda function policies](../services/lambda.md#security)** (for invoke permissions), and **ECR repository policies** all follow the same pattern. KMS adds a twist: the key policy is **mandatory** and must explicitly trust the account before IAM policies in that account can grant any access — there is no "IAM-only" path to a KMS key.
 
 > [!tip] Exam Tip
 > Spot the question type by what's being controlled. *"What can this user do?"* → identity policy. *"Who can access this bucket / key / queue?"* → resource policy. *"How do we grant anonymous read access?"* → must be a resource policy. *"How do we let another AWS account in?"* → resource policy on this side + identity policy on their side.

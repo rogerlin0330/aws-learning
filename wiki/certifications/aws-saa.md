@@ -1837,6 +1837,32 @@ See [EC2 Auto Scaling](../services/ec2-auto-scaling.md) for the full treatment.
 > - AZ balance is **best-effort**, not guaranteed.
 > - Lifecycle hooks are not user data: user data runs at boot with no coordination; a hook **holds the ASG state machine** until signalled.
 
+## AWS Lambda
+
+See [Lambda](../services/lambda.md) for full details.
+
+- **Trigger keywords** for a Lambda answer: *serverless*, *event-driven*, *FaaS*, *only pay for what you use*, *short-running focused compute*
+- **"Docker"** in a question means **NOT Lambda** — traditional containers point to [ECS](../services/ecs.md); Lambda *container images* (built with Docker but run inside Lambda) are a separate thing
+- **>15 minutes** of work is not a single Lambda invocation (hard **900 s** timeout) — orchestrate with **Step Functions**
+- **1769 MB = 1 vCPU** (vCPU is allocated indirectly via memory, 128–10240 MB); `/tmp` is 512 MB default up to 10240 MB, ephemeral
+- **VPC Lambda = normal VPC resource** — needs a [gateway endpoint / NAT + IGW](../services/vpc.md#nat--nat-gateway) for outside access, and the **execution role needs EC2 network permissions** so Lambda can create ENIs
+- **No CloudWatch Logs output** means a **missing execution-role permission** (`AWSLambdaBasicExecutionRole`)
+- **Two-part security model** ([resource vs identity policy](../concepts/resource-vs-identity-policies.md)): **resource policy** = who can invoke (like an S3 bucket policy); **execution role** = what the function can do (like an [EC2 instance role](../services/ec2.md#instance-roles--instance-profiles))
+- **Three invocation types:** **sync** (client handles retries) · **async** (Lambda retries 0–2 times, **requires idempotency**, DLQ + destinations) · **event source mapping** (polls Kinesis / DynamoDB Streams / SQS / MSK)
+- **ESM permissions trap:** the execution role needs **source-service permissions** even though the code never directly reads the source — the ESM reads on the function's behalf
+- **Versions immutable** (own ARN); `$LATEST` and **aliases mutable**
+- **Cold start** (~100 ms, full context build) vs **warm start** (~1–2 ms, reused context); pin capacity with **provisioned concurrency**; declare reusable objects (DB connections) **outside the handler**
+
+| If the question says... | Think... |
+| --- | --- |
+| serverless / event-driven / short-running compute | **Lambda** |
+| "Docker" (bare term) | **NOT Lambda** (ECS) |
+| work exceeds 15 minutes | **Step Functions** (not one Lambda) |
+| async invoke + retries re-run | **idempotent function** |
+| Lambda reads from Kinesis/SQS/DynamoDB Streams but code doesn't call them | **execution role still needs source permissions (ESM)** |
+| Lambda can't reach Aurora/RDS/EFS | **put Lambda in the VPC** (+ EC2 network permissions on the role) |
+| too many DB connections from Lambda | **[RDS Proxy](../services/rds-proxy.md)** |
+
 ## DNS and Route 53
 
 See [Route 53](../services/route53.md) and [DNS Concepts](../concepts/dns.md) for full details.
