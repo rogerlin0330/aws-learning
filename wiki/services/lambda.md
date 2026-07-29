@@ -55,7 +55,7 @@ A **Lambda function** is a piece of code that Lambda runs using a supported **ru
 
 ### Common use cases
 
-- **Serverless applications:** [S3](s3.md) plus API Gateway plus Lambda.
+- **Serverless applications:** [S3](s3.md) plus API Gateway plus Lambda — see the [Serverless Architecture](../patterns/serverless-architecture.md) pattern for a full worked example (the PetTube transcoding flow, with Lambda at steps 5 and 9).
 - **File processing:** an [S3](s3.md#event-notifications) upload fires an S3 event that invokes Lambda (classic example: watermarking images).
 - **Database triggers:** DynamoDB plus DynamoDB Streams plus Lambda (fires on insert/modify/delete).
 - **Serverless cron:** EventBridge / CloudWatch Events invokes Lambda on a schedule.

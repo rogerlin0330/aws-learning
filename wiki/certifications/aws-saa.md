@@ -33,6 +33,19 @@ See [Architecture Evolution](../patterns/architecture-evolution.md) for the full
 - **Do not assume queues are FIFO.** SQS **Standard** = best-effort ordering + at-least-once (default) → make consumers **idempotent**; **SQS FIFO** = strict ordering + exactly-once (name ends `.fifo`), the explicit choice when "ordering matters / no duplicates"
 - **Event-driven** = producers emit on occurrence, a highly available **event router** (maps to **EventBridge**) delivers events to consumers via an **event bus**; nothing polls, resources are consumed **only while handling events** → strongly tied to **serverless** and cost efficiency for spiky/idle-heavy workloads
 
+## Serverless Architecture
+
+See [Serverless Architecture](../patterns/serverless-architecture.md) for the full PetTube worked example (S3 static site + Cognito + Lambda + MediaConvert + DynamoDB).
+
+- **"Serverless" is not "no servers."** Servers exist; you just don't manage them. A question framing serverless as *literally* serverless is testing this.
+- **Third-party token, then AWS access, means Cognito.** When users log in via Google/Facebook and then need AWS access, **Cognito** brokers the exchange and returns **temporary** credentials (the token-to-temp-credentials step is an **Identity Pool**, distinct from a User Pool's sign-in store). AWS **cannot** consume a Google/Facebook token directly. Don't pick IAM users.
+- **5,000 IAM users per account** is the trigger figure that pushes consumer-facing apps toward **federated/third-party identity**. Large or unknown user counts mean **not** IAM users.
+- **S3 static website + client-side JavaScript** is a fully serverless front end with **no compute**. "Download HTML/JS from S3, JS runs in the browser" is the front-end pattern.
+- **S3 event, then Lambda** is the canonical event-driven trigger. "Object uploaded, then process it" points to an [S3 event notification](../services/s3.md#event-notifications) invoking Lambda (an **async** invocation).
+- **Idle serverless is approximately zero cost** (consumption-based billing). Any answer implying persistent/always-on compute cost for a serverless design is wrong.
+- **The managed transcoding role is MediaConvert.** **Amazon Elastic Transcoder was discontinued Nov 13, 2025**, so don't pick it as a *current* service, but recognise it if the exam still names it; learn the *role* (master file in, multiple renditions out), not the brand.
+- In real designs **API Gateway** sits between the client JS and Lambda (the web-tier front door); the diagram omits it for simplicity.
+
 ## IAM
 
 See [IAM](../services/iam.md) and [Identity and Access Concepts](../concepts/identity-and-access.md) for full details.

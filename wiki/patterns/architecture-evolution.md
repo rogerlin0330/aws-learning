@@ -128,7 +128,7 @@ The billing contrast is the heart of the lesson:
 - An **[EC2](../services/ec2.md) instance** running WordPress is a **consistent allocation of resources**. Whether load is low or high, you are billed for the instance — you are always consuming resources.
 - A **mature event-driven architecture** springs into action *only* when events arrive: it allocates resources, scales components up, handles the events, then **returns to low-or-no resource usage** as its default state.
 
-So an event-driven system **only consumes resources while handling events**. When nothing is happening, nothing is running and nothing is polling. This "consume only while working" property is a **key building block of serverless architecture** — and the compute primitive that embodies it is [AWS Lambda](../services/lambda.md), which runs your function only when invoked and bills only for its execution duration.
+So an event-driven system **only consumes resources while handling events**. When nothing is happening, nothing is running and nothing is polling. This "consume only while working" property is a **key building block of serverless architecture** — and the compute primitive that embodies it is [AWS Lambda](../services/lambda.md), which runs your function only when invoked and bills only for its execution duration. For the concrete, service-by-service realisation of this end state, see the [Serverless Architecture](serverless-architecture.md) pattern.
 
 The amazon.com analogy: clicking "order" generates an event and triggers action, but amazon.com is **not** checking your browser every second to see if you clicked. Producers emit on *occurrence*; consumers act on *delivery*.
 
