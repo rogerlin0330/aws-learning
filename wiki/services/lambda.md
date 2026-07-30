@@ -46,7 +46,7 @@ A **Lambda function** is a piece of code that Lambda runs using a supported **ru
 ### Timeout
 
 - Maximum **900 seconds / 15 minutes** per invocation — the **function timeout**. One of the few figures worth memorizing for the exam.
-- For workloads exceeding 15 minutes, Lambda can't be used directly; use **Step Functions** to orchestrate longer workflows across multiple functions.
+- For workloads exceeding 15 minutes, Lambda can't be used directly; use **[Step Functions](step-functions.md)** to orchestrate longer workflows across multiple functions.
 
 ### Statelessness
 
@@ -209,7 +209,7 @@ Always assume a fresh, clean context — never *require* reuse — but you *can*
 | Memory | 128 MB – 10240 MB, 1 MB steps | Directly set |
 | vCPU | Indirect; **1769 MB = 1 vCPU** | Linear; ~6 vCPUs at 10240 MB |
 | `/tmp` storage | 512 MB default to 10240 MB | Ephemeral scratch only |
-| Timeout | **900 s / 15 min** max | Use Step Functions beyond this |
+| Timeout | **900 s / 15 min** max | Use [Step Functions](step-functions.md) beyond this |
 | Deployment package | 50 MB zipped / 250 MB unzipped | Container images up to 10 GB uncompressed |
 | Cold start | ~100 ms | Full context creation |
 | Warm start | ~1–2 ms | Context reused |
@@ -219,7 +219,7 @@ Always assume a fresh, clean context — never *require* reuse — but you *can*
 ## Exam Traps (consolidated)
 
 - **"Docker"** in a question means **NOT Lambda** (traditional containers point to [ECS](ecs.md)). Lambda *container images* are a separate thing.
-- **>15 minutes** of work means not a single Lambda invocation; use **Step Functions**.
+- **>15 minutes** of work means not a single Lambda invocation; use **[Step Functions](step-functions.md)**.
 - **VPC Lambda is a normal VPC resource** — needs endpoints/NAT/IGW for outside access, plus **EC2 network permissions** on the execution role.
 - **No CloudWatch Logs output** means suspect a **missing execution-role permission**.
 - **ESM permissions:** the execution role needs **source-service permissions** (e.g. Kinesis) even though the code doesn't directly read the source.

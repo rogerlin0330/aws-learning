@@ -1926,6 +1926,34 @@ See [SNS](../services/sns.md) for full details.
 | which endpoints can confirm delivery | **HTTP/S, Lambda, SQS** |
 | notify a human/topic when an alarm, stack, or scaling event fires | **publish to an SNS topic** |
 
+## Step Functions
+
+See [Step Functions](../services/step-functions.md) for full details.
+
+- **What it is:** serverless **orchestration**. A **state machine** is a workflow; a **state** is something that happens inside it. States take data in, modify it, and pass it out
+- **Why it exists:** it works around two [Lambda](../services/lambda.md) design decisions — the **15-minute (900 s) timeout** and **stateless execution environments**. Chaining Lambdas to get past 15 minutes is the wrong answer
+- **Two workflow types, fixed at creation:** **Standard** (default, **1 year** max, exactly-once, billed per state transition) vs **Express** (**5 minutes** max, at-least-once async, billed per execution plus duration and memory). The type **cannot be changed later** — you recreate the state machine
+- **State types (8 in current ASL):** Task, Choice, Parallel, Map, Pass, Wait, Succeed, Fail. **Task** is the only one that performs work; the rest are flow control. (The course lists seven, omitting **Pass**)
+- **Wait** pauses for a duration *or* until a date/time · **Choice** branches on input · **Parallel** runs concurrent branches · **Map** repeats actions once per item in a list · **Succeed**/**Fail** are terminal
+- **Step Functions coordinates, it does not compute.** A **Task** state integrates with Lambda, AWS Batch, DynamoDB, [ECS](../services/ecs.md), [SNS](../services/sns.md), SQS, Glue, SageMaker, EMR, and more — the *integrated service* does the work
+- **Definition language is Amazon States Language (ASL)** — **JSON**-based, not YAML
+- **Permissions:** the state machine **assumes an [IAM role](../services/iam.md#iam-roles)** at runtime for temporary credentials — same pattern as a Lambda execution role or an EC2 instance role
+- **Triggers:** API Gateway, IoT rules, [EventBridge](../services/eventbridge.md), Lambda, or manual start
+
+| If the question says... | Think... |
+| --- | --- |
+| work exceeds 15 minutes / must hold state across steps | **Step Functions**, not chained Lambdas |
+| long-running, durable, auditable, "up to one year" | **Standard** workflow |
+| high-volume, IoT, streaming, under 5 minutes | **Express** workflow |
+| "convert an existing Standard state machine to Express" | **Not possible** — recreate it (distractor) |
+| wait for a period of time or until a specific time | **Wait** state |
+| branch on the input | **Choice** state |
+| do the same thing for every item in a list | **Map** state |
+| run several things at once | **Parallel** state |
+| actually invoke Lambda / SNS / SQS / ECS from the workflow | **Task** state |
+| workflow definition format | **ASL, JSON-based** |
+| how the workflow gets permissions | **IAM role assumed at runtime** |
+
 ## DNS and Route 53
 
 See [Route 53](../services/route53.md) and [DNS Concepts](../concepts/dns.md) for full details.

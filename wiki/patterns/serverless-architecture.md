@@ -24,6 +24,8 @@ Core properties of these function environments:
 
 Because each environment is identical, easy to provision, and short-lived, functions can run anywhere and scale cheaply. Each invocation typically obtains the data it needs, does one thing, and then optionally stores the result persistently or hands its output to something else.
 
+Statelessness and the 15-minute ceiling are exactly what make a *single* function a bad home for a long, multi-step process. When a serverless workflow needs sequence, branching, waiting, or state carried across steps, the orchestration layer is **[Step Functions](../services/step-functions.md)** — a state machine that coordinates the short-lived functions rather than replacing them.
+
 ## Design Philosophy
 
 The **event-driven cost model** is the heart of the pattern: nothing runs until an event (system-generated or a customer interaction) occurs. Lambda is billed on **execution duration**, so an idle serverless application is **close to zero cost** until an event fires. Serverless architectures generally have **no persistent compute usage**.
@@ -118,6 +120,7 @@ Step by step:
 
 - [Architecture Evolution — Coupling, Queues & Event-Driven](architecture-evolution.md) — the abstract progression this pattern concretises
 - [AWS Lambda](../services/lambda.md) — the FaaS compute primitive
+- [Step Functions](../services/step-functions.md) — the state-machine orchestration layer for multi-step serverless workflows
 - [S3](../services/s3.md) — static hosting, object storage, and event notifications
 - [Global & Regional AWS Architecture](global-regional-architecture.md) — where API Gateway/Lambda sit in the tier model
 - [AWS IAM quotas](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_iam-quotas.html) — the 5,000-IAM-users limit

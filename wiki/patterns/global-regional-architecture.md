@@ -69,7 +69,7 @@ Sits **in front of** the database. Most applications don't hit the database dire
 
 ### Application Services Tier
 
-A suite of products that provide functionality *to* applications: **Kinesis**, **Step Functions**, **SQS**, **[SNS](../services/sns.md)**. These range from simple functions (email, notifications) to services that change an application's architecture — the classic example being **decoupling components with SQS queues**. See [Architecture Evolution](architecture-evolution.md) for how decoupling and event-driven design move a system from tight, synchronous, always-on coupling to loose, asynchronous, consume-only-when-working.
+A suite of products that provide functionality *to* applications: **Kinesis**, **[Step Functions](../services/step-functions.md)**, **SQS**, **[SNS](../services/sns.md)**. These range from simple functions (email, notifications) to services that change an application's architecture — the classic example being **decoupling components with SQS queues**. See [Architecture Evolution](architecture-evolution.md) for how decoupling and event-driven design move a system from tight, synchronous, always-on coupling to loose, asynchronous, consume-only-when-working.
 
 ## Exam Quick-Reference
 
