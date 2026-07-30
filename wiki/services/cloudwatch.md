@@ -55,7 +55,7 @@ Metric filters let you **generate numeric metrics from log content**:
 
 1. Define a filter pattern on a log group (e.g. match the string `"Failed password"` in sshd logs)
 2. Each match increments a custom CloudWatch Metric
-3. Set an **alarm** on that metric to notify (SNS) or trigger automated responses (Lambda, Auto Scaling, EC2 Actions)
+3. Set an **alarm** on that metric to notify ([SNS](sns.md)) or trigger automated responses (Lambda, Auto Scaling, EC2 Actions)
 
 This pipeline is how AWS converts unstructured logs into actionable telemetry without exporting data to a separate tool.
 

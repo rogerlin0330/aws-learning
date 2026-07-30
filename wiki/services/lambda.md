@@ -146,7 +146,7 @@ There are three ways to invoke a Lambda function: **synchronous**, **asynchronou
 - The source (e.g. S3) generates the event and **stops tracking** — it doesn't wait for a response.
 - **Lambda owns reprocessing** on failure: retries are **configurable between 0 and 2 times**.
 - **Dead-letter queue (DLQ):** events that still fail after retries can be routed to a DLQ for diagnostics.
-- **Destinations (newer feature):** processed events can be delivered to **SQS, SNS, another Lambda, or EventBridge**, with **separate destinations for success vs. failure**.
+- **Destinations (newer feature):** processed events can be delivered to **SQS, [SNS](sns.md), another Lambda, or EventBridge**, with **separate destinations for success vs. failure**.
 
 > [!tip] Exam Tip — async requires idempotency
 > Because Lambda re-runs the *same* event with no extra context, the function must be **idempotent** — reprocessing should yield the same end state. Analogy: *set* the balance to $20, don't *add* $10. A "set" is safe to re-run; an "add" is not. Design functions to make a desired state *true* rather than performing additive/subtractive operations.

@@ -421,7 +421,7 @@ A **calculated** health check is the building block for monitoring multi-compone
 
 ### Integration with SNS
 
-Health checks can publish state changes to an **SNS topic** — fan them out to email, SMS, Lambda, or downstream incident systems for alerting. This is independent of how DNS routing uses the same check.
+Health checks can publish state changes to an **[SNS](sns.md) topic** — fan them out to email, SMS, Lambda, or downstream incident systems for alerting. This is independent of how DNS routing uses the same check.
 
 ### Architectural role
 

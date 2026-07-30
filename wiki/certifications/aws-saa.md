@@ -1902,6 +1902,30 @@ See [EventBridge](../services/eventbridge.md) for full details.
 | react to S3 object-level / Lambda-invoke calls | **configure trail data-event selectors first**, then EventBridge |
 | metric crosses a threshold | **[CloudWatch Alarm](../services/cloudwatch.md#metric-filters-and-alarms)** (not EventBridge) |
 
+## SNS — Simple Notification Service
+
+See [SNS](../services/sns.md) for full details.
+
+- **Pub/sub, topic-centric:** publishers write into a **topic**, subscribers receive from it; the topic holds permissions and config. By **default every subscriber gets every message**
+- **Public regional service** — needs connectivity to public AWS endpoints + IAM permissions; it is **not** placed inside a VPC subnet
+- **Subscriber types:** HTTP/S, email, **SQS**, **[Lambda](../services/lambda.md)**, SMS, mobile push
+- **Filter** = a **per-subscription** filter policy letting a subscriber opt into a **subset** — not publisher-side routing
+- **Fanout** = one topic to **many SQS queues**; the answer whenever one event must reach several parallel/decoupled workloads
+- **256 KB** message ceiling — notifications, not bulk data; larger payloads (up to **2 GB**) go via the **S3-backed Extended Client Library**
+- **Cross-account** access to a topic = a **topic policy** (resource policy), same idea as an S3 bucket policy
+- **Delivery status** is confirmable for **HTTP/S, Lambda, SQS**; failed deliveries retry per a delivery policy and are **lost unless a DLQ** (an SQS queue) is attached
+- **Standard vs FIFO topic:** FIFO gives **strict ordering + dedup** but delivers to **SQS queues only** — strict ordering *plus* email/SMS/HTTP is a mismatch. FIFO throughput is **3,000 msg/s or 20 MB/s per topic**, **300 msg/s per message group**
+
+| If the question says... | Think... |
+| --- | --- |
+| deliver one message to multiple queues / decouple one event into parallel workers | **SNS fanout to SQS** |
+| let a subscriber receive only relevant messages | **subscription filter policy** |
+| send a message larger than 256 KB | **S3-backed Extended Client Library (2 GB)** |
+| grant another account access to a topic | **topic (resource) policy** |
+| strict ordering **and** email/SMS delivery | **mismatch** — FIFO topics are SQS-only |
+| which endpoints can confirm delivery | **HTTP/S, Lambda, SQS** |
+| notify a human/topic when an alarm, stack, or scaling event fires | **publish to an SNS topic** |
+
 ## DNS and Route 53
 
 See [Route 53](../services/route53.md) and [DNS Concepts](../concepts/dns.md) for full details.

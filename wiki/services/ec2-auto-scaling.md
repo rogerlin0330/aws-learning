@@ -242,7 +242,7 @@ These are not the same number. `HeartbeatTimeout` caps a _single_ window; the **
 
 | Target | Use |
 | --- | --- |
-| **SNS topic** | Transition notifications — the message carries instance info **and a token** used to control the lifecycle action |
+| **[SNS](sns.md) topic** | Transition notifications — the message carries instance info **and a token** used to control the lifecycle action |
 | **SQS queue** | Also a valid `NotificationTargetARN` — the target can be an SNS topic or an SQS queue ([LifecycleHook API reference](https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_LifecycleHook.html)); the course only names SNS |
 | **EventBridge** | Event-driven initiation of other processes (for example, invoke Lambda). Older material may say "CloudWatch Events" — same service, renamed |
 | **A script on the instance itself** | The instance can call `CompleteLifecycleAction` for itself using its own instance ID |
