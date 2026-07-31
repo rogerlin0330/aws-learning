@@ -37,7 +37,7 @@ This is the **Pet Cuddle-O-Tron** demo scenario: Whiskers the cat reminds his hu
 Step by step:
 
 1. **Download the website** — Bob's laptop downloads the client-side website (HTML plus JavaScript) from an [S3 static-website bucket](s3.md).
-2. **Click a button** — Bob interacts with the page; the JavaScript calls a managed API hosted by **API Gateway**.
+2. **Click a button** — Bob interacts with the page; the JavaScript calls a managed API hosted by **[API Gateway](api-gateway.md)**.
 3. **Invoke API_Lambda** — the button triggers the backing **API_Lambda** function.
 4. **Start the execution** — **API_Lambda** starts the **state machine execution**, passing through all the input Bob entered (seconds until the cuddle, message, email address or phone number).
 5. **Timer** — a **Wait** state inside the state machine waits for the configured period of time.
@@ -77,7 +77,7 @@ You must pick **Standard** or **Express** when you create the state machine. The
 
 ### Starting a state machine
 
-State machines can be started many ways — **API Gateway**, **IoT rules**, **[EventBridge](eventbridge.md)** (for event-driven architectures), **[Lambda](lambda.md)**, or **manually**. Step Functions is generally used for back-end processing, so something inside your application initiates the execution. Using EventBridge as the trigger widens this to the broad set of AWS services that emit events onto an event bus, which is why EventBridge lists Step Functions as one of its standard [rule targets](eventbridge.md).
+State machines can be started many ways — **[API Gateway](api-gateway.md)**, **IoT rules**, **[EventBridge](eventbridge.md)** (for event-driven architectures), **[Lambda](lambda.md)**, or **manually**. Step Functions is generally used for back-end processing, so something inside your application initiates the execution. Using EventBridge as the trigger widens this to the broad set of AWS services that emit events onto an event bus, which is why EventBridge lists Step Functions as one of its standard [rule targets](eventbridge.md).
 
 ### Amazon States Language (ASL)
 
@@ -139,6 +139,7 @@ States fall into two groups: **flow-control states** and the **work-performing T
 - [Lambda](lambda.md) — the 15-minute timeout and statelessness that Step Functions works around
 - [Serverless Architecture](../patterns/serverless-architecture.md), [Architecture Evolution](../patterns/architecture-evolution.md) — where orchestration sits in the pattern
 - [EventBridge](eventbridge.md), [SNS](sns.md) — the sibling application-integration services
+- [API Gateway](api-gateway.md) — a common trigger, and a direct service integration that can start an execution with no backing compute
 - [AWS — Choosing workflow type](https://docs.aws.amazon.com/step-functions/latest/dg/choosing-workflow-type.html)
 - [AWS — State machine structure](https://docs.aws.amazon.com/step-functions/latest/dg/statemachine-structure.html)
 - Adrian Cantrill, AWS SAA course — Step Functions

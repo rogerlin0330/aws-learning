@@ -200,7 +200,7 @@ The CNAME restriction at the zone apex (naked domain) is a DNS standard limitati
 | ELB | A Alias |
 | CloudFront distribution | A Alias |
 | S3 static website endpoint | A Alias |
-| API Gateway | A Alias |
+| [API Gateway](api-gateway.md) | A Alias |
 | Global Accelerator | A Alias |
 | Elastic Beanstalk | A Alias |
 | Another Route 53 record | Match the target record type |

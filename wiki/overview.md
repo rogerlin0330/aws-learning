@@ -1,8 +1,8 @@
 ---
 title: AWS Learning — Overview
 type: overview
-tags: [aws, architecture, iam, vpc, organizations, control-tower, cost, s3, ec2, ecs, eks, kubernetes, containers, cloudwatch, cloudtrail, cloudformation, bootstrapping, serverless, lambda, step-functions, orchestration, dns, dnssec, rds, rds-custom, aurora, dms, database, database-migration, multi-az, high-availability, acid, base, cap-theorem, global, regional, tiers, cloudfront, elb, asg, auto-scaling]
-updated: 2026-07-29
+tags: [aws, architecture, iam, vpc, organizations, control-tower, cost, s3, ec2, ecs, eks, kubernetes, containers, cloudwatch, cloudtrail, cloudformation, bootstrapping, serverless, lambda, step-functions, api-gateway, orchestration, dns, dnssec, rds, rds-custom, aurora, dms, database, database-migration, multi-az, high-availability, acid, base, cap-theorem, global, regional, tiers, cloudfront, elb, asg, auto-scaling]
+updated: 2026-07-30
 ---
 
 # AWS Learning Overview
@@ -102,6 +102,7 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 - [EventBridge](services/eventbridge.md) — serverless event bus (formerly CloudWatch Events); "if X happens, or at time Y, then do Z" — producers emit events, rules match on content or schedule, targets (Lambda and others) receive the JSON; the AWS implementation of the [event-driven](patterns/architecture-evolution.md#stage-6--event-driven) router/bus pattern, distinct from CloudWatch Alarms (metric thresholds)
 - [SNS](services/sns.md) — Simple Notification Service; fully managed pub/sub messaging (topic = base entity); publishers (CloudWatch, CloudFormation, ASG, S3, custom apps) write into a topic and subscribers (HTTP/S, email, SQS, Lambda, SMS, mobile push) receive; subscription **filter policies** (opt into a subset), **fanout** (one topic to many SQS queues), 256 KB messages (2 GB via S3-backed Extended Client), retries + optional DLQ, cross-account via topic policy, and Standard vs FIFO (FIFO = strict ordering, SQS-only subscribers); a core [decoupling / event-driven](patterns/architecture-evolution.md) primitive alongside SQS and [EventBridge](services/eventbridge.md)
 - [Step Functions](services/step-functions.md) — serverless **orchestration**; state machines coordinate short-lived [Lambda](services/lambda.md) functions into long-running, stateful, branching workflows, working around Lambda's 15-minute timeout and stateless environments; Standard (1 year) vs Express (5 minutes) chosen at creation and unchangeable, eight ASL state types with **Task** the only one that performs work, definitions in JSON-based **ASL**, permissions via an assumed IAM role; the orchestration layer of a [serverless architecture](patterns/serverless-architecture.md)
+- [API Gateway](services/api-gateway.md) — managed APIs; an **intermediary between clients and integrations** with a request phase (authorize, validate, transform), the integration itself, and a response phase (transform, prepare, return); HTTP/REST/WebSocket types, three endpoint types (edge-optimized, regional, private), Cognito / Lambda-authorizer / IAM authentication, per-stage settings including **caching** and **canary deployments**, and direct AWS service integrations that need **no compute**; the front door of a [serverless architecture](patterns/serverless-architecture.md) and the regional entry point alongside [ELB](services/elb.md)
 - [KMS](services/kms.md) — key management; envelope encryption, key policies + IAM + grants
 
 ### Concepts

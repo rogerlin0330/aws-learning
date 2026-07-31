@@ -3,7 +3,7 @@ title: AWS Solutions Architect Associate — Exam Notes
 type: certification
 tags: [iam, vpc, networking, ec2, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, ephemeral, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns, route53, organizations, cost, purchase-options, on-demand, spot, reserved-instances, scheduled-reserved, capacity-reservations, zonal-ri, regional-ri, savings-plans, byol, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, raid0, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, ebs-encryption, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr, scaling, horizontal-scaling, vertical-scaling, stateless, sticky-sessions, elasticity, load-balancer, containers, docker, container-image, container-registry, ecs, eks, kubernetes, k8s, control-plane, etcd, kubelet, pod, ingress, persistent-volume, node-group, fargate-profile, ecr, fargate, task-definition, task-role, cloudtrail, audit, governance, management-events, data-events, insight-events, global-service-events, organizational-trail, log-file-integrity, event-history, eventbridge, control-tower, landing-zone, guardrails, account-factory, iam-identity-center, bootstrapping, cloud-init, boot-time-to-service-time, cloudformation, cfn-init, configsets, cfn-hup, cfn-signal, creation-policy, desired-state, infrastructure-as-code, cloudwatch-agent, cwagent, parameter-store, log-group, log-stream, placement-groups, cluster-placement-group, spread-placement-group, partition-placement-group, hpc, enhanced-networking, topology-aware, walking-the-tree, resolver, hosts-file, root-servers, nslookup, dig, dnssec, rrset, rrsig, dnskey, zsk, ksk, ds-record, trust-anchor, root-signing-ceremony, chain-of-trust, nsec3, cache-poisoning, rds, rds-custom, session-manager, database, relational, subnet-group, multi-az, multi-az-instance, multi-az-cluster, read-replica, synchronous-replication, semi-synchronous-replication, asynchronous-replication, quorum, failover, reader-endpoint, cluster-endpoint, graviton, nvme, aurora, dms, database-migration, cdc, full-load, replication-instance, replication-task, dms-serverless, dcu, schema-conversion, dms-schema-conversion, sct, homogeneous-migration, heterogeneous-migration, acid, base, cap-theorem, consistency, availability, eventual-consistency, dynamodb, nosql, backup, snapshot, automated-backup, manual-snapshot, transaction-logs, pitr, point-in-time-recovery, restore, rpo, rto, cross-region-backup, rds-security, encryption-in-transit, encryption-at-rest, ssl, tls, kms-key, cmk, dek, envelope-encryption, aes-256, tde, transparent-data-encryption, cloudhsm, iam-authentication, generate-db-auth-token, authentication, authorization, cluster-volume, shared-storage, backtrack, fast-clone, aurora-serverless, acu, scale-to-zero, data-api, global-database, multi-master, switchover, database-savings-plans, architecture-fundamentals, global-components, regional-tiers, cloudfront, cdn, web-tier, compute-tier, caching-tier, elasticache, dax, app-services, decoupling, sqs-decoupling, elb, alb, nlb, clb, cross-zone-load-balancing, listeners, internet-facing, internal-load-balancer, sni, listener-rules, end-to-end-encryption, tls-termination, tcp-pass-through, privatelink, oidc, cognito, gwlb, launch-template, launch-configuration, auto-scaling, mixed-instances-policy, ssl-bridging, ssl-offload, session-stickiness, awsalb-cookie]
 certs: [aws-saa]
-updated: 2026-07-21
+updated: 2026-07-30
 ---
 
 # AWS Solutions Architect Associate (SAA-C03)
@@ -16,7 +16,7 @@ See [Global & Regional AWS Architecture](../patterns/global-regional-architectur
 
 - Three architecture types: **single-region** · **single-region + DR failover** · **multi-region** (keeps working through the failure of one or more regions)
 - Global components get the customer to a healthy region; three jobs with fixed service answers: **service discovery** = DNS = [Route 53](../services/route53.md); **content delivery** = CDN = CloudFront (origin can be [S3](../services/s3.md)); **health checks / failover** = [Route 53 health checks](../services/route53.md#health-checks)
-- Regional applications are built from **tiers**: web ([ALB / API Gateway](../patterns/scaling.md) — the regional entry point that abstracts customers from the infrastructure behind it), compute ([EC2](../services/ec2.md) / Lambda / [ECS](../services/ecs.md)), caching (ElastiCache / DAX), database ([RDS](../services/rds.md) / [Aurora](../services/aurora.md) / DynamoDB / Redshift), storage ([EBS](../services/ebs.md) / [EFS](../services/efs.md) / [S3](../services/s3.md)), app services (Kinesis / Step Functions / SQS / SNS)
+- Regional applications are built from **tiers**: web ([ALB](../services/elb.md) / [API Gateway](../services/api-gateway.md) — the regional entry point that abstracts customers from the infrastructure behind it), compute ([EC2](../services/ec2.md) / Lambda / [ECS](../services/ecs.md)), caching (ElastiCache / DAX), database ([RDS](../services/rds.md) / [Aurora](../services/aurora.md) / DynamoDB / Redshift), storage ([EBS](../services/ebs.md) / [EFS](../services/efs.md) / [S3](../services/s3.md)), app services (Kinesis / Step Functions / SQS / SNS)
 - The caching tier sits **in front of** the database: consult the cache first, hit the DB only on a miss, then update the cache — "minimize reads to the database" is the trigger phrase for a caching-tier answer
 - "Decouple components" is the trigger phrase for the app-services tier (SQS queues)
 - Core takeaway: most AWS services are **regional**; very few are truly global — classify a service by **tier** and by **global vs regional** before anything else
@@ -44,7 +44,7 @@ See [Serverless Architecture](../patterns/serverless-architecture.md) for the fu
 - **S3 event, then Lambda** is the canonical event-driven trigger. "Object uploaded, then process it" points to an [S3 event notification](../services/s3.md#event-notifications) invoking Lambda (an **async** invocation).
 - **Idle serverless is approximately zero cost** (consumption-based billing). Any answer implying persistent/always-on compute cost for a serverless design is wrong.
 - **The managed transcoding role is MediaConvert.** **Amazon Elastic Transcoder was discontinued Nov 13, 2025**, so don't pick it as a *current* service, but recognise it if the exam still names it; learn the *role* (master file in, multiple renditions out), not the brand.
-- In real designs **API Gateway** sits between the client JS and Lambda (the web-tier front door); the diagram omits it for simplicity.
+- In real designs **[API Gateway](../services/api-gateway.md)** sits between the client JS and Lambda (the web-tier front door); the diagram omits it for simplicity.
 
 ## IAM
 
@@ -1938,7 +1938,7 @@ See [Step Functions](../services/step-functions.md) for full details.
 - **Step Functions coordinates, it does not compute.** A **Task** state integrates with Lambda, AWS Batch, DynamoDB, [ECS](../services/ecs.md), [SNS](../services/sns.md), SQS, Glue, SageMaker, EMR, and more — the *integrated service* does the work
 - **Definition language is Amazon States Language (ASL)** — **JSON**-based, not YAML
 - **Permissions:** the state machine **assumes an [IAM role](../services/iam.md#iam-roles)** at runtime for temporary credentials — same pattern as a Lambda execution role or an EC2 instance role
-- **Triggers:** API Gateway, IoT rules, [EventBridge](../services/eventbridge.md), Lambda, or manual start
+- **Triggers:** [API Gateway](../services/api-gateway.md), IoT rules, [EventBridge](../services/eventbridge.md), Lambda, or manual start
 
 | If the question says... | Think... |
 | --- | --- |
@@ -1953,6 +1953,43 @@ See [Step Functions](../services/step-functions.md) for full details.
 | actually invoke Lambda / SNS / SQS / ECS from the workflow | **Task** state |
 | workflow definition format | **ASL, JSON-based** |
 | how the workflow gets permissions | **IAM role assumed at runtime** |
+
+## API Gateway
+
+See [API Gateway](../services/api-gateway.md) for full details.
+
+- **What it is:** a managed **intermediary between clients and integrations** — create, publish, and manage APIs. Highly available and scalable, and a **public service**, so it can front backends in AWS *or* on-premises
+- **Three phases:** **Request** (authorize, validate, transform), **Integration** (the backend works), **Response** (transform, prepare, return)
+- **API types:** HTTP, REST, WebSocket. Several features below are **REST-only** — caching and canary deployments in particular
+- **Direct AWS service integration:** it can write to DynamoDB, start a [Step Functions](../services/step-functions.md) execution, or publish to [SNS](../services/sns.md) **with no backing compute**. "No Lambda needed" is the signal
+- **Migration façade:** a consistent front end while the backend moves on-premises into AWS, or monolith into serverless
+- **Auth:** open (no auth) · **Cognito user pools** (native token validation) · **Lambda authorizer** (returns an **IAM policy plus a principal identifier**; API Gateway then evaluates it and either invokes the integration or returns 403) · **[IAM](../services/iam.md)** (credentials in headers). The **authorizer Lambda and the integration Lambda are two different functions**
+- **Endpoint types:** **Edge-optimized** (nearest CloudFront point of presence) · **Regional** (no CloudFront, same-region clients) · **Private** (interface VPC endpoint only)
+- **Stages:** most configuration is **per stage**. Each stage has its own endpoint URL and settings. A **deployment** is an immutable snapshot with an ID; a **stage** is a named pointer to one deployment. Stage names are arbitrary labels — nothing makes `prod` special
+- **Canary:** enable it on a stage, and every new deployment lands on the **canary, not the base**. Configurable percentage split, adjustable at any time, **promote** to make it the new base or remove it to revert. REST APIs only
+- **Caching:** **per stage**, default TTL **300 s**, range **0 to 3,600 s**, size **0.5 GB to 237 GB**, **can be encrypted**. Backends are called only on a **cache miss**. `GET` only by default; max cacheable response 1 MB; REST APIs only
+- **Throttling:** account default **10,000 RPS per region** with a **5,000 burst**; per-stage/per-method throttles and **usage plans plus API keys** for per-consumer limits. Exceeding one gives a **429**
+- **Integration timeout:** **29 seconds** by default, producing a **504**. Since June 2024 it can be raised beyond 29 s for **Regional and private REST APIs** via Service Quotas, possibly at the cost of a lower throttle quota — but 29 s is still the exam answer
+- **Monitoring:** [CloudWatch](../services/cloudwatch.md) logs and metrics on both the client and integration sides
+
+| If the question says... | Think... |
+| --- | --- |
+| "cache per…" | **Per stage** (TTL 300 s default, max 3,600 s, 0.5 GB to 237 GB, encryptable) |
+| "validate a Cognito token" | **Cognito user pools** — native validation |
+| "custom / bearer token / external identity provider" | **Lambda authorizer** (returns an IAM policy plus a principal) |
+| "credentials in headers" | **IAM** authentication |
+| "nearest CloudFront point of presence" | **Edge-optimized** endpoint |
+| "only inside a VPC / interface endpoint" | **Private** endpoint |
+| "same region, low overhead" | **Regional** endpoint |
+| "gradually shift a percentage of traffic to a new version" | **Canary** deployment on a stage |
+| "redeploy while canary is enabled" | Lands on the **canary, not the base** |
+| **429** | **Throttling** |
+| **502** | Backend returned **bad or invalid output** |
+| **503** | Backend **offline** / service unavailable |
+| **504** | **Integration timeout** (29-second default) |
+| **403** | **Access denied** (authorizer or WAF) |
+| "write to DynamoDB / start a Step Functions execution / publish to SNS with no compute" | **Direct AWS service integration** |
+| "consistent front end during a migration" | API Gateway as a **migration façade** |
 
 ## DNS and Route 53
 

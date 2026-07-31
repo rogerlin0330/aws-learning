@@ -17,7 +17,7 @@ Two complementary ways to grant AWS permissions. Both are JSON policies and both
 | Has a `Principal` field? | **No** — the identity is implicit | **Yes** — must explicitly name the principal(s) |
 | Can grant **cross-account** access on its own? | No — the principal must also be allowed by the resource's policy | Yes — names external account IDs / ARNs / IAM users / roles |
 | Can grant **anonymous / public** access? | No — there is no authenticated identity to attach a policy to | Yes — `"Principal": "*"` |
-| Typical AWS services | IAM (works for every service) | S3, KMS, SNS, SQS, Lambda, ECR, Secrets Manager, API Gateway, … |
+| Typical AWS services | IAM (works for every service) | S3, KMS, SNS, SQS, Lambda, ECR, Secrets Manager, [API Gateway](../services/api-gateway.md), … |
 
 ## Why two mechanisms exist
 

@@ -46,7 +46,7 @@ How to read the diagram: the dotted box labelled "AWS Region" encloses the regio
 
 ### Web Tier
 
-The **regional entry point** — typically a regional AWS service such as an **[Application Load Balancer](../services/elb.md)** or **API Gateway**. Its job is to **abstract customers away from the underlying infrastructure**, so that the infrastructure behind it can scale, fail, or change without impacting customers. This abstraction is what makes [horizontal scaling](scaling.md) possible.
+The **regional entry point** — typically a regional AWS service such as an **[Application Load Balancer](../services/elb.md)** or **[API Gateway](../services/api-gateway.md)**. Its job is to **abstract customers away from the underlying infrastructure**, so that the infrastructure behind it can scale, fail, or change without impacting customers. This abstraction is what makes [horizontal scaling](scaling.md) possible.
 
 ### Compute Tier
 
@@ -79,7 +79,7 @@ A suite of products that provide functionality *to* applications: **Kinesis**, *
 | Global job 1: service discovery | DNS, via [Route 53](../services/route53.md) — resolve the name and direct to a healthy region |
 | Global job 2: content delivery | CDN, via CloudFront — cache near users; origin can be [S3](../services/s3.md) |
 | Global job 3: health check / failover | [Route 53 health checks](../services/route53.md#health-checks) move sessions to a healthy region |
-| Regional entry point | Web tier — ALB / API Gateway (abstracts customers from infrastructure) |
+| Regional entry point | Web tier — [ALB](../services/elb.md) / [API Gateway](../services/api-gateway.md) (abstracts customers from infrastructure) |
 | Compute options | [EC2](../services/ec2.md), Lambda, containers ([ECS](../services/ecs.md)) |
 | Storage options | [EBS](../services/ebs.md), [EFS](../services/efs.md), [S3](../services/s3.md) |
 | Database options | [RDS](../services/rds.md), [Aurora](../services/aurora.md), DynamoDB, Redshift |

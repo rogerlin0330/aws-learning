@@ -55,7 +55,7 @@ A **Lambda function** is a piece of code that Lambda runs using a supported **ru
 
 ### Common use cases
 
-- **Serverless applications:** [S3](s3.md) plus API Gateway plus Lambda — see the [Serverless Architecture](../patterns/serverless-architecture.md) pattern for a full worked example (the PetTube transcoding flow, with Lambda at steps 5 and 9).
+- **Serverless applications:** [S3](s3.md) plus [API Gateway](api-gateway.md) plus Lambda — see the [Serverless Architecture](../patterns/serverless-architecture.md) pattern for a full worked example (the PetTube transcoding flow, with Lambda at steps 5 and 9).
 - **File processing:** an [S3](s3.md#event-notifications) upload fires an S3 event that invokes Lambda (classic example: watermarking images).
 - **Database triggers:** DynamoDB plus DynamoDB Streams plus Lambda (fires on insert/modify/delete).
 - **Serverless cron:** EventBridge / CloudWatch Events invokes Lambda on a schedule.
@@ -133,7 +133,7 @@ There are three ways to invoke a Lambda function: **synchronous**, **asynchronou
 
 ![Synchronous invocation: a CLI/API caller and clients-via-API-Gateway each send an invoke request to Lambda and wait for the response to flow back, blocking for the whole duration](../assets/lambda-invocation-synchronous.png)
 
-- Caller (CLI/API, or clients via **API Gateway**) invokes the function and **waits** for the result during the request.
+- Caller (CLI/API, or clients via **[API Gateway](api-gateway.md)**) invokes the function and **waits** for the result during the request.
 - The function runs once and returns **success or failure** synchronously.
 - **Errors and retries must be handled by the client** — Lambda does not retry.
 - Typically used when a **human**, directly or indirectly, invokes the function.

@@ -58,7 +58,7 @@ Step by step:
 **Net result:** a master upload is transcoded into multiple sizes and then retrieved, with **no EC2 instances and no self-managed database servers anywhere**. Compute is consumed only when events fire (system-side at step 5 or client-side at step 9).
 
 > [!note] API Gateway is omitted for simplicity
-> The lesson notes this is a **simplified** diagram. In reality, **API Gateway** would sit between the client-side JavaScript and the Lambda functions (steps 5 and 9), providing the managed HTTP front door to Lambda. API-Gateway-in-front-of-Lambda is an extremely common exam pattern, and it maps to the **web tier** of the [global/regional model](global-regional-architecture.md).
+> The lesson notes this is a **simplified** diagram. In reality, **[API Gateway](../services/api-gateway.md)** would sit between the client-side JavaScript and the Lambda functions (steps 5 and 9), providing the managed HTTP front door to Lambda. API-Gateway-in-front-of-Lambda is an extremely common exam pattern, and it maps to the **web tier** of the [global/regional model](global-regional-architecture.md).
 
 ## Mechanics
 
@@ -122,6 +122,7 @@ Step by step:
 - [AWS Lambda](../services/lambda.md) — the FaaS compute primitive
 - [Step Functions](../services/step-functions.md) — the state-machine orchestration layer for multi-step serverless workflows
 - [S3](../services/s3.md) — static hosting, object storage, and event notifications
+- [API Gateway](../services/api-gateway.md) — the managed front door between clients and Lambda, omitted from the diagram for simplicity
 - [Global & Regional AWS Architecture](global-regional-architecture.md) — where API Gateway/Lambda sit in the tier model
 - [AWS IAM quotas](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_iam-quotas.html) — the 5,000-IAM-users limit
 - [Migrating from Elastic Transcoder to MediaConvert](https://aws.amazon.com/blogs/media/migrating-workflows-from-amazon-elastic-transcoder-to-aws-elemental-mediaconvert/)

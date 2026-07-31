@@ -10,7 +10,7 @@ updated: 2026-06-04
 
 HTTPS = HTTP over TLS. TLS (Transport Layer Security) provides three guarantees: **confidentiality** (encrypted data), **integrity** (tamper detection), and **authentication** (server identity verified). It operates at Layer 6/7 and sits above the [Networking](networking.md) controls (SG, NACL) that operate at L3/4.
 
-AWS services that terminate TLS: ALB, CloudFront, API Gateway. Certificate provisioning is managed by **ACM (AWS Certificate Manager)** — see the AWS connection points section below.
+AWS services that terminate TLS: [ALB](../services/elb.md), CloudFront, [API Gateway](../services/api-gateway.md). Certificate provisioning is managed by **ACM (AWS Certificate Manager)** — see the AWS connection points section below.
 
 ## 1. Certificates and the Chain of Trust
 
@@ -133,7 +133,7 @@ With TLS 1.3, the server sends its `key_share` in ServerHello, and the client re
 | **ACM Private CA** | Issues private certificates for internal services (not publicly trusted) |
 | **ALB** | Terminates TLS; forwards plaintext to backends (or re-encrypts) |
 | **CloudFront** | Terminates TLS at edge; can use custom certificates from ACM or IAM |
-| **API Gateway** | Terminates TLS; custom domain names require ACM cert |
+| **[API Gateway](../services/api-gateway.md)** | Terminates TLS; custom domain names require ACM cert |
 | **Route 53** | DNS TXT record for ACM domain validation — see [DNS](dns.md) |
 
 > [!tip] Exam Tip
