@@ -134,7 +134,7 @@ The richer OS-level metrics — disk I/O read/write, per-core CPU including I/O 
 
 ## Resilience and Scope
 
-CloudWatch is a **regional service** — log groups and their data are region-scoped. Cross-region log aggregation requires explicit forwarding (e.g. Kinesis Data Firehose or Lambda subscription filters to a central region).
+CloudWatch is a **regional service** — log groups and their data are region-scoped. Cross-region log aggregation requires explicit forwarding (e.g. [Kinesis Data Firehose](kinesis.md#kinesis-data-firehose-now-amazon-data-firehose) or Lambda subscription filters to a central region).
 
 > [!tip] Exam Tip
 > **Log Group = unit of configuration.** Retention, permissions, and metric filters all attach to the log group and inherit down to every stream it contains. Stream-level configuration does not exist.

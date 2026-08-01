@@ -69,7 +69,7 @@ Sits **in front of** the database. Most applications don't hit the database dire
 
 ### Application Services Tier
 
-A suite of products that provide functionality *to* applications: **Kinesis**, **[Step Functions](../services/step-functions.md)**, **[SQS](../services/sqs.md)**, **[SNS](../services/sns.md)**. These range from simple functions (email, notifications) to services that change an application's architecture — the classic example being **decoupling components with [SQS queues](../services/sqs.md)**. See [Architecture Evolution](architecture-evolution.md) for how decoupling and event-driven design move a system from tight, synchronous, always-on coupling to loose, asynchronous, consume-only-when-working.
+A suite of products that provide functionality *to* applications: **[Kinesis](../services/kinesis.md)**, **[Step Functions](../services/step-functions.md)**, **[SQS](../services/sqs.md)**, **[SNS](../services/sns.md)**. These range from simple functions (email, notifications) to services that change an application's architecture — the classic example being **decoupling components with [SQS queues](../services/sqs.md)**. See [Architecture Evolution](architecture-evolution.md) for how decoupling and event-driven design move a system from tight, synchronous, always-on coupling to loose, asynchronous, consume-only-when-working.
 
 ## Exam Quick-Reference
 
@@ -84,7 +84,7 @@ A suite of products that provide functionality *to* applications: **Kinesis**, *
 | Storage options | [EBS](../services/ebs.md), [EFS](../services/efs.md), [S3](../services/s3.md) |
 | Database options | [RDS](../services/rds.md), [Aurora](../services/aurora.md), DynamoDB, Redshift |
 | Caching options | ElastiCache (general), DAX (DynamoDB) |
-| App services | Kinesis, Step Functions, SQS, SNS |
+| App services | [Kinesis](../services/kinesis.md), Step Functions, SQS, SNS |
 | Purpose of caching tier | Offload database **reads** — faster and cheaper |
 | Purpose of app-services tier | Add functionality / **decouple** components (e.g. SQS queues) |
 | Core takeaway | Think global components first, then regional components; most services are **regional**, few are global |

@@ -66,7 +66,7 @@ A subscriber is an endpoint that receives messages from the topic. By default a 
 - **[Lambda](lambda.md) functions** — the function is *invoked* per message
 
 > [!note] A2A vs A2P
-> AWS groups subscriber types into **A2A** (application-to-application: SQS, Lambda, HTTP/S, Kinesis Data Firehose) and **A2P** (application-to-person: SMS, mobile push, email). Source: [AWS SNS features](https://aws.amazon.com/sns/features).
+> AWS groups subscriber types into **A2A** (application-to-application: SQS, Lambda, HTTP/S, [Kinesis Data Firehose](kinesis.md#kinesis-data-firehose-now-amazon-data-firehose)) and **A2P** (application-to-person: SMS, mobile push, email). Source: [AWS SNS features](https://aws.amazon.com/sns/features).
 
 ### Filtering
 

@@ -281,6 +281,7 @@ Access to a queue is controlled by **identity policies** or a **queue policy**:
 >
 > | If the question mentions... | Think... |
 > | --- | --- |
+> | Ingestion at huge scale, many independent consumers, or **replay** of the same data | **Not SQS** — [Kinesis Data Streams](kinesis.md#kinesis-data-streams) (a processed SQS message is gone; Kinesis has a rolling window) |
 > | One upload or event driving multiple independent parallel pipelines | **SNS fanout to multiple SQS queues** |
 > | Message reappears and another worker picks it up after a failure | **Visibility timeout** (not deleted, so it comes back) |
 > | Order must be preserved, or no duplicates at ingest | **FIFO queue** plus `MessageDeduplicationId` |

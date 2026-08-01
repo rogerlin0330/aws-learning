@@ -59,7 +59,7 @@ A **Lambda function** is a piece of code that Lambda runs using a supported **ru
 - **File processing:** an [S3](s3.md#event-notifications) upload fires an S3 event that invokes Lambda (classic example: watermarking images).
 - **Database triggers:** DynamoDB plus DynamoDB Streams plus Lambda (fires on insert/modify/delete).
 - **Serverless cron:** EventBridge / CloudWatch Events invokes Lambda on a schedule.
-- **Real-time stream processing:** a Kinesis stream feeds Lambda, scaling with data volume.
+- **Real-time stream processing:** a [Kinesis](kinesis.md) stream feeds Lambda, scaling with data volume.
 
 ## Networking
 
@@ -155,13 +155,13 @@ There are three ways to invoke a Lambda function: **synchronous**, **asynchronou
 
 ![Event source mapping: telemetry producers push into a Kinesis Data Stream; the event source mapping polls the stream for source batches, splits them by batch size, and delivers event batches to the Lambda function, borrowing the function's execution-role permissions to read the source and sending failed batches to a DLQ](../assets/lambda-invocation-event-source-mapping.png)
 
-- Used for **streams/queues that don't natively generate events** and require **polling**: **Kinesis, DynamoDB Streams, [SQS](sqs.md)**, and **Amazon MSK** (Managed Streaming for Apache Kafka).
+- Used for **streams/queues that don't natively generate events** and require **polling**: **[Kinesis](kinesis.md), DynamoDB Streams, [SQS](sqs.md)**, and **Amazon MSK** (Managed Streaming for Apache Kafka).
 - A hidden **event source mapping** component polls the source, retrieves **source batches**, splits them by configured **batch size**, and delivers **event batches** to the function.
 - A single invocation may receive **hundreds of events** in a batch — tune batch size carefully so processing completes within the **15-minute timeout**.
 - Persistently failing batches can be sent to an **[SQS queue](sqs.md#dead-letter-queues-dlq) or SNS topic**.
 
 > [!tip] Exam Tip — the key ESM permissions fact
-> The source does **not** deliver the event; the ESM **reads** from the source using the **function's execution role permissions**. So even though the function code never directly calls Kinesis, **the execution role still needs Kinesis (source) permissions** because the ESM uses them on the function's behalf. Contrast with async: there the source *delivers* the event, so the function only needs source permissions if it wants to *read additional data* (e.g. fetching the actual S3 object).
+> The source does **not** deliver the event; the ESM **reads** from the source using the **function's execution role permissions**. So even though the function code never directly calls Kinesis, **the execution role still needs [Kinesis](kinesis.md) (source) permissions** because the ESM uses them on the function's behalf. Contrast with async: there the source *delivers* the event, so the function only needs source permissions if it wants to *read additional data* (e.g. fetching the actual S3 object).
 
 ## Versions & Aliases
 
