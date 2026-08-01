@@ -146,7 +146,7 @@ There are three ways to invoke a Lambda function: **synchronous**, **asynchronou
 - The source (e.g. S3) generates the event and **stops tracking** — it doesn't wait for a response.
 - **Lambda owns reprocessing** on failure: retries are **configurable between 0 and 2 times**.
 - **Dead-letter queue (DLQ):** events that still fail after retries can be routed to a DLQ for diagnostics.
-- **Destinations (newer feature):** processed events can be delivered to **SQS, [SNS](sns.md), another Lambda, or EventBridge**, with **separate destinations for success vs. failure**.
+- **Destinations (newer feature):** processed events can be delivered to **[SQS](sqs.md), [SNS](sns.md), another Lambda, or EventBridge**, with **separate destinations for success vs. failure**.
 
 > [!tip] Exam Tip — async requires idempotency
 > Because Lambda re-runs the *same* event with no extra context, the function must be **idempotent** — reprocessing should yield the same end state. Analogy: *set* the balance to $20, don't *add* $10. A "set" is safe to re-run; an "add" is not. Design functions to make a desired state *true* rather than performing additive/subtractive operations.
@@ -155,10 +155,10 @@ There are three ways to invoke a Lambda function: **synchronous**, **asynchronou
 
 ![Event source mapping: telemetry producers push into a Kinesis Data Stream; the event source mapping polls the stream for source batches, splits them by batch size, and delivers event batches to the Lambda function, borrowing the function's execution-role permissions to read the source and sending failed batches to a DLQ](../assets/lambda-invocation-event-source-mapping.png)
 
-- Used for **streams/queues that don't natively generate events** and require **polling**: **Kinesis, DynamoDB Streams, SQS**, and **Amazon MSK** (Managed Streaming for Apache Kafka).
+- Used for **streams/queues that don't natively generate events** and require **polling**: **Kinesis, DynamoDB Streams, [SQS](sqs.md)**, and **Amazon MSK** (Managed Streaming for Apache Kafka).
 - A hidden **event source mapping** component polls the source, retrieves **source batches**, splits them by configured **batch size**, and delivers **event batches** to the function.
 - A single invocation may receive **hundreds of events** in a batch — tune batch size carefully so processing completes within the **15-minute timeout**.
-- Persistently failing batches can be sent to an **SQS queue or SNS topic**.
+- Persistently failing batches can be sent to an **[SQS queue](sqs.md#dead-letter-queues-dlq) or SNS topic**.
 
 > [!tip] Exam Tip — the key ESM permissions fact
 > The source does **not** deliver the event; the ESM **reads** from the source using the **function's execution role permissions**. So even though the function code never directly calls Kinesis, **the execution role still needs Kinesis (source) permissions** because the ESM uses them on the function's behalf. Contrast with async: there the source *delivers* the event, so the function only needs source permissions if it wants to *read additional data* (e.g. fetching the actual S3 object).

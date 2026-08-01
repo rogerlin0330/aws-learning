@@ -26,7 +26,7 @@ Vocabulary:
 
 Maximum execution duration for a **Standard** workflow is **1 year**.
 
-Step Functions is one of AWS's application-integration and [decoupling](../patterns/architecture-evolution.md) primitives, alongside SQS (queues), [SNS](sns.md) (pub/sub), and [EventBridge](eventbridge.md) (event bus). Where those move *messages*, Step Functions coordinates *sequence and state*, which makes it the orchestration layer of a [serverless architecture](../patterns/serverless-architecture.md).
+Step Functions is one of AWS's application-integration and [decoupling](../patterns/architecture-evolution.md) primitives, alongside [SQS](sqs.md) (queues), [SNS](sns.md) (pub/sub), and [EventBridge](eventbridge.md) (event bus). Where those move *messages*, Step Functions coordinates *sequence and state*, which makes it the orchestration layer of a [serverless architecture](../patterns/serverless-architecture.md).
 
 ## Architecture
 

@@ -3,14 +3,14 @@ title: Simple Notification Service (SNS)
 type: service
 tags: [sns, messaging, integration, pubsub, fanout, decoupling]
 certs: [aws-saa]
-updated: 2026-07-29
+updated: 2026-07-31
 ---
 
 # Simple Notification Service (SNS)
 
 ## Overview
 
-SNS is a **highly available, durable, secure, fully managed pub/sub messaging service**. It coordinates the sending and delivery of **messages** (payloads up to **256 KB**) between **publishers** and **subscribers**. It is one of AWS's core application-integration and [decoupling](../patterns/architecture-evolution.md) primitives, sitting alongside SQS (queues) and [EventBridge](eventbridge.md) (event bus).
+SNS is a **highly available, durable, secure, fully managed pub/sub messaging service**. It coordinates the sending and delivery of **messages** (payloads up to **256 KB**) between **publishers** and **subscribers**. It is one of AWS's core application-integration and [decoupling](../patterns/architecture-evolution.md) primitives, sitting alongside [SQS](sqs.md) (queues) and [EventBridge](eventbridge.md) (event bus).
 
 - **Public AWS service** — SNS runs from the AWS public zone. To reach it you need network connectivity to the public AWS endpoints plus IAM permissions. It is accessible from the public internet or from a VPC configured to reach public AWS endpoints. It is **not** something you place inside a VPC subnet.
 - **Base entity is the SNS topic.** Topics are where permissions are controlled (via a resource/topic policy) and where most configuration lives.
@@ -18,9 +18,11 @@ SNS is a **highly available, durable, secure, fully managed pub/sub messaging se
 - **Message size:** up to 256 KB. SNS is designed for small notification payloads, not bulk or binary data — you don't need the exact byte count for the exam, but the *concept* matters.
 
 > [!note] Beyond 256 KB — the Extended Client Libraries
-> The 256 KB ceiling isn't absolute. The **SNS Extended Client Libraries (Java and Python)** let you publish payloads up to **2 GB** by storing the actual payload in [S3](s3.md) and publishing only an S3 reference to the topic; subscribers de-reference the payload from S3. This is the same pattern SQS uses, and it's the standard answer to "how do I send a message larger than 256 KB." Source: [AWS — Publishing large messages with SNS and S3](https://docs.aws.amazon.com/sns/latest/dg/large-message-payloads.html).
+> The 256 KB ceiling isn't absolute. The **SNS Extended Client Libraries (Java and Python)** let you publish payloads up to **2 GB** by storing the actual payload in [S3](s3.md) and publishing only an S3 reference to the topic; subscribers de-reference the payload from S3. This is the same pattern [SQS](sqs.md) uses, and it's the standard answer to "how do I send a message larger than 256 KB." Source: [AWS — Publishing large messages with SNS and S3](https://docs.aws.amazon.com/sns/latest/dg/large-message-payloads.html).
+>
+> Note that **SNS still caps at 256 KB**: the August 2025 increase to a 1 MiB payload covered SQS, EventBridge, and asynchronous Lambda invocations, not SNS ([AWS — Amazon SQS increases maximum message payload size to 1 MiB](https://aws.amazon.com/about-aws/whats-new/2025/08/amazon-sqs-max-payload-size-1mib)).
 
-Related services: SQS, [Lambda](lambda.md), [CloudWatch](cloudwatch.md), [CloudFormation](cloudformation.md), [EC2 Auto Scaling](ec2-auto-scaling.md), [S3](s3.md), [EventBridge](eventbridge.md).
+Related services: [SQS](sqs.md), [Lambda](lambda.md), [CloudWatch](cloudwatch.md), [CloudFormation](cloudformation.md), [EC2 Auto Scaling](ec2-auto-scaling.md), [S3](s3.md), [EventBridge](eventbridge.md).
 
 ## Architecture
 
@@ -58,7 +60,7 @@ A subscriber is an endpoint that receives messages from the topic. By default a 
 
 - **HTTP / HTTPS endpoints**
 - **Email** and **email-JSON**
-- **SQS queues** — each message is enqueued as it arrives at the topic
+- **[SQS](sqs.md) queues** — each message is enqueued as it arrives at the topic
 - **Mobile push notifications**
 - **SMS** text messages
 - **[Lambda](lambda.md) functions** — the function is *invoked* per message
@@ -72,9 +74,10 @@ A **subscription filter policy** lets a subscriber receive only the messages rel
 
 ### Fanout
 
-**Fanout** is one SNS topic with **multiple SQS queues subscribed to it**. A single message (representing one workload) is delivered into every subscribed queue, letting multiple related-but-isolated workers each process it their own way.
+**Fanout** is one SNS topic with **multiple [SQS](sqs.md) queues subscribed to it**. A single message (representing one workload) is delivered into every subscribed queue, letting multiple related-but-isolated workers each process it their own way.
 
-- Course example: a video-processing job published once, fanned out to several queues that each transcode a **different bitrate or resolution** variant.
+- Course example: a video-processing job published once, fanned out to several queues that each transcode a **different bitrate or resolution** variant. The full architecture diagram and walkthrough live on the SQS page: [SNS fanout to multiple SQS queues](sqs.md#sns-fanout-to-multiple-sqs-queues).
+- The reason the pattern exists: an [S3 event notification](s3.md#event-notifications) for an upload is **one event**, and fanout is how one event becomes several independent jobs.
 - This is the concrete decoupling primitive behind the [worker-fleet / event-driven progression](../patterns/architecture-evolution.md#stage-4--queue-decoupled-worker-fleet): SNS fans one event out to many queues, and each queue drives its own scale-to-zero worker fleet.
 
 > [!tip] Exam Tip — fanout means SNS to SQS
@@ -88,7 +91,7 @@ A **subscription filter policy** lets a subscriber receive only the messages rel
 - **Delivery retries:** SNS retries failed deliveries according to a delivery policy.
 
 > [!note] Retry and DLQ detail (production nuance, deeper than the exam)
-> For **customer-managed HTTP/S endpoints** the default policy is **50 total attempts** before the message is discarded, and HTTP/S is the **only** protocol whose delivery policy you can customise. For **AWS-managed endpoints (SQS, Lambda)**, SNS retries far more aggressively — up to roughly **100,015 attempts over 23 days**. A message discarded after all retries is **lost by default** unless the subscription has a **dead-letter queue (DLQ)** attached — and an SNS DLQ is just a standard **SQS queue**. Sources: [AWS — Message delivery retries](https://docs.aws.amazon.com/sns/latest/dg/sns-message-delivery-retries.html), [AWS — SNS dead-letter queues](https://docs.aws.amazon.com/sns/latest/dg/sns-dead-letter-queues.html).
+> For **customer-managed HTTP/S endpoints** the default policy is **50 total attempts** before the message is discarded, and HTTP/S is the **only** protocol whose delivery policy you can customise. For **AWS-managed endpoints (SQS, Lambda)**, SNS retries far more aggressively — up to roughly **100,015 attempts over 23 days**. A message discarded after all retries is **lost by default** unless the subscription has a **dead-letter queue (DLQ)** attached — and an SNS DLQ is just a standard **[SQS queue](sqs.md#dead-letter-queues-dlq)**. Sources: [AWS — Message delivery retries](https://docs.aws.amazon.com/sns/latest/dg/sns-message-delivery-retries.html), [AWS — SNS dead-letter queues](https://docs.aws.amazon.com/sns/latest/dg/sns-dead-letter-queues.html).
 
 ### Resilience, encryption, cross-account
 
@@ -105,10 +108,10 @@ SNS has **two topic types**. The Cantrill course treats "topic" as one thing, bu
 | Ordering | Best-effort (may arrive out of order) | Strict, first-in-first-out within a message group |
 | Deduplication | Best-effort (at-least-once) | Strict (5-minute dedup window) |
 | Throughput | Nearly unlimited | Up to **3,000 msg/s or 20 MB/s** per topic (whichever comes first), plus **300 msg/s per message group** |
-| Subscriber types | All (SQS, Lambda, HTTP/S, email, SMS, push, Firehose) | **SQS queues only** — cannot deliver to email/HTTP/SMS/push directly |
+| Subscriber types | All (SQS, Lambda, HTTP/S, email, SMS, push, Firehose) | **[SQS](sqs.md) queues only** — cannot deliver to email/HTTP/SMS/push directly |
 
 > [!warning] Gotcha — FIFO topics deliver to SQS only
-> If a scenario needs strict ordering **and** email/SMS/HTTP delivery, that is a mismatch — a FIFO topic can only deliver to SQS queues (and those must be SQS FIFO queues to preserve ordering end to end). SNS FIFO pairs with SQS FIFO.
+> If a scenario needs strict ordering **and** email/SMS/HTTP delivery, that is a mismatch — a FIFO topic can only deliver to SQS queues (and those must be [SQS FIFO queues](sqs.md#standard-vs-fifo-queues) to preserve ordering end to end). SNS FIFO pairs with SQS FIFO.
 
 > [!note] The 300-vs-3,000 throughput numbers
 > Both figures are real and describe different scopes. A FIFO topic allows up to **3,000 messages per second (or 20 MB/s), whichever comes first, per topic** when `FifoThroughputScope` is set to `Topic`, and up to **300 messages per second per message group**. Older secondary sources cite only the 300 number as if it were the topic limit — it is the *per-message-group* limit. Trust the AWS Service Quotas page over blog aggregators. Source: [AWS — SNS endpoints and quotas](https://docs.aws.amazon.com/general/latest/gr/sns.html).
@@ -147,7 +150,7 @@ SNS has **two topic types**. The Cantrill course treats "topic" as one thing, bu
 ## References
 
 - [Architecture Evolution — Coupling, Queues & Event-Driven](../patterns/architecture-evolution.md)
-- [EventBridge](eventbridge.md), [Lambda](lambda.md), [S3](s3.md), [CloudWatch](cloudwatch.md), [CloudFormation](cloudformation.md), [EC2 Auto Scaling](ec2-auto-scaling.md)
+- [SQS](sqs.md), [EventBridge](eventbridge.md), [Lambda](lambda.md), [S3](s3.md), [CloudWatch](cloudwatch.md), [CloudFormation](cloudformation.md), [EC2 Auto Scaling](ec2-auto-scaling.md)
 - [AWS SNS features](https://aws.amazon.com/sns/features)
 - [AWS — SNS endpoints and quotas](https://docs.aws.amazon.com/general/latest/gr/sns.html)
 - [AWS — Publishing large messages with SNS and S3](https://docs.aws.amazon.com/sns/latest/dg/large-message-payloads.html)

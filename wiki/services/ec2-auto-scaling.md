@@ -113,7 +113,7 @@ Target tracking also **prioritizes availability**: it scales in more gradually w
 
 #### Scaling based on SQS
 
-Scale on **`ApproximateNumberOfMessagesVisible`** in an SQS queue — the classic **worker pool** architecture (see [Architecture Evolution — Queue-Decoupled (Worker Fleet)](../patterns/architecture-evolution.md#stage-4--queue-decoupled-worker-fleet) for how the queue decouples the producer and lets this fleet scale from zero). As messages pile up the ASG scales out to process them; as the queue drains it scales back in to reduce cost.
+Scale on **`ApproximateNumberOfMessagesVisible`** in an [SQS](sqs.md) queue — the classic **worker pool** architecture (see [Architecture Evolution — Queue-Decoupled (Worker Fleet)](../patterns/architecture-evolution.md#stage-4--queue-decoupled-worker-fleet) for how the queue decouples the producer and lets this fleet scale from zero). As messages pile up the ASG scales out to process them; as the queue drains it scales back in to reduce cost.
 
 > [!tip] Exam Tip
 > "Worker pool," "queue depth," "process backlog," "decoupled" all point to **SQS-based scaling**.
@@ -243,7 +243,7 @@ These are not the same number. `HeartbeatTimeout` caps a _single_ window; the **
 | Target | Use |
 | --- | --- |
 | **[SNS](sns.md) topic** | Transition notifications — the message carries instance info **and a token** used to control the lifecycle action |
-| **SQS queue** | Also a valid `NotificationTargetARN` — the target can be an SNS topic or an SQS queue ([LifecycleHook API reference](https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_LifecycleHook.html)); the course only names SNS |
+| **[SQS](sqs.md) queue** | Also a valid `NotificationTargetARN` — the target can be an SNS topic or an SQS queue ([LifecycleHook API reference](https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_LifecycleHook.html)); the course only names SNS |
 | **EventBridge** | Event-driven initiation of other processes (for example, invoke Lambda). Older material may say "CloudWatch Events" — same service, renamed |
 | **A script on the instance itself** | The instance can call `CompleteLifecycleAction` for itself using its own instance ID |
 

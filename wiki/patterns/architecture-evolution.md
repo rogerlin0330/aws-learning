@@ -3,7 +3,7 @@ title: Architecture Evolution — Coupling, Queues & Event-Driven
 type: pattern
 tags: [architecture, decoupling, coupling, monolithic, tiered, microservices, event-driven, queue, sqs, eventbridge, worker-fleet, synchronous, asynchronous, serverless, scale-to-zero, producer, consumer, events]
 certs: [aws-saa]
-updated: 2026-07-24
+updated: 2026-07-31
 ---
 
 # Architecture Evolution — Coupling, Queues & Event-Driven
@@ -73,20 +73,20 @@ How the CatTube worker-fleet flow runs:
 Both the ASG's **Min and Desired start at 0**, meaning **zero instances when the queue is empty**. This is the "worker fleet" pattern, and it is extremely common for upload-then-process workloads: the worker fleet can scale **from zero to near-infinite** based purely on queue length, and the consumer side **bills only while working**.
 
 > [!tip] Exam Tip — the scaling metric is queue length
-> "Scale the processing fleet based on the number of jobs waiting" means Auto Scaling on **queue length** (specifically the SQS `ApproximateNumberOfMessagesVisible` metric), with a worker fleet whose Min and Desired are 0 — **not** CPU-based scaling. See [EC2 Auto Scaling — SQS worker pool](../services/ec2-auto-scaling.md).
+> "Scale the processing fleet based on the number of jobs waiting" means Auto Scaling on **queue length** (specifically the [SQS](../services/sqs.md) `ApproximateNumberOfMessagesVisible` metric), with a worker fleet whose Min and Desired are 0 — **not** CPU-based scaling. See [EC2 Auto Scaling — SQS worker pool](../services/ec2-auto-scaling.md).
 
 > [!warning] Gotcha — do not assume queues are FIFO
-> In **Amazon SQS**, the *default* queue type is a **Standard queue**, which provides only **best-effort ordering** and **at-least-once delivery** — messages can arrive out of order and occasionally more than once. Strict ordering with exactly-once processing is a *separate* queue type you must explicitly choose (a **FIFO queue**, name ending `.fifo`). Do not carry "queues are FIFO by default" into the exam. Worker code on a Standard queue should be **idempotent** because a message may be delivered more than once. Source: [AWS SQS Features](https://aws.amazon.com/sqs/features/), current as of 2026.
+> In **[Amazon SQS](../services/sqs.md)**, the *default* queue type is a **Standard queue**, which provides only **best-effort ordering** and **at-least-once delivery** — messages can arrive out of order and occasionally more than once. Strict ordering with exactly-once processing is a *separate* queue type you must explicitly choose (a **FIFO queue**, name ending `.fifo`). Do not carry "queues are FIFO by default" into the exam. Worker code on a Standard queue should be **idempotent** because a message may be delivered more than once. Source: [AWS SQS Features](https://aws.amazon.com/sqs/features/), current as of 2026.
 
 The SQS pattern-match for the exam:
 
 | Requirement | Queue type |
 | --- | --- |
-| Ordering matters / no duplicates / exactly-once | **SQS FIFO** |
-| Maximum throughput / order does not matter / can tolerate duplicates | **SQS Standard** (make consumers idempotent) |
+| Ordering matters / no duplicates / exactly-once | **[SQS FIFO](../services/sqs.md#standard-vs-fifo-queues)** |
+| Maximum throughput / order does not matter / can tolerate duplicates | **[SQS Standard](../services/sqs.md#standard-vs-fifo-queues)** (make consumers idempotent) |
 
-> [!warning] Verify before relying — SQS figures change
-> Rough current SQS figures, for context rather than memorisation: FIFO throughput is about 300 msg/s without batching or about 3,000 with batching in base mode, with **High Throughput Mode** going far higher; Standard throughput is near-unlimited. The **source note also states the max payload was raised from 256 KB to 1 MB in January 2026** — treat that as unverified here and confirm against AWS docs before relying on it. Source: [AWS SQS Features](https://aws.amazon.com/sqs/features/).
+> [!note] The figures, now verified
+> FIFO throughput is **300 msg/s unbatched or 3,000 batched** in the default mode, with **high throughput mode** reaching up to **70,000 TPS per API action** in the highest-throughput Regions; Standard throughput is nearly unlimited ([SQS service quotas](https://docs.aws.amazon.com/general/latest/gr/sqs-service.html)). The **max payload was raised from 256 KB to 1 MiB** — this was previously flagged here as unverified and is now confirmed, though the change landed on **4 August 2025**, not January 2026 ([AWS — Amazon SQS increases maximum message payload size to 1 MiB](https://aws.amazon.com/about-aws/whats-new/2025/08/amazon-sqs-max-payload-size-1mib)). Exam material still says 256 KB. Full detail on [the SQS page](../services/sqs.md#overview).
 
 ## Stage 5 — Microservices
 
@@ -149,7 +149,7 @@ The amazon.com analogy: clicking "order" generates an event and triggers action,
 - **Load balancer ≠ decoupling.** A load balancer gives HA and horizontal scaling but keeps communication synchronous and coupled. A **queue** is what decouples producer from consumer.
 - **Worker-fleet scaling metric is queue length**, not CPU. "Scale on the number of jobs waiting" means Auto Scaling on queue length, with a Min/Desired-0 worker fleet.
 - **"Fails together / scales together / bills together"** is the monolith signature.
-- **Do not assume queues are FIFO.** SQS **Standard** is best-effort ordering and at-least-once (the default); **FIFO** is the explicit choice for strict ordering and exactly-once.
+- **Do not assume queues are FIFO.** [SQS](../services/sqs.md) **Standard** is best-effort ordering and at-least-once (the default); **FIFO** is the explicit choice for strict ordering and exactly-once.
 - **Event-driven = consumes resources only while handling events**, so it is strongly associated with **serverless** and cost efficiency for spiky, idle-heavy workloads.
 
 ## Key Takeaways

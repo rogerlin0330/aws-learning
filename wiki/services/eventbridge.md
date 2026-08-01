@@ -62,7 +62,7 @@ You create **rules** that match events or schedules:
 
 Event-pattern rules are linked to a specific event bus (the default unless you say otherwise). Scheduled rules are different: legacy scheduled rules run only on the **default event bus**. [EventBridge Scheduler](#scheduling-rules-vs-eventbridge-scheduler) is the newer bus-less scheduler.
 
-When a rule matches, it **delivers the matched event to one or more targets** defined on that rule. A common target is **invoke a [Lambda](lambda.md) function** — non-exhaustive: [S3](s3.md), SQS, [Step Functions](step-functions.md), [SNS](sns.md), Kinesis, and many others are also valid targets.
+When a rule matches, it **delivers the matched event to one or more targets** defined on that rule. A common target is **invoke a [Lambda](lambda.md) function** — non-exhaustive: [S3](s3.md), [SQS](sqs.md), [Step Functions](step-functions.md), [SNS](sns.md), Kinesis, and many others are also valid targets.
 
 ### Events are JSON
 
