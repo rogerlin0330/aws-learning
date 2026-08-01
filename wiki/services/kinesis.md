@@ -24,7 +24,9 @@ Four products, one line each:
 > [!warning] Two of these products were renamed and one was discontinued in the form the course teaches
 > The course names — Kinesis Data Firehose and Kinesis Data Analytics — are still the terms the exam is most likely to use, so learn them. AWS reality has moved on: Firehose is now **Amazon Data Firehose**, the Flink variant of Data Analytics is **Amazon Managed Service for Apache Flink**, and the **SQL** variant of Data Analytics was **discontinued on 27 January 2026**. Changes are flagged inline and collected in [Course vs current AWS reality](#course-vs-current-aws-reality).
 
-Related pages: [SQS](sqs.md) · [SNS](sns.md) · [Lambda](lambda.md) · [S3](s3.md) · [CloudWatch](cloudwatch.md) · [EventBridge](eventbridge.md) · [Architecture Evolution](../patterns/architecture-evolution.md) · [Global & Regional Architecture](../patterns/global-regional-architecture.md).
+Related pages: [SQS](sqs.md) · [SNS](sns.md) · [Lambda](lambda.md) · [S3](s3.md) · [CloudWatch](cloudwatch.md) · [EventBridge](eventbridge.md) · [Streaming vs Messaging](../concepts/streaming-vs-messaging.md) · [Architecture Evolution](../patterns/architecture-evolution.md) · [Global & Regional Architecture](../patterns/global-regional-architecture.md).
+
+For how Data Streams compares with **Apache Kafka** and **Amazon MSK**, see [Streaming vs Messaging](../concepts/streaming-vs-messaging.md#kinesis-vs-kafka-and-amazon-msk).
 
 ## Kinesis Data Streams
 
@@ -88,7 +90,7 @@ On-demand streams scale to **10 GB/s write and 20 GB/s read** in us-east-1, us-w
 
 ### Kinesis vs SQS — the classic exam decision
 
-There is almost always a question asking you to choose between these two. Read every such question through this lens:
+There is almost always a question asking you to choose between these two. The reasoning behind the answer — and the Kafka comparison — is on [Streaming vs Messaging](../concepts/streaming-vs-messaging.md). Read every such question through this lens:
 
 | The question is about… | Answer |
 | --- | --- |
@@ -285,7 +287,7 @@ The course lessons predate several AWS changes. Both framings are kept because e
 ## References
 
 - [SQS](sqs.md) · [SNS](sns.md) · [Lambda](lambda.md) · [S3](s3.md) · [CloudWatch](cloudwatch.md) · [EventBridge](eventbridge.md) · [EC2](ec2.md) · [DMS](dms.md)
-- [Architecture Evolution — Coupling, Queues & Event-Driven](../patterns/architecture-evolution.md) · [Global & Regional AWS Architecture](../patterns/global-regional-architecture.md) · [Resource Scope](../concepts/resource-scope.md)
+- [Streaming vs Messaging — Kinesis, SQS, and Kafka](../concepts/streaming-vs-messaging.md) · [Architecture Evolution — Coupling, Queues & Event-Driven](../patterns/architecture-evolution.md) · [Global & Regional AWS Architecture](../patterns/global-regional-architecture.md) · [Resource Scope](../concepts/resource-scope.md)
 - [Amazon Kinesis Data Streams — quotas and limits](https://docs.aws.amazon.com/streams/latest/dev/service-sizes-and-limits.html) · [choose the right mode to stream in](https://docs.aws.amazon.com/streams/latest/dev/how-do-i-size-a-stream.html) · [enhanced fan-out consumers](https://docs.aws.amazon.com/streams/latest/dev/enhanced-consumers.html)
 - [AWS — Amazon Kinesis Data Streams now supports 10x larger record sizes](https://aws.amazon.com/about-aws/whats-new/2025/10/amazon-kinesis-data-streams-10x-larger-record-sizes) · [up to 50 enhanced fan-out consumers](https://aws.amazon.com/about-aws/whats-new/2025/11/amazon-kinesis-data-streams-enhanced-fan-out-consumers) · [On-demand Advantage mode](https://aws.amazon.com/about-aws/whats-new/2025/11/amazon-kinesis-data-streams-ondemand-advantage)
 - [Amazon Data Firehose FAQs](https://aws.amazon.com/firehose/faqs/) · [buffering hints](https://docs.aws.amazon.com/firehose/latest/dev/buffering.html) · [zero buffering announcement](https://aws.amazon.com/about-aws/whats-new/2023/12/amazon-kinesis-data-firehose-zero-buffering) · [rename to Amazon Data Firehose](https://aws.amazon.com/about-aws/whats-new/2024/02/amazon-kinesis-data-firehose-amazon-data-firehose/)

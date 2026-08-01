@@ -281,7 +281,7 @@ Access to a queue is controlled by **identity policies** or a **queue policy**:
 >
 > | If the question mentions... | Think... |
 > | --- | --- |
-> | Ingestion at huge scale, many independent consumers, or **replay** of the same data | **Not SQS** — [Kinesis Data Streams](kinesis.md#kinesis-data-streams) (a processed SQS message is gone; Kinesis has a rolling window) |
+> | Ingestion at huge scale, many independent consumers, or **replay** of the same data | **Not SQS** — [Kinesis Data Streams](kinesis.md#kinesis-data-streams) (a processed SQS message is gone; Kinesis has a rolling window; reasoning in [Streaming vs Messaging](../concepts/streaming-vs-messaging.md#kinesis-vs-sqs)) |
 > | One upload or event driving multiple independent parallel pipelines | **SNS fanout to multiple SQS queues** |
 > | Message reappears and another worker picks it up after a failure | **Visibility timeout** (not deleted, so it comes back) |
 > | Order must be preserved, or no duplicates at ingest | **FIFO queue** plus `MessageDeduplicationId` |
@@ -328,7 +328,7 @@ Access to a queue is controlled by **identity policies** or a **queue policy**:
 ## References
 
 - [SNS](sns.md) · [Lambda](lambda.md) · [EC2 Auto Scaling](ec2-auto-scaling.md) · [S3](s3.md) · [EventBridge](eventbridge.md) · [KMS](kms.md) · [Step Functions](step-functions.md)
-- [Architecture Evolution — Coupling, Queues & Event-Driven](../patterns/architecture-evolution.md) · [Serverless Architecture](../patterns/serverless-architecture.md) · [Resource Policies vs Identity Policies](../concepts/resource-vs-identity-policies.md)
+- [Streaming vs Messaging — Kinesis, SQS, and Kafka](../concepts/streaming-vs-messaging.md) · [Architecture Evolution — Coupling, Queues & Event-Driven](../patterns/architecture-evolution.md) · [Serverless Architecture](../patterns/serverless-architecture.md) · [Resource Policies vs Identity Policies](../concepts/resource-vs-identity-policies.md)
 - [Amazon SQS message quotas](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/quotas-messages.html)
 - [Amazon SQS FIFO queue quotas](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/quotas-fifo.html)
 - [Amazon SQS endpoints and service quotas](https://docs.aws.amazon.com/general/latest/gr/sqs-service.html)

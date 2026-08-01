@@ -155,7 +155,7 @@ There are three ways to invoke a Lambda function: **synchronous**, **asynchronou
 
 ![Event source mapping: telemetry producers push into a Kinesis Data Stream; the event source mapping polls the stream for source batches, splits them by batch size, and delivers event batches to the Lambda function, borrowing the function's execution-role permissions to read the source and sending failed batches to a DLQ](../assets/lambda-invocation-event-source-mapping.png)
 
-- Used for **streams/queues that don't natively generate events** and require **polling**: **[Kinesis](kinesis.md), DynamoDB Streams, [SQS](sqs.md)**, and **Amazon MSK** (Managed Streaming for Apache Kafka).
+- Used for **streams/queues that don't natively generate events** and require **polling**: **[Kinesis](kinesis.md), DynamoDB Streams, [SQS](sqs.md)**, and **Amazon MSK** ([Managed Streaming for Apache Kafka](../concepts/streaming-vs-messaging.md#kinesis-vs-kafka-and-amazon-msk)).
 - A hidden **event source mapping** component polls the source, retrieves **source batches**, splits them by configured **batch size**, and delivers **event batches** to the function.
 - A single invocation may receive **hundreds of events** in a batch — tune batch size carefully so processing completes within the **15-minute timeout**.
 - Persistently failing batches can be sent to an **[SQS queue](sqs.md#dead-letter-queues-dlq) or SNS topic**.

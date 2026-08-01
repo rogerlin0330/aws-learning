@@ -1,7 +1,7 @@
 ---
 title: AWS Learning — Overview
 type: overview
-tags: [aws, architecture, iam, vpc, organizations, control-tower, cost, s3, ec2, ecs, eks, kubernetes, containers, cloudwatch, cloudtrail, cloudformation, bootstrapping, serverless, lambda, step-functions, api-gateway, orchestration, dns, dnssec, rds, rds-custom, aurora, dms, database, database-migration, multi-az, high-availability, acid, base, cap-theorem, global, regional, tiers, cloudfront, elb, asg, auto-scaling, sqs, sns, messaging, queues, decoupling, fifo, dead-letter-queue, kinesis, streaming, ingestion, firehose, analytics, video-streams]
+tags: [aws, architecture, iam, vpc, organizations, control-tower, cost, s3, ec2, ecs, eks, kubernetes, containers, cloudwatch, cloudtrail, cloudformation, bootstrapping, serverless, lambda, step-functions, api-gateway, orchestration, dns, dnssec, rds, rds-custom, aurora, dms, database, database-migration, multi-az, high-availability, acid, base, cap-theorem, global, regional, tiers, cloudfront, elb, asg, auto-scaling, sqs, sns, messaging, queues, decoupling, fifo, dead-letter-queue, kinesis, streaming, ingestion, firehose, analytics, video-streams, kafka, msk, log-vs-queue]
 updated: 2026-08-01
 ---
 
@@ -117,6 +117,7 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 - [DNSSEC](concepts/dnssec.md) — securing DNS; origin auth + integrity, chain of trust root→record (RRSIG/DNSKEY/ZSK/KSK/DS), trust anchor + root signing ceremony, Route 53 signing + validation
 - [Database Transaction Models](concepts/db-transaction-model.md) — ACID vs BASE vs CAP theorem; ACID → consistency (RDS/relational), BASE → availability (NoSQL/DynamoDB), DynamoDB straddles both via Transactions
 - [TLS/HTTPS](concepts/tls-https.md) — certificate trust, TLS handshake, ACM
+- [Streaming vs Messaging](concepts/streaming-vs-messaging.md) — choosing between [Kinesis](services/kinesis.md), [SQS](services/sqs.md), and Kafka/**Amazon MSK**; the log-vs-queue root distinction (consuming a queue *removes* the message, consuming a log only *reads* it), why fan-out and replay are free in a stream and deliberate in a queue, the Kinesis-to-Kafka concept map, and when an existing Kafka investment makes MSK the answer
 - [Containers](concepts/containers.md) — container vs VM mental model, Docker image layers, runtime R/W layer, registries, ECS as orchestration
 - [Kubernetes](concepts/kubernetes.md) — cloud-agnostic orchestration; control plane vs nodes, pods/services/ingress, ephemeral vs Persistent Volume storage, mapped to AWS via EKS
 
