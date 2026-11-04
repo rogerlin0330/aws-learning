@@ -19,12 +19,12 @@ tags:
 
 The family covered here, and the one-line job of each:
 
-|Product|Job|Real-time?|
-|---|---|---|
-|**Kinesis Data Streams**|Ingest huge volumes of data; let many consumers read it independently, with a persistence window|✅ Real-time (~200 ms)|
-|**Kinesis Data Firehose**|Managed **delivery** of streaming data to destinations (S3, Redshift, etc.); optional Lambda transform|⚠️ **Near** real-time (~60 s)|
-|**Kinesis Data Analytics**|Real-time **SQL processing** of streaming data|✅ Real-time (unless output is Firehose)|
-|**Kinesis Video Streams**|Ingest **live video/time-serialized media** from producers; integrate with analytics services|✅ Live streaming|
+| Product                    | Job                                                                                                    | Real-time?                              |
+| -------------------------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------- |
+| **Kinesis Data Streams**   | Ingest huge volumes of data; let many consumers read it independently, with a persistence window       | ✅ Real-time (~200 ms)                   |
+| **Kinesis Data Firehose**  | Managed **delivery** of streaming data to destinations (S3, Redshift, etc.); optional Lambda transform | ⚠️ **Near** real-time (~60 s)           |
+| **Kinesis Data Analytics** | Real-time **SQL processing** of streaming data                                                         | ✅ Real-time (unless output is Firehose) |
+| **Kinesis Video Streams**  | Ingest **live video/time-serialized media** from producers; integrate with analytics services          | ✅ Live streaming                        |
 
 > [!warning] Two of these products have been renamed, and one has been discontinued in the form the course teaches The course names (Kinesis Data Firehose, Kinesis Data Analytics) are still the terms the exam is most likely to use, so learn them — but AWS reality has moved on. See [[#Course-vs-current-AWS reality]] before you rely on any of the naming or destination lists below. The changes are significant enough that they're flagged inline throughout, then collected in that section.
 
@@ -75,17 +75,17 @@ More shards → more performance **and** more cost. Records have a **max size of
 
 There is almost always a question asking you to choose between these two. Read every such question through this lens:
 
-|Question is about…|Answer|
-|---|---|
-|**Ingestion** of data (huge scale, many producers)|**Kinesis**|
-|Worker pools, **decoupling**, **asynchronous** communication|**SQS** (assume SQS first; only switch with strong reason)|
+| Question is about…                                           | Answer                                                     |
+| ------------------------------------------------------------ | ---------------------------------------------------------- |
+| **Ingestion** of data (huge scale, many producers)           | **Kinesis**                                                |
+| Worker pools, **decoupling**, **asynchronous** communication | **SQS** (assume SQS first; only switch with strong reason) |
 
-||**SQS**|**Kinesis Data Streams**|
-|---|---|---|
-|**Producers**|Typically one thing / one group (e.g. a web tier in an ASG)|Huge numbers (thousands of sensors, clickstreams)|
-|**Consumers**|Usually one consumer / worker group|Many independent consumers at different rates|
-|**Persistence**|❌ No window — messages deleted after processing, gone forever|✅ Rolling window (24 h → 365 days)|
-|**Purpose**|Decoupling application components, async messaging|Ingestion, analytics, monitoring, click streams|
+|                 | **SQS**                                                       | **Kinesis Data Streams**                          |
+| --------------- | ------------------------------------------------------------- | ------------------------------------------------- |
+| **Producers**   | Typically one thing / one group (e.g. a web tier in an ASG)   | Huge numbers (thousands of sensors, clickstreams) |
+| **Consumers**   | Usually one consumer / worker group                           | Many independent consumers at different rates     |
+| **Persistence** | ❌ No window — messages deleted after processing, gone forever | ✅ Rolling window (24 h → 365 days)                |
+| **Purpose**     | Decoupling application components, async messaging            | Ingestion, analytics, monitoring, click streams   |
 
 > [!tip] 🎯 Trigger keywords Ingestion · analytics · dashboards · **mobile/click streams** · IoT · "many producers" · "multiple consumers reading independently" · "replay" / re-read data → **Kinesis**. Decouple · worker tier · queue · async · "process once then delete" → **SQS**.
 
@@ -231,35 +231,35 @@ The Cantrill lessons predate several AWS changes. Both framings are preserved be
 
 ## 🎯 Exam Traps — trigger keyword table
 
-|You see…|Think…|Why|
-|---|---|---|
-|"ingest data from thousands of devices/sensors/clickstreams"|**Kinesis Data Streams**|Ingestion at scale = Kinesis, not SQS|
-|"decouple components," "worker tier," "async," "process once"|**SQS**|No persistence/window; single consumer group|
-|"multiple consumers must **replay** / re-read the same data"|**Kinesis Data Streams**|Rolling window + many independent consumers|
-|"**real-time** delivery to S3"|❌ **not Firehose** → Data Streams + Lambda|Firehose is **near** real-time (~60 s)|
-|"**near** real-time delivery to S3/Redshift/Splunk, no infra to build"|**Firehose**|Managed delivery, ~1 MB / 60 s buffer|
-|"load streaming data into **Redshift**"|**Firehose** (S3 intermediate + COPY)|Redshift delivery is indirect via S3|
-|"**complex** real-time transformation with SQL"|**Data Analytics** (now Managed Flink)|Firehose+Lambda = simple + near-real-time only|
-|"enrich a stream with **static reference data**"|**Data Analytics** + S3 reference table|Core Analytics pattern|
-|"persist stream data past the window / archive to a data lake"|**Firehose**|Data Streams alone doesn't persist beyond the window|
-|"live **video**," "**RTSP**," "**GStreamer**," drone/camera feeds + analytics|**Kinesis Video Streams** (+ Rekognition)|Media ingestion; can't read raw off S3/EBS/EFS|
-|"many consumers each need full 2 MB/s, no contention"|**Enhanced fan-out**|Classic consumers _share_ 2 MB/s per shard|
+| You see…                                                                      | Think…                                     | Why                                                  |
+| ----------------------------------------------------------------------------- | ------------------------------------------ | ---------------------------------------------------- |
+| "ingest data from thousands of devices/sensors/clickstreams"                  | **Kinesis Data Streams**                   | Ingestion at scale = Kinesis, not SQS                |
+| "decouple components," "worker tier," "async," "process once"                 | **SQS**                                    | No persistence/window; single consumer group         |
+| "multiple consumers must **replay** / re-read the same data"                  | **Kinesis Data Streams**                   | Rolling window + many independent consumers          |
+| "**real-time** delivery to S3"                                                | ❌ **not Firehose** → Data Streams + Lambda | Firehose is **near** real-time (~60 s)               |
+| "**near** real-time delivery to S3/Redshift/Splunk, no infra to build"        | **Firehose**                               | Managed delivery, ~1 MB / 60 s buffer                |
+| "load streaming data into **Redshift**"                                       | **Firehose** (S3 intermediate + COPY)      | Redshift delivery is indirect via S3                 |
+| "**complex** real-time transformation with SQL"                               | **Data Analytics** (now Managed Flink)     | Firehose+Lambda = simple + near-real-time only       |
+| "enrich a stream with **static reference data**"                              | **Data Analytics** + S3 reference table    | Core Analytics pattern                               |
+| "persist stream data past the window / archive to a data lake"                | **Firehose**                               | Data Streams alone doesn't persist beyond the window |
+| "live **video**," "**RTSP**," "**GStreamer**," drone/camera feeds + analytics | **Kinesis Video Streams** (+ Rekognition)  | Media ingestion; can't read raw off S3/EBS/EFS       |
+| "many consumers each need full 2 MB/s, no contention"                         | **Enhanced fan-out**                       | Classic consumers _share_ 2 MB/s per shard           |
 
 ---
 
 ## Quick reference
 
-|Attribute|Data Streams|Firehose (now _Amazon Data Firehose_)|Data Analytics (now _Managed Flink_)|Video Streams|
-|---|---|---|---|---|
-|**Purpose**|Ingest + persist + multi-consumer read|Deliver to destinations|Real-time SQL processing|Live media ingestion|
-|**Latency**|Real-time (~200 ms)|**Near** real-time (~60 s)|Real-time (near real-time if → Firehose)|Live|
-|**Persistence**|24 h default, up to 365 days|Buffers only (~1 MB / 60 s)|Transient (virtual tables)|Persisted internally|
-|**Scaling unit**|Shards (1 MB/s in, 2 MB/s out each)|Fully serverless/auto|Serverless/auto|Managed|
-|**Record size**|1 MB max|—|—|—|
-|**Sources**|Producers (SDK/KPL/Agent)|Direct PUT, Data Streams, CloudWatch, IoT, KPL, Agent|Data Streams or Firehose (+ S3 reference)|Cameras, phones, cars, drones; audio/thermal/depth/radar|
-|**Destinations**|Consumers (EC2, Lambda, on-prem)|S3, Redshift, Elasticsearch/OpenSearch, Splunk, HTTP (+ many more now)|Firehose, Lambda, Data Streams|Consumers via product API; Rekognition, Connect|
-|**Transform**|No (consumer does it)|Lambda (simple)|SQL (complex)|n/a|
-|**Real-time?**|✅|❌ (near)|✅ (dest-dependent)|✅|
+| Attribute        | Data Streams                           | Firehose (now _Amazon Data Firehose_)                                  | Data Analytics (now _Managed Flink_)      | Video Streams                                            |
+| ---------------- | -------------------------------------- | ---------------------------------------------------------------------- | ----------------------------------------- | -------------------------------------------------------- |
+| **Purpose**      | Ingest + persist + multi-consumer read | Deliver to destinations                                                | Real-time SQL processing                  | Live media ingestion                                     |
+| **Latency**      | Real-time (~200 ms)                    | **Near** real-time (~60 s)                                             | Real-time (near real-time if → Firehose)  | Live                                                     |
+| **Persistence**  | 24 h default, up to 365 days           | Buffers only (~1 MB / 60 s)                                            | Transient (virtual tables)                | Persisted internally                                     |
+| **Scaling unit** | Shards (1 MB/s in, 2 MB/s out each)    | Fully serverless/auto                                                  | Serverless/auto                           | Managed                                                  |
+| **Record size**  | 1 MB max                               | —                                                                      | —                                         | —                                                        |
+| **Sources**      | Producers (SDK/KPL/Agent)              | Direct PUT, Data Streams, CloudWatch, IoT, KPL, Agent                  | Data Streams or Firehose (+ S3 reference) | Cameras, phones, cars, drones; audio/thermal/depth/radar |
+| **Destinations** | Consumers (EC2, Lambda, on-prem)       | S3, Redshift, Elasticsearch/OpenSearch, Splunk, HTTP (+ many more now) | Firehose, Lambda, Data Streams            | Consumers via product API; Rekognition, Connect          |
+| **Transform**    | No (consumer does it)                  | Lambda (simple)                                                        | SQL (complex)                             | n/a                                                      |
+| **Real-time?**   | ✅                                      | ❌ (near)                                                               | ✅ (dest-dependent)                        | ✅                                                        |
 
 ---
 
