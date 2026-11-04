@@ -3,7 +3,7 @@ title: EBS — Elastic Block Store
 type: service
 tags: [ebs, block-storage, storage, gp2, gp3, io1, io2, block-express, volume-types, iops, throughput, elastic-volumes, credit-bucket, ssd, general-purpose, provisioned-iops, latency, per-instance-ceiling, ebs-optimized, az-boundary, snapshot, incremental-backup, fsr, fast-snapshot-restore, lazy-restore, lifecycle, multi-attach, billing, resilience, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, encryption, kms, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption]
 certs: [aws-saa]
-updated: 2026-06-13
+updated: 2026-11-03
 ---
 
 # EBS — Elastic Block Store
@@ -674,6 +674,10 @@ EBS encryption follows the standard [envelope encryption](kms.md#data-encryption
 > [!warning] Gotcha — the KMS key never encrypts volume data
 > The KMS key only **wraps the per-volume DEK**. The DEK does the bulk crypto on the EC2 host using AES-256. This indirection is the whole reason KMS's [4 KB direct-encrypt ceiling](kms.md#direct-encrypt--decrypt--4-kb) doesn't apply to multi-TB volumes — KMS never sees the data, only the key that protects it.
 
+The handwritten diagram below is a conceptual walkthrough of volume creation and attachment. Its control-plane database box represents volume metadata, not a documented database implementation. On Nitro instances, the plaintext DEK is used in Nitro hardware to encrypt disk I/O, as described in [How Amazon EBS encryption works](https://docs.aws.amazon.com/ebs/latest/userguide/how-ebs-encryption-works.html).
+
+![Handwritten EBS encryption flow showing encrypted DEK generation in KMS, storage with volume metadata, EC2 grant creation and key decryption, and host-side encrypted disk I/O](../assets/ebs-encryption-handwrite.png)
+
 ### DEK Reuse — Volume → Snapshot → Restored Volume
 
 This is the single most exam-tested EBS encryption fact:
@@ -734,6 +738,8 @@ If you specifically need the **OS itself to hold the keys and perform encryption
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ec2_instance_store_vs_ebs.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ebs_snapshots.md`
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ebs-encryption.md`
+- Source diagram: `raw/aws-cert-study-notes/aws-solution-architect/assets/ebs-encryption-handwrite.png`
+- [AWS — How Amazon EBS encryption works](https://docs.aws.amazon.com/ebs/latest/userguide/how-ebs-encryption-works.html)
 - [EC2 — Instance Store](../services/ec2.md#instance-store)
 - [Storage Fundamentals](../concepts/storage.md)
 - [KMS — envelope encryption / DEKs](../services/kms.md#data-encryption-keys-deks)
