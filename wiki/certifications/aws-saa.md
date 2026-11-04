@@ -8,7 +8,7 @@ updated: 2026-11-04
 
 # AWS Solutions Architect Associate (SAA-C03)
 
-A running collection of exam tips, gotchas, and comparison tables. Deep-dive pages: [Cognito](../services/cognito.md) · [IAM](../services/iam.md) · [VPC](../services/vpc.md) · [EC2](../services/ec2.md) · [SQS](../services/sqs.md) · [SNS](../services/sns.md) · [Kinesis](../services/kinesis.md) · [ECS](../services/ecs.md) · [ECR](../services/ecr.md) · [S3](../services/s3.md) · [RDS](../services/rds.md) · [Aurora](../services/aurora.md) · [DMS](../services/dms.md) · [Route 53](../services/route53.md) · [Organizations](../services/organizations.md) · [Control Tower](../services/control-tower.md) · [CloudWatch](../services/cloudwatch.md) · [KMS](../services/kms.md) · [EKS](../services/eks.md) · [Networking](../concepts/networking.md) · [Identity & Access](../concepts/identity-and-access.md) · [Resource vs Identity Policies](../concepts/resource-vs-identity-policies.md) · [DNS](../concepts/dns.md) · [DNSSEC](../concepts/dnssec.md) · [Database Models](../concepts/db-transaction-model.md) · [TLS/HTTPS](../concepts/tls-https.md) · [Containers](../concepts/containers.md) · [Kubernetes](../concepts/kubernetes.md) · [CloudFormation](../services/cloudformation.md) · [Cost Optimization](../patterns/cost-optimization.md) · [Scaling](../patterns/scaling.md) · [Boot Time to Service Time](../patterns/boot-time-optimization.md) · [Global & Regional Architecture](../patterns/global-regional-architecture.md).
+A running collection of exam tips, gotchas, and comparison tables. Deep-dive pages: [Glue](../services/glue.md) · [Cognito](../services/cognito.md) · [IAM](../services/iam.md) · [VPC](../services/vpc.md) · [EC2](../services/ec2.md) · [SQS](../services/sqs.md) · [SNS](../services/sns.md) · [Kinesis](../services/kinesis.md) · [ECS](../services/ecs.md) · [ECR](../services/ecr.md) · [S3](../services/s3.md) · [RDS](../services/rds.md) · [Aurora](../services/aurora.md) · [DMS](../services/dms.md) · [Route 53](../services/route53.md) · [Organizations](../services/organizations.md) · [Control Tower](../services/control-tower.md) · [CloudWatch](../services/cloudwatch.md) · [KMS](../services/kms.md) · [EKS](../services/eks.md) · [Networking](../concepts/networking.md) · [Identity & Access](../concepts/identity-and-access.md) · [Resource vs Identity Policies](../concepts/resource-vs-identity-policies.md) · [DNS](../concepts/dns.md) · [DNSSEC](../concepts/dnssec.md) · [Database Models](../concepts/db-transaction-model.md) · [TLS/HTTPS](../concepts/tls-https.md) · [Containers](../concepts/containers.md) · [Kubernetes](../concepts/kubernetes.md) · [CloudFormation](../services/cloudformation.md) · [Cost Optimization](../patterns/cost-optimization.md) · [Scaling](../patterns/scaling.md) · [Boot Time to Service Time](../patterns/boot-time-optimization.md) · [Global & Regional Architecture](../patterns/global-regional-architecture.md).
 
 ## Architecture Fundamentals — Global vs Regional
 
@@ -2001,7 +2001,7 @@ See [Step Functions](../services/step-functions.md) for full details.
 - **Two workflow types, fixed at creation:** **Standard** (default, **1 year** max, exactly-once, billed per state transition) vs **Express** (**5 minutes** max, at-least-once async, billed per execution plus duration and memory). The type **cannot be changed later** — you recreate the state machine
 - **State types (8 in current ASL):** Task, Choice, Parallel, Map, Pass, Wait, Succeed, Fail. **Task** is the only one that performs work; the rest are flow control. (The course lists seven, omitting **Pass**)
 - **Wait** pauses for a duration *or* until a date/time · **Choice** branches on input · **Parallel** runs concurrent branches · **Map** repeats actions once per item in a list · **Succeed**/**Fail** are terminal
-- **Step Functions coordinates, it does not compute.** A **Task** state integrates with Lambda, AWS Batch, DynamoDB, [ECS](../services/ecs.md), [SNS](../services/sns.md), SQS, Glue, SageMaker, EMR, and more — the *integrated service* does the work
+- **Step Functions coordinates, it does not compute.** A **Task** state integrates with Lambda, AWS Batch, DynamoDB, [ECS](../services/ecs.md), [SNS](../services/sns.md), SQS, [Glue](../services/glue.md), SageMaker, EMR, and more — the *integrated service* does the work
 - **Definition language is Amazon States Language (ASL)** — **JSON**-based, not YAML
 - **Permissions:** the state machine **assumes an [IAM role](../services/iam.md#iam-roles)** at runtime for temporary credentials — same pattern as a Lambda execution role or an EC2 instance role
 - **Triggers:** [API Gateway](../services/api-gateway.md), IoT rules, [EventBridge](../services/eventbridge.md), Lambda, or manual start
@@ -2056,6 +2056,34 @@ See [API Gateway](../services/api-gateway.md) for full details.
 | **403** | **Access denied** (authorizer or WAF) |
 | "write to DynamoDB / start a Step Functions execution / publish to SNS with no compute" | **Direct AWS service integration** |
 | "consistent front end during a migration" | API Gateway as a **migration façade** |
+
+## AWS Glue
+
+See [AWS Glue](../services/glue.md) for the diagram and current service details, and [Data Integration](../concepts/data-integration.md) for the relationship between storage, catalogs, ETL, and queries.
+
+> [!tip] Exam Tip
+> **Crawler discovers schemas; Data Catalog stores metadata; job transforms records.** The catalog does not contain the underlying dataset, and publishing metadata does not grant data access.
+
+| Question trigger | Answer or distinction |
+| --- | --- |
+| Serverless ETL, cleaning, restructuring, or enriching datasets | **Glue job** |
+| Automatically discover schemas in [S3](../services/s3.md), [RDS](../services/rds.md), or DynamoDB | **Glue crawler** → Data Catalog |
+| Shared table definitions for Athena, Redshift Spectrum, or EMR | **Glue Data Catalog** |
+| New S3 partition absent from Athena results | Check partition metadata; crawl again, explicitly add the partition, or use `MSCK REPAIR TABLE` for Hive-style paths |
+| Reduce scanned data in a partitioned Athena query | Filter on **partition keys**; see the [lease-record example](../services/glue.md#worked-example--s3-lease-records-to-shared-catalog-consumers) |
+| Athena partition projection enabled; other engines cannot find new partitions | Projection computes partitions for Athena; it does not register them for Glue, Spectrum, or EMR |
+| How many catalogs? | One **default/root catalog per account per Region**; nested/federated catalogs are also supported |
+| Process [Kinesis Data Streams](../services/kinesis.md#kinesis-data-streams) or [Kafka](../concepts/streaming-vs-messaging.md#kinesis-vs-kafka-and-amazon-msk) continuously | **Glue streaming ETL**, with checkpoints; crawlers do not crawl streams |
+| Write transformed data into DynamoDB | Supported by the Glue DynamoDB writer; it is not source-only |
+| Run ETL on a cron schedule | Glue `SCHEDULED` trigger; [EventBridge](../services/eventbridge.md) is not mandatory |
+| Start an ETL workflow when data arrives | EventBridge → Glue workflow with an `EVENT` trigger |
+| Coordinate a Glue job with several AWS services and wait for it | [Step Functions](../services/step-functions.md) Standard workflow with Glue `.sync` integration |
+| Ad hoc SQL over S3, without a data-preparation requirement | **Athena**; “ad hoc” alone does not imply Glue |
+| Glue versus AWS Data Pipeline for managed ETL | Glue; Data Pipeline is in maintenance mode and closed to new customers since July 25, 2024 |
+| No servers to manage means no permissions/networking work | Incorrect: configure [IAM](../services/iam.md) and [VPC](../services/vpc.md) access as required |
+
+> [!warning] Gotcha
+> Serverless is a management model, not a promise of zero idle cost. Streaming Glue jobs consume capacity continuously; crawlers and catalog usage have billing separate from ETL jobs.
 
 ## Kinesis
 

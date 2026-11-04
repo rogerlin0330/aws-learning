@@ -28,7 +28,7 @@ Statelessness and the 15-minute ceiling are exactly what make a *single* functio
 
 ## Design Philosophy
 
-The **event-driven cost model** is the heart of the pattern: nothing runs until an event (system-generated or a customer interaction) occurs. Lambda is billed on **execution duration**, so an idle serverless application is **close to zero cost** until an event fires. Serverless architectures generally have **no persistent compute usage**.
+The **event-driven cost model** is the heart of the pattern: nothing runs until an event (system-generated or a customer interaction) occurs. Lambda is billed on **execution duration**, so an idle serverless application is **close to zero cost** until an event fires. This describes the function-based pattern here; serverless does not universally mean there is no persistent compute usage. **[AWS Glue streaming ETL](../services/glue.md#jobs-sources-and-targets)** runs continuously on managed capacity and remains billable while running. Batch Glue jobs provide managed data transformations without a customer-operated cluster; see [Data Integration](../concepts/data-integration.md).
 
 The design instinct is *consume-as-a-service wherever possible*: code as little as possible, use FaaS for general-purpose compute, and don't reinvent the wheel — lean on managed services:
 

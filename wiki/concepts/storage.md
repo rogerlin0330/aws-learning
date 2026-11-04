@@ -3,7 +3,7 @@ title: Storage Fundamentals
 type: concept
 tags: [storage, block-storage, file-storage, object-storage, ebs, instance-store, s3, efs, fsx, iops, throughput, ephemeral, persistent, direct-attached, network-attached]
 certs: [aws-saa]
-updated: 2026-07-06
+updated: 2026-11-04
 ---
 
 # Storage Fundamentals
@@ -66,6 +66,8 @@ Storage created independently and accessed over a network fabric.
 - **Cannot be mounted** and **cannot be booted from**.
 - **Strength:** massively scalable; supports high concurrency of whole-object reads and writes.
 - **AWS service:** [S3](../services/s3.md).
+
+For analytics, object storage holds the records while a **[Glue Data Catalog](../services/glue.md#data-catalog-and-crawlers)** table describes their location, schema, and partitions. This dataset metadata is separate from per-object metadata such as content type. A catalog is not another storage category: see [Data Integration](data-integration.md) for how storage, transformations, and query engines fit together.
 
 ### Quick Decision Guide
 

@@ -3,7 +3,7 @@ title: Step Functions
 type: service
 tags: [step-functions, serverless, orchestration, state-machine, application-integration, asl]
 certs: [aws-saa]
-updated: 2026-07-29
+updated: 2026-11-04
 ---
 
 # Step Functions
@@ -102,10 +102,14 @@ States fall into two groups: **flow-control states** and the **work-performing T
 
 **Work-performing state:**
 
-- **Task** — a **single unit of work** performed by the state machine; this is how the state machine actually *does* things. Task states integrate with many services: **Lambda, AWS Batch, DynamoDB, ECS, SNS, SQS, Glue, SageMaker, EMR**, and more. The state machine **coordinates** the work; it does not perform the work itself.
+- **Task** — a **single unit of work** performed by the state machine; this is how the state machine actually *does* things. Task states integrate with many services: **Lambda, AWS Batch, DynamoDB, ECS, SNS, SQS, [Glue](glue.md), SageMaker, EMR**, and more. The state machine **coordinates** the work; it does not perform the work itself.
 
 > [!note] Course-vs-reality — the lesson omits `Pass`
 > Current ASL defines **eight** state types: [Task, Choice, Parallel, Map, Pass, Wait, Succeed, Fail](https://docs.aws.amazon.com/step-functions/latest/dg/statemachine-structure.html). Cantrill's lesson lists seven, leaving out **Pass**. It is included above because it is one of the eight documented types and is cheap to remember; the raw note flags the omission rather than quietly folding it in. Source: [AWS — State machine structure](https://docs.aws.amazon.com/step-functions/latest/dg/statemachine-structure.html).
+
+### Coordinating Glue ETL
+
+A Standard workflow can run an [AWS Glue](glue.md) job with `arn:aws:states:::glue:startJobRun.sync` and wait for completion before validating output or starting another service. Glue performs the data transformation; Step Functions provides sequencing, branching, and error handling. This is useful when an ETL process crosses service boundaries and is one migration option for legacy Data Pipeline workloads. See [data integration responsibilities](../concepts/data-integration.md) and [AWS Glue integration](https://docs.aws.amazon.com/step-functions/latest/dg/connect-glue.html).
 
 ## Exam Traps
 

@@ -3,7 +3,7 @@ title: Kinesis
 type: service
 tags: [kinesis, data-streams, firehose, data-analytics, managed-flink, video-streams, streaming, ingestion, analytics, shards, enhanced-fan-out, serverless, real-time]
 certs: [aws-saa]
-updated: 2026-08-01
+updated: 2026-11-04
 ---
 
 # Kinesis
@@ -44,6 +44,8 @@ Reading the diagram:
 - **Top labels — the two things that cost money:** the rolling persistence window (24 hours by default, up to 365 days) and the record size.
 - **Bottom labels — per-shard throughput:** 1 MB/s ingestion, 2 MB/s consumption.
 - **Bottom-center:** the Firehose icon feeding an [S3](s3.md) bucket, previewing [Firehose](#kinesis-data-firehose-now-amazon-data-firehose) as the way to move stream data en masse into another service.
+
+[AWS Glue streaming ETL](glue.md#jobs-sources-and-targets) is another managed consumer: it can read Kinesis Data Streams or Kafka/MSK, transform records, and write prepared datasets. It runs continuously and uses checkpoints. Glue crawlers do not discover stream schemas; configure the streaming source separately. This separates **ingestion** from **transformation**, as described in [Data Integration](../concepts/data-integration.md#etl-elt-and-streaming).
 
 ### The persistence window
 

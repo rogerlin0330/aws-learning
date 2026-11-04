@@ -34,6 +34,8 @@ Account
 
 [Amazon Cognito](services/cognito.md) connects application users to this identity layer: **user pools** manage sign-in and issue tokens for [API Gateway](services/api-gateway.md) or application backends; **identity pools** provide temporary IAM-role credentials when clients need direct AWS access. These are separate choices in a [serverless architecture](patterns/serverless-architecture.md), not two mandatory stages of every login.
 
+For analytics, [S3](services/s3.md) holds datasets, [Glue](services/glue.md) discovers their schemas and runs transformations, and query engines consume the prepared data using shared catalog definitions. [Kinesis](services/kinesis.md) can feed continuous processing, while [EventBridge](services/eventbridge.md) and [Step Functions](services/step-functions.md) initiate and coordinate workflows. [Data Integration](concepts/data-integration.md) explains these separate responsibilities.
+
 ## Key Cross-Cutting Themes
 
 ### Security is Defense in Depth
@@ -81,6 +83,7 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 
 ### Services
 
+- [Glue](services/glue.md) — crawlers, shared Data Catalog metadata, serverless batch/streaming ETL, triggers and orchestration, billing, and the Data Pipeline comparison
 - [Cognito](services/cognito.md) — user directories and JWTs, identity federation and temporary AWS credentials, optional guest roles, and combined application sign-in/direct-access architectures
 - [IAM](services/iam.md) — users, groups, roles (STS / federation), policies, ARNs
 - [VPC](services/vpc.md) — subnets, routing, IGW, NACL, SG, NAT GW, PrivateLink
@@ -112,6 +115,7 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 
 ### Concepts
 
+- [Data Integration](concepts/data-integration.md) — storage vs metadata vs transformation vs query vs orchestration; ETL/ELT and batch/streaming choices
 - [Networking](concepts/networking.md) — OSI layers, firewall layers, routing, internet connectivity patterns
 - [Identity and Access](concepts/identity-and-access.md) — auth vs authz, identity types, role assumption, federation
 - [Resource Policies vs Identity Policies](concepts/resource-vs-identity-policies.md) — the two policy families; cross-account & anonymous access

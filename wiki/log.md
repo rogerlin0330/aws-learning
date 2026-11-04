@@ -1504,3 +1504,11 @@ Added the handwritten EBS encryption diagram and its wiki asset copy, embedded i
 ## [2026-11-04] seed | Amazon Cognito — User and Identity Pools
 
 Synthesized the Cognito study notes into `services/cognito.md` with all three diagrams copied to `wiki/assets/`. Verified AWS documentation and clarified optional guest roles, ID-token exchange, identity mappings versus user directories, provider configuration in the combined flow, REST/HTTP authorizer differences, ALB authentication, and current feature plans. Updated identity/access concepts, IAM federation, API Gateway, ALB, the serverless pattern, and SAA exam tips; added overview and index links. Raw sources preserved unchanged.
+
+## [2026-11-04] ingest | AWS Glue — Catalog, Crawlers, and ETL
+
+Synthesized `aws_glue.md` into `services/glue.md` and `concepts/data-integration.md`, with the architecture diagram copied into wiki assets. Verified and corrected stream crawling, DynamoDB/Kinesis target support, default versus nested catalogs, serverless networking and continuous-job costs, and workflow trigger semantics; retained concise billing and Data Pipeline migration coverage with AWS sources. Added SAA tips and inbound links from S3, Kinesis, EventBridge, Step Functions, storage, resource scope, serverless architecture, and the overview; updated the index. Preserved raw sources and their existing staged state.
+
+## [2026-11-04] update | Glue Lease-Record Worked Example
+
+Incorporated the updated source note's monthly S3 CSV example into `services/glue.md`, covering crawler configuration versus inference, classifiers, partition naming and registration, illustrative catalog metadata, Athena pruning SQL, a Glue DynamicFrame read and curated output, and Spectrum/EMR consumers. Clarified inferred types, new files versus new partitions, and Athena-only partition projection against AWS documentation. Linked the concept page, added SAA partition tips, and updated the index; raw source and existing staging preserved.

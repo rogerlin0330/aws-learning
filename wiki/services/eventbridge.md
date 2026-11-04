@@ -3,7 +3,7 @@ title: Amazon EventBridge (CloudWatch Events)
 type: service
 tags: [eventbridge, cloudwatch-events, serverless, event-driven, event-bus, rules, scheduler, lambda, cron, rate, saa]
 certs: [aws-saa]
-updated: 2026-07-25
+updated: 2026-11-04
 ---
 
 # Amazon EventBridge (CloudWatch Events)
@@ -143,6 +143,10 @@ Both scheduled rules and EventBridge Scheduler accept **two** schedule-expressio
 
 > [!tip] Exam Tip — rate vs cron
 > "Every N minutes / hours" points to a **rate** expression; "at 8am on the first Monday" points to a **cron** expression.
+
+### Starting Glue workflows when data arrives
+
+An event rule can target an [AWS Glue workflow](glue.md#starting-and-coordinating-work) with an `EVENT` trigger, for example to begin ETL when new data arrives in S3. Glue can batch events before starting the workflow. This is a workflow integration, not a blanket claim that every Glue job is a direct event-bus target. Glue also has its own cron-based scheduled triggers; using those does not require EventBridge. [AWS Glue workflow integration](https://docs.aws.amazon.com/glue/latest/dg/starting-workflow-eventbridge.html).
 
 ## EventBridge vs CloudWatch Alarms
 

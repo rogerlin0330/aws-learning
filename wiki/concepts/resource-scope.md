@@ -3,7 +3,7 @@ title: Resource Scope (Global / Regional / AZ / Edge)
 type: concept
 tags: [scope, regions, availability-zones, global, edge, dr, resilience, dms]
 certs: [aws-saa]
-updated: 2026-07-08
+updated: 2026-11-04
 ---
 
 # Resource Scope (Global / Regional / AZ / Edge)
@@ -58,6 +58,7 @@ Live in exactly one region. Most managed services are multi-AZ resilient within 
 | [CloudTrail](../services/cloudtrail.md) trail | Regional service; an all-regions trail spans every region as one logical trail. **Global service events** (IAM, STS, CloudFront, Route 53) deliver to **`us-east-1`** |
 | Lambda functions | Regional; cross-region invoke is allowed but the function itself doesn't exist elsewhere |
 | DynamoDB tables | Regional; **Global Tables** is the opt-in cross-region replication feature |
+| [Glue Data Catalog](../services/glue.md#scope-and-organization) | Default/root catalog per account per Region; supports nested/federated catalogs, not automatic global replication |
 | SNS topics, SQS queues | Regional |
 | ELB (ALB / NLB / CLB) | Regional load balancer; targets can span multiple AZs in the region |
 | Auto Scaling Group | Regional; can launch instances across multiple AZs within the region |
