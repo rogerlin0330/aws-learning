@@ -3,17 +3,17 @@ title: Identity and Access Concepts
 type: concept
 tags: [identity, access, authentication, authorization, iam, policies, roles, federation, scp, credentials]
 certs: [aws-saa, aws-aip]
-updated: 2026-06-04
+updated: 2026-11-04
 ---
 
 # Identity and Access Concepts
 
-Cross-cutting identity, authentication, and authorization concepts in AWS. The primary service implementing these is [IAM](../services/iam.md).
+Cross-cutting identity, authentication, and authorization concepts in AWS. [IAM](../services/iam.md) governs access to AWS resources; [Amazon Cognito](../services/cognito.md) provides application sign-in and brokers temporary AWS credentials for web and mobile users.
 
 ## Authentication vs Authorization
 
-- **Authentication** — verifying who you are (IAM acts as the IDP)
-- **Authorization** — determining what you can do (IAM policies define permissions)
+- **Authentication** — verifying who you are; the identity provider might be IAM, a Cognito user pool, or an external provider.
+- **Authorization** — determining what you can do; IAM policies govern AWS API access, while applications can enforce permissions using token claims and scopes.
 
 Note: IAM authorization is distinct from [network-level access control](../concepts/networking.md) (Security Groups, NACLs). A request must pass *both* — IAM says "you're allowed to call this API"; the network layer says "your packets can reach the resource."
 
@@ -54,6 +54,14 @@ Federation lets external identity providers serve as the source of truth for who
 | **Cross-account** | IAM user/role in another AWS account | `sts:AssumeRole` |
 
 In every case the user authenticates *somewhere else*, then exchanges that proof for temporary AWS credentials tied to a role. This pattern scales to millions of users and bypasses the 5,000 IAM user limit. See [IAM Roles — When to Use Roles](../services/iam.md#when-to-use-roles) for the canonical scenarios.
+
+### Application tokens vs AWS credentials
+
+A [Cognito user pool](../services/cognito.md#user-pools--application-sign-in) issues **ID and access tokens** for application identity and authorization. An [API Gateway](../services/api-gateway.md#authentication) authorizer or an application backend can validate these tokens without giving the client AWS credentials.
+
+A [Cognito identity pool](../services/cognito.md#identity-pools--temporary-aws-credentials) bridges from a trusted provider to **temporary AWS credentials** for direct AWS calls. With both pools, the user pool ID token is the input to this exchange. With an existing external provider, a user pool is optional. Guests can receive credentials only when guest access is enabled, using the configured guest role.
+
+The distinction is between **a token accepted by an application** and **credentials used to sign an AWS request**. Federation does not always end in STS credentials: a user pool can federate sign-in and issue application tokens only. The STS table above describes federation for AWS resource access.
 
 ## Policy Evaluation Order
 

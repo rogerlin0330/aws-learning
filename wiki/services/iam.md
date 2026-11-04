@@ -3,7 +3,7 @@ title: IAM — Identity and Access Management
 type: service
 tags: [iam, identity, access-management, authentication, authorization, roles, users, groups, policies, sts, federation, instance-profile, ec2-instance-role]
 certs: [aws-saa, aws-aip]
-updated: 2026-06-11
+updated: 2026-11-04
 ---
 
 # IAM — Identity and Access Management
@@ -144,11 +144,11 @@ This is essential at scale: the **5,000 IAM users per account** hard limit makes
 
 Apps with millions of end users (ride-share, photo apps) cannot create an IAM user per customer. Instead:
 
-- Users authenticate against Google / Facebook / Apple / Cognito.
-- The app exchanges that token for AWS credentials via `sts:AssumeRoleWithWebIdentity`.
+- Users authenticate against an external provider or a [Cognito user pool](cognito.md#user-pools--application-sign-in).
+- A [Cognito identity pool](cognito.md#identity-pools--temporary-aws-credentials) can broker the exchange for temporary role credentials; in its enhanced flow, Cognito handles the STS call. Direct STS federation with a supported, trusted provider is another option.
 - The role's permissions are typically narrow (e.g. read/write only the user's own DynamoDB rows or S3 prefix).
 
-No AWS credentials are ever stored in the app, and the design scales beyond the 5,000-user limit.
+The app holds temporary credentials at runtime, but no long-term AWS keys need to be embedded in its code. This design scales beyond the 5,000-user limit. If clients only call an application API that validates user pool tokens, they do not need AWS credentials at all.
 
 #### Cross-account access
 

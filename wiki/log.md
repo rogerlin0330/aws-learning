@@ -1500,3 +1500,7 @@ Added `concepts/streaming-vs-messaging.md` at the user's request, covering both 
 ## [2026-11-03] update | EBS encryption diagram
 
 Added the handwritten EBS encryption diagram and its wiki asset copy, embedded it beside the encryption walkthrough with descriptive alt text, clarified the conceptual metadata box and Nitro hardware behavior against AWS documentation, and updated the index and page date. Fixed heading spacing during staged-change review; raw source image preserved unchanged.
+
+## [2026-11-04] seed | Amazon Cognito — User and Identity Pools
+
+Synthesized the Cognito study notes into `services/cognito.md` with all three diagrams copied to `wiki/assets/`. Verified AWS documentation and clarified optional guest roles, ID-token exchange, identity mappings versus user directories, provider configuration in the combined flow, REST/HTTP authorizer differences, ALB authentication, and current feature plans. Updated identity/access concepts, IAM federation, API Gateway, ALB, the serverless pattern, and SAA exam tips; added overview and index links. Raw sources preserved unchanged.

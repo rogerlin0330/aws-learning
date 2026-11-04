@@ -3,7 +3,7 @@ title: Elastic Load Balancer (ELB)
 type: service
 tags: [elb, alb, nlb, clb, gwlb, load-balancing, networking, ha, scaling, sni, listener-rules, end-to-end-encryption, privatelink, ssl-tls, ssl-bridging, ssl-offload, tls-termination, stickiness, sticky-sessions, target-group, geneve, ingress-routing, network-inspection, security-appliance]
 certs: [aws-saa]
-updated: 2026-07-23
+updated: 2026-11-04
 ---
 
 # Elastic Load Balancer (ELB)
@@ -164,7 +164,7 @@ Rule **actions** can:
 - **Forward** to a target group
 - **Redirect** elsewhere (for example to another domain)
 - Return a **fixed HTTP response** (a specific status code)
-- **Authenticate** — using **OpenID Connect** or **Amazon Cognito**
+- **Authenticate** — using **OpenID Connect** or **[Amazon Cognito user pools](cognito.md#tokens-and-their-consumers)**. Cognito authentication uses the `authenticate-cognito` action on an HTTPS listener; an identity pool is not required. [AWS ALB authentication](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/listener-authenticate-users.html).
 
 Worked examples: a host-header rule forwards `catagram.io` traffic to the Catagram target group; a source-IP rule sends one corporate client (say `1.3.3.7`) to a dedicated target group running an alternative version; a host-header rule for `dogagram.io` **redirects** to `catagram.io` instead of forwarding.
 

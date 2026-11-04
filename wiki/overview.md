@@ -2,7 +2,7 @@
 title: AWS Learning — Overview
 type: overview
 tags: [aws, architecture, iam, vpc, organizations, control-tower, cost, s3, ec2, ecs, eks, kubernetes, containers, cloudwatch, cloudtrail, cloudformation, bootstrapping, serverless, lambda, step-functions, api-gateway, orchestration, dns, dnssec, rds, rds-custom, aurora, dms, database, database-migration, multi-az, high-availability, acid, base, cap-theorem, global, regional, tiers, cloudfront, elb, asg, auto-scaling, sqs, sns, messaging, queues, decoupling, fifo, dead-letter-queue, kinesis, streaming, ingestion, firehose, analytics, video-streams, kafka, msk, log-vs-queue]
-updated: 2026-08-01
+updated: 2026-11-04
 ---
 
 # AWS Learning Overview
@@ -31,6 +31,8 @@ Account
 ```
 
 [IAM](services/iam.md) is a **global** layer sitting above all of this — it controls who can do what to which resources, independent of region or network topology. Network security ([Security Groups](services/vpc.md#security-groups-sg), [NACLs](services/vpc.md#network-acl-nacl)) controls traffic flows *within* this infrastructure. The two layers are complementary.
+
+[Amazon Cognito](services/cognito.md) connects application users to this identity layer: **user pools** manage sign-in and issue tokens for [API Gateway](services/api-gateway.md) or application backends; **identity pools** provide temporary IAM-role credentials when clients need direct AWS access. These are separate choices in a [serverless architecture](patterns/serverless-architecture.md), not two mandatory stages of every login.
 
 ## Key Cross-Cutting Themes
 
@@ -79,6 +81,7 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 
 ### Services
 
+- [Cognito](services/cognito.md) — user directories and JWTs, identity federation and temporary AWS credentials, optional guest roles, and combined application sign-in/direct-access architectures
 - [IAM](services/iam.md) — users, groups, roles (STS / federation), policies, ARNs
 - [VPC](services/vpc.md) — subnets, routing, IGW, NACL, SG, NAT GW, PrivateLink
 - [EC2](services/ec2.md) — IaaS foundations, hosts vs instances (tenancy + AZ-resilience), instance lifecycle & state-based costs (incl. stop/start vs restart), AMIs, bootstrapping (user data), SSH/RDP access, when-to-use-EC2 decision framing

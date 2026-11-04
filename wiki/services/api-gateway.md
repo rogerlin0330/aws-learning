@@ -3,7 +3,7 @@ title: API Gateway
 type: service
 tags: [api-gateway, serverless, application-integration, rest, http, websocket, caching, authentication, migration]
 certs: [aws-saa]
-updated: 2026-07-30
+updated: 2026-11-04
 ---
 
 # API Gateway
@@ -56,12 +56,14 @@ This is the whole mental model: API Gateway is an intermediary, and each of the 
 
 API Gateway supports a range of authentication methods, including **fully open access** with no authentication at all. Three paths are worth knowing:
 
-1. **Cognito user pools** — the client authenticates with Cognito and receives a **Cognito token**, then passes that token with each request. Because of API Gateway's tight integration with Cognito, it can **natively validate** the token with no code of yours involved.
+1. **[Cognito user pools](cognito.md)** — the client authenticates with Cognito and receives a **Cognito token**, then passes that token with each request. Because of API Gateway's tight integration with Cognito, it can **natively validate** the token with no code of yours involved.
 2. **Lambda authorizer** (formerly "custom authorization") — used when API Gateway cannot natively validate the credential. A [Lambda function](lambda.md) inspects the credential and returns a verdict.
-3. **[IAM](iam.md)** — authenticate and authorize by passing **credentials in the headers**.
+3. **[IAM](iam.md)** — authenticate with **SigV4-signed requests**, including a session token when using temporary credentials; the secret access key itself is not transmitted.
+
+For **REST APIs**, the native Cognito authorizer type is `COGNITO_USER_POOLS`; methods can use ID tokens for identity checks or access tokens with OAuth scopes. For **HTTP APIs**, configure a JWT authorizer with the user pool issuer and audience, and require scopes when appropriate. An identity pool is unnecessary for these token-authorizer paths; it is useful when the client instead needs temporary credentials for IAM/SigV4 authentication. See [Cognito architecture choices](cognito.md#choosing-an-architecture), [AWS REST authorizers](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-integrate-with-cognito.html), and [AWS HTTP JWT authorizers](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-jwt-authorizer.html).
 
 > [!note] Depth beyond the exam
-> Cantrill notes that IAM authentication "is beyond what's required for the exam." Know that it exists and that its signature is credentials in the request headers, but focus on **Cognito user pools** and **Lambda authorizers**.
+> Cantrill notes that IAM authentication "is beyond what's required for the exam." Know that it exists and uses SigV4-signed request headers, but focus on **Cognito user pools** and **Lambda authorizers**.
 
 ![API Gateway authentication diagram showing two overlaid auth paths: on the left, a pink dotted arrow from the client laptop at top centre to a Cognito icon labelled authenticate with Cognito and receive token, a solid pink arrow down from the client to the API Gateway icon labelled pass token with request, and a pink double-headed arrow between API Gateway and Cognito labelled verify token validity; on the right, orange arrows show the client calling API Gateway with a bearer token (ID), API Gateway calling a Lambda Authorizer on the far right (labelled Lambda authorizer called), the authorizer making up-and-down calls to an ID-badge icon labelled call to ID Provider or compute based check of ID, and the authorizer returning an IAM Policy and principal identifier to API Gateway; a green arrow points down from API Gateway to a separate Lambda function, captioned handles request via lambda integration or returns 403 ACCESS_DENIED to client](../assets/api-gateway-authentication.png)
 

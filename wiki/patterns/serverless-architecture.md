@@ -3,7 +3,7 @@ title: Serverless Architecture
 type: pattern
 tags: [serverless, faas, lambda, event-driven, microservices, s3, dynamodb, cognito, mediaconvert, elastic-transcoder, s3-events, api-gateway, stateless, ephemeral, consumption-billing]
 certs: [aws-saa]
-updated: 2026-07-28
+updated: 2026-11-04
 ---
 
 # Serverless Architecture
@@ -47,7 +47,7 @@ Step by step:
 
 1. **HTML + JS** — Julie's browser loads an [S3 bucket serving a static website](../services/s3.md) and downloads HTML with embedded client-side **JavaScript**. This JS *is* the PetTube front end, running in her browser. **No self-managed compute so far.**
 2. **Authenticate with Google IdP, receive token** — the JS talks to a third-party identity provider (Google here). Google validates Julie's username/password and returns an **identity token** proving she authenticated.
-3. **Swap Google token for AWS temp credentials** — AWS can't consume third-party identities directly. The JS sends the Google token to **Amazon Cognito**, which exchanges it for **temporary AWS credentials**.
+3. **Swap Google token for AWS temp credentials** — S3 does not accept the Google login token as AWS credentials. The JS sends the Google token to **[Amazon Cognito](../services/cognito.md)**, which exchanges it for **temporary AWS credentials**.
 4. **Upload the master video using temp credentials** — the JS uses those temporary credentials to upload the master video into the **Originals Bucket** (S3). Everything to here used only managed services (S3, Cognito, Google IdP) with **zero self-managed compute**.
 5. **Event** — the Originals bucket is configured to emit an **event** on object upload; the event (containing the uploaded object's details) **invokes the Processing Lambda**. This is the canonical [S3 event notification](../services/s3.md#event-notifications) trigger, and on the Lambda side it is an [asynchronous invocation](../services/lambda.md#asynchronous-invocation).
 6. **Jobs** — the Processing [Lambda](../services/lambda.md) creates **transcoding jobs** in the managed transcoding service (diagram: MediaConvert), one job per required output video size.
@@ -71,7 +71,9 @@ Step by step:
 ### The Cognito role (critical exam concept)
 
 - A third-party (web) identity token goes to **Cognito**, which returns **temporary AWS credentials**.
-- Cognito is the **broker/exchange** between an external identity provider and AWS. AWS cannot use a Google/Facebook token directly. The token-to-temporary-credentials exchange shown at step 3 is specifically an **Identity Pool** (federated identities) function, as distinct from a **User Pool** (a sign-up/sign-in identity store) — a common exam distinction. This ties into [identity federation](../concepts/identity-and-access.md) and the [temporary credentials from STS](../services/iam.md) that AWS roles hand out.
+- Cognito is the **broker/exchange** between an external identity provider and AWS. S3 and DynamoDB do not accept a Google/Facebook login token as an AWS request signature. The token-to-temporary-credentials exchange shown at step 3 is specifically an **Identity Pool** (federated identities) function, as distinct from a **User Pool** (a sign-up/sign-in identity store) — a common exam distinction. This ties into [identity federation](../concepts/identity-and-access.md) and the [temporary credentials from STS](../services/iam.md) that AWS roles hand out.
+
+A user pool can be added when the app needs managed registration or a consistent token format across sign-in providers: [user pool → identity pool](../services/cognito.md#combining-user-and-identity-pools). An API-only design can instead validate user pool tokens at API Gateway and let the backend access AWS with its own role.
 
 ### Event-driven invocation
 
