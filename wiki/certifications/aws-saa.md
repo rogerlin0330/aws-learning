@@ -8,7 +8,7 @@ updated: 2026-11-04
 
 # AWS Solutions Architect Associate (SAA-C03)
 
-A running collection of exam tips, gotchas, and comparison tables. Deep-dive pages: [Glue](../services/glue.md) · [Cognito](../services/cognito.md) · [IAM](../services/iam.md) · [VPC](../services/vpc.md) · [EC2](../services/ec2.md) · [SQS](../services/sqs.md) · [SNS](../services/sns.md) · [Kinesis](../services/kinesis.md) · [ECS](../services/ecs.md) · [ECR](../services/ecr.md) · [S3](../services/s3.md) · [RDS](../services/rds.md) · [Aurora](../services/aurora.md) · [DMS](../services/dms.md) · [Route 53](../services/route53.md) · [Organizations](../services/organizations.md) · [Control Tower](../services/control-tower.md) · [CloudWatch](../services/cloudwatch.md) · [KMS](../services/kms.md) · [EKS](../services/eks.md) · [Networking](../concepts/networking.md) · [Identity & Access](../concepts/identity-and-access.md) · [Resource vs Identity Policies](../concepts/resource-vs-identity-policies.md) · [DNS](../concepts/dns.md) · [DNSSEC](../concepts/dnssec.md) · [Database Models](../concepts/db-transaction-model.md) · [TLS/HTTPS](../concepts/tls-https.md) · [Containers](../concepts/containers.md) · [Kubernetes](../concepts/kubernetes.md) · [CloudFormation](../services/cloudformation.md) · [Cost Optimization](../patterns/cost-optimization.md) · [Scaling](../patterns/scaling.md) · [Boot Time to Service Time](../patterns/boot-time-optimization.md) · [Global & Regional Architecture](../patterns/global-regional-architecture.md).
+A running collection of exam tips, gotchas, and comparison tables. Deep-dive pages: [AppFlow](../services/appflow.md) · [Glue](../services/glue.md) · [Cognito](../services/cognito.md) · [IAM](../services/iam.md) · [VPC](../services/vpc.md) · [EC2](../services/ec2.md) · [SQS](../services/sqs.md) · [SNS](../services/sns.md) · [Kinesis](../services/kinesis.md) · [ECS](../services/ecs.md) · [ECR](../services/ecr.md) · [S3](../services/s3.md) · [RDS](../services/rds.md) · [Aurora](../services/aurora.md) · [DMS](../services/dms.md) · [Route 53](../services/route53.md) · [Organizations](../services/organizations.md) · [Control Tower](../services/control-tower.md) · [CloudWatch](../services/cloudwatch.md) · [KMS](../services/kms.md) · [EKS](../services/eks.md) · [Networking](../concepts/networking.md) · [Identity & Access](../concepts/identity-and-access.md) · [Resource vs Identity Policies](../concepts/resource-vs-identity-policies.md) · [DNS](../concepts/dns.md) · [DNSSEC](../concepts/dnssec.md) · [Database Models](../concepts/db-transaction-model.md) · [TLS/HTTPS](../concepts/tls-https.md) · [Containers](../concepts/containers.md) · [Kubernetes](../concepts/kubernetes.md) · [CloudFormation](../services/cloudformation.md) · [Cost Optimization](../patterns/cost-optimization.md) · [Scaling](../patterns/scaling.md) · [Boot Time to Service Time](../patterns/boot-time-optimization.md) · [Global & Regional Architecture](../patterns/global-regional-architecture.md).
 
 ## Architecture Fundamentals — Global vs Regional
 
@@ -2056,6 +2056,27 @@ See [API Gateway](../services/api-gateway.md) for full details.
 | **403** | **Access denied** (authorizer or WAF) |
 | "write to DynamoDB / start a Step Functions execution / publish to SNS with no compute" | **Direct AWS service integration** |
 | "consistent front end during a migration" | API Gateway as a **migration façade** |
+
+## Amazon AppFlow
+
+See [Amazon AppFlow](../services/appflow.md) for the diagram and walkthrough, and [Data Integration](../concepts/data-integration.md#choosing-a-data-movement-service) for service selection.
+
+> [!tip] Exam Tip
+> Supported SaaS records → [S3](../services/s3.md)/Redshift with minimal custom code suggests AppFlow. Mapping, masking, filtering, and validation can be configured in a flow. A reusable connection supplies access settings; a flow defines the transfer.
+
+| Scenario | Choice or qualification |
+| --- | --- |
+| Supported SaaS transfer must avoid the public internet | AppFlow + [PrivateLink](../services/vpc.md#aws-privatelink), if the connector and SaaS account support it; console metadata calls still use public endpoints |
+| Run when source SaaS records change | Event-triggered flow, only for sources that expose supported change events |
+| Scheduled incremental transfer | Records since the last successful run; a creation timestamp alone does not capture edits |
+| No suitable built-in connector | Custom Connector SDK in Java or Python; requires implementation work |
+| Land records in S3 and register their schema | AppFlow can populate the [Glue Data Catalog](../services/glue.md#data-catalog-and-crawlers) for configured output; a crawler is not mandatory |
+| Database migration / CDC rather than SaaS connector transfer | [DMS](../services/dms.md); its targets are not limited to databases |
+| Event matching and routing | [EventBridge](../services/eventbridge.md); it can also receive supported events through AppFlow |
+| Retained streaming records / managed stream delivery | [Kinesis Data Streams / Data Firehose](../services/kinesis.md) respectively |
+
+> [!warning] Gotcha
+> Do not memorize “100 GB per flow” as a universal allowance. Connector-specific size, frequency, and application API quotas still apply. Glue also has external/SaaS connectors: the distinction is the work required, not merely whether the source is outside AWS.
 
 ## AWS Glue
 

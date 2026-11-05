@@ -1512,3 +1512,11 @@ Synthesized `aws_glue.md` into `services/glue.md` and `concepts/data-integration
 ## [2026-11-04] update | Glue Lease-Record Worked Example
 
 Incorporated the updated source note's monthly S3 CSV example into `services/glue.md`, covering crawler configuration versus inference, classifiers, partition naming and registration, illustrative catalog metadata, Athena pruning SQL, a Glue DynamicFrame read and curated output, and Spectrum/EMR consumers. Clarified inferred types, new files versus new partitions, and Athena-only partition projection against AWS documentation. Linked the concept page, added SAA partition tips, and updated the index; raw source and existing staging preserved.
+
+## [2026-11-04] ingest | Amazon AppFlow — SaaS Data Integration
+
+Synthesized `amazon_appflow.md` into `services/appflow.md` with the source architecture image copied into wiki assets, reusable connection/flow mechanics, trigger semantics, and an illustrative SaaS-to-S3/Glue analytics walkthrough. Verified AWS documentation and clarified S3 connection configuration, PrivateLink limits and public metadata calls, connector-specific quotas, and AppFlow versus DMS, streaming delivery, EventBridge, and Glue. Expanded the data integration hub and SAA tips; updated related service links, regional scope, overview, and index. Raw sources preserved unchanged.
+
+## [2026-11-04] update | AppFlow Supported Applications
+
+Added AWS's supported source/destination application catalog to the AppFlow page and made connector-specific direction, object, operation, and trigger limits explicit. Clarified that a custom connector requires a feasibility check and does not guarantee arbitrary application support; aligned the SAA tip and index. Preserved raw sources and existing staging.

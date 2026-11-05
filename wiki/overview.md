@@ -34,7 +34,7 @@ Account
 
 [Amazon Cognito](services/cognito.md) connects application users to this identity layer: **user pools** manage sign-in and issue tokens for [API Gateway](services/api-gateway.md) or application backends; **identity pools** provide temporary IAM-role credentials when clients need direct AWS access. These are separate choices in a [serverless architecture](patterns/serverless-architecture.md), not two mandatory stages of every login.
 
-For analytics, [S3](services/s3.md) holds datasets, [Glue](services/glue.md) discovers their schemas and runs transformations, and query engines consume the prepared data using shared catalog definitions. [Kinesis](services/kinesis.md) can feed continuous processing, while [EventBridge](services/eventbridge.md) and [Step Functions](services/step-functions.md) initiate and coordinate workflows. [Data Integration](concepts/data-integration.md) explains these separate responsibilities.
+For analytics, [AppFlow](services/appflow.md) can bring supported SaaS records into AWS, [S3](services/s3.md) holds datasets, [Glue](services/glue.md) discovers their schemas and runs transformations, and query engines consume the prepared data using shared catalog definitions. AppFlow can also register eligible S3 output directly in the catalog. [Kinesis](services/kinesis.md) can feed continuous processing, while [EventBridge](services/eventbridge.md) and [Step Functions](services/step-functions.md) initiate and coordinate workflows. [Data Integration](concepts/data-integration.md) explains these responsibilities and service choices.
 
 ## Key Cross-Cutting Themes
 
@@ -83,6 +83,7 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 
 ### Services
 
+- [AppFlow](services/appflow.md) — SaaS connectors, reusable connections, flow processing and triggers, PrivateLink limits, and an S3/Glue analytics example
 - [Glue](services/glue.md) — crawlers, shared Data Catalog metadata, serverless batch/streaming ETL, triggers and orchestration, billing, and the Data Pipeline comparison
 - [Cognito](services/cognito.md) — user directories and JWTs, identity federation and temporary AWS credentials, optional guest roles, and combined application sign-in/direct-access architectures
 - [IAM](services/iam.md) — users, groups, roles (STS / federation), policies, ARNs

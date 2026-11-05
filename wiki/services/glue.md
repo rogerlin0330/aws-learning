@@ -20,6 +20,8 @@ AWS Glue is a **serverless data integration service** for discovering, preparing
 
 For example, a crawler can describe JSON files in [S3](s3.md), while a job cleans their records and writes Parquet files for analysis. Creating a catalog entry does **not** copy the underlying dataset or transform its contents. Glue Studio can generate job code from a visual workflow, and developers can also author scripts directly. [AWS Glue overview](https://docs.aws.amazon.com/glue/latest/dg/what-is-glue.html).
 
+[AppFlow](appflow.md) complements Glue when records originate in supported SaaS applications: a configured flow can transfer them to S3 and register output metadata directly in the Data Catalog. A Glue job can then perform further transformations. This path does not require a crawler merely to populate the catalog. See the [data movement comparison](../concepts/data-integration.md#choosing-a-data-movement-service). [AWS AppFlow catalog integration](https://docs.aws.amazon.com/appflow/latest/userguide/flows-catalog.html).
+
 ## Architecture and Diagram Walkthrough
 
 Read the diagram as two flows: **blue arrows discover metadata**, while **red and green arrows move data through a transformation**. The catalog connects the flows but does not sit in the path as a repository for the source records.

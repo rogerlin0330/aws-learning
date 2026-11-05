@@ -3,7 +3,7 @@ title: DMS — Database Migration Service
 type: service
 tags: [dms, database-migration, migration, replication, cdc, full-load, replication-instance, replication-task, endpoint, dms-serverless, dcu, schema-conversion, dms-schema-conversion, sct, homogeneous-migration, heterogeneous-migration, snowball, s3, rds, aurora, redshift, dynamodb, vpc, kms, cloudwatch, cloudtrail]
 certs: [aws-saa]
-updated: 2026-07-03
+updated: 2026-11-04
 ---
 
 # DMS — Database Migration Service
@@ -26,6 +26,8 @@ The diagram is the classic **DMS Standard** shape:
 4. A **target endpoint** stores the connection details for the destination.
 
 The schema-conversion note on the right needs a modern update: **AWS SCT** still exists, but AWS also offers **DMS Schema Conversion** in the DMS console.
+
+For SaaS application records exposed through connectors rather than a database migration endpoint, consider [Amazon AppFlow](appflow.md). The [data integration comparison](../concepts/data-integration.md#choosing-a-data-movement-service) distinguishes these from stream delivery and event routing.
 
 ## DMS Standard
 

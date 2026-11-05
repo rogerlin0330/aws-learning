@@ -148,6 +148,10 @@ Both scheduled rules and EventBridge Scheduler accept **two** schedule-expressio
 
 An event rule can target an [AWS Glue workflow](glue.md#starting-and-coordinating-work) with an `EVENT` trigger, for example to begin ETL when new data arrives in S3. Glue can batch events before starting the workflow. This is a workflow integration, not a blanket claim that every Glue job is a direct event-bus target. Glue also has its own cron-based scheduled triggers; using those does not require EventBridge. [AWS Glue workflow integration](https://docs.aws.amazon.com/glue/latest/dg/starting-workflow-eventbridge.html).
 
+## AppFlow and SaaS Data
+
+[Amazon AppFlow](appflow.md) transfers supported SaaS records with mapping and filtering, while EventBridge matches and routes events. They can cooperate: AppFlow can ingest Salesforce Platform and CDC events into an EventBridge partner event bus, where rules route them onward. This integration does not make EventBridge a general bulk-data synchronization service. [AWS AppFlow integration](https://docs.aws.amazon.com/appflow/latest/userguide/what-is-appflow.html).
+
 ## EventBridge vs CloudWatch Alarms
 
 Do not blur these two CloudWatch-family capabilities:

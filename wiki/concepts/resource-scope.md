@@ -59,6 +59,7 @@ Live in exactly one region. Most managed services are multi-AZ resilient within 
 | Lambda functions | Regional; cross-region invoke is allowed but the function itself doesn't exist elsewhere |
 | DynamoDB tables | Regional; **Global Tables** is the opt-in cross-region replication feature |
 | [Glue Data Catalog](../services/glue.md#scope-and-organization) | Default/root catalog per account per Region; supports nested/federated catalogs, not automatic global replication |
+| [AppFlow](../services/appflow.md) flows and connector profiles | Regional configuration; an S3 source/destination bucket must be in the flow's Region |
 | SNS topics, SQS queues | Regional |
 | ELB (ALB / NLB / CLB) | Regional load balancer; targets can span multiple AZs in the region |
 | Auto Scaling Group | Regional; can launch instances across multiple AZs within the region |
