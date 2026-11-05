@@ -2069,7 +2069,7 @@ See [Amazon AppFlow](../services/appflow.md) for the diagram and walkthrough, an
 | Supported SaaS transfer must avoid the public internet | AppFlow + [PrivateLink](../services/vpc.md#aws-privatelink), if the connector and SaaS account support it; console metadata calls still use public endpoints |
 | Run when source SaaS records change | Event-triggered flow, only for sources that expose supported change events |
 | Scheduled incremental transfer | Records since the last successful run; a creation timestamp alone does not capture edits |
-| No suitable built-in connector | Custom Connector SDK in Java or Python; requires implementation work |
+| No suitable built-in connector | Check the [supported applications](https://docs.aws.amazon.com/appflow/latest/userguide/app-specific.html) first; a Java/Python custom connector requires a feasibility check and implementation, not guaranteed support for any application |
 | Land records in S3 and register their schema | AppFlow can populate the [Glue Data Catalog](../services/glue.md#data-catalog-and-crawlers) for configured output; a crawler is not mandatory |
 | Database migration / CDC rather than SaaS connector transfer | [DMS](../services/dms.md); its targets are not limited to databases |
 | Event matching and routing | [EventBridge](../services/eventbridge.md); it can also receive supported events through AppFlow |

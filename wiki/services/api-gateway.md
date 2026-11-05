@@ -52,6 +52,66 @@ Most API Gateway interactions have three phases:
 
 This is the whole mental model: API Gateway is an intermediary, and each of the features below attaches to one of these three phases.
 
+## REST API object relationships
+
+A REST API organizes **Resources** (paths such as `/orders`) and their **Methods** (such as `GET` and `POST`). A **Stage** is a named reference to a deployment snapshot of that API; it selects which deployed configuration clients reach. A resource path is only one part of the URL: the default invoke URL is `https://{apiId}.execute-api.{region}.amazonaws.com/{stage}/{resourcePath}`. See [stages and deployments](#stages-and-deployments) and [AWS method request setup](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-method-settings-method-request.html).
+
+Both diagrams begin with the general `METHOD https://{api_id}.execute-api.us-east-1.amazonaws.com/{stage}/{resource}` request format, a concrete example, and the component mapping. Both diagrams use the same color scheme: **blue** for API configuration and routing, **yellow** for authorization and usage controls, **green** for backend integration, **red** for rejected requests, and **orange** for the client. Labels and connector shapes carry the meaning independently of color.
+
+![English UML configuration diagram in Excalidraw hand-drawn style: API composes Resources and Stages; Resource composes Methods; Method owns client-facing Method Request settings and a separate Integration; Stages reference Deployments; Usage Plans associate stages and API keys; Method Request references a reusable Authorizer. All links describe configuration, not request execution](../assets/api-gateway-request-model.png)
+
+[Editable UML source](../assets/api-gateway-request-model.excalidraw). This diagram shows **configuration relationships only**: composition for ownership, shared aggregation for usage-plan selection of existing stages, and associations/dependencies for references and use. In particular, **Method → Integration is an ownership relationship, not a request path that bypasses Method Request checks**. Method Request is the client-facing configuration aspect of Method; Integration contains its backend-facing configuration. Runtime execution is illustrated separately below. Response configuration and canary deployments are omitted for clarity.
+
+### Reading the URL: API versus stage versus resource
+
+With the default REST API endpoint, the **API corresponds to the hostname level**. The general request format is:
+
+```text
+METHOD https://{api_id}.execute-api.us-east-1.amazonaws.com/{stage}/{resource}
+```
+
+`METHOD` is the HTTP verb, written before the URL rather than as part of it. `{resource}` can include multiple path segments. For example:
+
+```text
+GET https://abc123.execute-api.us-east-1.amazonaws.com/prod/orders
+```
+
+| URL/request component | API Gateway concept |
+| --- | --- |
+| `abc123.execute-api.us-east-1.amazonaws.com` | Default API hostname; `abc123` identifies the API |
+| `/prod` | Stage selecting a deployment of that API |
+| `/orders` | Resource path within that deployed API |
+| `GET` | Method on the resource; carried in the HTTP request, not in the URL |
+
+This makes **API → hostname, Stage → deployment path prefix, Resource → resource path, Method → HTTP verb** a useful reading rule for the default URL. The API is still the configuration container, not a DNS record or an HTTP route alone.
+
+**Custom domains loosen this one-API/one-hostname relationship.** An API mapping associates a custom domain and optional path prefix with an **API + stage**. For example, `api.example.com/shop` can map to API A's `prod` stage, while `api.example.com/billing` maps to API B's `prod` stage. A request to `/shop/orders` then reaches API A's `/orders` resource after the mapping prefix is removed; the stage name need not appear in the external URL. A mapping prefix is therefore not necessarily a Resource path. See [AWS custom-domain API mappings](https://docs.aws.amazon.com/apigateway/latest/developerguide/rest-api-mappings.html).
+
+### Configuration relationships
+
+| Concept | Responsibility | Relationship |
+| --- | --- | --- |
+| API | Defines the overall API | Contains resources, stages, deployments, and API-scoped authorizer definitions |
+| Resource | Identifies a path, for example `/orders` | Belongs to one API; can have child resources and multiple methods |
+| Method | Defines a client-facing operation, for example `GET /orders` | Belongs to a resource; has request configuration and an integration when configured for invocation |
+| Method Request | Defines authorization, API key requirement, request parameters, body models, and optional validation | A configuration aspect of the Method, **not a separate AWS API resource** |
+| Authorizer | Validates identity and determines API access | A method can reference a Lambda or Cognito authorizer; multiple methods can reuse it. `NONE` and `AWS_IAM` do not reference an Authorizer object |
+| Integration Request | Defines the backend target, integration type, and request construction/mapping | Represented by the Method's Integration object |
+| Integration Method | Chooses the HTTP verb used to call the backend | The Integration object's `httpMethod` property, independent of the client's Method |
+| Stage | Provides a named deployment entry point and stage-specific settings | References a deployment in the same API; several stages can reference the same deployment |
+| Usage Plan | Defines per-API-key throttling and optional periodic quotas | Associates selected API stages, potentially across multiple APIs, and API keys; may define method-specific throttles |
+
+### Runtime request flow
+
+For example, a client sends **`GET /prod/orders`**. Stage `prod` selects a deployment containing resource `/orders` and method `GET`. The method's request configuration specifies the applicable authorization and validation requirements. If API keys are required, a key associated with a usage plan covering this API stage enables per-client metering and throttling. **The request must pass the applicable checks before the integration constructs and sends the backend request.** A [Lambda](lambda.md) integration uses **`POST`** to invoke the Lambda service, even though the client's method is `GET`. Lambda proxy integration constructs the event automatically and preserves the client's method in `event.httpMethod`; custom integration supports explicit mappings. See [AWS Method reference](https://docs.aws.amazon.com/apigateway/latest/api/API_Method.html) and [AWS Integration reference](https://docs.aws.amazon.com/apigateway/latest/api/API_Integration.html).
+
+![English request-flow diagram in Excalidraw hand-drawn style: client GET request resolves API, Stage, Resource, and Method; configured Method Request checks and admission controls must accept the request before Integration Request constructs a POST invocation to the backend Lambda; failed checks reject the request without invoking the integration Lambda](../assets/api-gateway-request-flow.png)
+
+[Editable request-flow source](../assets/api-gateway-request-flow.excalidraw). This is an **uncached Lambda-backed example**, not the UML configuration graph. Authorization, usage controls, and validation are grouped without prescribing their internal evaluation order. Usage-plan throttling is an admission control associated with API keys and API stages, not a separately invoked backend. Rejected requests do not invoke the integration Lambda; a custom authorizer Lambda may already have run as part of authorization. Responses and cache hits are omitted.
+
+> [!warning] Gotcha — separate permission and throttling boundaries
+> A Lambda authorizer's policy allows or denies **`execute-api:Invoke`** on API methods; it does not give the caller direct **`lambda:InvokeFunction`** permission. API Gateway needs separately configured permission to invoke the backend. A [Cognito](cognito.md) user pool authorizer validates tokens natively without an additional authorizer Lambda. API keys identify usage consumers and are not a substitute for authentication. A key can be linked to multiple plans overall, but only one plan for a given API stage. Usage-plan throttles and quotas are best-effort targets; account and stage/method limits also apply. See [AWS authorizer output](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-lambda-authorizer-output.html), [Lambda invocation permissions](https://docs.aws.amazon.com/lambda/latest/dg/services-apigateway.html#services-apigateway-permissions), and [AWS usage plans](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-api-usage-plans.html).
+
 ## Authentication
 
 API Gateway supports a range of authentication methods, including **fully open access** with no authentication at all. Three paths are worth knowing:
@@ -128,7 +188,7 @@ The solid **blue** arrow into `prod` is the base deployment carrying the bulk of
 
 > [!note] Canary mechanics beyond the lecture
 >
-> - **Canary is a REST API feature only** — not available on HTTP APIs or WebSocket APIs. Source: [AWS — Canary release deployments](https://docs.aws.amazon.com/apigateway/latest/developerguide/canary-release.html).
+> - **Canary releases are supported only by API Gateway REST APIs** — not by API Gateway HTTP APIs or WebSocket APIs. REST APIs and HTTP APIs are both RESTful API products; HTTP APIs offer a smaller feature set at a lower price. Sources: [AWS — Canary release deployments](https://docs.aws.amazon.com/apigateway/latest/developerguide/canary-release.html), [REST API versus HTTP API](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-vs-rest.html).
 > - **You cannot create a canary on a stage that does not exist.** A normal deploy *creates* the stage if the name is new; a canary deploy **errors** instead. Source: [AWS — Create a canary release deployment](https://docs.aws.amazon.com/apigateway/latest/developerguide/create-canary-deployment.html).
 > - Canary state is **sticky**: once enabled, the **base freezes** at whatever deployment it had, and **every subsequent deploy to that stage lands on the canary** until you promote it or remove the canary settings.
 > - The canary holds **one deployment slot**, overwritten (not stacked) by each new deploy.
@@ -245,6 +305,10 @@ Throttling is what produces a **429**. API Gateway applies limits at several lev
 - [Global & Regional AWS Architecture](../patterns/global-regional-architecture.md) — API Gateway as the regional entry point / web tier
 - [TLS & HTTPS](../concepts/tls-https.md) — API Gateway terminates TLS; custom domain names need an ACM certificate
 - [AWS — Setting up a stage](https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-stages.html)
+- [AWS — Method API reference](https://docs.aws.amazon.com/apigateway/latest/api/API_Method.html)
+- [AWS — Integration API reference](https://docs.aws.amazon.com/apigateway/latest/api/API_Integration.html)
+- [AWS — Usage plans and API keys](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-api-usage-plans.html)
+- [AWS — Custom-domain API mappings](https://docs.aws.amazon.com/apigateway/latest/developerguide/rest-api-mappings.html)
 - [AWS — Canary release deployments](https://docs.aws.amazon.com/apigateway/latest/developerguide/canary-release.html)
 - [AWS — Cache settings for REST APIs](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-caching.html)
 - [AWS — API Gateway quotas](https://docs.aws.amazon.com/apigateway/latest/developerguide/limits.html)

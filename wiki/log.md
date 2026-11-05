@@ -1520,3 +1520,29 @@ Synthesized `amazon_appflow.md` into `services/appflow.md` with the source archi
 ## [2026-11-04] update | AppFlow Supported Applications
 
 Added AWS's supported source/destination application catalog to the AppFlow page and made connector-specific direction, object, operation, and trigger limits explicit. Clarified that a custom connector requires a feasibility check and does not guarantee arbitrary application support; aligned the SAA tip and index. Preserved raw sources and existing staging.
+
+## [2026-11-04] update | API Gateway REST API UML Relationships
+
+Added an editable Excalidraw relationship diagram and rendered PNG connecting API, Resource, Method, Method Request, Integration Request/Method, Stage/Deployment, Authorizers, and Usage Plans/API keys. Added a GET-to-Lambda-POST worked example and clarified configuration ownership, shared stage associations, native Cognito authorization, and separate API/backend permissions; updated the catalog and cited AWS documentation.
+
+Extended the diagram and explanation with default-hostname/API identification, stage and resource URL segments, and custom-domain API mappings that can share a hostname across APIs and hide stage names.
+
+## [2026-11-04] update | API Gateway Diagram Structure versus Request Flow
+
+Separated the UML configuration model from the runtime request-flow diagram so Method ownership of Integration cannot be mistaken for a bypass around Method Request checks. Reworked both diagrams in English using Excalidraw default Excalifont, hand-drawn black strokes, rounded shapes, and transparent fills; retained Stage/Deployment, usage-plan relationships, URL decomposition, and the client-GET/backend-POST distinction. Updated wiki explanations, editable-source links, and the index.
+
+## [2026-11-04] update | API Gateway Diagram Colors
+
+Added restrained semantic colors to both English Excalidraw diagrams: pale blue for API configuration/routing, yellow for authorization and usage controls, green for backend integration, red for rejected requests, and orange for the client. Preserved the hand-drawn font, lines, and separation of UML ownership from runtime flow; updated the wiki color guide and index.
+
+## [2026-11-04] update | API Gateway General Request Format
+
+Added the general METHOD + default invoke URL template to the request-flow diagram header, directly above the concrete GET example and component labels. Added the same template to the wiki and clarified that METHOD is outside the URL and resource paths can contain multiple segments; updated the index.
+
+## [2026-11-04] update | API Gateway Configuration Diagram Request Format
+
+Added the same general METHOD + invoke URL template, concrete GET example, and component labels to the top of the UML configuration diagram. Shifted the configuration graph down to preserve spacing, and aligned the wiki description and catalog with both diagrams.
+
+## [2026-11-04] update | API Gateway Pre-commit Review
+
+Reviewed the staged API Gateway diagrams and documentation plus the AppFlow connector exam-tip clarification. Corrected the canary explanation grammar and linked the REST-versus-HTTP product comparison to distinguish AWS product names from RESTful API design.
