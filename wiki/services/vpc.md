@@ -317,12 +317,20 @@ The packet translation steps are the same for both zonal and regional:
 
 [VPC Flow Logs](vpc-flow-logs.md) records delayed IP traffic metadata at VPC, subnet, or individual [ENI](../concepts/networking.md#elastic-network-interfaces-enis) scope. Use it to investigate accepted/rejected traffic and return-path filtering; it does not capture payloads or prove application success. The dedicated page covers destinations, record fields, exclusions, and the illustrated ICMP request/reply example.
 
+## VPC Gateway Endpoints
+
+[VPC Gateway Endpoints](vpc-gateway-endpoints.md) provide route-table-based access to [S3](s3.md) and DynamoDB without an internet gateway, NAT device, or public client IP. AWS adds a service-prefix-list destination pointing to the endpoint in each selected route table. The endpoint is highly available across AZs, serves its own Region, and cannot be extended to clients outside its VPC. The dedicated page includes before/after architecture diagrams, editable Excalidraw diagram, endpoint versus bucket policies, and configuration checks.
+
 ## AWS PrivateLink
 
-An **endpoint** is an object within your VPC that connects to AWS services or other VPCs using private IP addressing — traffic never leaves the AWS network.
+AWS PrivateLink provides private connectivity to supported services and resources. An **[interface endpoint](vpc-interface-endpoints.md)** uses [ENIs](../concepts/networking.md#elastic-network-interfaces-enis) with private IPs in selected subnets; private DNS can make the usual service hostname resolve to those addresses. Interface endpoints support many AWS/partner services and appropriate hybrid-connectivity designs. [Gateway endpoints](vpc-gateway-endpoints.md) use service-prefix-list routes instead and **do not use PrivateLink**. “VPC endpoint” is the broader category, not a synonym for PrivateLink. ([AWS PrivateLink overview](https://docs.aws.amazon.com/vpc/latest/privatelink/what-is-privatelink.html), [AWS gateway endpoints](https://docs.aws.amazon.com/vpc/latest/privatelink/gateway-endpoints.html))
+
+The [interface endpoint guide](vpc-interface-endpoints.md) compares gateway and interface endpoints and walks through [SNS DNS overrides](vpc-interface-endpoints.md#sns-walkthrough-keep-the-hostname-change-the-dns-answer): AWS-managed Private DNS or a customer-managed Route 53 private hosted zone with an alias to the endpoint.
 
 ## References
 
+- [AWS — Gateway endpoints](https://docs.aws.amazon.com/vpc/latest/privatelink/gateway-endpoints.html)
+- [AWS — What is AWS PrivateLink?](https://docs.aws.amazon.com/vpc/latest/privatelink/what-is-privatelink.html)
 - [IGW vs NAT Gateway](https://medium.com/awesome-cloud/aws-vpc-difference-between-internet-gateway-and-nat-gateway-c9177e710af6)
 - [Regional NAT gateways for automatic multi-AZ expansion — Amazon VPC User Guide](https://docs.aws.amazon.com/vpc/latest/userguide/nat-gateways-regional.html)
 - [Default VPCs — Amazon VPC User Guide](https://docs.aws.amazon.com/vpc/latest/userguide/default-vpc.html)

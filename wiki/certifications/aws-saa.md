@@ -636,6 +636,33 @@ See [VPC Flow Logs](../services/vpc-flow-logs.md) for diagrams, fields, and trou
 > - Missing [EC2 metadata](../services/ec2.md) / DHCP / Amazon DNS traffic can reflect exclusions. Queries to your own DNS server can be logged.
 > - Protocols: ICMP **1**, TCP **6**, UDP **17**. **SKIPDATA** indicates missing records, not a network rejection.
 
+### VPC Gateway Endpoints
+
+See [VPC Gateway Endpoints](../services/vpc-gateway-endpoints.md) for diagrams and the [S3](../services/s3.md) access-control example.
+
+> [!tip] Exam Tip
+>
+> - **Private access to same-Region S3 or DynamoDB without NAT/IGW/public client IPs** → gateway endpoint; no additional gateway-endpoint charge.
+> - **Destination = AWS-managed service prefix list; target = endpoint ID.** Associate route tables, not endpoint ENIs in each subnet. Subnets using those tables inherit the route.
+> - **Highly available across AZs by default**, but scoped to one [VPC](../services/vpc.md) and Region; not an endpoint that on-premises/peered/transit-connected clients can reuse.
+> - **Endpoint policy** limits what can be accessed through that endpoint. **Bucket policy + explicit Deny on `aws:SourceVpce`** enforces the approved path for the selected actions; a conditional Allow alone is not an absolute restriction.
+> - **Gateway endpoints do not use [PrivateLink](../services/vpc.md#aws-privatelink).** Interface endpoints use subnet [ENIs](../concepts/networking.md#elastic-network-interfaces-enis) and private IPs; both S3 and DynamoDB also support interface endpoints.
+> - Adding a gateway endpoint does not remove a default NAT/IGW route or grant missing [IAM](../services/iam.md) permissions.
+
+### VPC Interface Endpoints
+
+See [VPC Interface Endpoints](../services/vpc-interface-endpoints.md) and its [gateway/interface comparison](../services/vpc-interface-endpoints.md#gateway-endpoint-vs-interface-endpoint).
+
+> [!tip] Exam Tip
+>
+> - **Private [SNS](../services/sns.md)/[SQS](../services/sqs.md) calls without NAT/IGW** → interface endpoint using PrivateLink, with ENIs in selected subnets and endpoint security groups.
+> - **Resilience across AZs** → one endpoint resource with ENIs in multiple AZs; select one subnet per AZ. A single ENI creates an AZ dependency.
+> - **Keep the application's normal service hostname** → enable supported Private DNS. AWS manages a hidden [Route 53 private hosted zone](../services/route53.md#private-hosted-zone); set **both `enableDnsSupport` and `enableDnsHostnames` to `true`**.
+> - **Customer-managed SNS DNS** → private zone `sns.us-east-1.amazonaws.com`, apex A alias to the endpoint's regional DNS entry, and automatic endpoint Private DNS disabled to avoid a conflicting zone.
+> - **Default name still resolves publicly** → check Private DNS/custom zone, VPC association, and the resolver used. **Private address but timeout** → check normal routes, endpoint SG inbound TCP 443, client egress, and NACLs.
+> - Interface endpoints use normal routing to ENIs; they do not add a gateway-style service-prefix-list route. They charge per AZ-hour and data processed.
+> - [S3](../services/s3.md) and DynamoDB support both types, but service DNS rules differ: DynamoDB interface clients must use endpoint-specific URLs, not the SNS private-zone recipe.
+
 ### IGW vs NAT GW
 
 | | IGW | NAT GW |
@@ -1946,7 +1973,7 @@ See [EventBridge](../services/eventbridge.md) for full details.
 See [SNS](../services/sns.md) for full details.
 
 - **Pub/sub, topic-centric:** publishers write into a **topic**, subscribers receive from it; the topic holds permissions and config. By **default every subscriber gets every message**
-- **Public regional service** — needs connectivity to public AWS endpoints + IAM permissions; it is **not** placed inside a VPC subnet
+- **Regional service outside the VPC** — reachable through public endpoints or a private [interface endpoint](../services/vpc-interface-endpoints.md), with appropriate [IAM](../services/iam.md)/topic permissions; SNS itself is not placed in a subnet
 - **Subscriber types:** HTTP/S, email, **SQS**, **[Lambda](../services/lambda.md)**, SMS, mobile push
 - **Filter** = a **per-subscription** filter policy letting a subscriber opt into a **subset** — not publisher-side routing
 - **Fanout** = one topic to **many SQS queues**; the answer whenever one event must reach several parallel/decoupled workloads

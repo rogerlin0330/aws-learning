@@ -3,7 +3,7 @@ title: Route 53
 type: service
 tags: [dns, route53, networking, health-checks, routing-policy, weighted-routing, latency-routing, geolocation-routing, geoproximity-routing, multi-value-routing, failover-routing, registrar, dns-hosting, interoperability, dnssec, dnssec-signing, dnssec-validation]
 certs: [aws-saa]
-updated: 2026-06-23
+updated: 2026-11-05
 ---
 
 # Route 53
@@ -102,10 +102,12 @@ Accessible **only from explicitly associated VPCs** — never from the public in
 
 - Must be associated with one or more VPCs (same or different AWS accounts)
 - **Cross-account association**: supported, but **CLI/API only** — not available in the AWS Console
-- Requires the VPC to have `enableDnsSupport` = `true` (see [VPC](vpc.md#dns-in-vpc))
+- Requires **both** `enableDnsSupport=true` and `enableDnsHostnames=true` in the [VPC](vpc.md#dns-in-vpc). [AWS private-zone prerequisites](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/hosted-zone-private-considerations.html)
 
 > [!tip] Exam Tip
 > Private hosted zones are the right answer for **internal service discovery** — microservices resolving each other by name within a VPC without exposing anything publicly.
+
+A concrete service-access example is [SNS through an interface endpoint](vpc-interface-endpoints.md#sns-walkthrough-keep-the-hostname-change-the-dns-answer). Enabling endpoint Private DNS creates a hidden AWS-managed zone. Alternatively, create a customer-managed private zone named `sns.us-east-1.amazonaws.com` and an apex **A alias** to the endpoint's regional DNS entry, with automatic endpoint Private DNS disabled to avoid a conflict. Clients keep the SNS HTTPS hostname while resolving to private ENI addresses. DNS selects the address; normal routes and security groups still determine reachability.
 
 ### Split-View (Split-Horizon) DNS
 

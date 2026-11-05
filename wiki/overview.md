@@ -34,6 +34,8 @@ Account
 
 [Amazon Cognito](services/cognito.md) connects application users to this identity layer: **user pools** manage sign-in and issue tokens for [API Gateway](services/api-gateway.md) or application backends; **identity pools** provide temporary IAM-role credentials when clients need direct AWS access. These are separate choices in a [serverless architecture](patterns/serverless-architecture.md), not two mandatory stages of every login.
 
+[VPC gateway endpoints](services/vpc-gateway-endpoints.md) connect private VPC workloads to same-Region [S3](services/s3.md) and DynamoDB through service-prefix-list routes. They illustrate the separation between **network path** (gateway endpoint), **permitted use of that path** (endpoint policy), and **resource authorization** (IAM/bucket policies). [PrivateLink interface endpoints](services/vpc-interface-endpoints.md) instead present private ENI addresses. For [SNS](services/sns.md), a [Route 53 private hosted zone](services/route53.md#private-hosted-zone) can make the usual service hostname resolve to those ENIs, preserving the application URL while changing its network destination. The [comparison and SNS walkthrough](services/vpc-interface-endpoints.md#gateway-endpoint-vs-interface-endpoint) connects endpoint routing, DNS, security groups, and multi-AZ placement.
+
 For analytics, [AppFlow](services/appflow.md) can bring supported SaaS records into AWS, [S3](services/s3.md) holds datasets, [Glue](services/glue.md) discovers their schemas and runs transformations, and query engines consume the prepared data using shared catalog definitions. AppFlow can also register eligible S3 output directly in the catalog. [Kinesis](services/kinesis.md) can feed continuous processing, while [EventBridge](services/eventbridge.md) and [Step Functions](services/step-functions.md) initiate and coordinate workflows. [Data Integration](concepts/data-integration.md) explains these responsibilities and service choices.
 
 ## Key Cross-Cutting Themes
@@ -89,7 +91,9 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 - [Glue](services/glue.md) — crawlers, shared Data Catalog metadata, serverless batch/streaming ETL, triggers and orchestration, billing, and the Data Pipeline comparison
 - [Cognito](services/cognito.md) — user directories and JWTs, identity federation and temporary AWS credentials, optional guest roles, and combined application sign-in/direct-access architectures
 - [IAM](services/iam.md) — users, groups, roles (STS / federation), policies, ARNs
-- [VPC](services/vpc.md) — subnets, routing, IGW, NACL, SG, NAT GW, PrivateLink
+- [VPC](services/vpc.md) — subnets, routing, IGW, NACL, SG, NAT GW, gateway endpoints versus PrivateLink
+- [VPC Interface Endpoints](services/vpc-interface-endpoints.md) — PrivateLink ENIs, gateway comparison, security and HA, plus SNS private hosted zone and alias walkthrough
+- [VPC Gateway Endpoints](services/vpc-gateway-endpoints.md) — private S3/DynamoDB routing, built-in multi-AZ availability, endpoint/bucket policy distinction, and before/after diagrams
 - [VPC Flow Logs](services/vpc-flow-logs.md) — network metadata, capture scopes, destinations, record interpretation, and exclusions
 - [EC2](services/ec2.md) — IaaS foundations, hosts vs instances (tenancy + AZ-resilience), instance lifecycle & state-based costs (incl. stop/start vs restart), AMIs, bootstrapping (user data), SSH/RDP access, when-to-use-EC2 decision framing
 - [ELB](services/elb.md) — Elastic Load Balancer family (CLB legacy, ALB for HTTP/S, NLB for TCP/TLS/UDP); a load balancer is really auto-scaling **nodes** behind one DNS A record; internet-facing vs internal (node addressing only), listeners, subnet rules (one per AZ, 2+ AZs, /27 recommended), cross-zone load balancing; the abstraction layer that decouples tiers and enables [horizontal scaling](patterns/scaling.md)

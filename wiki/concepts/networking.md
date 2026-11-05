@@ -70,9 +70,18 @@ Traffic flows through these components in order:
 | Public subnet → internet (IPv4) | IGW + route `0.0.0.0/0 → IGW` |
 | IPv6 bidirectional | IGW + route `::/0 → IGW` |
 | IPv6 outbound only | Egress-Only IGW + route `::/0 → EIGW` |
-| Private → AWS services (no internet) | VPC Endpoint (PrivateLink or Gateway) |
+| Private → same-Region S3/DynamoDB (no internet) | [Gateway endpoint](../services/vpc-gateway-endpoints.md) + service-prefix-list route |
+| Private → other supported services (no internet) | [PrivateLink interface endpoint](../services/vpc-interface-endpoints.md) + endpoint ENIs and DNS |
 
 See [VPC](../services/vpc.md) for the full details on each of these components.
+
+## Private Service Access: Routing vs Addressing
+
+[Gateway endpoints](../services/vpc-gateway-endpoints.md) show why a public destination address does not necessarily require public internet connectivity. The client resolves the service endpoint, and a route matching the AWS-managed service prefix list directs traffic to the gateway endpoint. A [PrivateLink interface endpoint](../services/vpc-interface-endpoints.md), by comparison, presents private [ENI](#elastic-network-interfaces-enis) addresses in chosen subnets.
+
+For an interface endpoint, DNS supplies an endpoint ENI address and the ordinary network routes carry the packets; “uses DNS” does not mean “does not use routing.” A [private hosted zone for SNS](../services/vpc-interface-endpoints.md#sns-walkthrough-keep-the-hostname-change-the-dns-answer) can preserve the application's service hostname while choosing that private destination. See the [gateway/interface comparison](../services/vpc-interface-endpoints.md#gateway-endpoint-vs-interface-endpoint) for the distinct availability, security-group, and cost models.
+
+A prefix list is a reusable set of CIDRs: the route destination references the list, while the route target identifies the next hop. Routes determine reachability; [IAM and resource policies](resource-vs-identity-policies.md) independently determine authorization. A gateway endpoint policy constrains requests using that path; a bucket policy can enforce the required path. Neither creating the endpoint nor restricting its policy removes other egress routes.
 
 ## Ephemeral Ports
 

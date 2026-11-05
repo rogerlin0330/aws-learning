@@ -2,7 +2,7 @@
 title: DNS — Domain Name System
 type: concept
 tags: [dns, networking, split-horizon-dns, split-view-dns, ttl, cname, alias, ns, mx, txt, a-record, aaaa-record, delegation, authoritative, walking-the-tree, resolver, hosts-file, root-servers, nslookup, dig, dnssec, cache-poisoning]
-updated: 2026-06-23
+updated: 2026-11-05
 ---
 
 # DNS — Domain Name System
@@ -227,6 +227,8 @@ This avoids two common problems:
 - **Hostname duplication** — applications don't need separate "internal" and "external" hostnames; the same name works from both sides
 
 ### Where you see it in AWS
+
+[Interface endpoint Private DNS](../services/vpc-interface-endpoints.md#dns-names-and-private-dns) applies the same principle to AWS service names: inside the associated VPC, the usual service hostname resolves to endpoint ENI addresses. The [SNS walkthrough](../services/vpc-interface-endpoints.md#sns-walkthrough-keep-the-hostname-change-the-dns-answer) demonstrates the hidden AWS-managed zone and an explicit customer-managed private zone with an apex A alias. Both require `enableDnsSupport=true` and `enableDnsHostnames=true`; the hostname and TLS service identity remain unchanged.
 
 | Mechanism | Behaviour |
 | --- | --- |

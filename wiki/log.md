@@ -1568,3 +1568,27 @@ Audited 58 Markdown pages and 2,449 local link/image references using GitHub-sty
 ## [2026-11-05] ingest | VPC Flow Logs
 
 Synthesized the VPC Flow Logs study note into a dedicated service-feature page and copied both source diagrams into wiki assets. Verified AWS documentation, corrected the SG/statefulness record-count shortcut and overbroad NACL diagnosis, and covered capture scope, destinations, timing, fields, exclusions, and troubleshooting. Added networking concepts, SAA tips, and links from VPC, CloudWatch, Firehose, and the overview; corrected the related zero-configuration logging claim and updated the index. Raw sources preserved unchanged.
+
+## [2026-11-05] update | Gateway Endpoint Excalidraw Diagram
+
+Recreated the supplied gateway endpoint image as editable Excalidraw shapes, arrows, and handwritten text in `wiki/asset/vpc-gateway-endpoints.excalidraw`, preserving its architecture and annotations. Rendered and visually checked the diagram; added a catalog link in the index.
+
+## [2026-11-05] ingest | VPC Gateway Endpoints Video
+
+Reviewed the supplied 11:15 Adrian Cantrill gateway-endpoint video narration and frames; created a dedicated feature page covering prefix-list routing, route-table associations, regional/multi-AZ scope, endpoint policies, and endpoint-restricted S3 access. Reused the editable Excalidraw file after its move to `wiki/assets/`, exported an inline PNG, and captured the 06:30 summary and 08:30 NAT/IGW architecture. Clarified conditional Allow versus explicit Deny, public endpoint addresses versus private paths, and gateway endpoints versus PrivateLink using AWS documentation; corrected the adjacent S3 tip that wrongly called policy conditions bucket-policy-only. Linked VPC, S3, networking, overview, and SAA tips; fixed the moved diagram's catalog link. Original video and raw notes preserved unchanged. This supersedes the singular asset-directory location recorded in the earlier diagram entry.
+
+## [2026-11-05] update | Self-Contained Gateway Endpoint Explanations
+
+Rewrote the gateway-endpoint page to explain concepts directly without narration references or video timestamps. Replaced the policy-correction commentary with a concrete competing-Allow example, described embedded diagrams by their content, and kept source attribution in References. Removed the inaccessible local video path and updated the VPC summary and index.
+
+## [2026-11-05] ingest | VPC Interface Endpoints and SNS Private DNS
+
+Synthesized the interface-endpoint note into a dedicated page with both source diagrams, a gateway/interface comparison, multi-AZ ENI placement, DNS names, security, and service-specific limitations. Added an SNS walkthrough for AWS-managed Private DNS and a customer-managed Route 53 private hosted zone with an apex alias, both DNS attributes, TLS/namespace boundaries, and connectivity checks. Corrected DNS-versus-routing and single-ENI-versus-endpoint HA shortcuts, retained current IPv6/UDP and S3 coexistence coverage, and documented DynamoDB's endpoint-specific URL requirement. Updated SNS public-access wording, Route 53 prerequisites, networking/DNS concepts, gateway/VPC links, SAA tips, overview, and index. Preserved raw sources and pre-existing gateway-endpoint work; no AWS resources changed.
+
+## [2026-11-05] update | Concrete Gateway vs Interface Endpoint Comparison
+
+Expanded the comparison table with service examples, request paths, actual configuration choices, DNS/application behavior, SG and policy checks, hybrid connectivity, and billing examples. Made gateway endpoints' default regional/multi-AZ resilience explicit and contrasted it with interface endpoints' required multi-AZ ENI placement. Added a two-AZ example distinguishing one endpoint resource from its two endpoint ENIs and noted the zonal-DNS dependency; updated the index.
+
+## [2026-11-05] update | SNS Service Name vs Endpoint DNS and Apex Alias
+
+Clarified the creation-time SNS service identifier, generated endpoint-specific DNS hostname, and normal application hostname in the interface-endpoint walkthrough. Made the generated regional endpoint DNS name explicit as the Route 53 alias target. Explained that this private zone's apex requires NS/SOA records, which precludes a CNAME, while an A alias can target the endpoint and return IPv4 addresses; updated the index and verified AWS documentation.

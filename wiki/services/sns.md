@@ -3,7 +3,7 @@ title: Simple Notification Service (SNS)
 type: service
 tags: [sns, messaging, integration, pubsub, fanout, decoupling]
 certs: [aws-saa]
-updated: 2026-07-31
+updated: 2026-11-05
 ---
 
 # Simple Notification Service (SNS)
@@ -12,7 +12,7 @@ updated: 2026-07-31
 
 SNS is a **highly available, durable, secure, fully managed pub/sub messaging service**. It coordinates the sending and delivery of **messages** (payloads up to **256 KB**) between **publishers** and **subscribers**. It is one of AWS's core application-integration and [decoupling](../patterns/architecture-evolution.md) primitives, sitting alongside [SQS](sqs.md) (queues) and [EventBridge](eventbridge.md) (event bus).
 
-- **Public AWS service** — SNS runs from the AWS public zone. To reach it you need network connectivity to the public AWS endpoints plus IAM permissions. It is accessible from the public internet or from a VPC configured to reach public AWS endpoints. It is **not** something you place inside a VPC subnet.
+- **Regional AWS service** — SNS remains outside your VPC subnets. Clients can use public service endpoints or a private connection through a [VPC interface endpoint](vpc-interface-endpoints.md); both require appropriate [IAM](iam.md) and topic permissions.
 - **Base entity is the SNS topic.** Topics are where permissions are controlled (via a resource/topic policy) and where most configuration lives.
 - **Pub/sub model:** publishers send messages *into* a topic; subscribers *receive* from the topic. By default every subscriber receives every message sent to the topic.
 - **Message size:** up to 256 KB. SNS is designed for small notification payloads, not bulk or binary data — you don't need the exact byte count for the exam, but the *concept* matters.
@@ -120,7 +120,7 @@ SNS has **two topic types**. The Cantrill course treats "topic" as one thing, bu
 
 > [!tip] SNS exam triggers
 >
-> - **"Public service"** — SNS needs connectivity to public AWS endpoints plus IAM permissions; it is not placed inside a VPC subnet. Reachable from the internet or from a VPC with public-endpoint access.
+> - **Private publishing without NAT/IGW** — use an [SNS interface endpoint](vpc-interface-endpoints.md) with Private DNS and appropriate permissions. SNS is not deployed into the subnet; its endpoint ENIs are.
 > - **Fanout** is one topic to many **SQS** queues. A scenario duplicating one event across several parallel processors is SNS fanout to SQS.
 > - **Filtering** happens at the **subscription** level (filter policy) — a subscriber opts into a subset. Don't confuse it with publisher-side routing.
 > - **Cross-account** access to a topic is a **topic policy** (resource policy) — the S3-bucket-policy analogy.
@@ -146,6 +146,12 @@ SNS has **two topic types**. The Cantrill course treats "topic" as one thing, bu
 | Encryption | SSE for data at rest |
 | Cross-account | Topic policy (resource policy) |
 | Topic types | Standard (best-effort order/dedup) vs FIFO (strict, SQS-only subscribers) |
+
+## Private Access from a VPC
+
+Create an interface endpoint for `com.amazonaws.us-east-1.sns` to call SNS privately over HTTPS. With Private DNS and both VPC DNS attributes enabled, `sns.us-east-1.amazonaws.com` resolves to endpoint ENI addresses. The [SNS private hosted zone walkthrough](vpc-interface-endpoints.md#sns-walkthrough-keep-the-hostname-change-the-dns-answer) covers the AWS-managed zone and a customer-managed [Route 53](route53.md#private-hosted-zone) alias alternative, plus endpoint SG and IAM requirements. [AWS SNS endpoint setup](https://docs.aws.amazon.com/sns/latest/dg/sns-vpc-create-endpoint.html)
+
+This endpoint supports client calls to SNS; it does **not** let SNS initiate HTTP/S deliveries to private-IP subscribers. [AWS SNS privacy limits](https://docs.aws.amazon.com/sns/latest/dg/sns-internetwork-traffic-privacy.html)
 
 ## References
 
