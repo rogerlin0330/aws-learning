@@ -89,17 +89,19 @@ This makes **API → hostname, Stage → deployment path prefix, Resource → re
 
 ### Configuration relationships
 
-| Concept | Responsibility | Relationship |
-| --- | --- | --- |
-| API | Defines the overall API | Contains resources, stages, deployments, and API-scoped authorizer definitions |
-| Resource | Identifies a path, for example `/orders` | Belongs to one API; can have child resources and multiple methods |
-| Method | Defines a client-facing operation, for example `GET /orders` | Belongs to a resource; has request configuration and an integration when configured for invocation |
-| Method Request | Defines authorization, API key requirement, request parameters, body models, and optional validation | A configuration aspect of the Method, **not a separate AWS API resource** |
-| Authorizer | Validates identity and determines API access | A method can reference a Lambda or Cognito authorizer; multiple methods can reuse it. `NONE` and `AWS_IAM` do not reference an Authorizer object |
-| Integration Request | Defines the backend target, integration type, and request construction/mapping | Represented by the Method's Integration object |
-| Integration Method | Chooses the HTTP verb used to call the backend | The Integration object's `httpMethod` property, independent of the client's Method |
-| Stage | Provides a named deployment entry point and stage-specific settings | References a deployment in the same API; several stages can reference the same deployment |
-| Usage Plan | Defines per-API-key throttling and optional periodic quotas | Associates selected API stages, potentially across multiple APIs, and API keys; may define method-specific throttles |
+| Concept             | Responsibility                                                                                       | Relationship                                                                                                                                     |
+| ------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| API                 | Defines a collection of resources and methods, exposed through an API-specific hostname by default   | Contains resources, stages, deployments, and API-scoped authorizer definitions                                                                   |
+| Resource            | Defines a path within the API, for example `/orders`                                                 | Belongs to one API; can have child resources and multiple methods                                                                                |
+| Method              | Defines a client-facing operation, for example `GET /orders`                                         | Belongs to a resource; has request configuration and an integration when configured for invocation                                               |
+| Method Request      | Defines authorization, API key requirement, request parameters, body models, and optional validation | A configuration aspect of the Method, **not a separate AWS API resource**                                                                        |
+| Authorizer          | Validates identity and determines API access                                                         | A method can reference a Lambda or Cognito authorizer; multiple methods can reuse it. `NONE` and `AWS_IAM` do not reference an Authorizer object |
+| Integration Request | Defines the backend target, integration type, and request construction/mapping                       | Represented by the Method's Integration object                                                                                                   |
+| Integration Method  | Chooses the HTTP verb used to call the backend                                                       | The Integration object's `httpMethod` property, independent of the client's Method                                                               |
+| Stage               | Provides a named deployment entry point and stage-specific settings                                  | References a deployment in the same API; several stages can reference the same deployment                                                        |
+| Usage Plan          | Defines per-API-key throttling and optional periodic quotas                                          | Associates selected API stages, potentially across multiple APIs, and API keys; may define method-specific throttles                             |
+
+In everyday usage, individual endpoints are often called “APIs.” Here, **API** means the enclosing REST API configuration in Amazon API Gateway; **Resource** means a path within it. With the default invoke URL, the hostname identifies the API, followed by the stage and resource path. Custom domains can map one hostname to multiple APIs. See [Reading the URL](#reading-the-url-api-versus-stage-versus-resource) for examples.
 
 ### Runtime request flow
 

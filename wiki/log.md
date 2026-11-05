@@ -1546,3 +1546,19 @@ Added the same general METHOD + invoke URL template, concrete GET example, and c
 ## [2026-11-04] update | API Gateway Pre-commit Review
 
 Reviewed the staged API Gateway diagrams and documentation plus the AppFlow connector exam-tip clarification. Corrected the canary explanation grammar and linked the REST-versus-HTTP product comparison to distinguish AWS product names from RESTful API design.
+
+## [2026-11-04] update | API Gateway API and Resource Terminology
+
+Clarified API as a collection of resources and methods with an API-specific default hostname, and Resource as a path within that API. Distinguished everyday endpoint usage from the REST API configuration object and retained the custom-domain mapping exception; updated the index.
+
+## [2026-11-04] update | API Gateway Obsidian Heading Link
+
+Changed the Reading the URL link to Markdown syntax with the full heading text and percent-encoded spaces for Obsidian; added a matching section link in the index and a line-scoped MD051 exception because markdownlint validates GitHub-style heading slugs.
+
+## [2026-11-04] update | API Gateway Heading Navigation Correction
+
+Removed the colon from the percent-encoded Markdown heading anchors in the API Gateway page and index to match Obsidian heading normalization. Verified in Obsidian 1.15.0 that clicking Reading the URL scrolls to the intended heading; retained the heading itself and the line-scoped MD051 exception.
+
+## [2026-11-04] update | API Gateway Portable URL Heading
+
+Replaced the Obsidian-specific anchor with a shared #url link in the API Gateway page and index. Shortened the heading to URL and preserved its descriptive wording as a bold introduction. Verified clicking the link in Obsidian and checked GitHub heading-slug rules; the GitHub Markdown API also rendered the heading and link successfully. This supersedes the earlier platform-specific workaround and requires no MD051 exception.
