@@ -1,6 +1,6 @@
 # aws-learning
 
-A personal AWS knowledge base built using the [LLM Wiki pattern](https://gist.github.com/karpathy/TODO) — an LLM incrementally builds and maintains a structured wiki from raw source material, rather than re-deriving knowledge from scratch on every query.
+A personal AWS knowledge base built using the [LLM Wiki pattern](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) — an LLM incrementally builds and maintains a structured wiki from raw source material, rather than re-deriving knowledge from scratch on every query.
 
 ## Structure
 
