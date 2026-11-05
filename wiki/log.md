@@ -1564,3 +1564,7 @@ Replaced the Obsidian-specific anchor with a shared #url link in the API Gateway
 ## [2026-11-04] update | Wiki Internal Link Audit
 
 Audited 58 Markdown pages and 2,449 local link/image references using GitHub-style heading anchors, including cross-file fragments and asset paths. Corrected the stale API Gateway section link in the index and 34 link destinations in historical log entries without changing their recorded descriptions; removed the log-wide MD051 suppression. Preserved original headings, documented GFM Heading Links compatibility in the index, and left external references unchanged. This supersedes the earlier Obsidian-only and shortened-heading workarounds.
+
+## [2026-11-05] ingest | VPC Flow Logs
+
+Synthesized the VPC Flow Logs study note into a dedicated service-feature page and copied both source diagrams into wiki assets. Verified AWS documentation, corrected the SG/statefulness record-count shortcut and overbroad NACL diagnosis, and covered capture scope, destinations, timing, fields, exclusions, and troubleshooting. Added networking concepts, SAA tips, and links from VPC, CloudWatch, Firehose, and the overview; corrected the related zero-configuration logging claim and updated the index. Raw sources preserved unchanged.

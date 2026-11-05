@@ -3,7 +3,7 @@ title: Amazon CloudWatch
 type: service
 tags: [cloudwatch, monitoring, logging, observability, ec2, lambda, cloudtrail, vpc, cloudwatch-agent, cwagent, metrics, parameter-store, instance-role, log-group, log-stream]
 certs: [aws-saa]
-updated: 2026-06-12
+updated: 2026-11-05
 ---
 
 # Amazon CloudWatch
@@ -43,7 +43,7 @@ Log events are organized in a hierarchy:
 
 | Method | When to use |
 | --- | --- |
-| Native AWS service integration | [EC2](ec2.md), [VPC](vpc.md) Flow Logs, Lambda, [CloudTrail](cloudtrail.md), Route 53 — zero config, logs flow automatically via service/IAM roles |
+| Native AWS service integration | [VPC Flow Logs](vpc-flow-logs.md), Lambda, [CloudTrail](cloudtrail.md), Route 53 — configure service logging and required permissions; no host agent needed for these integrations |
 | **[Unified CloudWatch Agent](#cloudwatch-agent)** | Custom OS logs (e.g. `/var/log/messages` on EC2), on-premises servers, non-AWS compute |
 | AWS SDK | Application-level logging from any language — call `PutLogEvents` directly |
 
@@ -72,7 +72,7 @@ CloudWatch Logs is the default log destination for most AWS services. Key integr
 | --- | --- |
 | [CloudTrail](cloudtrail.md) | API call history — who called what, when, from where |
 | Lambda | Function execution output (stdout/stderr) |
-| [VPC](vpc.md) Flow Logs | Network traffic flow records (accepted/rejected) |
+| [VPC Flow Logs](vpc-flow-logs.md) | Delayed network traffic metadata (accepted/rejected); collection and delivery must be configured |
 | [EC2](ec2.md) | OS and application logs (via CloudWatch Agent) |
 | Route 53 | DNS query logs |
 
@@ -145,7 +145,7 @@ CloudWatch is a **regional service** — log groups and their data are region-sc
 ## References
 
 - [IAM](iam.md) — roles and permissions for log access
-- [VPC](vpc.md) — VPC Flow Logs sent to CloudWatch Logs
+- [VPC Flow Logs](vpc-flow-logs.md) — capture scopes, delivery delay, and network-record interpretation
 - [EC2](ec2.md) — OS and app logs via the [CloudWatch Agent](#cloudwatch-agent); [instance roles](ec2.md#instance-roles--instance-profiles) supply the agent's permissions
 - [Systems Manager (SSM)](ssm.md#parameter-store) — Parameter Store holds the agent config for fleet-wide reuse
 - [CloudTrail](cloudtrail.md) — API/account-activity audit; delivers events to CloudWatch Logs for search + alarms

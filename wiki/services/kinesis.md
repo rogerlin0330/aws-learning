@@ -3,7 +3,7 @@ title: Kinesis
 type: service
 tags: [kinesis, data-streams, firehose, data-analytics, managed-flink, video-streams, streaming, ingestion, analytics, shards, enhanced-fan-out, serverless, real-time]
 certs: [aws-saa]
-updated: 2026-11-04
+updated: 2026-11-05
 ---
 
 # Kinesis
@@ -115,6 +115,8 @@ There is almost always a question asking you to choose between these two. The re
 > The product is now **Amazon Data Firehose**. Endpoints, APIs, CLI, IAM policies, and CloudWatch metrics were unchanged. The course teaches it as "Kinesis Data Firehose" and the exam may still use that name, so recognize both. See [Course vs current AWS reality](#course-vs-current-aws-reality).
 
 Firehose is a **fully managed, serverless, resilient delivery service**. It accepts streaming data, optionally transforms it in flight with [Lambda](lambda.md), and delivers it to supported destinations in near real time. Its core value is giving Data Streams something it lacks natively: **persistence and delivery** into other services, since records that age out of the rolling window are otherwise gone forever.
+
+[VPC Flow Logs](vpc-flow-logs.md) can publish directly to Firehose for onward delivery; no intermediate CloudWatch Logs subscription is required. Flow-log aggregation and publication delays still apply before Firehose receives the records. [AWS flow-log delivery documentation](https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs-firehose.html)
 
 ### Firehose architecture
 

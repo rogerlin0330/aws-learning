@@ -3,7 +3,7 @@ title: VPC — Virtual Private Cloud
 type: service
 tags: [vpc, networking, subnets, route-tables, internet-gateway, nacl, security-groups, nat-gateway, private-link, dns]
 certs: [aws-saa]
-updated: 2026-07-21
+updated: 2026-11-05
 ---
 
 # VPC — Virtual Private Cloud
@@ -312,6 +312,10 @@ The packet translation steps are the same for both zonal and regional:
 > **NAT does not work with IPv6.** IPv6 addresses are all publicly routable in AWS. For outbound-only IPv6, use an **Egress-Only Internet Gateway** with a `::/0` route instead.
 > [!warning] Gotcha
 > To use an EC2 as a NAT instance, you must **disable source/destination checks** on the instance — otherwise EC2 drops packets it isn't the source/destination of.
+
+## VPC Flow Logs
+
+[VPC Flow Logs](vpc-flow-logs.md) records delayed IP traffic metadata at VPC, subnet, or individual [ENI](../concepts/networking.md#elastic-network-interfaces-enis) scope. Use it to investigate accepted/rejected traffic and return-path filtering; it does not capture payloads or prove application success. The dedicated page covers destinations, record fields, exclusions, and the illustrated ICMP request/reply example.
 
 ## AWS PrivateLink
 

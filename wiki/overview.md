@@ -2,7 +2,7 @@
 title: AWS Learning — Overview
 type: overview
 tags: [aws, architecture, iam, vpc, organizations, control-tower, cost, s3, ec2, ecs, eks, kubernetes, containers, cloudwatch, cloudtrail, cloudformation, bootstrapping, serverless, lambda, step-functions, api-gateway, orchestration, dns, dnssec, rds, rds-custom, aurora, dms, database, database-migration, multi-az, high-availability, acid, base, cap-theorem, global, regional, tiers, cloudfront, elb, asg, auto-scaling, sqs, sns, messaging, queues, decoupling, fifo, dead-letter-queue, kinesis, streaming, ingestion, firehose, analytics, video-streams, kafka, msk, log-vs-queue]
-updated: 2026-11-04
+updated: 2026-11-05
 ---
 
 # AWS Learning Overview
@@ -75,6 +75,8 @@ Every AWS service operates at a specific resilience scope. Knowing this is criti
 
 The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental networking unit in AWS. Security Groups attach to ENIs, not to instances or subnets. Any resource that has an ENI in your VPC can have a Security Group — including [EC2](services/ec2.md), RDS, [ALB](services/elb.md), Fargate, and Lambda-in-VPC.
 
+[VPC Flow Logs](services/vpc-flow-logs.md) observes traffic at these interfaces. It connects the network-control model to [CloudWatch Logs](services/cloudwatch.md) for operations and [S3](services/s3.md) plus Athena for analysis. Records describe delayed traffic metadata; they are separate from [CloudTrail](services/cloudtrail.md) API activity and application logs.
+
 ### Compute Packaging Changes the Management Line
 
 [EC2](services/ec2.md) gives you the full OS and runtime surface. [Containers](concepts/containers.md) package the application and dependencies into portable images that run as isolated processes on a host OS. Two managed orchestrators run those containers: [ECS](services/ecs.md) (AWS-proprietary) and [EKS](services/eks.md) (AWS-managed [Kubernetes](concepts/kubernetes.md), the cloud-agnostic open standard). Both run tasks/pods on EC2 when you want host control and pricing flexibility, or on Fargate when you want AWS to own the host layer — so launch type is orthogonal to the orchestrator choice. Both orchestrators pull their images from a registry — on AWS that is [ECR](services/ecr.md), the managed container image registry that stores, scans, and distributes images for ECS, EKS, and Fargate. Managed compute such as Fargate or Lambda shifts more infrastructure responsibility away from you, but the exam still tests the basic boundary: VM means full guest OS; container means shared host kernel plus packaged user-space dependencies.
@@ -88,6 +90,7 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 - [Cognito](services/cognito.md) — user directories and JWTs, identity federation and temporary AWS credentials, optional guest roles, and combined application sign-in/direct-access architectures
 - [IAM](services/iam.md) — users, groups, roles (STS / federation), policies, ARNs
 - [VPC](services/vpc.md) — subnets, routing, IGW, NACL, SG, NAT GW, PrivateLink
+- [VPC Flow Logs](services/vpc-flow-logs.md) — network metadata, capture scopes, destinations, record interpretation, and exclusions
 - [EC2](services/ec2.md) — IaaS foundations, hosts vs instances (tenancy + AZ-resilience), instance lifecycle & state-based costs (incl. stop/start vs restart), AMIs, bootstrapping (user data), SSH/RDP access, when-to-use-EC2 decision framing
 - [ELB](services/elb.md) — Elastic Load Balancer family (CLB legacy, ALB for HTTP/S, NLB for TCP/TLS/UDP); a load balancer is really auto-scaling **nodes** behind one DNS A record; internet-facing vs internal (node addressing only), listeners, subnet rules (one per AZ, 2+ AZs, /27 recommended), cross-zone load balancing; the abstraction layer that decouples tiers and enables [horizontal scaling](patterns/scaling.md)
 - [EC2 Auto Scaling](services/ec2-auto-scaling.md) — Auto Scaling groups; min/desired/max with the ASG's one job (keep running count equal to desired), Multi-AZ instance placement, self-healing (including the min = desired = max = 1 cheap-HA pattern), scaling policies (scheduled; dynamic: simple / step / target tracking / SQS worker pool) with the target-tracking-first recommendation hierarchy, cooldown vs instance warmup, ELB integration (auto target registration, application-aware health checks), and lifecycle hooks (pause launch/terminate transitions for custom actions, SNS/SQS/EventBridge integration); completes the [horizontal scaling](patterns/scaling.md) story alongside [ELB](services/elb.md)
