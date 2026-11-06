@@ -109,6 +109,8 @@ Accessible **only from explicitly associated VPCs** — never from the public in
 
 A concrete service-access example is [SNS through an interface endpoint](vpc-interface-endpoints.md#sns-walkthrough-keep-the-hostname-change-the-dns-answer). Enabling endpoint Private DNS creates a hidden AWS-managed zone. Alternatively, create a customer-managed private zone named `sns.us-east-1.amazonaws.com` and an apex **A alias** to the endpoint's regional DNS entry, with automatic endpoint Private DNS disabled to avoid a conflict. Clients keep the SNS HTTPS hostname while resolving to private ENI addresses. DNS selects the address; normal routes and security groups still determine reachability.
 
+[VPC peering](vpc-peering.md#dns-public-ec2-hostnames-vs-private-hosted-zones) does not automatically share a private hosted zone. Associate the zone with each client VPC that should resolve it, and separately configure peering routes and network permissions to reach the returned addresses. Peering's DNS options instead control resolution of EC2 public IPv4 hostnames to private IPv4 addresses.
+
 ### Split-View (Split-Horizon) DNS
 
 You can create both a **public** and a **private** hosted zone for the **same domain name**:

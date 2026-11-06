@@ -62,6 +62,12 @@ Traffic flows through these components in order:
 4. **NACL** — inbound check on the destination subnet boundary (L3/4, stateless)
 5. **Security Group** — inbound check on the destination ENI (L3/4, stateful)
 
+## Direct Connectivity vs Transit Routing
+
+[VPC peering](../services/vpc-peering.md) creates one direct relationship between two non-overlapping VPCs. Routes select the peering connection as the next hop, and both endpoints need a return path. A–B and B–C peering do not permit A → B → C: B cannot act as a transit router between its peers. Full-mesh connectivity among n VPCs requires n(n − 1)/2 peering connections, which makes topology and route management increasingly complex as the network grows.
+
+Peering also does not share a peer's internet/NAT gateway, VPN, Direct Connect connection, or [gateway endpoint](../services/vpc-gateway-endpoints.md). For centralized transit, evaluate a dedicated routing service such as [AWS Transit Gateway](https://docs.aws.amazon.com/vpc/latest/tgw/what-is-transit-gateway.html). Separately configure [DNS](dns.md) visibility: a route to a private IP does not automatically expose the destination's private hosted zone.
+
 ## Internet Connectivity Patterns
 
 | Scenario | Solution |

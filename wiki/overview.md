@@ -38,6 +38,8 @@ Account
 
 For analytics, [AppFlow](services/appflow.md) can bring supported SaaS records into AWS, [S3](services/s3.md) holds datasets, [Glue](services/glue.md) discovers their schemas and runs transformations, and query engines consume the prepared data using shared catalog definitions. AppFlow can also register eligible S3 output directly in the catalog. [Kinesis](services/kinesis.md) can feed continuous processing, while [EventBridge](services/eventbridge.md) and [Step Functions](services/step-functions.md) initiate and coordinate workflows. [Data Integration](concepts/data-integration.md) explains these responsibilities and service choices.
 
+[VPC peering](services/vpc-peering.md) connects two VPC networks through explicit routes and firewall permissions. It is non-transitive: connecting A–B and B–C does not connect A–C. This separates **direct connectivity** from **transit routing**, while its DNS options illustrate another independent concern: reaching a private IP does not automatically expose a [Route 53 private hosted zone](services/route53.md#private-hosted-zone).
+
 ## Key Cross-Cutting Themes
 
 ### Security is Defense in Depth

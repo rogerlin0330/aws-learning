@@ -622,6 +622,20 @@ See [VPC](../services/vpc.md) and [Networking Concepts](../concepts/networking.m
 - Because NACLs are stateless: always allow **ephemeral ports (1024–65535)** for return traffic
 - The real distinction between NACL and SG is **stateful vs stateless** + **attachment point**, not OSI layer
 
+### VPC Peering
+
+See [VPC Peering](../services/vpc-peering.md) for the topology diagram, reciprocal routes, and DNS configuration.
+
+> [!tip] Exam Tip
+>
+> - **Exactly two VPCs per connection**, within or across accounts/Regions; CIDRs must not overlap, including secondary blocks.
+> - **A–B + B–C does not provide A–C.** Add a direct A–C connection or use a transit architecture. A full mesh needs **n(n − 1)/2** connections.
+> - **Accepted connection + routes on both sides + SG/NACL permissions** are separate requirements. Route destination = peer CIDR; target = `pcx-...`.
+> - **Same-Region** peers support security-group references, including across accounts. **Cross-Region** peers use IP/CIDR rules.
+> - Peering DNS options resolve **EC2 public IPv4 hostnames to private addresses**; enable both VPC DNS attributes. They do not share a [private hosted zone](../services/route53.md#private-hosted-zone); associate the zone with the client VPC separately.
+> - No transit through a peer's IGW/NAT, VPN, Direct Connect, or [gateway endpoint](../services/vpc-gateway-endpoints.md).
+> - Cross-Region peering traffic stays on AWS's backbone and is encrypted before leaving AWS facilities.
+
 ### VPC Flow Logs
 
 See [VPC Flow Logs](../services/vpc-flow-logs.md) for diagrams, fields, and troubleshooting.

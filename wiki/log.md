@@ -1592,3 +1592,7 @@ Expanded the comparison table with service examples, request paths, actual confi
 ## [2026-11-05] update | SNS Service Name vs Endpoint DNS and Apex Alias
 
 Clarified the creation-time SNS service identifier, generated endpoint-specific DNS hostname, and normal application hostname in the interface-endpoint walkthrough. Made the generated regional endpoint DNS name explicit as the Route 53 alias target. Explained that this private zone's apex requires NS/SOA records, which precludes a CNAME, while an A alias can target the endpoint and return IPv4 addresses; updated the index and verified AWS documentation.
+
+## [2026-11-05] ingest | VPC Peering Video
+
+Synthesized the supplied VPC Peering video narration into a dedicated guide with one topology snapshot; no text-only slide snapshots were retained. Covered two-VPC scope, account/Region boundaries, non-transitive routing, reciprocal route examples, non-overlapping CIDRs, security-group references, DNS options versus private hosted zone associations, encryption scope, and practical checks. Clarified that peering is not a gateway appliance and corrected the diagram’s mismatched route labels in accompanying prose. Verified against AWS documentation and linked VPC, networking, Route 53, overview, and SAA tips; updated the index. Original video and raw sources preserved unchanged.

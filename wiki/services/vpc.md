@@ -84,7 +84,7 @@ A typical VPC subnet design uses tiers (WEB, APP, DB, Spare) across AZs, each ti
 
 - Every subnet is associated with a route table that controls where traffic is directed.
 - The VPC router (at `network + 1`) handles inter-subnet and egress routing.
-- Route tables are the configuration the VPC router (at `network + 1`) reads — editing routes or subnet associations changes the router's forwarding behavior immediately; the router itself is never directly configured. Gateway targets in routes (IGW, NAT gateway, peering, Transit Gateway) are likewise just instructions telling the router where to hand packets off next.
+- Route tables are the configuration the VPC router (at `network + 1`) reads — editing routes or subnet associations changes the router's forwarding behavior immediately; the router itself is never directly configured. Route targets (IGW, NAT gateway, [VPC peering](vpc-peering.md), Transit Gateway) tell the router where to hand packets off next; a peering connection is not a gateway appliance.
 - Route tables operate at **Layer 3 only** — they deal purely with IP destinations and next hops; no awareness of ports or protocols.
 - **A subnet can only be associated with 1 route table at a time, but you can associate multiple subnets with the same subnet route table.** ([AWS docs: Subnet route tables](https://docs.aws.amazon.com/vpc/latest/userguide/subnet-route-tables.html))
 
@@ -96,6 +96,12 @@ A typical VPC subnet design uses tiers (WEB, APP, DB, Spare) across AZs, each ti
 - **The main route table cannot be deleted.** To get rid of it, first promote a custom route table to be the new main one via the **Set main route table** action — the displaced table becomes a regular custom route table that you can then delete. ([AWS docs: Replace the main route table](https://docs.aws.amazon.com/vpc/latest/userguide/Route_Replacing_Main_Table.html))
 - **Changing the main route table also changes the default for all subnets** that have no explicit association — they immediately start using the new main route table.
 - **Best practice:** leave the main route table in its default state (local route only), and explicitly associate every subnet with a custom route table. This way no subnet accidentally inherits unintended routes. ([AWS docs: Configure route tables](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Route_Tables.html))
+
+## VPC Peering
+
+[VPC peering](vpc-peering.md) provides direct private-IP connectivity between exactly two VPCs, within or across accounts and Regions. The VPCs need non-overlapping CIDRs, an accepted connection, routes in both directions targeting its `pcx-...` ID, and security-group/NACL rules permitting the traffic. Configure the route tables serving the participating subnets; accepting the connection does not add routes automatically.
+
+Peering is **non-transitive**: A–B and B–C do not connect A to C. The [topology and route-table example](vpc-peering.md#non-transitive-routing) shows why A–C needs its own connection. Same-Region peers support security-group references; cross-Region peers require IP/CIDR rules. [Peering DNS options](vpc-peering.md#dns-public-ec2-hostnames-vs-private-hosted-zones) can resolve EC2 public IPv4 hostnames to private addresses, but do not automatically share Route 53 private hosted zones.
 
 ## Internet Gateway (IGW)
 
