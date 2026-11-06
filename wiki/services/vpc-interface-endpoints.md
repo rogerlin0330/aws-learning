@@ -1,7 +1,7 @@
 ---
 title: VPC Interface Endpoints
 type: service
-tags: [vpc, interface-endpoints, privatelink, networking, eni, dns, route53, sns, private-access]
+tags: [vpc, interface-endpoints, privatelink, networking, eni, dns, route53, sns, private-access, ec2-instance-connect, eice]
 certs: [aws-saa]
 updated: 2026-11-05
 ---
@@ -42,6 +42,53 @@ The diagram has only one endpoint ENI in AZ-B. That makes AZ-B a dependency for 
 **Terminology matters for HA:** “one endpoint per AZ” should mean **one endpoint ENI per selected AZ**, not necessarily separate endpoint resources. For a two-AZ deployment, create **one interface endpoint**, select one subnet in AZ-A and one in AZ-B, and AWS creates **two endpoint ENIs**. DNS must allow clients to use the available interfaces; pinning every client to AZ-A's zonal name would preserve an AZ-A dependency.
 
 For same-Region in-VPC [S3](s3.md)/DynamoDB access, a gateway endpoint usually avoids unnecessary endpoint charges. Interface endpoints serve additional services and connectivity designs. Neither endpoint grants missing [IAM](iam.md) permissions or removes other egress paths. Service support and DNS behavior must be checked individually. Sources: [AWS gateway endpoints](https://docs.aws.amazon.com/vpc/latest/privatelink/gateway-endpoints.html), [interface endpoint creation](https://docs.aws.amazon.com/vpc/latest/privatelink/create-interface-endpoint.html), and [DynamoDB endpoint comparison](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/privatelink-interface-endpoints.html).
+
+## EC2 Instance Connect Endpoint vs SNS Interface Endpoint
+
+**EC2 Instance Connect Endpoint (EICE) and an SNS interface endpoint are different kinds of resources**, even though both use an ENI in your subnet. EICE gives administrators a controlled connection to private [EC2 instances](ec2.md); the SNS interface endpoint gives applications a private entry point to the SNS API.
+
+| Question | EC2 Instance Connect Endpoint (EICE) | SNS interface endpoint |
+| --- | --- | --- |
+| Who connects to what? | An administrator connects to an EC2 instance for SSH or RDP. | An application calls SNS, for example to publish a message to a topic over HTTPS. |
+| What does the subnet ENI do? | Provides the VPC entry point for authorized management traffic, which is forwarded to the target instance. | Provides private destination addresses that applications connect to when calling SNS. |
+| What mechanism does AWS document? | An identity-aware TCP proxy with an IAM-authorized tunnel. | An interface VPC endpoint powered by AWS PrivateLink. |
+| What does “no public IP or internet gateway required” mean? | The target EC2 and VPC need neither. An administrator can still connect from the internet through the AWS service. | Applications can reach SNS through the endpoint without NAT or an IGW; this service-access path does not traverse the public internet. |
+| Which security-group rules matter? | Allow endpoint **outbound** traffic to the instance's management port, and instance **inbound** traffic from the endpoint. | Allow endpoint **inbound TCP 443** from application clients, with matching client egress permissions. |
+
+Sources: [AWS EICE architecture](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/connect-with-ec2-instance-connect-endpoint.html), [EICE security groups](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/eice-security-groups.html), and [PrivateLink service access](https://docs.aws.amazon.com/vpc/latest/privatelink/privatelink-access-aws-services.html).
+
+### Connection paths and the public-internet question
+
+For EICE, the useful mental model is **an authorized tunnel between an external client and a private EC2 instance**. For SNS, it is **a private service entry point placed inside the application's VPC**. The following shows connection initiation; established connections carry replies too.
+
+```text
+EICE — administrator connecting from the internet:
+Browser / SSH client
+  → AWS EICE service entry point reached over the internet
+  → IAM-authorized tunnel to the EICE ENI in your subnet
+  → EC2 private IP:22 (SSH example)
+
+SNS interface endpoint — application calling SNS privately:
+Application in the VPC
+  → SNS endpoint ENI private IP:443
+  → AWS PrivateLink
+  → SNS API
+```
+
+The browser does not need a direct internet route to the EICE ENI's private IP. AWS provides the managed tunnel into the VPC. “The instance needs no public IP” therefore does **not** mean the administrator's entire connection avoids the internet. See [connecting through EICE](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/connect-using-eice.html).
+
+By comparison, resolving an SNS `vpce-…` hostname from outside the VPC does not create a tunnel: it returns endpoint addresses that still require network reachability. A publicly resolvable DNS name is not the same as a publicly reachable service entry point.
+
+### When IAM authorization happens
+
+In the console, select **Connect using a Private IP**, choose the EICE, and click the final **Connect** button. The resulting tunnel request requires `ec2-instance-connect:OpenTunnel` authorization for your current [IAM identity](iam.md). Merely signing in to the console or selecting an endpoint does not grant permission to connect. Policies can constrain the endpoint, target private IP, remote port, and tunnel duration. [AWS EICE permissions](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/permissions-for-ec2-instance-connect-endpoint.html)
+
+Once authorized, the tunnel carries traffic to the instance through the endpoint. SSH authentication still takes place between the SSH client and the instance; the endpoint forwards the traffic. The console's Linux connection also uses EC2 Instance Connect to supply a temporary SSH public key, requiring `ec2-instance-connect:SendSSHPublicKey` and EC2 Instance Connect installed on the instance. [AWS console and SSH connection methods](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/connect-using-eice.html)
+
+EICE service traffic reaches the endpoint regardless of its inbound SG rules; IAM controls who may open the tunnel. Endpoint outbound and instance inbound rules must still permit the target connection. This differs from an SNS interface endpoint, whose inbound SG rules admit application connections. [AWS EICE security-group behavior](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/eice-security-groups.html)
+
+> [!warning] Gotcha
+> An ENI and the word “endpoint” do not identify a resource as a PrivateLink interface endpoint. AWS explicitly documents SNS interface endpoints as using PrivateLink, while the cited EICE documentation describes an authorized TCP tunnel. It does not establish whether EICE internally reuses PrivateLink technology; do not record that speculation as an architectural fact.
 
 ## DNS Names and Private DNS
 
@@ -135,6 +182,10 @@ Endpoint SGs control **network connections**. Endpoint policies constrain **prin
 - [AWS — Create an interface endpoint](https://docs.aws.amazon.com/vpc/latest/privatelink/create-interface-endpoint.html)
 - [AWS — Gateway endpoints](https://docs.aws.amazon.com/vpc/latest/privatelink/gateway-endpoints.html)
 - [AWS — Creating an SNS endpoint](https://docs.aws.amazon.com/sns/latest/dg/sns-vpc-create-endpoint.html)
+- [AWS — EC2 Instance Connect Endpoint architecture](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/connect-with-ec2-instance-connect-endpoint.html)
+- [AWS — Connecting through EC2 Instance Connect Endpoint](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/connect-using-eice.html)
+- [AWS — EC2 Instance Connect Endpoint permissions](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/permissions-for-ec2-instance-connect-endpoint.html)
+- [AWS — EC2 Instance Connect Endpoint security groups](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/eice-security-groups.html)
 - [AWS — Publishing an SNS message from a VPC](https://docs.aws.amazon.com/sns/latest/dg/sns-vpc-tutorial.html)
 - [AWS — SNS traffic privacy](https://docs.aws.amazon.com/sns/latest/dg/sns-internetwork-traffic-privacy.html)
 - [AWS — SNS endpoint policies](https://docs.aws.amazon.com/sns/latest/dg/sns-vpc-endpoint-policy.html)

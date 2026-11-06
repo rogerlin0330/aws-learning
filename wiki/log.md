@@ -1596,3 +1596,7 @@ Clarified the creation-time SNS service identifier, generated endpoint-specific 
 ## [2026-11-05] ingest | VPC Peering Video
 
 Synthesized the supplied VPC Peering video narration into a dedicated guide with one topology snapshot; no text-only slide snapshots were retained. Covered two-VPC scope, account/Region boundaries, non-transitive routing, reciprocal route examples, non-overlapping CIDRs, security-group references, DNS options versus private hosted zone associations, encryption scope, and practical checks. Clarified that peering is not a gateway appliance and corrected the diagram’s mismatched route labels in accompanying prose. Verified against AWS documentation and linked VPC, networking, Route 53, overview, and SAA tips; updated the index. Original video and raw sources preserved unchanged.
+
+## [2026-11-05] ingest | EC2 Instance Connect Endpoint vs SNS Interface Endpoint
+
+Synthesized the discussion into the interface-endpoint guide with a concrete comparison table and connection paths. Explained EICE as an IAM-authorized tunnel from an external administrator to private EC2, contrasted it with application access to SNS through PrivateLink, and clarified the public browser connection, OpenTunnel authorization timing, SSH authentication, and differing security-group directions. Kept undocumented PrivateLink implementation speculation separate from established behavior; added official AWS references and updated the index.
