@@ -3,7 +3,7 @@ title: AWS Lambda
 type: service
 tags: [lambda, compute, serverless, faas, event-driven, execution-role, resource-policy, vpc, eni, invocation, synchronous, asynchronous, event-source-mapping, idempotency, cold-start, warm-start, provisioned-concurrency, versions, aliases, container-image, cloudwatch, x-ray, dlq, destinations]
 certs: [aws-saa]
-updated: 2026-07-25
+updated: 2026-11-09
 ---
 
 # AWS Lambda
@@ -51,7 +51,7 @@ A **Lambda function** is a piece of code that Lambda runs using a supported **ru
 ### Statelessness
 
 - By default, assume **every invocation runs in a brand-new, clean runtime environment** with no leftover state. Your code must work 100% of the time on the assumption of a fresh environment.
-- Execution contexts *can* be reused (warm starts — see [Cold Starts, Warm Starts & Provisioned Concurrency](#startup-cold-starts-warm-starts--provisioned-concurrency)), but you must never *depend* on reuse.
+- Execution contexts *can* be reused (warm starts — see [Cold Starts, Warm Starts & Concurrency](#startup-cold-starts-warm-starts--concurrency)), but you must never *depend* on reuse.
 
 ### Common use cases
 
@@ -110,7 +110,7 @@ Lambda has a **two-part permissions model**, and the exam tests both halves. Thi
 
 ### Resource policy (less commonly known)
 
-- Analogous to an **[S3 bucket policy](s3.md#bucket-policies)** — controls **who can invoke** a specific function (external accounts, or services like SNS / S3).
+- Analogous to an **[S3 bucket policy](s3.md#bucket-policies)** — controls **who can invoke** a specific function (external accounts, or services like SNS / S3, API Gateway).
 - Automatically modified when you integrate other services with Lambda.
 
 > [!warning] Gotcha — resource policy is editable in the console
@@ -153,6 +153,19 @@ There are three ways to invoke a Lambda function: **synchronous**, **asynchronou
 
 ### Event source mapping (ESM)
 
+**Direct service triggers versus ESM:** [S3](s3.md#event-notifications) and [SNS](sns.md) push events to Lambda asynchronously; [API Gateway](api-gateway.md) normally invokes it synchronously for an API request. Their integration configuration lives in the invoking service. These direct invocations do not use an ESM.
+
+An **event source mapping** is a Lambda-managed resource that polls a stream or queue and invokes the function with batches of records. The [AWS ESM guide](https://docs.aws.amazon.com/lambda/latest/dg/invocation-eventsourcemapping.html) distinguishes these polling integrations from direct service triggers.
+
+Supported ESM sources include:
+
+- [Amazon DocumentDB change streams](https://docs.aws.amazon.com/lambda/latest/dg/with-documentdb.html)
+- [DynamoDB Streams](https://docs.aws.amazon.com/lambda/latest/dg/with-ddb.html)
+- [Kinesis Data Streams](kinesis.md)
+- [Amazon MQ](https://docs.aws.amazon.com/lambda/latest/dg/with-mq.html)
+- [Amazon MSK and self-managed Apache Kafka](../concepts/streaming-vs-messaging.md#kinesis-vs-kafka-and-amazon-msk)
+- [Amazon SQS](sqs.md)
+
 ![Event source mapping: telemetry producers push into a Kinesis Data Stream; the event source mapping polls the stream for source batches, splits them by batch size, and delivers event batches to the Lambda function, borrowing the function's execution-role permissions to read the source and sending failed batches to a DLQ](../assets/lambda-invocation-event-source-mapping.png)
 
 - Used for **streams/queues that don't natively generate events** and require **polling**: **[Kinesis](kinesis.md), DynamoDB Streams, [SQS](sqs.md)**, and **Amazon MSK** ([Managed Streaming for Apache Kafka](../concepts/streaming-vs-messaging.md#kinesis-vs-kafka-and-amazon-msk)).
@@ -163,6 +176,28 @@ There are three ways to invoke a Lambda function: **synchronous**, **asynchronou
 > [!tip] Exam Tip — the key ESM permissions fact
 > The source does **not** deliver the event; the ESM **reads** from the source using the **function's execution role permissions**. So even though the function code never directly calls Kinesis, **the execution role still needs [Kinesis](kinesis.md) (source) permissions** because the ESM uses them on the function's behalf. Contrast with async: there the source *delivers* the event, so the function only needs source permissions if it wants to *read additional data* (e.g. fetching the actual S3 object).
 
+### Retry ownership: synchronous, asynchronous, and ESM
+
+Both **asynchronous invocation and ESM provide automatic reprocessing**, but they use different mechanisms and configuration:
+
+| Invocation path | Who retries after a function error? | Where to configure it |
+| :--- | :--- | :--- |
+| Direct synchronous invocation (`RequestResponse`) | The caller checks the result and decides whether to invoke again. Lambda does not automatically retry function errors. | Caller application or invoking service; SDK retry settings cover eligible request failures such as throttling or network errors, rather than function-code errors. |
+| Asynchronous invocation (`Event`) | Lambda's internal asynchronous queue; function errors are retried twice by default. | Function/version/alias **Asynchronous invocation** settings; **Retry attempts** is configurable from 0 to 2. |
+| ESM: [Kinesis](kinesis.md) / DynamoDB Streams | The ESM reprocesses failed batches. | The **event source mapping**, including `MaximumRetryAttempts` and `MaximumRecordAgeInSeconds`; by default, failed records are retried until they expire in the source. |
+| ESM: [SQS](sqs.md) | By default, all messages in a failed batch become visible again after the visibility timeout, and the ESM reads them again. | The **SQS queue's** visibility timeout and redrive policy (`maxReceiveCount` / [DLQ](sqs.md#dead-letter-queues-dlq)); `maxReceiveCount` counts receives, rather than additional retries. |
+
+The async **0–2 Retry attempts** setting applies to function errors. Throttling and service errors use separate queue retries, with backoff, for up to six hours by default; see [AWS async error handling](https://docs.aws.amazon.com/lambda/latest/dg/invocation-async-error-handling.html). For SQS, [partial batch responses](https://docs.aws.amazon.com/lambda/latest/dg/services-sqs-errorhandling.html) let your handler identify failed messages so successfully processed messages are not retried with them.
+
+**ESM invokes the function synchronously, and the ESM itself acts as the caller responsible for retries.** The rule “the caller handles retries for synchronous invocation” still holds: with ESM, that caller is an AWS-managed component. AWS describes this synchronous invocation model in [Event source mappings with durable functions](https://docs.aws.amazon.com/lambda/latest/dg/durable-invoking-esm.html).
+
+> [!warning] Gotcha — asynchronous retry settings do not apply to ESM
+> The function's **Asynchronous invocation → Retry attempts** (shown in screenshot) setting does not affect ESM invocations. Configure retry behavior for the specific event source, using the mapping settings or source queue settings as shown above.
+
+![Lambda console Asynchronous invocation configuration showing Retry attempts set to 2, Maximum age of event set to 6 hours, and no dead-letter queue configured](../assets/lambda_async_invoke_retry_attempt_config_screenshot.png)
+
+For configuration details, see [asynchronous error handling settings](https://docs.aws.amazon.com/lambda/latest/dg/invocation-async-configuring.html), [ESM configuration](https://docs.aws.amazon.com/lambda/latest/api/API_EventSourceMappingConfiguration.html), and [SQS queue and ESM configuration](https://docs.aws.amazon.com/lambda/latest/dg/services-sqs-configure.html). Both async and ESM consumers must handle duplicate processing safely through **idempotency**.
+
 ## Versions & Aliases
 
 - A **version** is the function's **code plus configuration** (resources, environment variables, all config).
@@ -171,18 +206,75 @@ There are three ways to invoke a Lambda function: **synchronous**, **asynchronou
 - **Aliases** (e.g. `dev`, `stage`, `prod`) point at specific versions and are **mutable** (can be repointed).
 - Typical pattern: publish immutable versions for major changes; use aliases so app components target specific version numbers.
 
-## Startup: Cold Starts, Warm Starts & Provisioned Concurrency
+## Startup: Cold Starts, Warm Starts & Concurrency
 
 ![Cold start vs warm start: on a cold start the full execution context must be created and configured (including function-code download), taking ~100 ms; future invocations reuse the same warm context and skip setup, running in ~1-2 ms, with /tmp data persisting in the reused context](../assets/lambda-invocation-cold-start-vs-warm-start.png)
 
 - **Execution context** is the environment (a small container with allocated resource) the function runs in.
 - **Cold start:** the first invocation must **create and configure** the environment, download/install the runtime, and download/install the deployment package — **~100 ms or more** before code runs.
 - **Warm start:** a subsequent invocation soon after can **reuse** the existing context, skipping setup — code runs in **~1–2 ms**.
-- Contexts are deleted after too long between invocations, causing another cold start. **One invocation runs per context at a time**, so 20 simultaneous invocations can mean 20 cold starts.
+- Contexts are deleted after too long between invocations, causing another cold start. **In default Lambda, one invocation runs per context at a time**: 20 concurrent invocations require 20 environments; cold starts depend on how many warm environments are available.
+
+### Concurrency walkthrough: 10 requests across six environments
+
+In default Lambda, an environment handles one invocation at a time, including time spent waiting for I/O. It can serve later requests after completion. In this AWS example, rows A–F are environments; circles identify requests; **Init** marks initialization and **Invoke** marks handler execution.
+
+![AWS concurrency timeline: requests 1–5 initialize environments A–E, requests 6–8 reuse A–C, request 9 initializes F, and request 10 reuses D](../assets/lambda-concurrency-ten-requests.png)
+
+| Request | Environment action | Why? |
+| :--- | :--- | :--- |
+| 1 | Create A | No environment exists yet. |
+| 2 | Create B | A is occupied. |
+| 3 | Create C | A–B are occupied. |
+| 4 | Create D | A–C are occupied. |
+| 5 | Create E | A–D are occupied. |
+| 6 | Reuse A | Request 1 has completed. |
+| 7 | Reuse B | Request 2 has completed. |
+| 8 | Reuse C | Request 3 has completed. |
+| 9 | Create F | A–E are occupied. |
+| 10 | Reuse D | Request 4 has completed. |
+
+Ten total requests use six environments, with six cold starts and four warm invocations. **Concurrency counts overlapping requests**, rather than all requests received. Source: [AWS concurrency walkthrough](https://docs.aws.amazon.com/lambda/latest/dg/lambda-concurrency.html), with the table paraphrased above.
+
+> [!warning] Gotcha — scope of the one-invocation rule
+> This example describes **default Lambda**. **Lambda Managed Instances** can run multiple invocations concurrently within one execution environment; see [AWS concurrency model comparison](https://docs.aws.amazon.com/lambda/latest/dg/lambda-managed-instances.html).
+
+## Understanding Reserved Concurrency and Provisioned Concurrency
+
+Functions in an account share a Regional concurrency quota, commonly 1,000 concurrent executions; check your account's quota because it can differ. Exhausting available concurrency causes throttling. Whether a request is returned as an error, queued, or retried depends on the [invocation path](#retry-ownership-synchronous-asynchronous-and-esm).
+
+Some of your Event Functions might be more critical than others. As a result, you might want to configure concurrency settings to ensure that critical Event Functions get the concurrency that they need. There are two types of concurrency controls available: reserved concurrency and provisioned concurrency.
+
+- Use **[reserved concurrency](#reserved-concurrency)** to reserve a portion of the account's concurrency quota exclusively for a function and set its concurrency cap. It protects capacity from other functions without keeping environments running.
+- Use **[provisioned concurrency](#provisioned-concurrency)** to pre-initialize a number of environment instances for an Event Function. This is useful for reducing cold start latencies.
+
+### Reserved concurrency
+
+**Reserved concurrency reserves part of the account's Regional concurrency quota exclusively for a function and caps that function at the same number.** It does not keep a minimum number of environments running or initialize them in advance. Other functions cannot use the reserved capacity, even while it is idle.
+
+**Unused reserved capacity cannot be borrowed by other functions.** See the [AWS reserved concurrency walkthrough](https://docs.aws.amazon.com/lambda/latest/dg/lambda-concurrency.html).
+
+For example, reserving 20 means the function can run at most 20 invocations concurrently, and other functions cannot consume those 20 slots. It can still scale down to zero active invocations. Reserved concurrency has no additional charge; see [AWS reserved concurrency configuration](https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html).
+
+Let's explore further using the following chart:
+
+![AWS reserved concurrency example: a Regional quota of 1,000 is divided into 400 slots for function-orange, 400 for function-blue, and 200 shared unreserved slots; red segments mark throttling at pool limits](../assets/lambda-reserved-concurrency.png)
+
+In this diagram, your account concurrency limit for all the Event Functions in this Region is at the default limit of 1,000. Suppose you have two critical Event Functions, `function-blue` and `function-orange`, that routinely expect to get high invocation volumes. You decide to give 400 units of reserved concurrency to `function-blue`, and 400 units of reserved concurrency to `function-orange`. In this example, all other Event Functions in your account must share the remaining 200 units of unreserved concurrency.
+
+The diagram has five points of interest:
+
+- At `t1`, both `function-orange` and `function-blue` begin receiving requests. Each Event Function begins to use up its allocated portion of reserved concurrency units.
+- At `t2`, `function-orange` and `function-blue` steadily receive more requests. At the same time, you deploy some other Lambda Event Functions, which begin receiving requests. You don't allocate reserved concurrency to these other Event Functions. They begin using the remaining 200 units of unreserved concurrency.
+- At `t3`, `function-orange` hits the max concurrency of 400. Although there is unused concurrency elsewhere in your account, `function-orange` cannot access it. The red line indicates that `function-orange` is experiencing throttling, and Lambda might drop requests.
+- At `t4`, `function-orange` starts to receive fewer requests and is no longer throttling. However, your other Event Functions experience a spike in traffic and begin throttling. Although there is unused concurrency elsewhere in your account, these other Event Functions cannot access it. The red line indicates that your other Event Functions are experiencing throttling.
+- At `t5`, other Event Functions start to receive fewer requests and are no longer throttling.
 
 ### Provisioned concurrency
 
-- Tell AWS in advance to **pre-create and keep X contexts warm**, improving start speed. Use for known high-load periods or ahead of a production release.
+**Provisioned concurrency pre-initializes a configured number of execution environments** to reduce cold-start latency, with additional charges. Use it for latency-sensitive workloads with predictable traffic.
+
+It can be configured independently of [reserved concurrency](#reserved-concurrency). Requests beyond the provisioned allocation can use on-demand environments, subject to concurrency limits, and may experience cold starts. If both are configured, the provisioned allocation cannot exceed the function's reserved concurrency. See [AWS provisioned concurrency configuration](https://docs.aws.amazon.com/lambda/latest/dg/provisioned-concurrency.html).
 
 ### Code-level optimization
 
@@ -225,7 +317,7 @@ Always assume a fresh, clean context — never *require* reuse — but you *can*
 - **ESM permissions:** the execution role needs **source-service permissions** (e.g. Kinesis) even though the code doesn't directly read the source.
 - **Async invocation requires idempotency** (retries re-run the same event).
 - **Published versions are immutable**; `$LATEST` and **aliases are mutable**.
-- **Sync means the client handles retries; async means Lambda handles retries.**
+- **Sync means the caller handles retries; async means Lambda handles retries. For ESM, the mapping is the synchronous caller and manages reprocessing according to the event source.**
 
 ## References
 
@@ -234,3 +326,16 @@ Always assume a fresh, clean context — never *require* reuse — but you *can*
 - [AWS Lambda Developer Guide — Resource-based policies](https://docs.aws.amazon.com/lambda/latest/dg/access-control-resource-based.html) (console-editable resource policy)
 - [Configuring a Lambda function to access resources in a VPC](https://docs.aws.amazon.com/lambda/latest/dg/configuration-vpc.html) (shared-ENI Hyperplane model)
 - [Lambda quotas](https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html) (deployment package, timeout, /tmp)
+- [Lambda event source mappings](https://docs.aws.amazon.com/lambda/latest/dg/invocation-eventsourcemapping.html)
+- [Understanding retry behavior in Lambda](https://docs.aws.amazon.com/lambda/latest/dg/invocation-retries.html)
+- [Invoke a Lambda function synchronously](https://docs.aws.amazon.com/lambda/latest/dg/invocation-sync.html)
+- [Configuring asynchronous error handling](https://docs.aws.amazon.com/lambda/latest/dg/invocation-async-configuring.html)
+- [Event source mapping configuration](https://docs.aws.amazon.com/lambda/latest/api/API_EventSourceMappingConfiguration.html)
+- [Creating and configuring an SQS event source mapping](https://docs.aws.amazon.com/lambda/latest/dg/services-sqs-configure.html)
+- [Event source mappings with durable functions](https://docs.aws.amazon.com/lambda/latest/dg/durable-invoking-esm.html) — synchronous ESM invocation model
+- [Understanding Lambda concurrency and scaling](https://docs.aws.amazon.com/lambda/latest/dg/lambda-concurrency.html) — ten-request diagram and accompanying table
+- [Lambda Managed Instances](https://docs.aws.amazon.com/lambda/latest/dg/lambda-managed-instances.html) — concurrency model differences
+- [Asynchronous invocation errors and retries](https://docs.aws.amazon.com/lambda/latest/dg/invocation-async-error-handling.html)
+- [SQS partial batch responses](https://docs.aws.amazon.com/lambda/latest/dg/services-sqs-errorhandling.html)
+- [Configuring reserved concurrency](https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html)
+- [Configuring provisioned concurrency](https://docs.aws.amazon.com/lambda/latest/dg/provisioned-concurrency.html)
