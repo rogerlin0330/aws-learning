@@ -3,7 +3,7 @@ title: AWS Lambda
 type: service
 tags: [lambda, compute, serverless, faas, event-driven, execution-role, resource-policy, vpc, eni, invocation, synchronous, asynchronous, event-source-mapping, idempotency, cold-start, warm-start, provisioned-concurrency, versions, aliases, container-image, cloudwatch, x-ray, dlq, destinations]
 certs: [aws-saa]
-updated: 2026-11-09
+updated: 2026-11-10
 ---
 
 # AWS Lambda
@@ -318,6 +318,10 @@ Always assume a fresh, clean context — never *require* reuse — but you *can*
 - **Async invocation requires idempotency** (retries re-run the same event).
 - **Published versions are immutable**; `$LATEST` and **aliases are mutable**.
 - **Sync means the caller handles retries; async means Lambda handles retries. For ESM, the mapping is the synchronous caller and manages reprocessing according to the event source.**
+
+## CloudFront Edge Execution
+
+[Lambda@Edge](lambda-edge.md) executes published function versions on the [CloudFront](cloudfront.md) path rather than through the ordinary regional invocation architecture. Viewer and origin triggers have different relationships to cache lookup; deployment starts in us-east-1 and excludes features such as VPC attachment, layers, and provisioned concurrency. Use the dedicated guide for the four trigger positions, redirect examples, and current quotas.
 
 ## References
 

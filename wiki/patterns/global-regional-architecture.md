@@ -3,7 +3,7 @@ title: Global & Regional AWS Architecture
 type: pattern
 tags: [architecture, foundations, global, regional, tiers, route53, cloudfront, cdn, dns, health-checks, failover, multi-region, dr, web-tier, compute-tier, caching, database-tier, storage-tier, app-services, decoupling]
 certs: [aws-saa]
-updated: 2026-07-09
+updated: 2026-11-10
 ---
 
 # Global & Regional AWS Architecture
@@ -28,10 +28,12 @@ As a solutions architect you will design three main types of architecture:
 At the global level there are three architectural jobs:
 
 1. **Global service location and discovery** — when a user types `netflix.com`, how does their machine discover where to point? The answer is [DNS](../concepts/dns.md), implemented in AWS by [Route 53](../services/route53.md).
-2. **Content delivery** — how does content reach users globally: cached in pockets around the world, or pulled from one central location? The answer is a **Content Delivery Network (CDN)**, implemented by **CloudFront**.
+2. **Content delivery** — how does content reach users globally: cached in pockets around the world, or pulled from one central location? The answer is a **Content Delivery Network (CDN)**, implemented by [CloudFront](../services/cloudfront.md).
 3. **Global health checks and failover** — detect whether infrastructure in one location is healthy, and move customers to another region when needed. The answer is [Route 53 health checks](../services/route53.md#health-checks).
 
 The whole purpose of the global layer is to deliver customers to a suitable regional infrastructure location: isolate regional failures, move sessions to a working region, ideally direct customers to their *nearest* region, and improve delivery via caching (CloudFront).
+
+[Global Accelerator](../services/global-accelerator.md) adds a global network entry option: static anycast IPs bring TCP/UDP traffic onto AWS close to users, then select configured regional endpoints. This complements DNS discovery and differs from CloudFront caching. [Lambda@Edge](../services/lambda-edge.md) adds request/response customization to the CDN path; [Edge Delivery](../concepts/edge-delivery.md) separates routing, cache correctness, viewer authorization, origin protection, and TLS.
 
 ## Regional Components — The Application Tiers
 

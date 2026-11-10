@@ -3,7 +3,7 @@ title: Networking Concepts
 type: concept
 tags: [networking, eni, elastic-network-interface, osi, firewall, ephemeral-ports, ip-addresses, routing]
 certs: [aws-saa]
-updated: 2026-11-05
+updated: 2026-11-10
 ---
 
 # Networking Concepts
@@ -111,6 +111,10 @@ When a client connects to a server, the OS assigns a random **ephemeral (source)
 
 > [!tip] Exam Tip
 > A public IPv4 address is **not visible inside the EC2 OS** — the OS only sees the private IP. The IGW performs the 1:1 NAT translation. IPv6 is different: it's configured directly in the OS.
+
+## Anycast and Global Application Entry
+
+[Global Accelerator](../services/global-accelerator.md) advertises stable anycast addresses from AWS edges. Traffic reaches an edge and travels over the backbone to a configured regional endpoint. Those addresses belong to the accelerator entry, not an EC2 ENI. [CloudFront](../services/cloudfront.md) instead adds HTTP caching and content controls; [Edge Delivery](edge-delivery.md) explains how these services combine network paths, DNS discovery, and application security.
 
 ## References
 

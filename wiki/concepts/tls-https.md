@@ -3,14 +3,14 @@ title: TLS and HTTPS
 type: concept
 tags: [tls, https, security, certificates, acm, networking]
 certs: [aws-saa]
-updated: 2026-06-04
+updated: 2026-11-10
 ---
 
 # TLS and HTTPS
 
 HTTPS = HTTP over TLS. TLS (Transport Layer Security) provides three guarantees: **confidentiality** (encrypted data), **integrity** (tamper detection), and **authentication** (server identity verified). It operates at Layer 6/7 and sits above the [Networking](networking.md) controls (SG, NACL) that operate at L3/4.
 
-AWS services that terminate TLS: [ALB](../services/elb.md), CloudFront, [API Gateway](../services/api-gateway.md). Certificate provisioning is managed by **ACM (AWS Certificate Manager)** — see the AWS connection points section below.
+AWS services that terminate TLS: [ALB](../services/elb.md), [CloudFront](../services/cloudfront.md), [API Gateway](../services/api-gateway.md). Certificate provisioning is managed by [ACM (AWS Certificate Manager)](../services/acm.md) — see the AWS connection points section below.
 
 ## 1. Certificates and the Chain of Trust
 
@@ -46,14 +46,14 @@ The **Root CA cert is never sent over the wire** — clients already have it loc
 1. Request a certificate via the provider's dashboard (e.g. ACM console)
 2. Provider generates the key pair and CSR on your behalf
 3. Provider submits CSR to the CA
-4. Domain validation challenge sent back (Route 53 DNS TXT record is the easiest option with ACM)
+4. Domain validation challenge sent back (ACM supplies DNS CNAME records; Route 53 can create them)
 5. CA issues certificate; provider stores it and deploys it automatically to ALB/CloudFront/etc.
 
 > [!warning] Gotcha
-> In Flow B the **provider holds the private key**. With ACM specifically, the private key never leaves AWS — ACM manages it and deploys it to integrated services; you can't download it.
+> In Flow B the **provider holds the private key**. ACM non-exportable public certificates retain it within the managed service workflow. ACM also supports paid **exportable public certificates**, including private-key export for installation on servers; deployment of renewed exported copies is your responsibility. See [ACM certificate modes](../services/acm.md#non-exportable-versus-exportable-public-certificates).
 
 > [!tip] Exam Tip
-> ACM certificates are **free** and **auto-renewed** when used with integrated AWS services (ALB, CloudFront, API Gateway). You cannot export the private key from ACM-issued certificates.
+> ACM non-exportable public certificates used with integrated services such as ALB, CloudFront, and API Gateway have no additional certificate charge and can qualify for managed renewal. Imported certificates require external renewal; exportable public certificates have separate charges.
 
 ## 2. Certificate Verification
 
@@ -134,7 +134,7 @@ With TLS 1.3, the server sends its `key_share` in ServerHello, and the client re
 | **ALB** | Terminates TLS; forwards plaintext to backends (or re-encrypts) |
 | **CloudFront** | Terminates TLS at edge; can use custom certificates from ACM or IAM |
 | **[API Gateway](../services/api-gateway.md)** | Terminates TLS; custom domain names require ACM cert |
-| **Route 53** | DNS TXT record for ACM domain validation — see [DNS](dns.md) |
+| **Route 53** | DNS CNAME record for ACM domain validation — see [DNS](dns.md) |
 
 > [!tip] Exam Tip
 > ACM certificates used with **CloudFront must be in `us-east-1`** (N. Virginia), regardless of where your CloudFront distribution serves traffic. ALB certificates must be in the **same region as the ALB**.
@@ -143,6 +143,9 @@ With TLS 1.3, the server sends its `key_share` in ServerHello, and the client re
 > **TLS termination at ALB** means traffic between ALB and EC2 targets is plaintext by default. To encrypt the backend leg, configure HTTPS on the target group and install a cert on the EC2 instance (can be self-signed for this leg). These arrangements have names — bridging (re-encrypt), offload (plain HTTP), pass-through (never decrypted, NLB TCP listener only) — covered in [ELB SSL/TLS connection modes](../services/elb.md#ssltls-connection-modes--bridging-pass-through-offload).
 
 ## References
+
+- [ACM exportable public certificates](https://docs.aws.amazon.com/acm/latest/userguide/acm-exportable-certificates.html)
+- [ACM DNS CNAME validation](https://docs.aws.amazon.com/acm/latest/userguide/dns-validation.html)
 
 - [Networking Concepts](networking.md)
 - [DNS](dns.md)

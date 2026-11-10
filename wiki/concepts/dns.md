@@ -2,7 +2,7 @@
 title: DNS — Domain Name System
 type: concept
 tags: [dns, networking, split-horizon-dns, split-view-dns, ttl, cname, alias, ns, mx, txt, a-record, aaaa-record, delegation, authoritative, walking-the-tree, resolver, hosts-file, root-servers, nslookup, dig, dnssec, cache-poisoning]
-updated: 2026-11-05
+updated: 2026-11-10
 ---
 
 # DNS — Domain Name System
@@ -248,6 +248,10 @@ The **authoritative DNS server** (nameserver) is the source of truth for a domai
 ## Securing DNS — DNSSEC
 
 Plain DNS has no way to validate the **origin** or **integrity** of an answer, which is what makes [cache poisoning](dnssec.md#why-dnssec-is-needed--cache-poisoning) possible — an attacker races a forged response into a resolver's cache during the [tree walk](#walking-the-tree-step-by-step), and every later client is served the poisoned record until its TTL expires. **[DNSSEC (DNS Security Extensions)](dnssec.md)** is the *add-on* that closes this gap: it layers digital signatures (RRSIG) over [RRSETs](dnssec.md#rrset--resource-record-set) and builds a cryptographically verifiable **chain of trust** from the root down to each record, so a validating resolver can detect and reject forged or altered data. It is additive and backward compatible — DNS-only clients never see the extra records. See the full treatment on the [DNSSEC](dnssec.md) page.
+
+## DNS for Edge Application Entry
+
+For [Global Accelerator](../services/global-accelerator.md), a custom hostname resolves to the accelerator entry IPs, directly or through its assigned name; Route 53 supports an alias target. For [CloudFront](../services/cloudfront.md), configure the alternate domain name, matching viewer certificate, and DNS pointing to the distribution. DNS discovers the destination; application traffic then follows the selected service path. [ACM](../services/acm.md) domain validation uses the CNAME record ACM supplies, separately from application address records.
 
 ## References
 

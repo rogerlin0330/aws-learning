@@ -2,7 +2,7 @@
 title: Wiki Index
 type: overview
 tags: [index, catalog, wiki]
-updated: 2026-11-09
+updated: 2026-11-10
 ---
 
 # Wiki Index
@@ -15,6 +15,10 @@ Section links use GitHub-style heading anchors. In Obsidian, use the GFM Heading
 
 ## Services
 
+- [CloudFront](services/cloudfront.md) — Distribution/behavior/origin scopes, caching and TTLs, invalidation automation and costs, TLS/SNI, signed URLs/cookies, and origin protection
+- [Global Accelerator](services/global-accelerator.md) — Anycast assignment, IPv4/dual-stack, what to configure after receiving IPs, listeners/endpoints/DNS/HTTPS testing, backbone path, and failover
+- [Lambda@Edge](services/lambda-edge.md) — Four trigger positions, cache-safe variants, use cases and AWS examples including redirects, deployment restrictions, and updated quotas
+- [ACM](services/acm.md) — Certificate lifecycle, CNAME validation, regional placement and CloudFront us-east-1, imported-certificate renewal, and exportable public certificates
 - [VPC Peering](services/vpc-peering.md) — Direct two-VPC connectivity, non-transitive topology diagram, concrete reciprocal route tables, CIDR constraints, same-/cross-Region security-group rules, EC2 hostname resolution versus private-zone association, encryption scope, setup checks, and mesh scaling
 - [VPC Interface Endpoints](services/vpc-interface-endpoints.md) — PrivateLink ENIs and multi-AZ placement, two architecture diagrams, [descriptive gateway/interface comparison](services/vpc-interface-endpoints.md#gateway-endpoint-vs-interface-endpoint) with request-path examples, default gateway HA versus per-AZ interface ENIs, setup steps and costs, [EICE vs SNS interface endpoint](services/vpc-interface-endpoints.md#ec2-instance-connect-endpoint-vs-sns-interface-endpoint) with management tunnels, public/private connection paths, and IAM authorization timing, regional/zonal DNS, [SNS private hosted zone walkthrough](services/vpc-interface-endpoints.md#sns-walkthrough-keep-the-hostname-change-the-dns-answer) with service identifiers versus generated endpoint DNS names, AWS-managed and customer-managed alias options, A alias versus apex CNAME explanation, DNS attributes, SG/IAM boundaries, and S3/DynamoDB caveats
 - [VPC Gateway Endpoints](services/vpc-gateway-endpoints.md) — Self-contained guide to private S3/DynamoDB access, prefix-list routes and route-table associations, regional/multi-AZ scope, endpoint vs bucket policies, [interface endpoint comparison](services/vpc-interface-endpoints.md#gateway-endpoint-vs-interface-endpoint), PrivateLink distinction, editable Excalidraw architecture, and supporting illustrations
@@ -56,6 +60,7 @@ Section links use GitHub-style heading anchors. In Obsidian, use the GFM Heading
 
 ## Concepts
 
+- [Edge Delivery](concepts/edge-delivery.md) — CDN caching versus TCP/UDP acceleration, authorization/origin/TLS boundaries, and service-selection guidance
 - [Data Integration](concepts/data-integration.md) — Ingestion, storage, metadata, discovery, transformations, queries, governance, and orchestration as separate responsibilities; AppFlow/DMS/Kinesis/Firehose/EventBridge/Glue selection, ETL vs ELT, batch vs streaming, and linked SaaS-to-S3 and Glue lease-record examples
 - [Storage Fundamentals](concepts/storage.md) — Direct-attached vs network-attached; ephemeral vs persistent; block / file / object categories; IOPS, throughput, block size performance triangle; AWS service mapping (instance store, EBS, EFS/FSx, S3)
 - [Networking](concepts/networking.md) — Firewall layers, routing, direct peering versus transit, private service access via prefix lists versus endpoint ENI addresses, internet connectivity patterns, ephemeral ports, and flow-log observability versus firewall statefulness

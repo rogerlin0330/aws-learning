@@ -171,3 +171,6 @@ $RECYCLE.BIN/
 # End of https://www.toptal.com/developers/gitignore/api/macos,windows,linux,vim,emacs,visualstudiocode,obsidian
 
 .claudian
+
+raw/adrian-cantrill-lectures/**/videos/
+raw/adrian-cantrill-lectures/**/transcripts/

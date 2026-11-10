@@ -2,7 +2,7 @@
 title: AWS Learning — Overview
 type: overview
 tags: [aws, architecture, iam, vpc, organizations, control-tower, cost, s3, ec2, ecs, eks, kubernetes, containers, cloudwatch, cloudtrail, cloudformation, bootstrapping, serverless, lambda, step-functions, api-gateway, orchestration, dns, dnssec, rds, rds-custom, aurora, dms, database, database-migration, multi-az, high-availability, acid, base, cap-theorem, global, regional, tiers, cloudfront, elb, asg, auto-scaling, sqs, sns, messaging, queues, decoupling, fifo, dead-letter-queue, kinesis, streaming, ingestion, firehose, analytics, video-streams, kafka, msk, log-vs-queue]
-updated: 2026-11-05
+updated: 2026-11-10
 ---
 
 # AWS Learning Overview
@@ -63,6 +63,8 @@ This distinction recurs across AWS — understanding it once unlocks many servic
 
 ### Global Components vs Regional Tiers
 
+[CloudFront](services/cloudfront.md) serves cached HTTP objects and routes web paths; [Lambda@Edge](services/lambda-edge.md) transforms requests/responses at cache-aware trigger positions. [Global Accelerator](services/global-accelerator.md) supplies stable anycast entry IPs for TCP/UDP traffic over the AWS backbone. [ACM](services/acm.md) supplies TLS certificates, with us-east-1 required for CloudFront viewer certificates. [Edge Delivery](concepts/edge-delivery.md) connects these roles through service comparisons and architecture explanations.
+
 Large systems split into **global components** that get the customer to a healthy region (Route 53 for discovery and health-check failover, CloudFront for content delivery) and **regional applications** built from standard tiers (web, compute, caching, database, storage, app services). What looks like one global application — Netflix, say — is really a collection of regional applications duplicated across regions. See [Global & Regional AWS Architecture](patterns/global-regional-architecture.md) for the full model, including the three architecture types (single-region, single-region + DR, multi-region).
 
 ### Resilience Tiers
@@ -88,6 +90,11 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 ## Pages in This Wiki
 
 ### Services
+
+- [CloudFront](services/cloudfront.md) — HTTP delivery, cache behaviors, freshness, private content, origin protection, and TLS
+- [Global Accelerator](services/global-accelerator.md) — Anycast entry IPs, regional endpoint routing, and TCP/UDP acceleration
+- [Lambda@Edge](services/lambda-edge.md) — CloudFront trigger functions and cache-aware customization
+- [ACM](services/acm.md) — TLS certificate lifecycle, regional associations, and exportable certificates
 
 - [AppFlow](services/appflow.md) — SaaS connectors, reusable connections, flow processing and triggers, PrivateLink limits, and an S3/Glue analytics example
 - [Glue](services/glue.md) — crawlers, shared Data Catalog metadata, serverless batch/streaming ETL, triggers and orchestration, billing, and the Data Pipeline comparison
@@ -124,6 +131,8 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 - [KMS](services/kms.md) — key management; envelope encryption, key policies + IAM + grants
 
 ### Concepts
+
+- [Edge Delivery](concepts/edge-delivery.md) — Caching, global network acceleration, security boundaries, and service selection
 
 - [Data Integration](concepts/data-integration.md) — storage vs metadata vs transformation vs query vs orchestration; ETL/ELT and batch/streaming choices
 - [Networking](concepts/networking.md) — OSI layers, firewall layers, routing, internet connectivity patterns
