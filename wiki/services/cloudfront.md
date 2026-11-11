@@ -60,11 +60,11 @@ Origins are configured in the distribution and **referenced by behaviors**; the 
 
 ### Configuration Scopes at a Glance
 
-| Scope | What it controls | Key settings |
-| --- | --- | --- |
-| Distribution | Shared configuration across all behaviors | Price class, viewer TLS security policy and certificate, SNI/dedicated-IP SSL support, alternate domain names, WAF association, supported viewer HTTP versions, logging |
-| Cache behavior | Rules for requests matching a path pattern | Origin/origin-group reference, viewer protocol policy, allowed/cached methods, cache/origin-request policies, signed viewer access, compression, field-level encryption, edge-function associations |
-| Origin | Connection and access to one backend | Domain name, origin path, origin access configuration; custom-origin protocol policy, TLS settings, ports, and custom headers |
+| Scope          | What it controls                           | Key settings                                                                                                                                                                                                                                                           |
+| -------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Distribution   | Shared configuration across all behaviors  | Price class, viewer TLS security policy and certificate, SNI/dedicated-IP SSL support, alternate domain names, WAF association, supported viewer HTTP versions, logging                                                                                                |
+| Cache behavior | Rules for requests matching a path pattern | Origin/origin-group reference, viewer protocol policy, allowed/cached methods, cache/origin-request policies, [signed viewer access](#private-distribution-behaviours-signed-urls-and-signed-cookies), compression, field-level encryption, edge-function associations |
+| Origin         | Connection and access to one backend       | Domain name, origin path, origin access configuration; custom-origin protocol policy, TLS settings, ports, and custom headers                                                                                                                                          |
 
 ### Distribution-Level Settings
 
@@ -91,7 +91,7 @@ Check which browsers, mobile apps, and devices need access before choosing a pol
 
 ### Behavior-Level Settings
 
-Each behavior defines rules for a matching path: which origin or origin group to use, which HTTP methods to accept or cache, how to cache and forward request data, and whether signed viewer access is required. Compression, field-level encryption, and edge-function associations are also configured here.
+Each behavior defines rules for a matching path: which origin or origin group to use, which HTTP methods to accept or cache, how to cache and forward request data, and whether [signed viewer access](#private-distribution-behaviours-signed-urls-and-signed-cookies) is required. Compression, field-level encryption, and edge-function associations are also configured here.
 
 The **viewer protocol policy** is a behavior setting. It chooses whether matching requests may use HTTP/HTTPS, must redirect from HTTP to HTTPS, or must use HTTPS. It does not choose TLS versions or ciphers; those come from the distribution-level **TLS security policy**.
 
@@ -211,6 +211,19 @@ Versioned filenames also avoid reuse of old browser/proxy cache entries, support
 
 > [!tip] Exam Tip
 > Frequent content updates plus cost efficiency → prefer **versioned filenames** over repeatedly invalidating the same URLs. Invalidation charges depend on submitted path count, not how many objects a wildcard matches.
+
+## Custom Domain Setup: Certificate, Distribution, and DNS
+
+To serve `https://www.example.com` through CloudFront, connect three pieces: a certificate covering that hostname, a distribution configured to accept it, and DNS routing viewers to that distribution. The **alternate domain names and viewer certificate are distribution-level settings** shared by all behaviors.
+
+1. **Choose a hostname you control**, such as `www.example.com`, and have access to its authoritative public DNS. Your domain registrar and DNS provider can be outside AWS.
+2. **Request or import a certificate in [ACM](acm.md), in `us-east-1`.** Request an ACM public certificate covering every hostname you will add. Alternatively, import an existing trusted CA certificate with its matching private key and certificate chain. A wildcard such as `*.example.com` covers `www.example.com`, but not the apex `example.com` or deeper names such as `a.b.example.com`. [AWS certificate requirements](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cnames-and-https-requirements.html)
+3. **Validate an ACM-issued certificate.** With DNS validation, publish the CNAME record(s) ACM provides and wait for the certificate to become **Issued**. Keep these records for automatic renewal. Imported certificates instead require you to manage renewal and reimport replacements. [ACM DNS validation](https://docs.aws.amazon.com/acm/latest/userguide/dns-validation.html)
+4. **Configure the distribution.** Add `www.example.com` under **Alternate domain names (CNAMEs)** and select the matching ACM certificate. Use SNI for modern clients and choose an appropriate viewer TLS security policy. To redirect HTTP visitors to HTTPS, set **Redirect HTTP to HTTPS** on each relevant behavior. Save and wait for deployment before switching traffic. AWS deploys the associated certificate to the edges; you do not manually install it on edge servers. [AWS custom-domain setup](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CNAMEs.html)
+5. **Point the hostname's DNS record to the distribution**, for example `d111111abcdef8.cloudfront.net`. In [Route 53](route53.md), create an **A alias** targeting the distribution, plus an **AAAA alias** if IPv6 is enabled. These work for both subdomains and the apex. With another DNS provider, use a **CNAME** for a subdomain; an apex requires that provider's supported ALIAS/ANAME or CNAME-flattening feature, or Route 53. Target the distribution hostname, rather than copying its currently resolved IP addresses. [AWS DNS routing guide](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-to-cloudfront-distribution.html)
+6. **Verify the custom URL after DNS propagation.** Open `https://www.example.com`, check that the certificate covers the hostname, and confirm the expected content and HTTP-to-HTTPS redirect. Update application links to use the custom hostname.
+
+The **ACM validation CNAME** proves domain ownership; the **traffic-routing alias/CNAME** sends users to CloudFront. They are separate DNS records with different purposes. Adding a DNS record alone does not configure CloudFront to accept the hostname, and attaching the viewer certificate does not configure HTTPS on the origin.
 
 ## TLS: Two Independent Connections
 
@@ -361,11 +374,32 @@ For new deployments, AWS recommends **OAC**. It supports modern S3 Regions, SSE-
 
 ### Protect Custom Origins
 
-Combine HTTPS, a CloudFront-injected custom header checked by the origin, and firewall restrictions to CloudFront source ranges.
+For a publicly reachable custom origin, two complementary methods help prevent viewers from bypassing CloudFront:
 
-![A custom origin requires a CloudFront-added header while a firewall allows origin-facing CloudFront source addresses](../assets/cloudfront-custom-origin-protection.png)
+| Method | What it checks | Where it is configured |
+| --- | --- | --- |
+| Secret custom header | Does the request carry the expected secret? | CloudFront **origin settings** add the header; the origin application or ALB listener validates it |
+| Source-IP restriction | Did the connection come from CloudFront's origin-facing servers? | The origin's firewall or security group permits CloudFront source ranges |
 
-Treat the header value as a secret: keep it out of client responses, protect configuration access, rotate it, and reject missing/incorrect values. HTTPS protects it in transit but does not make it impossible to leak or replay. CloudFront source-range filtering alone permits other customers' distributions too; combine network restrictions with distribution-specific origin validation. For supported private AWS resources, consider a VPC origin instead of a publicly reachable origin. [AWS custom-header and network restrictions](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/restrict-access-to-load-balancer.html)
+You can use either method or combine them. In the architecture below, the **upper origin** illustrates header validation; the **lower origin** illustrates firewall filtering. They are two alternatives, not two sequential hops.
+
+![Two custom-origin protection options: the upper origin checks a CloudFront-added secret header over HTTPS, while the lower origin uses a firewall allowing CloudFront source IP ranges](../assets/cloudfront-custom-origin-protection.png)
+
+#### Method 1: Require a Secret Custom Header
+
+CloudFront adds a secret header when forwarding a request to the origin. The origin checks the expected **name and value**, serves matching requests, and rejects missing or incorrect values. With an [ALB](elb.md), a listener rule can forward matching requests to the target group while the default rule returns `403`.
+
+Configure the header under **origin settings**, and use the origin protocol policy to require HTTPS between CloudFront and the origin. The behavior's viewer protocol policy separately controls HTTPS for viewers. Keep the header secret, prevent it from appearing in client responses, restrict configuration access, and rotate it. HTTPS protects the header in transit; a leaked secret can still be replayed. [AWS header-based origin protection](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/restrict-access-to-load-balancer.html)
+
+#### Method 2: Allow Only CloudFront Source IP Ranges
+
+The origin's firewall allows incoming connections on the required service port, typically HTTPS/443, from **CloudFront origin-facing IP ranges** and denies other sources. A direct viewer connection is blocked at the network boundary, before the application handles an HTTP request.
+
+For an AWS origin protected by a [security group](../concepts/networking.md), use the AWS-managed prefix list `com.amazonaws.global.cloudfront.origin-facing` for IPv4; use the corresponding `com.amazonaws.global.ipv6.cloudfront.origin-facing` list when allowing IPv6 origin connections. AWS maintains these ranges. For other firewalls, maintain rules from AWS's published origin-facing ranges and keep them updated. Remove broader inbound rules that would permit bypassing the restriction. [AWS CloudFront IP ranges and managed prefix lists](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/LocationsOfEdgeServers.html)
+
+This identifies **CloudFront as a service**, not your particular distribution: other customers' distributions also use these source ranges. Combining source-IP filtering with a secret unique to your distribution adds a second check. Neither method replaces [signed viewer access](#private-distribution-behaviours-signed-urls-and-signed-cookies), which controls who may retrieve content through CloudFront.
+
+For supported private AWS resources, a **VPC origin** provides another architecture option that avoids a publicly reachable origin. The two methods above describe protection for public custom origins, rather than an exhaustive list of all origin-access options. [AWS VPC origins](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-vpc-origins.html)
 
 ## Practical Checks
 
@@ -381,6 +415,9 @@ Treat the header value as a secret: keep it out of client responses, protect con
 
 ## References
 
+- [Custom domain names](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CNAMEs.html)
+- [Viewer certificate requirements](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cnames-and-https-requirements.html)
+- [Route 53 routing to CloudFront](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-to-cloudfront-distribution.html)
 - [How CloudFront delivers content](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/HowCloudFrontWorks.html)
 - [Cache behavior settings](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/DownloadDistValuesCacheBehavior.html)
 - [Origin types](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/DownloadDistS3AndCustomOrigins.html)

@@ -1608,3 +1608,7 @@ Expanded Lambda coverage of direct service triggers versus ESM polling, supporte
 ## [2026-11-10] ingest | CloudFront, Edge Delivery, and Global Acceleration
 
 Added CloudFront, ACM, Lambda@Edge, Global Accelerator, and Edge Delivery guides with architecture illustrations and a cache-lifecycle animation. Covered configuration scopes, behavior ordering, cache-policy TTLs versus origin headers, invalidation automation and costs, viewer/origin TLS and SNI, signed URL/cookie authorization and formats, OAI/OAC and custom-origin protection, and anycast IP assignment and setup. Corrected ACM exportability and DNS-validation guidance; cross-linked related services, concepts, patterns, overview, and SAA notes. Consolidated the index and validated Markdown and local links.
+
+## [2026-11-10] update | CloudFront Custom Domains and Origin Protection
+
+Added a standalone custom-domain setup checklist covering ACM certificates in us-east-1, validation, distribution settings, DNS routing, and verification. Separated secret-header validation and source-IP filtering with configuration scopes, limitations, and a complete two-method architecture diagram. Corrected signed-access heading links and consolidated the index summary; validated Markdown and local links.
