@@ -1612,3 +1612,7 @@ Added CloudFront, ACM, Lambda@Edge, Global Accelerator, and Edge Delivery guides
 ## [2026-11-10] update | CloudFront Custom Domains and Origin Protection
 
 Added a standalone custom-domain setup checklist covering ACM certificates in us-east-1, validation, distribution settings, DNS routing, and verification. Separated secret-header validation and source-IP filtering with configuration scopes, limitations, and a complete two-method architecture diagram. Corrected signed-access heading links and consolidated the index summary; validated Markdown and local links.
+
+## [2026-11-11] ingest | CloudFront Origin Access Control
+
+Expanded OAC coverage with origin-level configuration, a signed-request architecture diagram, temporary credentials, authentication and authorization, and a distribution-scoped bucket policy example. Covered signing modes, SSE-KMS, OAI migration and shared-identity permissions, and Lambda function URL support. Organized the explanation from concepts to configuration, added S3 and SAA cross-links, and updated the index.

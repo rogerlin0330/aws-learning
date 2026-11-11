@@ -2,7 +2,7 @@
 title: Wiki Index
 type: overview
 tags: [index, catalog, wiki]
-updated: 2026-11-10
+updated: 2026-11-11
 ---
 
 # Wiki Index
@@ -15,7 +15,7 @@ Section links use GitHub-style heading anchors. In Obsidian, use the GFM Heading
 
 ## Services
 
-- [CloudFront](services/cloudfront.md) — Configuration scopes, caching/TTLs and invalidation, [custom domains](services/cloudfront.md#custom-domain-setup-certificate-distribution-and-dns), TLS/SNI, [signed viewer access](services/cloudfront.md#private-distribution-behaviours-signed-urls-and-signed-cookies), and S3/custom-origin protection
+- [CloudFront](services/cloudfront.md) — Configuration scopes, caching/TTLs and invalidation, [custom domains](services/cloudfront.md#custom-domain-setup-certificate-distribution-and-dns), TLS/SNI, [signed viewer access](services/cloudfront.md#private-distribution-behaviours-signed-urls-and-signed-cookies), [S3 origin access with OAC/OAI](services/cloudfront.md#protect-the-s3-origin-oai-and-oac), and custom-origin protection
 - [Global Accelerator](services/global-accelerator.md) — Anycast assignment, IPv4/dual-stack, what to configure after receiving IPs, listeners/endpoints/DNS/HTTPS testing, backbone path, and failover
 - [Lambda@Edge](services/lambda-edge.md) — Four trigger positions, cache-safe variants, use cases and AWS examples including redirects, deployment restrictions, and updated quotas
 - [ACM](services/acm.md) — Certificate lifecycle, CNAME validation, regional placement and CloudFront us-east-1, imported-certificate renewal, and exportable public certificates

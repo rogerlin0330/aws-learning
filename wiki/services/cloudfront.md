@@ -3,7 +3,7 @@ title: Amazon CloudFront
 type: service
 tags: [cloudfront, cdn, caching, ttl, invalidation, origins, oai, oac, signed-urls, signed-cookies, tls]
 certs: [aws-saa]
-updated: 2026-11-10
+updated: 2026-11-11
 ---
 
 # Amazon CloudFront
@@ -362,15 +362,95 @@ This JSON is the **decoded payload**, not the literal cookie value. Compact it, 
 
 Origin protection ensures users cannot bypass CloudFront and retrieve content directly from the backend. It complements [signed viewer access](#private-distribution-behaviours-signed-urls-and-signed-cookies): one controls entry through CloudFront, while the other closes the direct-origin path. Choose the mechanism based on the origin type.
 
-### Protect the Origin: OAI and OAC
+### Protect the S3 Origin: OAI and OAC
 
-For an S3 bucket origin, use OAC (recommended) or legacy OAI to authorize CloudFront access while keeping the bucket private. An OAI provides a dedicated CloudFront identity allowed by the bucket policy while ordinary anonymous access remains denied.
+For a standard [S3 bucket origin](s3.md#cloudfront-origin-delivery), prefer **Origin Access Control (OAC)**. OAC configures how CloudFront authenticates origin requests; the bucket policy grants access. Legacy **Origin Access Identity (OAI)** instead supplies an identity that the bucket policy trusts. Neither works with an S3 website endpoint.
+
+#### OAC: Sign Requests on Behalf of a Distribution
+
+An OAC is a reusable CloudFront resource that configures request signing. Create it for the supported origin type and attach it to the **origin within a distribution**. Multiple origins/distributions can reuse it; each origin's resource policy decides which distributions are allowed.
+
+With the recommended **Sign requests (`always`)** setting, the flow is:
+
+1. A viewer requests content through CloudFront. If CloudFront needs to fetch from this origin, it signs the origin request using **Signature Version 4 (SigV4)** and AWS-managed short-term credentials.
+2. Then, S3 authenticates the fetching request from CloudFront. The bucket policy allows the CloudFront service principal, `cloudfront.amazonaws.com`, with `AWS:SourceArn` matching the intended **distribution ARN**.
+3. S3 returns the object to CloudFront. An anonymous direct request, or a different distribution without permission, cannot use this grant.
+
+![OAC attached to an S3 origin causes CloudFront origin requests to be signed for a distribution; the bucket policy permits that distribution through a SourceArn condition and denies unauthorised direct requests](../assets/cloudfront-oac-origin-protection.png)
+
+The diagram illustrates **always-sign mode**, with the bucket policy granting access exclusively through the intended distribution. CloudFront uses HTTPS for these signed S3 requests. The viewer protocol policy controls HTTPS on the viewer connection. SigV4 defines how CloudFront signs requests using AWS-managed credentials. [AWS OAC overview](https://aws.amazon.com/blogs/networking-and-content-delivery/amazon-cloudfront-introduces-origin-access-control-oac/)
+
+#### Request Authentication and Authorization
+
+S3 processes a signed request through two stages: **authentication** establishes who is making the request, and **authorization** determines what that requester is allowed to do.
+
+**First, authenticate the fetching request from CloudFront.** CloudFront uses AWS-managed temporary credentials to sign each origin request. These credentials include an access key ID, a secret access key, and a session token. The access key ID identifies the credentials; the secret access key is used to derive the signing key; the session token accompanies requests made with those temporary credentials.
+
+CloudFront sends the resulting signature and credential information in HTTP headers. A simplified request contains:
+
+```http
+Authorization: AWS4-HMAC-SHA256 Credential=<AccessKeyId>/<date>/<region>/s3/aws4_request, SignedHeaders=<signed-header-names>, Signature=<signature>
+X-Amz-Date: <request-timestamp>
+X-Amz-Security-Token: <temporary-session-token>
+```
+
+| Field | Purpose |
+| --- | --- |
+| `AWS4-HMAC-SHA256` | Identifies the signing algorithm |
+| `AccessKeyId` in `Credential` | Identifies the credentials used to sign the request |
+| Date, Region, and service in `Credential` | Define the signing scope |
+| `SignedHeaders` and `Signature` | Identify the signed headers and provide the signature to verify |
+| `X-Amz-Date` and `X-Amz-Security-Token` | Supply the request timestamp and temporary-credential session token |
+
+AWS uses these fields to identify the credentials, check their validity, and verify the signature against the received request. Successful verification establishes the authenticated identity and the integrity of the signed request data. AWS manages the credentials and their rotation throughout this process. [AWS SigV4 authentication fields](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_sigv-signing-elements.html)
+
+**Second, evaluate authorization.** S3 evaluates the authenticated request against the applicable access policies. In an OAC bucket-policy grant, four elements describe the permitted access:
+
+| Policy element | Meaning in a read-only OAC grant |
+| --- | --- |
+| `Principal` | The CloudFront service, `cloudfront.amazonaws.com` |
+| `Condition` with `AWS:SourceArn` | The distribution on whose behalf CloudFront is making the request |
+| `Action` | The permitted operation, such as `s3:GetObject` |
+| `Resource` | The bucket objects covered by the grant |
+
+For example, when distribution `EXAMPLEDISTRIBUTION` fetches `images/cat.jpg`, AWS authenticates the signed request, then S3 evaluates whether the policies permit that distribution to read that object. If the authorization decision allows access, S3 returns the object to CloudFront, which can cache it and serve it to the viewer. Otherwise, S3 rejects the request.
+
+#### Grant Access and Configure OAC
+
+Keep **S3 Block Public Access enabled** and use **Bucket owner enforced** Object Ownership for the usual ACL-free setup. Grant only the required actions, attach the OAC to the S3 origin, deploy, and verify CloudFront retrieval and denial of anonymous direct access. For read-only delivery, the bucket policy can be:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Principal": { "Service": "cloudfront.amazonaws.com" },
+    "Action": "s3:GetObject",
+    "Resource": "arn:aws:s3:::example-content-bucket/*",
+    "Condition": {
+      "StringEquals": {
+        "AWS:SourceArn": "arn:aws:cloudfront::111122223333:distribution/EXAMPLEDISTRIBUTION"
+      }
+    }
+  }]
+}
+```
+
+Replace the bucket, account, and distribution identifiers. Set `AWS:SourceArn` to the **distribution ARN** whose requests this bucket should accept. When several distributions reuse an OAC, authorize each intended distribution in the bucket policy. Review all applicable [identity/resource policies](../concepts/resource-vs-identity-policies.md) to account for other principals that may also have access.
+
+OAC supports all S3 Regions, SSE-KMS, and dynamic requests. For SSE-KMS objects, also grant the required [KMS](kms.md) key permissions scoped to the distribution. To enable writes, configure the corresponding S3 permissions and allowed HTTP methods in the behavior. CloudFront forwards these write requests to S3; caching applies to GET/HEAD and optionally OPTIONS responses.
+
+Advanced signing modes include `no-override` (preserve viewer authorization when present; forward `Authorization` through the cache policy) and `never` (no CloudFront signing). Use `always` for the normal private-bucket pattern. To migrate from OAI, first allow both principals, deploy the OAC association, then remove the old OAI grant after verification. [AWS setup, signing options, and migration](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html)
+
+OAC also supports selected other AWS origin types, including [Lambda function URLs](lambda.md): use `AWS_IAM` authentication and a function resource policy allowing the intended distribution. Choose the OAC origin type and resource-policy permissions appropriate to that AWS service. For general HTTP servers, use the custom-origin protection methods described below. [AWS Lambda function URL OAC](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-lambda.html)
+
+#### Legacy OAI: Trust an Identity
+
+An OAI provides a dedicated CloudFront identity allowed by the bucket policy while ordinary anonymous access remains denied.
 
 ![CloudFront uses an OAI to retrieve an S3 object while a viewer attempting a direct S3 request is denied](../assets/cloudfront-oai-origin-protection.png)
 
-OAI is a CloudFront identity, not an IAM role. It is configured for the relevant S3 origin. Removing public access is essential, but an OAI Allow statement does not cancel other valid IAM permissions: audit the complete [identity/resource policy](../concepts/resource-vs-identity-policies.md) picture before claiming only CloudFront can read objects.
-
-For new deployments, AWS recommends **OAC**. It supports modern S3 Regions, SSE-KMS, and dynamic requests. Configure OAC signing, allow the CloudFront service principal in the bucket policy with the intended distribution's `AWS:SourceArn`, keep S3 Block Public Access, and add required [KMS](kms.md) key permissions for encrypted objects. Migrate OAI by allowing both mechanisms temporarily, deploying OAC, then removing OAI permission after verification. Neither applies to S3 website endpoints. [AWS S3 origin-access guide](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html)
+OAI is a CloudFront identity, not an IAM role. It is configured for the relevant S3 origin. The bucket trusts the **OAI itself**: distributions configured to use that same identity share its access. OAC instead lets the bucket trust the CloudFront service while restricting each grant to a distribution through `AWS:SourceArn`. Removing public access remains essential with either approach.
 
 ### Protect Custom Origins
 
@@ -415,6 +495,7 @@ For supported private AWS resources, a **VPC origin** provides another architect
 
 ## References
 
+- [SigV4 request authentication fields](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_sigv-signing-elements.html)
 - [Custom domain names](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CNAMEs.html)
 - [Viewer certificate requirements](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cnames-and-https-requirements.html)
 - [Route 53 routing to CloudFront](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-to-cloudfront-distribution.html)
@@ -425,6 +506,8 @@ For supported private AWS resources, a **VPC origin** provides another architect
 - [Expiration](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Expiration.html)
 - [Invalidations and versioned filenames](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Invalidation.html)
 - [S3 origin access](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html)
+- [OAC architecture and signing](https://aws.amazon.com/blogs/networking-and-content-delivery/amazon-cloudfront-introduces-origin-access-control-oac/)
+- [Lambda function URL origin access](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-lambda.html)
 - [Signed URLs](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-signed-urls.html)
 - [Signed cookies](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-signed-cookies.html)
 - [Trusted key groups](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-trusted-signers.html)
