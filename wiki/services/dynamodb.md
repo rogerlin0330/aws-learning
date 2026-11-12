@@ -262,7 +262,7 @@ Strongly consistent reads pass through to DynamoDB and are **not cached**. See [
 
 For ordinary writes through DAX, DynamoDB commits first, then DAX updates its item cache. A failed backing write is not treated as a successful cached write. Writes that **bypass DAX** can leave cached items stale until expiry. Updating an item through DAX also does **not invalidate cached query results**; the two caches operate independently. These freshness rules are separate from DynamoDB's own replication delay. See [DAX consistency](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DAX.consistency.html).
 
-DAX fits read-heavy, repetitive workloads that tolerate stale data. It does not accelerate writes or strongly consistent reads through cache hits. Include cluster costs when comparing savings from fewer DynamoDB reads; lower total cost is workload-dependent.
+DAX fits read-heavy, repetitive workloads that tolerate stale data. It does not accelerate writes or strongly consistent reads through cache hits. Include cluster costs when comparing savings from fewer DynamoDB reads; lower total cost is workload-dependent. For caching other databases, or for session state, use [ElastiCache](elasticache.md); see the [ElastiCache vs DAX comparison](elasticache.md#elasticache-vs-dax).
 
 ## Time to Live (TTL)
 

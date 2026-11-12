@@ -3,7 +3,7 @@ title: Scaling — Horizontal vs Vertical
 type: pattern
 tags: [scaling, horizontal-scaling, vertical-scaling, scale-out, scale-in, elasticity, load-balancer, sessions, stateless, sticky-sessions, ha]
 certs: [aws-saa]
-updated: 2026-07-15
+updated: 2026-11-11
 ---
 
 # Scaling — Horizontal vs Vertical
@@ -74,7 +74,7 @@ A **session** is the state of a customer's interaction with the app: login statu
 
 | Where to put sessions | AWS service |
 | --- | --- |
-| In-memory cache (fast, ephemeral) | **ElastiCache** (Redis or Memcached) |
+| In-memory cache (fast, ephemeral) | **[ElastiCache](../services/elasticache.md#session-state-for-stateless-servers)** (Valkey, Redis OSS, or Memcached) |
 | Durable key-value | **[DynamoDB](../services/dynamodb.md)** |
 | Shared relational state | **RDS** |
 

@@ -3,7 +3,7 @@ title: Elastic Load Balancer (ELB)
 type: service
 tags: [elb, alb, nlb, clb, gwlb, load-balancing, networking, ha, scaling, sni, listener-rules, end-to-end-encryption, privatelink, ssl-tls, ssl-bridging, ssl-offload, tls-termination, stickiness, sticky-sessions, target-group, geneve, ingress-routing, network-inspection, security-appliance]
 certs: [aws-saa]
-updated: 2026-11-04
+updated: 2026-11-11
 ---
 
 # Elastic Load Balancer (ELB)
@@ -285,7 +285,7 @@ By default there is **no stickiness**: every request is routed independently acr
 > [!warning] Gotcha — stickiness causes uneven backend load
 > A single heavy user is pinned to one server for the duration. Stickiness undermines the fair balancing you deployed a load balancer to get — on the exam, "uneven load across backend instances" with stickiness in the scenario points at stickiness as the **cause**.
 
-**The architect's answer:** design **stateless instances** and externalise session state — DynamoDB (the course's canonical example) or ElastiCache. Then there are no cookies, no pinning, fully fair balancing, and instances become disposable, which is what [Auto Scaling](ec2-auto-scaling.md) needs anyway. This is the same conclusion as the [scaling pattern page](../patterns/scaling.md): sticky sessions are a migration aid, not the proper fix.
+**The architect's answer:** design **stateless instances** and externalise session state — DynamoDB (the course's canonical example) or [ElastiCache](elasticache.md#session-state-for-stateless-servers). Then there are no cookies, no pinning, fully fair balancing, and instances become disposable, which is what [Auto Scaling](ec2-auto-scaling.md) needs anyway. This is the same conclusion as the [scaling pattern page](../patterns/scaling.md): sticky sessions are a migration aid, not the proper fix.
 
 ### Two stickiness types, not one
 

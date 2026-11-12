@@ -1817,13 +1817,40 @@ See [DynamoDB](../services/dynamodb.md) and [NoSQL Access Patterns](../concepts/
 > [!warning] Gotcha
 > GSI “global” does not mean global tables. Strong consistency does not mean a multi-item transaction. PartiQL gives [DynamoDB](../services/dynamodb.md) SQL-compatible syntax, not a relational engine. A single small eventually consistent read may consume **0.5** read unit; the “minimum one RCU” shortcut is wrong for that case.
 
+## ElastiCache
+
+See [ElastiCache](../services/elasticache.md) for the caching and session-state diagrams, engine comparison, and deployment options.
+
+- **In-memory, managed Valkey / Redis OSS / Memcached.** Sub-millisecond access; holds temporary copies of data, not the durable system of record. AWS recommends **Valkey** for new deployments (priced 20% lower node-based, 33% lower serverless).
+- **Use cases:** **read-heavy** workloads, **low-latency** requirements, reducing database cost, and **session state** for stateless servers behind a load balancer and Auto Scaling group.
+- **Requires application changes.** The application checks the cache, falls back to the database on a miss, populates the cache, and handles invalidation. "No code changes allowed" usually rules ElastiCache out.
+- **Caching strategies:** **lazy loading** caches only requested data but can be stale and costs three trips per miss; **write-through** keeps the cache fresh but leaves new nodes missing data and causes churn; a **TTL** bounds staleness and wasted space.
+- **Memcached:** simple data types, **no replication**, data split across multiple nodes, **no backups** on node-based clusters, **multi-threaded**.
+- **Valkey / Redis OSS:** advanced data structures (sorted-set leaderboards, pub/sub, geospatial), **Multi-AZ** with automatic failover, **replicas to scale reads** (up to 5 per shard), **backup and restore**, **transactions**. Cluster mode enabled also shards data (up to 500 shards).
+- **Global Datastore:** cross-Region replication for node-based Valkey/Redis OSS to up to two secondary Regions; secondaries are read-only and promotion is manual.
+- **ElastiCache Serverless:** no capacity planning, replicates across multiple AZs, always encrypted, billed by data stored and ECPUs.
+
+> [!tip] Exam Tip
+>
+> | Requirement | Candidate |
+> | --- | --- |
+> | Read-heavy, reduce database load or cost, low latency | [ElastiCache](../services/elasticache.md) in front of the database |
+> | Users lose sessions behind an ALB; make instances stateless | Sessions in ElastiCache or DynamoDB |
+> | Cache needs HA, failover, backup/restore, persistence, or advanced data types | Valkey / Redis OSS |
+> | Simplest cache, multi-threaded, simple values | Memcached |
+> | Cache data must never be stale | Write-through, usually with TTL |
+> | Cache DynamoDB reads with minimal code change | DAX, not ElastiCache |
+
+> [!warning] Gotcha
+> Valkey/Redis OSS transactions run commands in sequence without interleaving, but they **do not roll back** if one command fails at execution time; they are not relational ACID transactions. Sharding is not Memcached-only: Valkey/Redis OSS cluster mode enabled also partitions data. Memcached's real gap is **replication and backups**.
+
 ## Scaling — Horizontal vs Vertical
 
 See [Scaling — Horizontal vs Vertical](../patterns/scaling.md) for the full treatment.
 
 - **Vertical scaling = resize one instance.** Simple, works for monoliths, no app changes. But requires **stop / modify / start** (disruption), only happens in maintenance windows, and is **capped at the largest available instance size**.
 - **Horizontal scaling = add more instances behind a load balancer.** No upper limit, no disruption, finer granularity, and usually cheaper per unit of capacity. Requires a **load balancer** and **stateless application design**.
-- **Sessions are the critical constraint.** With horizontal scaling, a customer's consecutive requests can hit different instances. If session state lives on the instance, the user appears logged out, the cart empties, the wizard restarts. **Move sessions off-host** to ElastiCache (Redis or Memcached), [DynamoDB](../services/dynamodb.md), or RDS.
+- **Sessions are the critical constraint.** With horizontal scaling, a customer's consecutive requests can hit different instances. If session state lives on the instance, the user appears logged out, the cart empties, the wizard restarts. **Move sessions off-host** to [ElastiCache](../services/elasticache.md#session-state-for-stateless-servers) (Valkey, Redis OSS, or Memcached), [DynamoDB](../services/dynamodb.md), or RDS.
 - **ALB sticky sessions are NOT the proper fix.** They pin a user to one instance; if that instance is replaced or scaled in, the session is lost anyway. Sticky sessions are a migration aid for legacy apps. Exam-correct long-term answer: **off-host sessions, stateless instances**.
 - **Resizing EC2 is a stop/start in disguise** — instance-store data destroyed, auto-public-IPv4 changes. See [EC2 — Stop/Start vs Restart](../services/ec2.md#stopstart-vs-restart--these-are-not-the-same).
 - **Horizontal scaling is the foundation for HA.** Vertical scaling cannot reach fault tolerance — a single instance always inherits the resilience tier of its AZ. Horizontal + ELB + Auto Scaling Groups across multiple AZs is the HA pattern.
@@ -1834,7 +1861,7 @@ See [Scaling — Horizontal vs Vertical](../patterns/scaling.md) for the full tr
 | --- | --- |
 | "App is a monolith on one instance, traffic doubled" | **Vertical scaling** — resize to a larger instance type |
 | "Cannot tolerate downtime, need to scale during business hours" | **Horizontal scaling** — adding instances doesn't disrupt existing connections |
-| "Users get logged out at random after deploying behind ALB" | **Move sessions off-host** to ElastiCache / [DynamoDB](../services/dynamodb.md), not sticky sessions |
+| "Users get logged out at random after deploying behind ALB" | **Move sessions off-host** to [ElastiCache](../services/elasticache.md) / [DynamoDB](../services/dynamodb.md), not sticky sessions |
 | "Shopping cart empties intermittently across instances" | **Stateless app + external session store** |
 | "Legacy app, on-host sessions, no time to refactor" | **ALB sticky sessions** — migration aid only |
 | "Need infinite scale" | **Horizontal** — vertical has a hard cap |

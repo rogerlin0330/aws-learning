@@ -15,6 +15,7 @@ Section links use GitHub-style heading anchors. In Obsidian, use the GFM Heading
 
 ## Services
 
+- [ElastiCache](services/elasticache.md) — In-memory Valkey/Redis OSS/Memcached; read-heavy caching and session-state diagrams, application-change requirement, lazy loading/write-through/TTL, engine comparison with current corrections, serverless vs node-based and cluster mode, Global Datastore, and ElastiCache vs DAX
 - [DynamoDB](services/dynamodb.md) — Key and index design, capacity modes and calculations, consistency/transactions, Query/Scan and PartiQL costs, Streams, global tables and SDK replica selection, DAX, TTL, recovery, and architecture diagrams
 - [CloudFront](services/cloudfront.md) — Configuration scopes, caching/TTLs and invalidation, [custom domains](services/cloudfront.md#custom-domain-setup-certificate-distribution-and-dns), TLS/SNI, [signed viewer access](services/cloudfront.md#private-distribution-behaviours-signed-urls-and-signed-cookies), [S3 origin access with OAC/OAI](services/cloudfront.md#protect-the-s3-origin-oai-and-oac), and custom-origin protection
 - [Global Accelerator](services/global-accelerator.md) — Anycast assignment, IPv4/dual-stack, what to configure after receiving IPs, listeners/endpoints/DNS/HTTPS testing, backbone path, and failover

@@ -3,7 +3,7 @@ title: Cost Optimization — Purchase Plans
 type: pattern
 tags: [cost, savings-plans, reserved-instances, spot, organizations]
 certs: [aws-saa]
-updated: 2026-05-15
+updated: 2026-11-11
 ---
 
 # Cost Optimization — Compute Purchase Plans
@@ -47,18 +47,18 @@ You commit to an hourly $ amount; AWS applies the SP to whatever eligible usage 
 
 ## Reserved Instances (still essential for non-EC2 compute)
 
-Although Savings Plans replaced most EC2 RI usage, RIs remain the **only purchase plan** for several services:
+Although Savings Plans replaced most EC2 RI usage, service-specific reservations remain important for several non-EC2 services:
 
 | Service | RI option name |
 | --- | --- |
 | RDS | Reserved DB Instances |
-| ElastiCache | Reserved Cache Nodes |
+| [ElastiCache](../services/elasticache.md) | Reserved Cache Nodes |
 | Redshift | Reserved Nodes |
 | OpenSearch (formerly Elasticsearch Service) | Reserved Instances |
 | DynamoDB (provisioned capacity) | Reserved Capacity |
 
 > [!warning] Gotcha
-> Savings Plans do **not** apply to RDS, ElastiCache, Redshift, OpenSearch, or DynamoDB. If a question describes a long-running database and asks for cost reduction, the answer is **Reserved Instance / Reserved Capacity**, not a Savings Plan.
+> **Compute and EC2 Instance Savings Plans** do **not** apply to RDS, ElastiCache, Redshift, OpenSearch, or DynamoDB. Since December 2025, however, **Database Savings Plans** (1-year commitment, up to 35%) cover eligible usage of Aurora, RDS, DynamoDB, ElastiCache, and several other database services, though not Redshift or OpenSearch ([announcement](https://aws.amazon.com/about-aws/whats-new/2025/12/database-savings-plans-savings/)). For a long-running database, compare the service's **Reserved Instance / Reserved Capacity** with a Database Savings Plan; their discounts do not stack on the same usage. The older "databases never qualify for Savings Plans" shortcut is incorrect.
 
 ### RI Types
 
@@ -93,7 +93,8 @@ Is the workload interruption-tolerant?
 └── No
     ├── Is it a database/cache/data-warehouse?
     │   └── Reserved Instance / Reserved Capacity (RDS, ElastiCache,
-    │       Redshift, OpenSearch, DynamoDB)
+    │       Redshift, OpenSearch, DynamoDB), or a Database Savings
+    │       Plan for eligible RDS, Aurora, ElastiCache, DynamoDB usage
     └── Is it general compute (EC2, Fargate, Lambda)?
         ├── Steady baseline?
         │   ├── Locked to one family+region → EC2 Instance Savings Plan

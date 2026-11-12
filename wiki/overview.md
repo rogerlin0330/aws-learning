@@ -1,7 +1,7 @@
 ---
 title: AWS Learning — Overview
 type: overview
-tags: [aws, architecture, iam, vpc, organizations, control-tower, cost, s3, ec2, ecs, eks, kubernetes, containers, cloudwatch, cloudtrail, cloudformation, bootstrapping, serverless, lambda, step-functions, api-gateway, orchestration, dns, dnssec, rds, rds-custom, aurora, dms, database, database-migration, multi-az, high-availability, acid, base, cap-theorem, global, regional, tiers, cloudfront, elb, asg, auto-scaling, sqs, sns, messaging, queues, decoupling, fifo, dead-letter-queue, kinesis, streaming, ingestion, firehose, analytics, video-streams, kafka, msk, log-vs-queue]
+tags: [aws, architecture, elasticache, caching, valkey, redis, memcached, iam, vpc, organizations, control-tower, cost, s3, ec2, ecs, eks, kubernetes, containers, cloudwatch, cloudtrail, cloudformation, bootstrapping, serverless, lambda, step-functions, api-gateway, orchestration, dns, dnssec, rds, rds-custom, aurora, dms, database, database-migration, multi-az, high-availability, acid, base, cap-theorem, global, regional, tiers, cloudfront, elb, asg, auto-scaling, sqs, sns, messaging, queues, decoupling, fifo, dead-letter-queue, kinesis, streaming, ingestion, firehose, analytics, video-streams, kafka, msk, log-vs-queue]
 updated: 2026-11-11
 ---
 
@@ -41,6 +41,8 @@ For analytics, [AppFlow](services/appflow.md) can bring supported SaaS records i
 [VPC peering](services/vpc-peering.md) connects two VPC networks through explicit routes and firewall permissions. It is non-transitive: connecting A–B and B–C does not connect A–C. This separates **direct connectivity** from **transit routing**, while its DNS options illustrate another independent concern: reaching a private IP does not automatically expose a [Route 53 private hosted zone](services/route53.md#private-hosted-zone).
 
 [DynamoDB](services/dynamodb.md) provides persistent key-value/document state for serverless applications. [NoSQL access patterns](concepts/nosql-access-patterns.md) connect key design to query cost and traffic distribution; [transaction models](concepts/db-transaction-model.md) distinguish fresh reads from atomic changes. Streams connect item updates to Lambda, DAX caches repeated reads, and global tables extend the data layer across Regions.
+
+[ElastiCache](services/elasticache.md) is the general-purpose caching tier. It sits in front of [RDS](services/rds.md), [Aurora](services/aurora.md), or other data sources so read-heavy workloads scale without a proportional rise in database reads, and it holds session state so instances behind a [load balancer](services/elb.md) stay [stateless](patterns/scaling.md#the-critical-consideration--sessions). Both uses require application changes. The engine choice is a resilience choice: Valkey/Redis OSS replicate, fail over, and back up, while Memcached does not.
 
 ## Key Cross-Cutting Themes
 
@@ -94,6 +96,7 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 ### Services
 
 - [DynamoDB](services/dynamodb.md) — Managed tables, key design, capacity and consistency, indexes, Streams, global replication, caching, and expiry
+- [ElastiCache](services/elasticache.md) — In-memory caching and session state with Valkey, Redis OSS, or Memcached
 
 - [CloudFront](services/cloudfront.md) — HTTP delivery, cache behaviors, freshness, private content, origin protection, and TLS
 - [Global Accelerator](services/global-accelerator.md) — Anycast entry IPs, regional endpoint routing, and TCP/UDP acceleration

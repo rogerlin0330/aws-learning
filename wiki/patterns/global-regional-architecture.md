@@ -3,7 +3,7 @@ title: Global & Regional AWS Architecture
 type: pattern
 tags: [architecture, foundations, global, regional, tiers, route53, cloudfront, cdn, dns, health-checks, failover, multi-region, dr, web-tier, compute-tier, caching, database-tier, storage-tier, app-services, decoupling]
 certs: [aws-saa]
-updated: 2026-11-10
+updated: 2026-11-11
 ---
 
 # Global & Regional AWS Architecture
@@ -64,7 +64,7 @@ Structured data storage: [RDS](../services/rds.md), [Aurora](../services/aurora.
 
 ### Caching Tier
 
-Sits **in front of** the database. Most applications don't hit the database directly; they consult a cache first — **ElastiCache** (general-purpose) or **DAX** (DynamoDB Accelerator). Only on a cache miss is the database consulted, and the cache is then updated.
+Sits **in front of** the database. Most applications don't hit the database directly; they consult a cache first — **[ElastiCache](../services/elasticache.md)** (general-purpose) or **[DAX](../services/dynamodb.md#dynamodb-accelerator-dax)** (DynamoDB Accelerator). Only on a cache miss is the database consulted, and the cache is then updated. This requires the application to implement the caching logic; see [ElastiCache read caching](../services/elasticache.md#read-caching-architecture).
 
 > [!tip] Exam Tip: why cache in front of the DB
 > Caching is in-memory, so it is cheap and fast; databases are expensive relative to the data volume they hold. Offload **reads** from the database into the cache wherever possible to improve performance and reduce cost. "Minimize reads to the database" is the trigger phrase for a caching-tier answer.
@@ -85,7 +85,7 @@ A suite of products that provide functionality *to* applications: **[Kinesis](..
 | Compute options | [EC2](../services/ec2.md), Lambda, containers ([ECS](../services/ecs.md)) |
 | Storage options | [EBS](../services/ebs.md), [EFS](../services/efs.md), [S3](../services/s3.md) |
 | Database options | [RDS](../services/rds.md), [Aurora](../services/aurora.md), DynamoDB, Redshift |
-| Caching options | ElastiCache (general), DAX (DynamoDB) |
+| Caching options | [ElastiCache](../services/elasticache.md) (general), DAX (DynamoDB) |
 | App services | [Kinesis](../services/kinesis.md), Step Functions, SQS, SNS |
 | Purpose of caching tier | Offload database **reads** — faster and cheaper |
 | Purpose of app-services tier | Add functionality / **decouple** components (e.g. SQS queues) |
