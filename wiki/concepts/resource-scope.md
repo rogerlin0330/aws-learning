@@ -3,7 +3,7 @@ title: Resource Scope (Global / Regional / AZ / Edge)
 type: concept
 tags: [scope, regions, availability-zones, global, edge, dr, resilience, dms]
 certs: [aws-saa]
-updated: 2026-11-04
+updated: 2026-11-11
 ---
 
 # Resource Scope (Global / Regional / AZ / Edge)
@@ -57,7 +57,8 @@ Live in exactly one region. Most managed services are multi-AZ resilient within 
 | [CloudWatch](../services/cloudwatch.md) log groups, metrics, alarms | All CloudWatch data is per-region; cross-region dashboards aggregate, they don't replicate |
 | [CloudTrail](../services/cloudtrail.md) trail | Regional service; an all-regions trail spans every region as one logical trail. **Global service events** (IAM, STS, CloudFront, Route 53) deliver to **`us-east-1`** |
 | Lambda functions | Regional; cross-region invoke is allowed but the function itself doesn't exist elsewhere |
-| DynamoDB tables | Regional; **Global Tables** is the opt-in cross-region replication feature |
+| [DynamoDB](../services/dynamodb.md) tables | Regional with automatic multi-AZ replication; [global tables](../services/dynamodb.md#global-tables) add cross-Region replicas with MREC or MRSC consistency |
+| [DAX](../services/dynamodb.md#dynamodb-accelerator-dax) cluster | Regional and VPC-based; place cache nodes across AZs for high availability |
 | [Glue Data Catalog](../services/glue.md#scope-and-organization) | Default/root catalog per account per Region; supports nested/federated catalogs, not automatic global replication |
 | [AppFlow](../services/appflow.md) flows and connector profiles | Regional configuration; an S3 source/destination bucket must be in the flow's Region |
 | SNS topics, SQS queues | Regional |

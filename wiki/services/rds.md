@@ -123,7 +123,7 @@ Read the diagram from the outside in: the outer panels are external networks (**
 
 Key elements:
 
-- **RDS runs inside a [VPC](vpc.md)** — it is *not* a public-zone service like S3 or DynamoDB. It needs subnets in specific AZs.
+- **RDS runs inside a [VPC](vpc.md)** — it is *not* a public-zone service like S3 or [DynamoDB](dynamodb.md). It needs subnets in specific AZs.
 - **Subnet group** defines *which subnets RDS may use* (see below).
 - **Private subnets** (the normal case) — reachable from inside the VPC or from connected networks over **VPN / Direct Connect**.
 - **Public addressing** can optionally be given to instances in public subnets for internet access — possible but a **security anti-pattern**.

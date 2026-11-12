@@ -3,7 +3,7 @@ title: AWS Solutions Architect Associate — Exam Notes
 type: certification
 tags: [iam, vpc, networking, ec2, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, ephemeral, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns, route53, organizations, cost, purchase-options, on-demand, spot, reserved-instances, scheduled-reserved, capacity-reservations, zonal-ri, regional-ri, savings-plans, byol, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, raid0, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, ebs-encryption, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr, scaling, horizontal-scaling, vertical-scaling, stateless, sticky-sessions, elasticity, load-balancer, containers, docker, container-image, container-registry, ecs, eks, kubernetes, k8s, control-plane, etcd, kubelet, pod, ingress, persistent-volume, node-group, fargate-profile, ecr, fargate, task-definition, task-role, cloudtrail, audit, governance, management-events, data-events, insight-events, global-service-events, organizational-trail, log-file-integrity, event-history, eventbridge, control-tower, landing-zone, guardrails, account-factory, iam-identity-center, bootstrapping, cloud-init, boot-time-to-service-time, cloudformation, cfn-init, configsets, cfn-hup, cfn-signal, creation-policy, desired-state, infrastructure-as-code, cloudwatch-agent, cwagent, parameter-store, log-group, log-stream, placement-groups, cluster-placement-group, spread-placement-group, partition-placement-group, hpc, enhanced-networking, topology-aware, walking-the-tree, resolver, hosts-file, root-servers, nslookup, dig, dnssec, rrset, rrsig, dnskey, zsk, ksk, ds-record, trust-anchor, root-signing-ceremony, chain-of-trust, nsec3, cache-poisoning, rds, rds-custom, session-manager, database, relational, subnet-group, multi-az, multi-az-instance, multi-az-cluster, read-replica, synchronous-replication, semi-synchronous-replication, asynchronous-replication, quorum, failover, reader-endpoint, cluster-endpoint, graviton, nvme, aurora, dms, database-migration, cdc, full-load, replication-instance, replication-task, dms-serverless, dcu, schema-conversion, dms-schema-conversion, sct, homogeneous-migration, heterogeneous-migration, acid, base, cap-theorem, consistency, availability, eventual-consistency, dynamodb, nosql, backup, snapshot, automated-backup, manual-snapshot, transaction-logs, pitr, point-in-time-recovery, restore, rpo, rto, cross-region-backup, rds-security, encryption-in-transit, encryption-at-rest, ssl, tls, kms-key, cmk, dek, envelope-encryption, aes-256, tde, transparent-data-encryption, cloudhsm, iam-authentication, generate-db-auth-token, authentication, authorization, cluster-volume, shared-storage, backtrack, fast-clone, aurora-serverless, acu, scale-to-zero, data-api, global-database, multi-master, switchover, database-savings-plans, architecture-fundamentals, global-components, regional-tiers, cloudfront, cdn, web-tier, compute-tier, caching-tier, elasticache, dax, app-services, decoupling, sqs-decoupling, elb, alb, nlb, clb, cross-zone-load-balancing, listeners, internet-facing, internal-load-balancer, sni, listener-rules, end-to-end-encryption, tls-termination, tcp-pass-through, privatelink, oidc, cognito, gwlb, launch-template, launch-configuration, auto-scaling, mixed-instances-policy, ssl-bridging, ssl-offload, session-stickiness, awsalb-cookie, sqs, queues, fifo, standard-queue, visibility-timeout, delay-queue, message-timer, dead-letter-queue, redrive-policy, redrive-allow-policy, max-receive-count, long-polling, short-polling, message-group-id, message-deduplication-id, fair-queues, fanout, idempotency, kinesis, data-streams, shards, partition-key, enhanced-fan-out, firehose, amazon-data-firehose, near-real-time, kinesis-data-analytics, managed-flink, kinesis-video-streams, rekognition, streaming, ingestion, kafka, msk, managed-kafka, log-vs-queue, replay, consumer-group, partitions]
 certs: [aws-saa]
-updated: 2026-11-10
+updated: 2026-11-11
 ---
 
 # AWS Solutions Architect Associate (SAA-C03)
@@ -16,7 +16,7 @@ See [Global & Regional AWS Architecture](../patterns/global-regional-architectur
 
 - Three architecture types: **single-region** · **single-region + DR failover** · **multi-region** (keeps working through the failure of one or more regions)
 - Global components get the customer to a healthy region; three jobs with fixed service answers: **service discovery** = DNS = [Route 53](../services/route53.md); **content delivery** = CDN = CloudFront (origin can be [S3](../services/s3.md)); **health checks / failover** = [Route 53 health checks](../services/route53.md#health-checks)
-- Regional applications are built from **tiers**: web ([ALB](../services/elb.md) / [API Gateway](../services/api-gateway.md) — the regional entry point that abstracts customers from the infrastructure behind it), compute ([EC2](../services/ec2.md) / Lambda / [ECS](../services/ecs.md)), caching (ElastiCache / DAX), database ([RDS](../services/rds.md) / [Aurora](../services/aurora.md) / DynamoDB / Redshift), storage ([EBS](../services/ebs.md) / [EFS](../services/efs.md) / [S3](../services/s3.md)), app services ([Kinesis](../services/kinesis.md) / Step Functions / SQS / SNS)
+- Regional applications are built from **tiers**: web ([ALB](../services/elb.md) / [API Gateway](../services/api-gateway.md) — the regional entry point that abstracts customers from the infrastructure behind it), compute ([EC2](../services/ec2.md) / Lambda / [ECS](../services/ecs.md)), caching (ElastiCache / DAX), database ([RDS](../services/rds.md) / [Aurora](../services/aurora.md) / [DynamoDB](../services/dynamodb.md) / Redshift), storage ([EBS](../services/ebs.md) / [EFS](../services/efs.md) / [S3](../services/s3.md)), app services ([Kinesis](../services/kinesis.md) / Step Functions / SQS / SNS)
 - The caching tier sits **in front of** the database: consult the cache first, hit the DB only on a miss, then update the cache — "minimize reads to the database" is the trigger phrase for a caching-tier answer
 - "Decouple components" is the trigger phrase for the app-services tier ([SQS](../services/sqs.md) queues)
 - Core takeaway: most AWS services are **regional**; very few are truly global — classify a service by **tier** and by **global vs regional** before anything else
@@ -35,7 +35,7 @@ See [Architecture Evolution](../patterns/architecture-evolution.md) for the full
 
 ## Serverless Architecture
 
-See [Serverless Architecture](../patterns/serverless-architecture.md) for the full PetTube worked example (S3 static site + [Cognito](../services/cognito.md) + Lambda + MediaConvert + DynamoDB).
+See [Serverless Architecture](../patterns/serverless-architecture.md) for the full PetTube worked example (S3 static site + [Cognito](../services/cognito.md) + Lambda + MediaConvert + [DynamoDB](../services/dynamodb.md)).
 
 - **"Serverless" is not "no servers."** Servers exist; you just don't manage them. A question framing serverless as *literally* serverless is testing this.
 - **Third-party token, then AWS access, means Cognito.** When users log in via Google/Facebook and then need AWS access, **Cognito** brokers the exchange and returns **temporary** credentials (the token-to-temp-credentials step is an **Identity Pool**, distinct from a User Pool's sign-in store). S3/DynamoDB cannot use the provider token as an AWS request signature. Don't pick IAM users.
@@ -56,7 +56,7 @@ See [Cognito](../services/cognito.md) for the three diagram walkthroughs and [Id
 | Question trigger | Answer or distinction |
 | --- | --- |
 | Sign-up/sign-in, user directory, MFA | Cognito **user pool** |
-| Mobile/web clients call [S3](../services/s3.md) or DynamoDB directly with temporary credentials | Cognito **identity pool** |
+| Mobile/web clients call [S3](../services/s3.md) or [DynamoDB](../services/dynamodb.md) directly with temporary credentials | Cognito **identity pool** |
 | Guest AWS access without registration | Enable identity-pool guest access with a restricted unauthenticated role |
 | Logged-in users call an [API Gateway](../services/api-gateway.md) REST API | User pool + `COGNITO_USER_POOLS` authorizer |
 | Logged-in users call an API Gateway HTTP API | JWT authorizer with the user pool issuer/audience; scopes as needed |
@@ -656,11 +656,11 @@ See [VPC Gateway Endpoints](../services/vpc-gateway-endpoints.md) for diagrams a
 
 > [!tip] Exam Tip
 >
-> - **Private access to same-Region S3 or DynamoDB without NAT/IGW/public client IPs** → gateway endpoint; no additional gateway-endpoint charge.
+> - **Private access to same-Region S3 or [DynamoDB](../services/dynamodb.md) without NAT/IGW/public client IPs** → gateway endpoint; no additional gateway-endpoint charge.
 > - **Destination = AWS-managed service prefix list; target = endpoint ID.** Associate route tables, not endpoint ENIs in each subnet. Subnets using those tables inherit the route.
 > - **Highly available across AZs by default**, but scoped to one [VPC](../services/vpc.md) and Region; not an endpoint that on-premises/peered/transit-connected clients can reuse.
 > - **Endpoint policy** limits what can be accessed through that endpoint. **Bucket policy + explicit Deny on `aws:SourceVpce`** enforces the approved path for the selected actions; a conditional Allow alone is not an absolute restriction.
-> - **Gateway endpoints do not use [PrivateLink](../services/vpc.md#aws-privatelink).** Interface endpoints use subnet [ENIs](../concepts/networking.md#elastic-network-interfaces-enis) and private IPs; both S3 and DynamoDB also support interface endpoints.
+> - **Gateway endpoints do not use [PrivateLink](../services/vpc.md#aws-privatelink).** Interface endpoints use subnet [ENIs](../concepts/networking.md#elastic-network-interfaces-enis) and private IPs; both S3 and [DynamoDB](../services/dynamodb.md) also support interface endpoints.
 > - Adding a gateway endpoint does not remove a default NAT/IGW route or grant missing [IAM](../services/iam.md) permissions.
 
 ### VPC Interface Endpoints
@@ -675,7 +675,7 @@ See [VPC Interface Endpoints](../services/vpc-interface-endpoints.md) and its [g
 > - **Customer-managed SNS DNS** → private zone `sns.us-east-1.amazonaws.com`, apex A alias to the endpoint's regional DNS entry, and automatic endpoint Private DNS disabled to avoid a conflicting zone.
 > - **Default name still resolves publicly** → check Private DNS/custom zone, VPC association, and the resolver used. **Private address but timeout** → check normal routes, endpoint SG inbound TCP 443, client egress, and NACLs.
 > - Interface endpoints use normal routing to ENIs; they do not add a gateway-style service-prefix-list route. They charge per AZ-hour and data processed.
-> - [S3](../services/s3.md) and DynamoDB support both types, but service DNS rules differ: DynamoDB interface clients must use endpoint-specific URLs, not the SNS private-zone recipe.
+> - [S3](../services/s3.md) and [DynamoDB](../services/dynamodb.md) support both types, but service DNS rules differ: [DynamoDB](../services/dynamodb.md) interface clients must use endpoint-specific URLs, not the SNS private-zone recipe.
 
 ### IGW vs NAT GW
 
@@ -856,7 +856,7 @@ See [ECS](../services/ecs.md) for the full service page and [Containers](../conc
 | "Application template with one or more containers" | **Task definition** |
 | "One container inside a task definition" | **Container definition** |
 | "Keep 5 copies running and replace failed copies" | **ECS service** |
-| "Container app needs S3 / DynamoDB / KMS permissions" | **ECS task role** |
+| "Container app needs S3 / [DynamoDB](../services/dynamodb.md) / KMS permissions" | **ECS task role** |
 | "Pull image from ECR and write logs" | **Task execution role** |
 | "Large, steady, price-sensitive container workload" | **ECS on EC2** |
 | "Small / bursty / periodic / no host management" | **ECS on Fargate** |
@@ -1250,7 +1250,7 @@ See [EC2 — Instance Roles & Instance Profiles](../services/ec2.md#instance-rol
 - **Credential provider chain**: instance profile credentials are the **last** source the AWS CLI checks → an instance with a role needs **zero credentials configured**. But **anything higher silently shadows the role** (env vars `AWS_ACCESS_KEY_ID`, `~/.aws/credentials`, CLI flags)
 
 > [!tip] Exam Tip
-> *"App on EC2 needs to access S3 / DynamoDB / etc."* → **instance role** (not access keys). *"Access keys / hardcoded credentials on an instance"* → **bad practice**, replace with an instance role. *"What is attached to the instance — role or profile?"* → the **instance profile**. *"How do role credentials reach the app without keys?"* → **temporary creds via IMDS, auto-renewed by EC2 + STS**. *"Role attached but app uses wrong/expired permissions"* → **higher-precedence credentials (env vars / credentials file) shadowing the role** — remove them so the chain falls through to IMDS. Mnemonic **RPM**: **R**ole holds permissions, **P**rofile attaches, **M**etadata delivers.
+> *"App on EC2 needs to access S3 / [DynamoDB](../services/dynamodb.md) / etc."* → **instance role** (not access keys). *"Access keys / hardcoded credentials on an instance"* → **bad practice**, replace with an instance role. *"What is attached to the instance — role or profile?"* → the **instance profile**. *"How do role credentials reach the app without keys?"* → **temporary creds via IMDS, auto-renewed by EC2 + STS**. *"Role attached but app uses wrong/expired permissions"* → **higher-precedence credentials (env vars / credentials file) shadowing the role** — remove them so the chain falls through to IMDS. Mnemonic **RPM**: **R**ole holds permissions, **P**rofile attaches, **M**etadata delivers.
 
 ### EC2 Launch Configurations & Launch Templates
 
@@ -1763,7 +1763,7 @@ See [AWS Backup](../services/aws-backup.md) for full details. A **high-level awa
 - Components: **backup plan** (frequency / window / lifecycle / vault / region copy), **resource** (what is backed up), **vault** (destination, at least 1 required)
 - **On-demand backups** exist too — you are not limited to plans; cron scheduling goes down to **hourly** at most
 - **Continuous backups enable PITR** for select services only (e.g. [S3](../services/s3.md), [RDS](../services/rds.md))
-- **Cold storage**: minimum **90 days**; retention must be at least 90 days beyond the transition; early deletion incurs a pro-rated charge; only **eligible resource types** ([EBS](../services/ebs.md), [EFS](../services/efs.md), DynamoDB, Timestream, VMware) — the transition is **ignored** for others
+- **Cold storage**: minimum **90 days**; retention must be at least 90 days beyond the transition; early deletion incurs a pro-rated charge; only **eligible resource types** ([EBS](../services/ebs.md), [EFS](../services/efs.md), [DynamoDB](../services/dynamodb.md), Timestream, VMware) — the transition is **ignored** for others
 - **Vault Lock** = WORM on a vault. **Governance mode**: removable with sufficient IAM permissions. **Compliance mode** (`ChangeableForDays`, minimum 3 days / 72 hours grace): after grace time, **immutable — not even AWS can delete**. Retention still applies; backups still age out
 
 > [!tip] Exam Tip
@@ -1774,15 +1774,48 @@ See [AWS Backup](../services/aws-backup.md) for full details. A **high-level awa
 
 ## Database Transaction Models — ACID & BASE
 
-See [Database Transaction Models (ACID/BASE/CAP)](../concepts/db-transaction-model.md) for full details.
+See [Database Transaction Models](../concepts/db-transaction-model.md) for the distinction between transaction guarantees, read freshness, and partition behavior.
 
-- **CAP theorem**: Consistency, Availability, Partition tolerance — a DB can deliver **two of three**. Once a network partition is in play, the real choice is **consistency vs availability**
-- **ACID → consistency** (atomic, consistent, isolated, durable). Rigid rules **limit scalability**. Exam default: **ACID = [RDS](../services/rds.md) / relational** (financial systems)
-- **BASE → availability** (basically available, soft state, eventually consistent). Highly scalable; pushes consistency handling to the application. Exam default: **BASE = NoSQL / DynamoDB**
-- **DynamoDB straddles both**: eventually consistent **and** strongly consistent reads (app chooses), plus **DynamoDB Transactions** for ACID guarantees
+- **CAP:** during a network partition, a distributed system cannot guarantee both linearizable consistency and availability for every operation; “pick two” is an incomplete shortcut.
+- **ACID:** atomicity, consistency, isolation, durability. ACID's valid-state consistency is different from CAP's read-ordering consistency.
+- **BASE:** basically available, soft state, eventually consistent; applications tolerate temporary replica disagreement. This is not a rule that NoSQL databases have no transactions.
+- **[DynamoDB](../services/dynamodb.md)** supports eventually consistent and strongly consistent table reads, plus ACID transactions. A strongly consistent read does not make a subsequent update atomic with that read; use conditions or a transaction.
 
 > [!tip] Exam Tip
-> Trigger words: *"ACID"* → relational / RDS. *"BASE" / "eventually consistent" / "soft state"* → NoSQL / DynamoDB. *"DynamoDB"* **with** *"ACID" or "transactions"* → **DynamoDB Transactions**. Watch the wording trap: **ACID's "C" (valid-state rules) is not CAP's "C" (read sees latest write)**.
+> Relational joins/constraints suggest [RDS](../services/rds.md) or [Aurora](../services/aurora.md). Key-value/document access suggests [DynamoDB](../services/dynamodb.md). ACID changes within [DynamoDB](../services/dynamodb.md) suggest Transactions; check Region scope and global-table mode.
+
+## DynamoDB
+
+See [DynamoDB](../services/dynamodb.md) and [NoSQL Access Patterns](../concepts/nosql-access-patterns.md) for architecture, diagrams, and worked examples.
+
+- **Table/item/attribute:** fixed primary-key schema, flexible other attributes; **400 KB per item** including names and values. Simple PK is unique; composite PK + SK pair is unique.
+- **Regional and multi-AZ by default:** use [global tables](../services/dynamodb.md#global-tables) for cross-Region replication. [Gateway endpoints](../services/vpc-gateway-endpoints.md) give private VPC workloads a route to the regional service.
+- **Capacity:** ordinary write units round to **1 KB**; strongly consistent reads to **4 KB**; eventually consistent reads cost half; transactional writes cost twice ordinary writes, and transactional reads cost twice strongly consistent reads. Rate calculations use **operations per second**. Ten separate 2.5 KB items/second need **30 WCU**, **10 RCU for strongly consistent reads**, or **5 RCU for eventually consistent reads**.
+- **On-demand:** pay per request unit; useful for unknown/variable load. **Provisioned:** allocate RCU/WCU, optionally with target-tracking auto scaling. Both can throttle on hot keys; auto scaling is not instantaneous.
+- **Query:** equality on a partition-key value, optionally narrowed by sort key. **Scan:** evaluates across a table/index. Filters and response projections do not save capacity for evaluated items. Follow pagination even after an empty filtered page.
+- **LSI:** same PK, alternate SK; create with table; strongly consistent or eventually consistent reads; shares table capacity; **5 per table**, **10 GB per item collection**.
+- **GSI:** alternate PK and optional SK; add/delete later; eventually consistent reads only; independent provisioned capacity; **20 default quota**. No automatic fetch of unprojected attributes. Sparse indexes include only items with required index-key attributes.
+- **Streams:** item-change records retained **24 hours**, ordered per item. Four views: keys, old image, new image, both images. [Lambda](../services/lambda.md#event-source-mapping-esm) polls through an event source mapping and can process records more than once; make side effects idempotent.
+- **Global tables:** multi-active reads/writes. **MREC** is asynchronous with last-writer-wins conflict resolution; a strongly consistent local read does not guarantee freshness of remote writes. **MRSC** supports global strongly consistent reads through synchronous replication; exactly three participating Regions, with three replicas or two plus a witness. MRSC does not support TTL, LSIs, or transaction APIs; GSI reads remain eventually consistent.
+- **DAX:** VPC-based cache for repeated eventually consistent reads; item and query caches are distinct. Strongly consistent reads pass through uncached. Write-through updates the item cache, not cached query results.
+- **TTL:** Number in epoch **seconds**; delayed background deletion, not exact expiry enforcement. Initial delete consumes no write capacity; MREC replicated deletes are charged.
+- **PITR:** opt-in **1–35 days**, restore to a new table at second granularity; latest restorable time typically trails now by about five minutes. Replication does not replace backups.
+
+> [!tip] Exam Tip
+>
+> | Requirement | Candidate |
+> | --- | --- |
+> | Managed key-value/document database | [DynamoDB](../services/dynamodb.md) |
+> | Alternate sort order with strongly consistent reads | LSI, planned at table creation |
+> | New index after creation or different grouping key | GSI |
+> | Repeated reads need microsecond latency and tolerate staleness | DAX |
+> | React to inserts, modifications, or deletions | Streams plus Lambda |
+> | Multi-Region writes | Global tables; choose MREC/MRSC from consistency needs |
+> | Expire old items automatically | TTL, with application-side validity checks |
+> | Roll back accidental item changes | PITR restore to a new table |
+
+> [!warning] Gotcha
+> GSI “global” does not mean global tables. Strong consistency does not mean a multi-item transaction. PartiQL gives [DynamoDB](../services/dynamodb.md) SQL-compatible syntax, not a relational engine. A single small eventually consistent read may consume **0.5** read unit; the “minimum one RCU” shortcut is wrong for that case.
 
 ## Scaling — Horizontal vs Vertical
 
@@ -1790,7 +1823,7 @@ See [Scaling — Horizontal vs Vertical](../patterns/scaling.md) for the full tr
 
 - **Vertical scaling = resize one instance.** Simple, works for monoliths, no app changes. But requires **stop / modify / start** (disruption), only happens in maintenance windows, and is **capped at the largest available instance size**.
 - **Horizontal scaling = add more instances behind a load balancer.** No upper limit, no disruption, finer granularity, and usually cheaper per unit of capacity. Requires a **load balancer** and **stateless application design**.
-- **Sessions are the critical constraint.** With horizontal scaling, a customer's consecutive requests can hit different instances. If session state lives on the instance, the user appears logged out, the cart empties, the wizard restarts. **Move sessions off-host** to ElastiCache (Redis or Memcached), DynamoDB, or RDS.
+- **Sessions are the critical constraint.** With horizontal scaling, a customer's consecutive requests can hit different instances. If session state lives on the instance, the user appears logged out, the cart empties, the wizard restarts. **Move sessions off-host** to ElastiCache (Redis or Memcached), [DynamoDB](../services/dynamodb.md), or RDS.
 - **ALB sticky sessions are NOT the proper fix.** They pin a user to one instance; if that instance is replaced or scaled in, the session is lost anyway. Sticky sessions are a migration aid for legacy apps. Exam-correct long-term answer: **off-host sessions, stateless instances**.
 - **Resizing EC2 is a stop/start in disguise** — instance-store data destroyed, auto-public-IPv4 changes. See [EC2 — Stop/Start vs Restart](../services/ec2.md#stopstart-vs-restart--these-are-not-the-same).
 - **Horizontal scaling is the foundation for HA.** Vertical scaling cannot reach fault tolerance — a single instance always inherits the resilience tier of its AZ. Horizontal + ELB + Auto Scaling Groups across multiple AZs is the HA pattern.
@@ -1801,7 +1834,7 @@ See [Scaling — Horizontal vs Vertical](../patterns/scaling.md) for the full tr
 | --- | --- |
 | "App is a monolith on one instance, traffic doubled" | **Vertical scaling** — resize to a larger instance type |
 | "Cannot tolerate downtime, need to scale during business hours" | **Horizontal scaling** — adding instances doesn't disrupt existing connections |
-| "Users get logged out at random after deploying behind ALB" | **Move sessions off-host** to ElastiCache / DynamoDB, not sticky sessions |
+| "Users get logged out at random after deploying behind ALB" | **Move sessions off-host** to ElastiCache / [DynamoDB](../services/dynamodb.md), not sticky sessions |
 | "Shopping cart empties intermittently across instances" | **Stateless app + external session store** |
 | "Legacy app, on-host sessions, no time to refactor" | **ALB sticky sessions** — migration aid only |
 | "Need infinite scale" | **Horizontal** — vertical has a hard cap |
@@ -1862,7 +1895,7 @@ See [SSL/TLS connection modes](../services/elb.md#ssltls-connection-modes--bridg
 - **The listener protocol determines the mode, not the LB type** — NLB has supported TLS termination since January 2019. TCP listener = pass-through; HTTPS/TLS listener = terminated.
 - **Stickiness is a target-group setting** — not a listener setting, not a load-balancer setting. LB-generated **`AWSALB`** cookie, duration **1 second to 7 days**; breaks on **instance failure** or **cookie expiry**; causes **uneven backend load**.
 - **Two stickiness types**: duration-based (`AWSALB`) and application-based (**`AWSALBAPP-`** cookie, app-set, February 2021). **CLB** uses **`AWSELB`**.
-- **Lost carts / repeated logins has two answers**: stickiness is the *quick fix*; externalising state to DynamoDB / ElastiCache is the *well-architected* answer — "best practice" / "scalable" / "even load distribution" wording points to stateless.
+- **Lost carts / repeated logins has two answers**: stickiness is the *quick fix*; externalising state to [DynamoDB](../services/dynamodb.md) / ElastiCache is the *well-architected* answer — "best practice" / "scalable" / "even load distribution" wording points to stateless.
 
 | Trigger phrase | Answer |
 | --- | --- |
@@ -1879,7 +1912,7 @@ See [SSL/TLS connection modes](../services/elb.md#ssltls-connection-modes--bridg
 | "AWSELB cookie" | **CLB** stickiness |
 | "AWSALBAPP-" cookie | ALB **application-based** stickiness |
 | "Uneven load across backend instances" (stickiness in scenario) | Stickiness is the **cause** |
-| "Stateless" / "session state in DynamoDB" | No stickiness needed — fair balancing |
+| "Stateless" / "session state in [DynamoDB](../services/dynamodb.md)" | No stickiness needed — fair balancing |
 | "1 second to 7 days" | Stickiness duration range |
 
 ## EC2 Auto Scaling — Auto Scaling Groups (ASG)
@@ -1941,7 +1974,7 @@ See [Lambda](../services/lambda.md) for full details.
 - **VPC Lambda = normal VPC resource** — needs a [gateway endpoint / NAT + IGW](../services/vpc.md#nat--nat-gateway) for outside access, and the **execution role needs EC2 network permissions** so Lambda can create ENIs
 - **No CloudWatch Logs output** means a **missing execution-role permission** (`AWSLambdaBasicExecutionRole`)
 - **Two-part security model** ([resource vs identity policy](../concepts/resource-vs-identity-policies.md)): **resource policy** = who can invoke (like an S3 bucket policy); **execution role** = what the function can do (like an [EC2 instance role](../services/ec2.md#instance-roles--instance-profiles))
-- **Three invocation types:** **sync** (client handles retries) · **async** (Lambda retries 0–2 times, **requires idempotency**, DLQ + destinations) · **event source mapping** (polls [Kinesis](../services/kinesis.md) / DynamoDB Streams / [SQS](../services/sqs.md) / MSK)
+- **Three invocation types:** **sync** (client handles retries) · **async** (Lambda retries 0–2 times, **requires idempotency**, DLQ + destinations) · **event source mapping** (polls [Kinesis](../services/kinesis.md) / [DynamoDB](../services/dynamodb.md) Streams / [SQS](../services/sqs.md) / MSK)
 - **ESM permissions trap:** the execution role needs **source-service permissions** even though the code never directly reads the source — the ESM reads on the function's behalf
 - **Versions immutable** (own ARN); `$LATEST` and **aliases mutable**
 - **Cold start** (~100 ms, full context build) vs **warm start** (~1–2 ms, reused context); pin capacity with **provisioned concurrency**; declare reusable objects (DB connections) **outside the handler**
@@ -2056,7 +2089,7 @@ See [Step Functions](../services/step-functions.md) for full details.
 - **Two workflow types, fixed at creation:** **Standard** (default, **1 year** max, exactly-once, billed per state transition) vs **Express** (**5 minutes** max, at-least-once async, billed per execution plus duration and memory). The type **cannot be changed later** — you recreate the state machine
 - **State types (8 in current ASL):** Task, Choice, Parallel, Map, Pass, Wait, Succeed, Fail. **Task** is the only one that performs work; the rest are flow control. (The course lists seven, omitting **Pass**)
 - **Wait** pauses for a duration *or* until a date/time · **Choice** branches on input · **Parallel** runs concurrent branches · **Map** repeats actions once per item in a list · **Succeed**/**Fail** are terminal
-- **Step Functions coordinates, it does not compute.** A **Task** state integrates with Lambda, AWS Batch, DynamoDB, [ECS](../services/ecs.md), [SNS](../services/sns.md), SQS, [Glue](../services/glue.md), SageMaker, EMR, and more — the *integrated service* does the work
+- **Step Functions coordinates, it does not compute.** A **Task** state integrates with Lambda, AWS Batch, [DynamoDB](../services/dynamodb.md), [ECS](../services/ecs.md), [SNS](../services/sns.md), SQS, [Glue](../services/glue.md), SageMaker, EMR, and more — the *integrated service* does the work
 - **Definition language is Amazon States Language (ASL)** — **JSON**-based, not YAML
 - **Permissions:** the state machine **assumes an [IAM role](../services/iam.md#iam-roles)** at runtime for temporary credentials — same pattern as a Lambda execution role or an EC2 instance role
 - **Triggers:** [API Gateway](../services/api-gateway.md), IoT rules, [EventBridge](../services/eventbridge.md), Lambda, or manual start
@@ -2082,7 +2115,7 @@ See [API Gateway](../services/api-gateway.md) for full details.
 - **What it is:** a managed **intermediary between clients and integrations** — create, publish, and manage APIs. Highly available and scalable, and a **public service**, so it can front backends in AWS *or* on-premises
 - **Three phases:** **Request** (authorize, validate, transform), **Integration** (the backend works), **Response** (transform, prepare, return)
 - **API types:** HTTP, REST, WebSocket. Several features below are **REST-only** — caching and canary deployments in particular
-- **Direct AWS service integration:** it can write to DynamoDB, start a [Step Functions](../services/step-functions.md) execution, or publish to [SNS](../services/sns.md) **with no backing compute**. "No Lambda needed" is the signal
+- **Direct AWS service integration:** it can write to [DynamoDB](../services/dynamodb.md), start a [Step Functions](../services/step-functions.md) execution, or publish to [SNS](../services/sns.md) **with no backing compute**. "No Lambda needed" is the signal
 - **Migration façade:** a consistent front end while the backend moves on-premises into AWS, or monolith into serverless
 - **Auth:** open (no auth) · **[Cognito user pools](../services/cognito.md)** (`COGNITO_USER_POOLS` for REST; JWT authorizer for HTTP APIs) · **Lambda authorizer** (returns an **IAM policy plus a principal identifier**; API Gateway then evaluates it and either invokes the integration or returns 403) · **[IAM](../services/iam.md)** (SigV4-signed requests). The **authorizer Lambda and the integration Lambda are two different functions**
 - **Endpoint types:** **Edge-optimized** (nearest CloudFront point of presence) · **Regional** (no CloudFront, same-region clients) · **Private** (interface VPC endpoint only)
@@ -2109,7 +2142,7 @@ See [API Gateway](../services/api-gateway.md) for full details.
 | **503** | Backend **offline** / service unavailable |
 | **504** | **Integration timeout** (29-second default) |
 | **403** | **Access denied** (authorizer or WAF) |
-| "write to DynamoDB / start a Step Functions execution / publish to SNS with no compute" | **Direct AWS service integration** |
+| "write to [DynamoDB](../services/dynamodb.md) / start a Step Functions execution / publish to SNS with no compute" | **Direct AWS service integration** |
 | "consistent front end during a migration" | API Gateway as a **migration façade** |
 
 ## Amazon AppFlow
@@ -2143,14 +2176,14 @@ See [AWS Glue](../services/glue.md) for the diagram and current service details,
 | Question trigger | Answer or distinction |
 | --- | --- |
 | Serverless ETL, cleaning, restructuring, or enriching datasets | **Glue job** |
-| Automatically discover schemas in [S3](../services/s3.md), [RDS](../services/rds.md), or DynamoDB | **Glue crawler** → Data Catalog |
+| Automatically discover schemas in [S3](../services/s3.md), [RDS](../services/rds.md), or [DynamoDB](../services/dynamodb.md) | **Glue crawler** → Data Catalog |
 | Shared table definitions for Athena, Redshift Spectrum, or EMR | **Glue Data Catalog** |
 | New S3 partition absent from Athena results | Check partition metadata; crawl again, explicitly add the partition, or use `MSCK REPAIR TABLE` for Hive-style paths |
 | Reduce scanned data in a partitioned Athena query | Filter on **partition keys**; see the [lease-record example](../services/glue.md#worked-example--s3-lease-records-to-shared-catalog-consumers) |
 | Athena partition projection enabled; other engines cannot find new partitions | Projection computes partitions for Athena; it does not register them for Glue, Spectrum, or EMR |
 | How many catalogs? | One **default/root catalog per account per Region**; nested/federated catalogs are also supported |
 | Process [Kinesis Data Streams](../services/kinesis.md#kinesis-data-streams) or [Kafka](../concepts/streaming-vs-messaging.md#kinesis-vs-kafka-and-amazon-msk) continuously | **Glue streaming ETL**, with checkpoints; crawlers do not crawl streams |
-| Write transformed data into DynamoDB | Supported by the Glue DynamoDB writer; it is not source-only |
+| Write transformed data into [DynamoDB](../services/dynamodb.md) | Supported by the Glue [DynamoDB](../services/dynamodb.md) writer; it is not source-only |
 | Run ETL on a cron schedule | Glue `SCHEDULED` trigger; [EventBridge](../services/eventbridge.md) is not mandatory |
 | Start an ETL workflow when data arrives | EventBridge → Glue workflow with an `EVENT` trigger |
 | Coordinate a Glue job with several AWS services and wait for it | [Step Functions](../services/step-functions.md) Standard workflow with Glue `.sync` integration |
@@ -2423,13 +2456,14 @@ See [Cost Optimization](../patterns/cost-optimization.md) for the decision tree 
 | **Convertible Reserved Instances** | 1 / 3 yr | up to ~54 % | Exchangeable for different family/OS/tenancy |
 | **Scheduled Reserved Instances** *(retired 2024-09-03)* | 1 yr min | Modest vs On-Demand | Recurring time-window EC2 — **discontinued; use On-Demand Capacity Reservations** |
 | **On-Demand Capacity Reservations** | None (immediate-use) | None | Pure capacity guarantee in one AZ; billed even idle |
-| **Reserved Capacity** (RDS / ElastiCache / Redshift / OpenSearch / DynamoDB) | 1 / 3 yr | up to ~72 % | The only purchase plan for these services |
+| **Reserved Instances / Reserved Capacity** (service-specific) | 1 / 3 yr | Varies by service and commitment | Eligible database instances or provisioned throughput; DynamoDB reserved capacity applies to provisioned mode |
+| **Database Savings Plans** | 1 yr | Up to 35%, depending on usage | Eligible database usage, including DynamoDB on-demand and provisioned throughput; check service-specific eligibility |
 | **Spot Instances** | None | up to ~90 % | Spare EC2 capacity, 2-minute interruption warning |
 | **Dedicated Instances** | None | Premium (per-Region hourly fee) | No co-tenant hardware; host opaque |
 | **Dedicated Hosts** | None or per-host | Pay-per-host | Socket/core-based **BYOL** licensing; Host Affinity |
 
 > [!warning] Gotcha
-> **Savings Plans do NOT cover RDS, ElastiCache, Redshift, OpenSearch, or DynamoDB.** For long-running databases, the answer is a **Reserved Instance / Reserved Capacity**, not a Savings Plan.
+> **Compute and EC2 Instance Savings Plans do not cover database usage, but Database Savings Plans cover eligible usage, including DynamoDB on-demand and provisioned throughput.** Compare service-specific reservations with Database Savings Plans; their discounts do not stack on the same usage. The older “databases never qualify for Savings Plans” shortcut is incorrect. See [AWS Savings Plans types](https://docs.aws.amazon.com/savingsplans/latest/userguide/plan-types.html) and [Database Savings Plans eligibility](https://aws.amazon.com/savingsplans/faqs/).
 
 > [!warning] Gotcha — capacity priority under shortage
 > If a Region or AZ runs short on EC2 capacity (e.g. after a major fault), the safe mental model is **reserved capacity first**, then ordinary On-Demand if capacity exists, then Spot only from spare capacity. A *discount* (Regional Reserved Instance, Savings Plan) gives you **no** capacity claim — only a Zonal Reserved Instance or an On-Demand Capacity Reservation does.

@@ -1616,3 +1616,7 @@ Added a standalone custom-domain setup checklist covering ACM certificates in us
 ## [2026-11-11] ingest | CloudFront Origin Access Control
 
 Expanded OAC coverage with origin-level configuration, a signed-request architecture diagram, temporary credentials, authentication and authorization, and a distribution-scoped bucket policy example. Covered signing modes, SSE-KMS, OAI migration and shared-identity permissions, and Lambda function URL support. Organized the explanation from concepts to configuration, added S3 and SAA cross-links, and updated the index.
+
+## [2026-11-11] ingest | DynamoDB Architecture and Access Patterns
+
+Synthesized ten DynamoDB lectures into a service guide with eight lecture diagrams and a NoSQL access-pattern guide. Covered keys/indexes, capacity math and provisioned RCU/WCU versus on-demand RRU/WRU, PartiQL and filtering costs, consistency/transactions, Streams/Lambda, MREC/MRSC global tables, SDK replica selection and failover, DAX, TTL, and recovery. Added a regional/global Excalidraw comparison with default styling, AWS icons, a PNG preview, and license attribution. Refined ACID/BASE/CAP explanations, corrected database-discount guidance in the exam notes, added SAA tips and reciprocal links, and consolidated the index. Checked AWS documentation, Markdown, local links, and diagram structure; raw sources preserved unchanged.

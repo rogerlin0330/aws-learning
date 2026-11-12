@@ -2,7 +2,7 @@
 title: AWS Learning — Overview
 type: overview
 tags: [aws, architecture, iam, vpc, organizations, control-tower, cost, s3, ec2, ecs, eks, kubernetes, containers, cloudwatch, cloudtrail, cloudformation, bootstrapping, serverless, lambda, step-functions, api-gateway, orchestration, dns, dnssec, rds, rds-custom, aurora, dms, database, database-migration, multi-az, high-availability, acid, base, cap-theorem, global, regional, tiers, cloudfront, elb, asg, auto-scaling, sqs, sns, messaging, queues, decoupling, fifo, dead-letter-queue, kinesis, streaming, ingestion, firehose, analytics, video-streams, kafka, msk, log-vs-queue]
-updated: 2026-11-10
+updated: 2026-11-11
 ---
 
 # AWS Learning Overview
@@ -34,11 +34,13 @@ Account
 
 [Amazon Cognito](services/cognito.md) connects application users to this identity layer: **user pools** manage sign-in and issue tokens for [API Gateway](services/api-gateway.md) or application backends; **identity pools** provide temporary IAM-role credentials when clients need direct AWS access. These are separate choices in a [serverless architecture](patterns/serverless-architecture.md), not two mandatory stages of every login.
 
-[VPC gateway endpoints](services/vpc-gateway-endpoints.md) connect private VPC workloads to same-Region [S3](services/s3.md) and DynamoDB through service-prefix-list routes. They illustrate the separation between **network path** (gateway endpoint), **permitted use of that path** (endpoint policy), and **resource authorization** (IAM/bucket policies). [PrivateLink interface endpoints](services/vpc-interface-endpoints.md) instead present private ENI addresses. For [SNS](services/sns.md), a [Route 53 private hosted zone](services/route53.md#private-hosted-zone) can make the usual service hostname resolve to those ENIs, preserving the application URL while changing its network destination. The [comparison and SNS walkthrough](services/vpc-interface-endpoints.md#gateway-endpoint-vs-interface-endpoint) connects endpoint routing, DNS, security groups, and multi-AZ placement.
+[VPC gateway endpoints](services/vpc-gateway-endpoints.md) connect private VPC workloads to same-Region [S3](services/s3.md) and [DynamoDB](services/dynamodb.md) through service-prefix-list routes. They illustrate the separation between **network path** (gateway endpoint), **permitted use of that path** (endpoint policy), and **resource authorization** (IAM/bucket policies). [PrivateLink interface endpoints](services/vpc-interface-endpoints.md) instead present private ENI addresses. For [SNS](services/sns.md), a [Route 53 private hosted zone](services/route53.md#private-hosted-zone) can make the usual service hostname resolve to those ENIs, preserving the application URL while changing its network destination. The [comparison and SNS walkthrough](services/vpc-interface-endpoints.md#gateway-endpoint-vs-interface-endpoint) connects endpoint routing, DNS, security groups, and multi-AZ placement.
 
 For analytics, [AppFlow](services/appflow.md) can bring supported SaaS records into AWS, [S3](services/s3.md) holds datasets, [Glue](services/glue.md) discovers their schemas and runs transformations, and query engines consume the prepared data using shared catalog definitions. AppFlow can also register eligible S3 output directly in the catalog. [Kinesis](services/kinesis.md) can feed continuous processing, while [EventBridge](services/eventbridge.md) and [Step Functions](services/step-functions.md) initiate and coordinate workflows. [Data Integration](concepts/data-integration.md) explains these responsibilities and service choices.
 
 [VPC peering](services/vpc-peering.md) connects two VPC networks through explicit routes and firewall permissions. It is non-transitive: connecting A–B and B–C does not connect A–C. This separates **direct connectivity** from **transit routing**, while its DNS options illustrate another independent concern: reaching a private IP does not automatically expose a [Route 53 private hosted zone](services/route53.md#private-hosted-zone).
+
+[DynamoDB](services/dynamodb.md) provides persistent key-value/document state for serverless applications. [NoSQL access patterns](concepts/nosql-access-patterns.md) connect key design to query cost and traffic distribution; [transaction models](concepts/db-transaction-model.md) distinguish fresh reads from atomic changes. Streams connect item updates to Lambda, DAX caches repeated reads, and global tables extend the data layer across Regions.
 
 ## Key Cross-Cutting Themes
 
@@ -91,6 +93,8 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 
 ### Services
 
+- [DynamoDB](services/dynamodb.md) — Managed tables, key design, capacity and consistency, indexes, Streams, global replication, caching, and expiry
+
 - [CloudFront](services/cloudfront.md) — HTTP delivery, cache behaviors, freshness, private content, origin protection, and TLS
 - [Global Accelerator](services/global-accelerator.md) — Anycast entry IPs, regional endpoint routing, and TCP/UDP acceleration
 - [Lambda@Edge](services/lambda-edge.md) — CloudFront trigger functions and cache-aware customization
@@ -132,6 +136,8 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 
 ### Concepts
 
+- [NoSQL Access Patterns and Key Design](concepts/nosql-access-patterns.md) — Design direct read paths, spread traffic, and choose indexes with explicit freshness requirements
+
 - [Edge Delivery](concepts/edge-delivery.md) — Caching, global network acceleration, security boundaries, and service selection
 
 - [Data Integration](concepts/data-integration.md) — storage vs metadata vs transformation vs query vs orchestration; ETL/ELT and batch/streaming choices
@@ -141,7 +147,7 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 - [Resource Scope](concepts/resource-scope.md) — global / regional / AZ / edge tiers; blast radius and movement cost
 - [DNS](concepts/dns.md) — resolution, record types, TTL
 - [DNSSEC](concepts/dnssec.md) — securing DNS; origin auth + integrity, chain of trust root→record (RRSIG/DNSKEY/ZSK/KSK/DS), trust anchor + root signing ceremony, Route 53 signing + validation
-- [Database Transaction Models](concepts/db-transaction-model.md) — ACID vs BASE vs CAP theorem; ACID → consistency (RDS/relational), BASE → availability (NoSQL/DynamoDB), DynamoDB straddles both via Transactions
+- [Database Transaction Models](concepts/db-transaction-model.md) — ACID, BASE, and CAP; distinguish transaction guarantees, read freshness, and cross-Region replication
 - [TLS/HTTPS](concepts/tls-https.md) — certificate trust, TLS handshake, ACM
 - [Streaming vs Messaging](concepts/streaming-vs-messaging.md) — choosing between [Kinesis](services/kinesis.md), [SQS](services/sqs.md), and Kafka/**Amazon MSK**; the log-vs-queue root distinction (consuming a queue *removes* the message, consuming a log only *reads* it), why fan-out and replay are free in a stream and deliberate in a queue, the Kinesis-to-Kafka concept map, and when an existing Kafka investment makes MSK the answer
 - [Containers](concepts/containers.md) — container vs VM mental model, Docker image layers, runtime R/W layer, registries, ECS as orchestration

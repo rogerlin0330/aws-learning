@@ -33,7 +33,7 @@ The **event-driven cost model** is the heart of the pattern: nothing runs until 
 The design instinct is *consume-as-a-service wherever possible*: code as little as possible, use FaaS for general-purpose compute, and don't reinvent the wheel — lean on managed services:
 
 - **[S3](../services/s3.md)** for persistent object storage.
-- **DynamoDB** for persistent data storage.
+- **[DynamoDB](../services/dynamodb.md)** for persistent data storage, with [keys and indexes designed around application reads](../concepts/nosql-access-patterns.md).
 - **Third-party identity providers** (Google, Facebook, corporate AD) instead of building your own identity store.
 - **Managed media transcoding** (see the [discrepancy note](#course-vs-reality-discrepancies) — the course's Elastic Transcoder has since been retired).
 

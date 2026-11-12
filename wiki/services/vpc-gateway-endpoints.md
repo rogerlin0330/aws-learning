@@ -8,7 +8,7 @@ updated: 2026-11-05
 
 # VPC Gateway Endpoints
 
-A gateway endpoint gives resources inside a [VPC](vpc.md) a route to [Amazon S3](s3.md) or DynamoDB without requiring an internet gateway, NAT device, or public address on the client. The service remains outside the VPC; the endpoint changes the network path to it. This is a [networking](../concepts/networking.md) feature, separate from the [IAM](iam.md) permissions needed to use the service.
+A gateway endpoint gives resources inside a [VPC](vpc.md) a route to [Amazon S3](s3.md) or [DynamoDB](dynamodb.md) without requiring an internet gateway, NAT device, or public address on the client. The service remains outside the VPC; the endpoint changes the network path to it. This is a [networking](../concepts/networking.md) feature, separate from the [IAM](iam.md) permissions needed to use the service.
 
 Two common designs are an isolated VPC that retrieves approved software from S3, and a bucket that rejects requests unless they arrive through an approved endpoint. Both combine service-specific routing with access-control policies, as summarized below.
 

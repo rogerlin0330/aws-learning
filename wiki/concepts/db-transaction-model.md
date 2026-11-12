@@ -3,100 +3,78 @@ title: Database Transaction Models — ACID, BASE & CAP
 type: concept
 tags: [database, acid, base, cap-theorem, consistency, availability, partition-tolerance, eventual-consistency, rds, dynamodb, nosql, relational, transactions]
 certs: [aws-saa]
-updated: 2026-06-25
+updated: 2026-11-11
 ---
 
 # Database Transaction Models — ACID, BASE & CAP
 
-**ACID** and **BASE** are two database **transaction models** — both acronyms. They define how transactions behave to and from a database, which in turn shapes how the database system itself is architected. This is theoretical but testable: expect a small number of exam questions keyed off the trigger terms, and use them to pick between [RDS](../services/rds.md) (relational, ACID) and NoSQL stores like DynamoDB (BASE).
+**ACID** describes transaction guarantees. **BASE** describes a design approach that permits temporary inconsistency. **CAP** explains a constraint on distributed systems during network partitions. They are not mutually exclusive product categories: [DynamoDB](../services/dynamodb.md) supports eventually consistent reads and ACID transactions, while [RDS](../services/rds.md) can combine transactional writes with asynchronous read replicas.
 
 ## The CAP Theorem (the foundation)
 
-A computer-science theorem underpinning both models. **CAP** = **C**onsistency, **A**vailability, **P**artition tolerance.
-
-| Term | Meaning |
+| Term | Meaning in CAP |
 | --- | --- |
-| **Consistency** | Every read receives the most recent write — or an error |
-| **Availability** | Every request receives a non-error response — but with no guarantee it contains the most recent write |
-| **Partition tolerance** | The system keeps operating even when messages between its nodes are dropped or error out |
+| Consistency | Operations behave as if using one current copy; reads respect completed writes |
+| Availability | Every request to a non-failing node eventually receives a successful response, even during a partition |
+| Partition tolerance | The system must handle communication failures separating its nodes |
 
-**The core rule: a database can deliver a maximum of two of the three.**
+**During a network partition, a distributed system cannot guarantee both linearizable consistency and availability for every operation.** A node cut off from its peers cannot always determine whether it has the latest state. It can delay/reject an operation to preserve consistency, or continue serving operations that may conflict with the other side.
 
-Why? Picture a multi-node database on a network. If communication between nodes fails (a partition) and someone reads, you have two choices:
-
-1. **Cancel** the operation — lower availability, preserve consistency.
-2. **Proceed** with the operation — improve availability, risk consistency.
-
-So once multiple nodes and a network are involved, the real choice collapses to **consistency vs availability**. ACID and BASE pick opposite sides:
-
-> [!tip] The one-line summary
-> **ACID focuses on consistency. BASE focuses on availability.**
+“Pick any two of three” is an incomplete shortcut. Network failures are a condition to design for, not a feature to disable. CAP does not say a healthy system must always sacrifice either consistency or availability, and does not directly determine whether a database supports ACID transactions. See the [Gilbert and Lynch proof](https://groups.csail.mit.edu/tds/papers/Gilbert/Brewer6.pdf).
 
 ## ACID
 
-> [!tip] Exam default
-> If you see **ACID**, assume an **[RDS](../services/rds.md)** / relational database. ACID's rigid rules **limit scalability** — which is exactly why it's the wrong fit for internet-scale, high-velocity workloads and the right fit for financial systems.
-
-| Letter | Property | Meaning |
+| Property | Meaning | Transfer example |
 | --- | --- | --- |
-| **A** | **Atomic** | Either *all* parts of a transaction succeed, or *none* do |
-| **C** | **Consistent** | Transactions move the DB from one valid state to another — nothing in between |
-| **I** | **Isolated** | Concurrent transactions don't interfere; parallel execution matches sequential results |
-| **D** | **Durable** | Once committed, a transaction survives system/power failure or restart |
+| Atomicity | All transaction changes commit, or none do | Debit and credit succeed together |
+| Consistency | A transaction preserves the application's declared invariants | Balance constraints remain valid |
+| Isolation | Concurrent operations obey the database's selected isolation guarantees | Other transactions do not observe unsupported intermediate states |
+| Durability | Committed results persist through failures covered by the service guarantee | A successful transfer is not just an in-memory change |
 
-- **Atomic** — a $10 bank transfer is "remove $10 from A" + "add $10 to B". Both apply or neither does; you never want one half to land.
-- **Consistent** — relational DBs have inter-table links and value-range rules; every transaction must respect them and leave a valid state.
-- **Isolated** — many concurrent transactions (different apps/users) each execute as if alone.
-- **Durable** — once the DB reports "committed", a failure or restart won't lose the data.
+ACID's **consistency** means valid data states; CAP's **consistency** concerns the visibility and ordering of operations across replicas. Isolation levels also vary; “ACID” alone does not establish that every operation uses the strongest possible isolation level.
 
-Most relational platforms use ACID because it implements a rigid, reliable form of data management — and that rigidity is precisely what caps scalability.
+Transactions introduce coordination costs, especially across many items or locations. That is a tradeoff to measure, not a rule that transactional databases cannot scale. Both relational engines and suitably scoped NoSQL operations can provide transactions.
 
 ## BASE
 
-> [!tip] Exam default
-> If you see **BASE**, assume a **NoSQL**-style database (DynamoDB). BASE databases are **highly scalable** and **high performance** because they offload consistency concerns to the application.
+| Term | Meaning |
+| --- | --- |
+| Basically available | Design favors serving requests despite some failures or replica disagreement |
+| Soft state | Replica state may evolve without a new user operation as synchronization progresses |
+| Eventually consistent | If updates stop and communication succeeds, replicas converge |
 
-| Letters | Property | Meaning |
-| --- | --- | --- |
-| **BA** | **Basically Available** | Read/write ops are available as much as possible, but with **no consistency guarantee**; availability comes from spreading and replicating across all nodes |
-| **S** | **Soft state** | The DB does **not** enforce its own consistency — it delegates that to the **developer/application** |
-| **E** | **Eventually consistent** | Consistency may happen *eventually*; wait long enough and a read matches a prior write — but not immediately by default |
+BASE is a broad design description rather than a precise universal API contract. Soft state does not mean the database abandons all integrity rules. Eventual consistency does not specify a fixed maximum delay and does not mean committed data is randomly discarded. Applications must understand the actual service's guarantees and tolerate the stale views those guarantees allow.
 
-- **Basically available** — instead of enforcing immediate consistency, BASE-modeled stores ensure availability by replicating across nodes; reads and writes are "best effort, no guarantee".
-- **Soft state** — breaks from the self-enforcing-consistency idea. The application must be consistency-aware. If it needs to always see all prior writes, it must **explicitly request** a consistent read (and only if the DB supports it); otherwise it must tolerate stale reads.
-- **Eventually consistent** — the default read behaviour. Many BASE databases *can* do both eventual and immediate reads — but the app has to know which it's asking for.
+## Separate Questions to Ask
+
+| Requirement | Mechanism to investigate |
+| --- | --- |
+| Does this read reflect successful prior writes? | Read consistency and replica scope |
+| Must these related changes commit together? | Transaction atomicity and isolation |
+| Can another writer change the value between my read and write? | Conditional writes, version checks, or a suitable transaction |
+| Must another Region immediately observe a completed write? | Cross-Region replication/consistency mode |
+
+A strongly consistent read does not lock the item against later writers. An atomic transaction in one Region does not automatically remain atomic when its changes replicate elsewhere. A [cache](../services/dynamodb.md#dynamodb-accelerator-dax) adds another freshness boundary regardless of the backing database's guarantees.
 
 ## AWS Mapping: DynamoDB
 
-DynamoDB normally behaves in a **BASE-like** way, but it straddles both models:
+[DynamoDB reads](../services/dynamodb.md#read-consistency-and-transactions) default to eventual consistency. Tables and LSIs also support strongly consistent reads; GSIs do not. Its transactional APIs provide scoped ACID operations, while conditional writes protect an update against a changed value.
 
-- Offers **both** eventually consistent (default) and **strongly/immediately consistent** reads — the application must choose which it requests.
-- Offers **DynamoDB Transactions**, which provide **ACID** guarantees on top of the otherwise-BASE store.
+The [global-table modes](../services/dynamodb.md#global-tables) make the distinction especially clear:
 
-So DynamoDB is the standing exception to "NoSQL = BASE only" — see the trigger table below.
+- **MREC:** asynchronous replication; a transaction is atomic in its source Region, but another Region can temporarily observe only part of its changes.
+- **MRSC:** supports strongly consistent reads across participating Regions, but does not support transaction APIs. Global read consistency is not synonymous with multi-item transaction support.
 
-> [!tip] Exam Quick Reference
->
-> | If you see… | Default assumption |
-> | --- | --- |
-> | **BASE** | NoSQL-style database |
-> | **ACID** | [RDS](../services/rds.md) / relational database |
-> | **NoSQL / DynamoDB** *together with* **ACID** or **transactions** | **DynamoDB Transactions** |
->
-> | Model | Optimizes for | Scalability | Typical use |
-> | --- | --- | --- | --- |
-> | **ACID** | Consistency | Lower (rigid rules) | RDS, relational, financial |
-> | **BASE** | Availability | High / high performance | NoSQL, DynamoDB |
+Choose [access patterns](nosql-access-patterns.md), indexes, and consistency together. For example, a new GSI might answer a query efficiently while failing its read-after-write freshness requirement.
 
-> [!warning] Traps & Gotchas
->
-> - **CAP = pick two of three**, but once a partition is involved the real choice is **consistency vs availability**: ACID → C, BASE → A.
-> - **ACID's "C" ≠ CAP's "C".** ACID consistency = "moves between valid states per DB rules"; CAP consistency = "every read sees the latest write". The exam may blur these — read carefully.
-> - **BASE ≠ "bad".** It sounds weak ("kinda available", "soft state") but it's deliberately trading guarantees for **scale and performance**.
-> - **Eventual consistency is the BASE default, not the only option** — DynamoDB can do strongly consistent reads *if the app asks*.
-> - **DynamoDB can be ACID too** via DynamoDB Transactions — don't reflexively map DynamoDB to BASE when the question mentions transactions/ACID.
+> [!tip] Exam Tip
+> Relational joins and constraints suggest [RDS](../services/rds.md) or [Aurora](../services/aurora.md). Key-value/document access suggests DynamoDB. If the question requires ACID changes in DynamoDB, evaluate Transactions; do not reject DynamoDB solely because it is NoSQL. Check the requested Region scope and feature compatibility.
 
 ## References
 
-- Cantrill SAA-C03 study notes — *ACID vs. BASE — Database Transaction Models*
-- Related: [RDS](../services/rds.md) (the canonical ACID/relational service)
+- Cantrill SAA-C03 study notes — *ACID vs. BASE — Database Transaction Models*; refined while ingesting the DynamoDB lectures.
+- [Gilbert and Lynch — Brewer's conjecture and the feasibility of consistent, available, partition-tolerant web services](https://groups.csail.mit.edu/tds/papers/Gilbert/Brewer6.pdf)
+- [AWS — DynamoDB transactions](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/transaction-apis.html)
+- [AWS — DynamoDB read consistency](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.ReadConsistency.html)
+- [AWS — Global table consistency and transaction scope](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/V2globaltables_HowItWorks.html)
+- [RDS](../services/rds.md)

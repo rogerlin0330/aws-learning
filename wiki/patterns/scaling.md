@@ -75,7 +75,7 @@ A **session** is the state of a customer's interaction with the app: login statu
 | Where to put sessions | AWS service |
 | --- | --- |
 | In-memory cache (fast, ephemeral) | **ElastiCache** (Redis or Memcached) |
-| Durable key-value | **DynamoDB** |
+| Durable key-value | **[DynamoDB](../services/dynamodb.md)** |
 | Shared relational state | **RDS** |
 
 Once sessions are off-host, the instances become **stateless** — interchangeable "dumb" copies of the app. It no longer matters which instance a customer hits because their state lives elsewhere.
