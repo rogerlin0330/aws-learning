@@ -3,7 +3,7 @@ title: Data Integration — Storage, Catalogs, ETL, and Queries
 type: concept
 tags: [data-integration, analytics, etl, elt, data-lake, metadata, glue, s3, appflow, saas, orchestration]
 certs: [aws-saa]
-updated: 2026-11-04
+updated: 2026-11-12
 ---
 
 # Data Integration — Storage, Catalogs, ETL, and Queries
@@ -19,7 +19,7 @@ A data pipeline is easier to design when each service has a clear responsibility
 | Catalog | Where is the dataset, and what structure does it have? | Glue Data Catalog table definitions |
 | Discovery | How do we infer those definitions? | Glue crawlers |
 | Transformation | How should the records change? | Glue jobs that clean, join, enrich, or convert formats |
-| Query | What answer can we compute from the records? | Athena SQL over S3, Redshift Spectrum, or an EMR processing engine |
+| Query | What answer can we compute from the records? | [Athena](../services/athena.md) SQL over S3, Redshift Spectrum, or an EMR processing engine |
 | Orchestration | What runs next, and what happens on failure? | Glue workflows or Step Functions |
 | Governance | Who may discover or use the data? | [IAM](../services/iam.md) and Lake Formation permissions |
 

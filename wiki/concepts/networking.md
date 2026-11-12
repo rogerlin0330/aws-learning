@@ -3,7 +3,7 @@ title: Networking Concepts
 type: concept
 tags: [networking, eni, elastic-network-interface, osi, firewall, ephemeral-ports, ip-addresses, routing]
 certs: [aws-saa]
-updated: 2026-11-10
+updated: 2026-11-12
 ---
 
 # Networking Concepts
@@ -48,7 +48,7 @@ Best practice: use [Security Groups](../services/vpc.md#security-groups-sg) as t
 
 ## Observing Network Traffic
 
-[VPC Flow Logs](../services/vpc-flow-logs.md) makes ENI traffic visible as delayed metadata. VPC/subnet scopes widen the set of interfaces monitored; they do not turn the logs into packet captures. [CloudWatch Logs](../services/cloudwatch.md) supports operational log analysis, while [S3](../services/s3.md) supports stored-log analysis with Athena.
+[VPC Flow Logs](../services/vpc-flow-logs.md) makes ENI traffic visible as delayed metadata. VPC/subnet scopes widen the set of interfaces monitored; they do not turn the logs into packet captures. [CloudWatch Logs](../services/cloudwatch.md) supports operational log analysis, while [S3](../services/s3.md) supports stored-log analysis with [Athena](../services/athena.md).
 
 Firewall statefulness and logging direction are separate ideas: an allowed request and its reply can produce separate records even though the security group tracks one conversation. In the [ICMP example](../services/vpc-flow-logs.md#reading-request-and-response-records), an accepted request and a rejected reply expose an outbound NACL restriction. Correlate the traffic and inspect rules rather than inferring the firewall type from the number of records.
 

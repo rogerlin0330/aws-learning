@@ -3,7 +3,7 @@ title: VPC Flow Logs
 type: service
 tags: [vpc, flow-logs, networking, monitoring, troubleshooting, cloudwatch, s3, firehose]
 certs: [aws-saa]
-updated: 2026-11-05
+updated: 2026-11-12
 ---
 
 # VPC Flow Logs
@@ -35,7 +35,7 @@ The slide shows two destinations; current AWS also supports **Amazon Data Fireho
 | Destination | Useful when |
 | --- | --- |
 | [CloudWatch Logs](cloudwatch.md#cloudwatch-logs) | Operators want log searches, metric filters, and alarms |
-| [S3](s3.md) | Logs need durable storage and SQL analysis with Athena |
+| [S3](s3.md) | Logs need durable storage and SQL analysis with [Athena](athena.md) |
 | [Amazon Data Firehose](kinesis.md#kinesis-data-firehose-now-amazon-data-firehose) | Logs need delivery into a supported analytics or third-party destination |
 
 For Athena, publish to S3 and define a table matching the files' format and fields. The VPC console can generate a CloudFormation template for the Athena resources and example queries; alternatively, create the table directly. A custom text field order must match the table schema. [AWS Athena guide](https://docs.aws.amazon.com/athena/latest/ug/vpc-flow-logs.html)

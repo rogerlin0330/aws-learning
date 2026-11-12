@@ -3,7 +3,7 @@ title: AWS Glue
 type: service
 tags: [glue, analytics, etl, data-catalog, crawlers, data-integration, serverless, spark, data-lake]
 certs: [aws-saa]
-updated: 2026-11-04
+updated: 2026-11-12
 ---
 
 # AWS Glue
@@ -39,7 +39,7 @@ Read the diagram as two flows: **blue arrows discover metadata**, while **red an
 
 ## Data Catalog and Crawlers
 
-The catalog contains **metadata**, including table schemas, storage locations, and partitions. A catalog database is a logical grouping of tables, not a provisioned [RDS](rds.md) database containing application rows. Crawlers automate discovery, but they are optional: definitions can also be created manually or through APIs. [AWS cataloging](https://docs.aws.amazon.com/glue/latest/dg/catalog-and-crawler.html).
+The catalog contains **metadata**, including table schemas, storage locations, and partitions. A catalog database is a logical grouping of tables, not a provisioned [RDS](rds.md) database containing application rows. Crawlers automate discovery, but they are optional: definitions can also be created manually, through APIs, or with an Athena `CREATE EXTERNAL TABLE` statement. The [Athena page](athena.md#real-world-examples-of-how-to-use-athena) compares that DDL path with a crawler. [AWS cataloging](https://docs.aws.amazon.com/glue/latest/dg/catalog-and-crawler.html).
 
 ### Scope and organization
 
@@ -57,7 +57,7 @@ Configure the crawler's source locations, [IAM role](iam.md#iam-roles), and any 
 | Consumer | How it uses the catalog |
 | --- | --- |
 | **Glue jobs** | Locate datasets and use their schemas during processing |
-| **Athena** | Use table definitions to query S3 data with SQL |
+| **[Athena](athena.md)** | Use table definitions to query S3 data with SQL ([schema-on-read](athena.md#schema-on-read-architecture)) |
 | **Redshift Spectrum** | Use external table definitions when querying S3 |
 | **EMR** | Use a shared metastore for compatible processing engines |
 | **Lake Formation** | Apply governance and fine-grained permissions to cataloged resources and data |
