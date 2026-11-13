@@ -290,7 +290,55 @@ When December's folder `month=12/` arrives, Athena does not see it yet. Athena o
 - **On a schedule.** Give the crawler a cron expression so that it scans S3 periodically, for example `cron(0 1 * * ? *)` to run every day at 01:00 UTC. Schedules use UTC and can run at most every 5 minutes. Setting the crawler to crawl new folders only keeps each run short ([AWS — Crawler schedules](https://docs.aws.amazon.com/glue/latest/dg/monitor-data-warehouse-schedule.html)).
 - **When a new file is uploaded.** Turn on Amazon EventBridge notifications for the bucket, and create an [EventBridge](eventbridge.md) rule that matches `Object Created` events under `orders_v2/`. The rule invokes a [Lambda](lambda.md) function that calls the Glue `StartCrawler` API, so the crawler runs whenever a new file arrives. The function's role needs the `glue:StartCrawler` permission ([AWS — S3 events in EventBridge](https://docs.aws.amazon.com/AmazonS3/latest/userguide/EventBridge.html)).
 
-Without the crawler, we can also run `MSCK REPAIR TABLE raw.orders_v2;` in Athena, or set up partition projection. Because our month folders are predictable, partition projection removes the registration step completely: Athena works out the partition locations from rules in the table properties instead of reading the partition list from the Data Catalog ([AWS — Partition projection](https://docs.aws.amazon.com/athena/latest/ug/partition-projection.html)). The [Glue worked example](glue.md#4-keep-new-partitions-discoverable) compares these options.
+Without the crawler, we can also run `MSCK REPAIR TABLE raw.orders_v2;` in Athena, or set up partition projection.
+
+**Partition projection** replaces a lookup with a calculation. Without it, Athena looks up the partition list in the Glue Data Catalog. With it, Athena computes the partition locations from rules in the table properties ([AWS — Partition projection](https://docs.aws.amazon.com/athena/latest/ug/partition-projection.html)). The rule has three parts:
+
+1. **Input: the partition columns.** The keys declared in `PARTITIONED BY`, such as `year` and `month`, are not stored inside the files. They are the inputs to the rule.
+2. **Mapping rule: the table properties.** `TBLPROPERTIES` gives each partition column a projection type (`enum`, `integer`, `date`, or `injected`) and its allowed values. An optional `storage.location.template` describes the S3 path, for example `s3://my-raw-bucket/orders/${year}/${month}/` for folders like `orders/2026/11/`. Without a template, Athena assumes the Hive-style `key=value` layout ([AWS — Supported types for partition projection](https://docs.aws.amazon.com/athena/latest/ug/partition-projection-supported-types.html)).
+3. **Output: the S3 prefixes to read.** Athena puts the values from the `WHERE` clause into the template, works out the matching S3 prefixes, and lists and reads only the files under them.
+
+For example, suppose the Stage 1 order files sit in plain `year/month` folders such as `s3://my-raw-bucket/orders/2026/11/`. A table with one projected partition column, `order_month`, covers every month without any partition registration:
+
+```sql
+CREATE EXTERNAL TABLE orders_projected (
+    order_id STRING,
+    customer_id STRING,
+    amount DOUBLE,
+    status STRING,
+    order_date STRING
+)
+PARTITIONED BY (order_month STRING)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+LOCATION 's3://my-raw-bucket/orders/'
+TBLPROPERTIES (
+    'projection.enabled' = 'true',
+    'projection.order_month.type' = 'date',
+    'projection.order_month.format' = 'yyyy/MM',
+    'projection.order_month.range' = '2024/01,NOW',
+    'projection.order_month.interval' = '1',
+    'projection.order_month.interval.unit' = 'MONTHS',
+    'storage.location.template' = 's3://my-raw-bucket/orders/${order_month}/'
+);
+```
+
+Each property maps to one part of the rule:
+
+- `projection.enabled` turns projection on for the table.
+- `projection.order_month.type` = `date` says the column holds dates, and `format` = `yyyy/MM` says how those dates are written, both in queries and in the S3 path.
+- `range` gives the first and last values Athena may generate. `NOW` is evaluated in UTC at query time, so each new month becomes queryable as soon as its folder exists, with no `MSCK REPAIR TABLE` or crawler run.
+- `interval` and `interval.unit` set the step between values, here one month.
+- `storage.location.template` places each value into the path. The template must end with `/` and contain a placeholder for every partition column ([AWS — Setting up partition projection](https://docs.aws.amazon.com/athena/latest/ug/partition-projection-setting-up.html)).
+
+A query such as `WHERE order_month = '2026/11'` now becomes the single prefix `s3://my-raw-bucket/orders/2026/11/`. If a computed prefix holds no files, Athena returns no rows for it rather than an error.
+
+If the query filters on a range (`BETWEEN`, `>=`) or does not filter on the partition columns at all, Athena enumerates every value the rule allows and maps each one to a path. `WHERE order_month BETWEEN '2026/01' AND '2026/06'`, for example, becomes six prefixes. For an `integer` column, the values come from its required `range` and its optional `interval` (default 1). For a `date` column, they come from `range` and `interval`; `interval` and `interval.unit` can be left out only at day or month precision, where the step defaults to one day or one month. For an `enum` column, they are the listed values. An `injected` column has no range, so every query must give its exact value in the `WHERE` clause.
+
+Because our month folders are predictable, partition projection removes the registration step completely. The [Glue worked example](glue.md#4-keep-new-partitions-discoverable) compares these options.
+
+> [!warning] Gotcha: projection skips the partition list, not the catalog
+> Athena still reads the table definition (columns, SerDe, location) from the Glue Data Catalog. Only the partition lookup is replaced. Projected partitions are never registered in the catalog, so other engines that read it, such as Glue ETL jobs, EMR, or Redshift Spectrum, do not see them. When projection is enabled, Athena also ignores any partitions that are registered for that table.
 
 > [!warning] Gotcha: triggering the crawler on every upload
 > Every uploaded file creates its own event, but a crawler cannot start while it is already running: `StartCrawler` fails with `CrawlerRunningException`. The Lambda function should catch this error, because the running crawl or the next one will pick up the new files. A new file in an existing folder, such as another file in `month=11/`, does not need a crawl at all unless the schema changed. Only a new folder (partition) does. If uploads are frequent, a schedule is usually simpler. The crawler can also use S3 event notifications itself (**crawl based on events**), so that each scheduled run crawls only the folders that changed ([AWS — Crawls using S3 event notifications](https://docs.aws.amazon.com/glue/latest/dg/crawler-s3-event-notifications.html)).
