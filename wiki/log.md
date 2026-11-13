@@ -1636,3 +1636,7 @@ Rewrote the partition projection explanation as input (partition columns), mappi
 ## [2026-11-12] update | Athena log sources
 
 Added a gotcha under the schema-on-read diagram: logs must be delivered to S3 before standard Athena tables can read them (ELB access logs S3-only, CloudTrail trails always S3, VPC Flow Logs need the S3 destination), with CloudWatch Logs Insights or the federated CloudWatch Logs connector as alternatives.
+
+## [2026-11-12] update | Kinesis producers and AWS service sources
+
+Added a "How producers write to a stream" section to the Kinesis page: AWS SDK `PutRecord`/`PutRecords` with partition keys and IAM permissions, KPL, Kinesis Agent, and AWS service integrations, mapped to the producers in the stream architecture diagram. Added two tables from AWS documentation: services that write to Kinesis Data Streams (DynamoDB, Aurora/RDS Database Activity Streams, CloudFront real-time logs, CloudWatch Logs, EventBridge, IoT Core, DMS, Connect, Pinpoint, Amplify; QLDB noted as discontinued) and Firehose Direct PUT sources (WAF with the `aws-waf-logs-` prefix, VPC Flow Logs, Metric Streams, API Gateway, Route 53 Resolver, Network Firewall, MSK, ElastiCache, SES, Lambda), plus the store-or-deliver versus real-time-processing pattern and exam tips. Realigned the page's table columns.

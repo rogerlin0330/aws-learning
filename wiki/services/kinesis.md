@@ -3,7 +3,7 @@ title: Kinesis
 type: service
 tags: [kinesis, data-streams, firehose, data-analytics, managed-flink, video-streams, streaming, ingestion, analytics, shards, enhanced-fan-out, serverless, real-time]
 certs: [aws-saa]
-updated: 2026-11-05
+updated: 2026-11-12
 ---
 
 # Kinesis
@@ -14,12 +14,12 @@ updated: 2026-11-05
 
 Four products, one line each:
 
-| Product | Job | Real-time? |
-| --- | --- | --- |
-| **Kinesis Data Streams** | Ingest huge volumes of data; let many consumers read it independently, with a persistence window | Yes, real-time (~200 ms) |
-| **Kinesis Data Firehose** (now *Amazon Data Firehose*) | Managed **delivery** of streaming data to destinations (S3, Redshift, and more); optional Lambda transform | **Near** real-time (~60 s in course/exam terms) |
-| **Kinesis Data Analytics** (now *Amazon Managed Service for Apache Flink*) | Real-time **stream processing**, taught as SQL | Yes, unless the output is Firehose |
-| **Kinesis Video Streams** | Ingest **live video and time-serialized media** from producers; integrate with analytics services | Yes, live |
+| Product                                                                    | Job                                                                                                        | Real-time?                                      |
+| -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| **Kinesis Data Streams**                                                   | Ingest huge volumes of data; let many consumers read it independently, with a persistence window           | Yes, real-time (~200 ms)                        |
+| **Kinesis Data Firehose** (now *Amazon Data Firehose*)                     | Managed **delivery** of streaming data to destinations (S3, Redshift, and more); optional Lambda transform | **Near** real-time (~60 s in course/exam terms) |
+| **Kinesis Data Analytics** (now *Amazon Managed Service for Apache Flink*) | Real-time **stream processing**, taught as SQL                                                             | Yes, unless the output is Firehose              |
+| **Kinesis Video Streams**                                                  | Ingest **live video and time-serialized media** from producers; integrate with analytics services          | Yes, live                                       |
 
 > [!warning] Two of these products were renamed and one was discontinued in the form the course teaches
 > The course names — Kinesis Data Firehose and Kinesis Data Analytics — are still the terms the exam is most likely to use, so learn them. AWS reality has moved on: Firehose is now **Amazon Data Firehose**, the Flink variant of Data Analytics is **Amazon Managed Service for Apache Flink**, and the **SQL** variant of Data Analytics was **discontinued on 27 January 2026**. Changes are flagged inline and collected in [Course vs current AWS reality](#course-vs-current-aws-reality).
@@ -46,6 +46,48 @@ Reading the diagram:
 - **Bottom-center:** the Firehose icon feeding an [S3](s3.md) bucket, previewing [Firehose](#kinesis-data-firehose-now-amazon-data-firehose) as the way to move stream data en masse into another service.
 
 [AWS Glue streaming ETL](glue.md#jobs-sources-and-targets) is another managed consumer: it can read Kinesis Data Streams or Kafka/MSK, transform records, and write prepared datasets. It runs continuously and uses checkpoints. Glue crawlers do not discover stream schemas; configure the streaming source separately. This separates **ingestion** from **transformation**, as described in [Data Integration](../concepts/data-integration.md#etl-elt-and-streaming).
+
+### How producers write to a stream
+
+The common path is the **AWS SDK**. There is no separate Kinesis SDK; the Kinesis client inside the regular AWS SDK calls the Kinesis Data Streams API ([AWS — Write data to Kinesis Data Streams](https://docs.aws.amazon.com/streams/latest/dev/building-producers.html)):
+
+- `PutRecord` sends one record.
+- `PutRecords` sends up to 500 records per request, which is the usual choice for throughput ([AWS — PutRecords](https://docs.aws.amazon.com/kinesis/latest/APIReference/API_PutRecords.html)).
+
+Each record carries a **data blob** and a **partition key**, and the partition key decides which shard the record lands on. The caller needs [IAM](iam.md) permission for `kinesis:PutRecord` or `kinesis:PutRecords`.
+
+The SDK is not the only way in. Producers usually use one of these:
+
+| Producer method                        | What it is                                                                                                                                                                                                                                                       | Typical producer from the diagram                                                                                                       |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| **AWS SDK** (`PutRecord`/`PutRecords`) | Direct API calls from your own code                                                                                                                                                                                                                              | EC2 apps, on-premises services, backend code                                                                                            |
+| **KPL** (Kinesis Producer Library)     | A library on top of the API that adds batching, record aggregation, and automatic retries ([AWS — KPL](https://docs.aws.amazon.com/streams/latest/dev/developing-producers-with-kpl.html))                                                                       | High-throughput app servers                                                                                                             |
+| **Kinesis Agent**                      | A standalone Java app that tails log files and sends new lines ([AWS — Kinesis Agent](https://docs.aws.amazon.com/streams/latest/dev/writing-with-agents.html))                                                                                                  | EC2 or on-premises servers producing log files                                                                                          |
+| **AWS service integrations**           | Other services write to the stream for you, with no producer code: [CloudWatch](cloudwatch.md) Logs subscription filters, AWS IoT Core rules, [DynamoDB](dynamodb.md)'s Kinesis streaming, [EventBridge](eventbridge.md) targets, API Gateway proxy integrations | IoT sensors and connected cars (usually via IoT Core), mobile apps (often via API Gateway, or via the AWS SDK with Cognito credentials) |
+
+So in the diagram, **EC2 and on-premises servers** most likely use the SDK, KPL, or Agent. **Cars, medical devices, and retail sensors** usually do not call Kinesis directly: they connect to **AWS IoT Core**, and an IoT rule forwards their data into the stream.
+
+#### AWS services that write to Kinesis Data Streams
+
+Several AWS services can write to a stream directly, without any producer code ([AWS — Write to Kinesis Data Streams using other AWS services](https://docs.aws.amazon.com/streams/latest/dev/using-other-services.html)):
+
+| Service                             | What it sends                                                                                                                       |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| [DynamoDB](dynamodb.md)             | Item-level changes (Kinesis Data Streams for DynamoDB), an alternative to DynamoDB Streams with longer retention and more consumers |
+| [Aurora](aurora.md) / [RDS](rds.md) | **Database Activity Streams**, a near-real-time feed of database activity for auditing and compliance                               |
+| [CloudFront](cloudfront.md)         | **Real-time logs**, one record per viewer request within seconds; standard logs go to S3 instead                                    |
+| [CloudWatch](cloudwatch.md) Logs    | Log events matched by a **subscription filter**                                                                                     |
+| [EventBridge](eventbridge.md)       | Events matched by a rule, with a Kinesis stream as the target                                                                       |
+| AWS IoT Core                        | Device messages forwarded by an **IoT rule action**                                                                                 |
+| [DMS](dms.md)                       | Change data from a source database, with Kinesis as the migration target                                                            |
+| Amazon Connect                      | Contact records, agent events, and Customer Profiles events                                                                         |
+| Amazon Pinpoint                     | Engagement events (opens, clicks, deliveries) via event streams                                                                     |
+| AWS Amplify                         | Mobile and web app data sent from the client                                                                                        |
+
+The AWS list also names Amazon QLDB journal streams, but QLDB was discontinued in July 2025, so treat that integration as historical.
+
+> [!tip] Exam Tip
+> *"Capture every DynamoDB table change for multiple real-time consumers"* means **Kinesis Data Streams for DynamoDB**. *"CloudFront logs within seconds"* means **CloudFront real-time logs to Kinesis Data Streams**.
 
 ### The persistence window
 
@@ -79,11 +121,11 @@ More shards means more performance **and** more cost. Records carry a **partitio
 
 The course describes Data Streams purely in **provisioned** terms, where you choose and manage the shard count. Current AWS offers three modes ([Choose the right mode to stream in](https://docs.aws.amazon.com/streams/latest/dev/how-do-i-size-a-stream.html)):
 
-| Mode | How capacity works | Notes |
-| --- | --- | --- |
-| **Provisioned** | You set the shard count and split or merge shards yourself | Predictable traffic; fine-grained control over distribution |
-| **On-demand Standard** | AWS manages shards and scales automatically | New streams start at **4 MB/s write and 8 MB/s read**; a stream absorbs up to **double its peak write throughput of the previous 30 days**, and splits a shard within 15 minutes once it sustains more than 500 KB/s |
-| **On-demand Advantage** | Account-level setting on top of on-demand | Adds configurable **warm throughput**, **50** enhanced fan-out consumers, and simpler pricing at least 60% below On-demand Standard; commits the account to 25 MiB/s ingest and 25 MiB/s retrieval per Region |
+| Mode                    | How capacity works                                         | Notes                                                                                                                                                                                                                |
+| ----------------------- | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Provisioned**         | You set the shard count and split or merge shards yourself | Predictable traffic; fine-grained control over distribution                                                                                                                                                          |
+| **On-demand Standard**  | AWS manages shards and scales automatically                | New streams start at **4 MB/s write and 8 MB/s read**; a stream absorbs up to **double its peak write throughput of the previous 30 days**, and splits a shard within 15 minutes once it sustains more than 500 KB/s |
+| **On-demand Advantage** | Account-level setting on top of on-demand                  | Adds configurable **warm throughput**, **50** enhanced fan-out consumers, and simpler pricing at least 60% below On-demand Standard; commits the account to 25 MiB/s ingest and 25 MiB/s retrieval per Region        |
 
 On-demand streams scale to **10 GB/s write and 20 GB/s read** in us-east-1, us-west-2, and eu-west-1, and to **200 MB/s write and 400 MB/s read** in other Regions (raisable by support request). A stream can switch between on-demand and provisioned **twice in 24 hours**.
 
@@ -94,17 +136,17 @@ On-demand streams scale to **10 GB/s write and 20 GB/s read** in us-east-1, us-w
 
 There is almost always a question asking you to choose between these two. The reasoning behind the answer — and the Kafka comparison — is on [Streaming vs Messaging](../concepts/streaming-vs-messaging.md). Read every such question through this lens:
 
-| The question is about… | Answer |
-| --- | --- |
-| **Ingestion** of data at huge scale, from many producers | **Kinesis** |
+| The question is about…                                       | Answer                                                                 |
+| ------------------------------------------------------------ | ---------------------------------------------------------------------- |
+| **Ingestion** of data at huge scale, from many producers     | **Kinesis**                                                            |
 | Worker pools, **decoupling**, **asynchronous** communication | **[SQS](sqs.md)** (assume SQS first; switch only with a strong reason) |
 
-| | **[SQS](sqs.md)** | **Kinesis Data Streams** |
-| --- | --- | --- |
-| **Producers** | Typically one thing or one group (a web tier in an ASG) | Huge numbers (thousands of sensors, clickstreams) |
-| **Consumers** | Usually one consumer or worker group | Many independent consumers reading at different rates |
-| **Persistence** | No window — a message is deleted after processing and is gone | Rolling window, 24 hours up to 365 days |
-| **Purpose** | Decoupling application components, async messaging | Ingestion, analytics, monitoring, clickstreams |
+|                 | **[SQS](sqs.md)**                                             | **Kinesis Data Streams**                              |
+| --------------- | ------------------------------------------------------------- | ----------------------------------------------------- |
+| **Producers**   | Typically one thing or one group (a web tier in an ASG)       | Huge numbers (thousands of sensors, clickstreams)     |
+| **Consumers**   | Usually one consumer or worker group                          | Many independent consumers reading at different rates |
+| **Persistence** | No window — a message is deleted after processing and is gone | Rolling window, 24 hours up to 365 days               |
+| **Purpose**     | Decoupling application components, async messaging            | Ingestion, analytics, monitoring, clickstreams        |
 
 > [!tip] Exam Tip — trigger keywords
 > Ingestion, analytics, dashboards, **mobile or click streams**, IoT, "many producers", "multiple consumers reading independently", "replay" or re-read the data: **Kinesis**. Decouple, worker tier, queue, async, "process once then delete": **[SQS](sqs.md)**.
@@ -130,6 +172,29 @@ Reading the diagram:
 - **Backup bucket (bottom):** if you transform, you can optionally keep the **unmodified source records** in a backup [S3](s3.md) bucket.
 - **Destinations (right):** HTTP endpoints, **Splunk**, **Redshift**, **Elasticsearch** (now OpenSearch Service), and **S3**.
 - **Redshift is special:** delivery to Redshift uses **S3 as an intermediate**. Firehose writes to S3 and then issues a **Redshift COPY**. Conceptually direct, mechanically S3 plus COPY, handled end to end by Firehose.
+
+### AWS services that send to Kinesis Firehose
+
+Many AWS services can write to a Firehose stream directly as a **Direct PUT** source. The AWS list is not exhaustive ([AWS — Choose source and destination for your Firehose stream](https://docs.aws.amazon.com/firehose/latest/dev/create-name.html)):
+
+| Service                                                                   | What it sends                                                                                                                                                                    |
+| ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AWS WAF                                                                   | Web ACL traffic logs; the stream name must start with `aws-waf-logs-` ([AWS WAF — Firehose logging](https://docs.aws.amazon.com/waf/latest/developerguide/logging-kinesis.html)) |
+| [VPC Flow Logs](vpc-flow-logs.md)                                         | Flow log records, with no CloudWatch Logs hop needed                                                                                                                             |
+| [CloudWatch](cloudwatch.md) Metric Streams                                | Near-real-time metric data, often to S3 or third-party monitoring tools                                                                                                          |
+| CloudWatch Logs / [EventBridge](eventbridge.md) / [SNS](sns.md) / AWS IoT | Subscription filters, rule targets, topic subscriptions, and rule actions respectively                                                                                           |
+| [API Gateway](api-gateway.md)                                             | Access logs                                                                                                                                                                      |
+| [Route 53](route53.md) Resolver                                           | DNS query logs                                                                                                                                                                   |
+| AWS Network Firewall                                                      | Alert logs and flow logs                                                                                                                                                         |
+| Amazon MSK                                                                | Broker logs                                                                                                                                                                      |
+| [ElastiCache](elasticache.md) (Redis OSS)                                 | SLOWLOG entries                                                                                                                                                                  |
+| Amazon SES / Amazon Pinpoint                                              | Email sending events / engagement events                                                                                                                                         |
+| [Lambda](lambda.md)                                                       | Records written by your function code                                                                                                                                            |
+
+The split between the two products follows a pattern. Logs that only need to be **stored or delivered** (WAF, VPC Flow Logs, Route 53 Resolver, Network Firewall, API Gateway, metric streams) go to **Firehose**, which lands them in S3, OpenSearch, Splunk, and similar destinations, where tools such as [Athena](athena.md) can query them. Event feeds that applications **process in real time** (DynamoDB changes, Database Activity Streams, CloudFront real-time logs) go to **Data Streams**, for real-time latency, replay, and multiple consumers. CloudWatch Logs, EventBridge, and IoT Core can send to both.
+
+> [!tip] Exam Tip
+> *"Ship WAF logs or VPC Flow Logs to S3 or Splunk with no servers to manage"* means **Firehose**. WAF logging cannot target a Kinesis data stream directly.
 
 ### Near real-time: the buffer
 
@@ -276,17 +341,17 @@ The course lessons predate several AWS changes. Both framings are kept because e
 
 ## Quick Reference
 
-| Attribute | Data Streams | Firehose (*Amazon Data Firehose*) | Data Analytics (*Managed Flink*) | Video Streams |
-| --- | --- | --- | --- | --- |
-| Purpose | Ingest, persist, multi-consumer read | Deliver to destinations | Real-time stream processing | Live media ingestion |
-| Latency | Real-time (~200 ms) | **Near** real-time (~60 s on the exam; 0 s buffer possible today) | Real-time, near real-time if the output is Firehose | Live |
-| Persistence | 24 h default, up to 365 days | Buffers only | Transient (virtual tables) | Persisted inside the product |
-| Scaling unit | Shards (1 MB/s in, 2 MB/s out each), or on-demand | Fully serverless, automatic | Serverless, automatic | Managed |
-| Record size | 1 MB default, up to 10 MiB opt-in | — | — | — |
-| Sources | Producers via SDK, KPL, or Agent | Direct PUT, Data Streams, CloudWatch, IoT, KPL, Agent | Data Streams or Firehose, plus S3 reference data | Cameras, phones, cars, drones; audio, thermal, depth, radar |
-| Destinations | Consumers (EC2, Lambda, on-premises) | S3, Redshift, OpenSearch, Splunk, HTTP, and more | Firehose, Lambda, Data Streams | Consumers via the product API; Rekognition, Connect |
-| Transform | No, the consumer does it | Lambda (simple) | SQL or Flink (complex) | Not applicable |
-| Real-time? | Yes | No, near | Yes, destination-dependent | Yes |
+| Attribute    | Data Streams                                      | Firehose (*Amazon Data Firehose*)                                 | Data Analytics (*Managed Flink*)                    | Video Streams                                               |
+| ------------ | ------------------------------------------------- | ----------------------------------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------- |
+| Purpose      | Ingest, persist, multi-consumer read              | Deliver to destinations                                           | Real-time stream processing                         | Live media ingestion                                        |
+| Latency      | Real-time (~200 ms)                               | **Near** real-time (~60 s on the exam; 0 s buffer possible today) | Real-time, near real-time if the output is Firehose | Live                                                        |
+| Persistence  | 24 h default, up to 365 days                      | Buffers only                                                      | Transient (virtual tables)                          | Persisted inside the product                                |
+| Scaling unit | Shards (1 MB/s in, 2 MB/s out each), or on-demand | Fully serverless, automatic                                       | Serverless, automatic                               | Managed                                                     |
+| Record size  | 1 MB default, up to 10 MiB opt-in                 | —                                                                 | —                                                   | —                                                           |
+| Sources      | Producers via SDK, KPL, or Agent                  | Direct PUT, Data Streams, CloudWatch, IoT, KPL, Agent             | Data Streams or Firehose, plus S3 reference data    | Cameras, phones, cars, drones; audio, thermal, depth, radar |
+| Destinations | Consumers (EC2, Lambda, on-premises)              | S3, Redshift, OpenSearch, Splunk, HTTP, and more                  | Firehose, Lambda, Data Streams                      | Consumers via the product API; Rekognition, Connect         |
+| Transform    | No, the consumer does it                          | Lambda (simple)                                                   | SQL or Flink (complex)                              | Not applicable                                              |
+| Real-time?   | Yes                                               | No, near                                                          | Yes, destination-dependent                          | Yes                                                         |
 
 ## References
 
