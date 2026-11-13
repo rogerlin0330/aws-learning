@@ -616,7 +616,7 @@ See [VPC](../services/vpc.md) and [Networking Concepts](../concepts/networking.m
 
 - Both [NACL](../services/vpc.md#network-acl-nacl) and [Security Group](../services/vpc.md#security-groups-sg) operate at **Layer 3/4** — not Layer 7; they filter by IP, protocol, and port only
 - ICMP rules = Layer 3 only (no ports); TCP/UDP rules = Layer 4
-- Layer 7 (HTTP content, headers, URLs) is handled by **WAF**, not NACL or SG
+- Layer 7 (HTTP content, headers, URLs) is handled by **[WAF](../services/waf.md)**, not NACL or SG; a firewall only understands its own layer and below (see [Layer 7 Firewalls](../concepts/networking.md#layer-7-application-firewalls))
 - **NACL** = stateless, attaches to **subnets** (L3 constructs), supports explicit Deny → use to block bad IPs
 - **Security Group** = stateful, attaches to **ENIs** (L3/4 constructs), no explicit Deny → use for fine-grained per-resource control
 - Because NACLs are stateless: always allow **ephemeral ports (1024–65535)** for return traffic
@@ -2826,6 +2826,32 @@ See [Systems Manager — Parameter Store](../services/ssm.md#parameter-store) fo
 
 > [!warning] Gotcha
 > Granting only `ssm:GetParameter` is **not enough** to read a SecureString — without `kms:Decrypt` on the key, the decrypt fails. The reverse trap: a parameter created in `us-east-1` is **not** visible in `us-west-2` (no cross-Region replication).
+
+## AWS WAF
+
+See [AWS WAF](../services/waf.md) for the architecture diagram, rule actions, and the full pricing breakdown, and [Layer 7 Firewalls](../concepts/networking.md#layer-7-application-firewalls) for why NACLs and security groups cannot see HTTP content.
+
+- **What it is:** AWS's managed **Layer 7** firewall for HTTP/HTTPS. The host service (CloudFront, ALB, API Gateway) terminates TLS and hands WAF the plain request, so WAF can read URI, headers, cookies, query strings, and the body.
+- **Where it attaches:** CloudFront (and Amplify), with the Web ACL in **us-east-1**; or regional resources (ALB, API Gateway REST API, AppSync, Cognito user pool, App Runner, Verified Access) with the Web ACL in the **same Region**. Not an NLB, not EC2 directly. One Web ACL per resource; one Web ACL can serve many resources of the same scope.
+- **Web ACL:** default action **Allow** (block known bad) or **Block** (allow only known good); rules evaluated in priority order. **1,500 WCU** included, up to **5,000** at extra cost (no support ticket). WAF WCU is rule complexity, not DynamoDB write capacity.
+- **Rule groups:** AWS managed (mostly free), Marketplace (seller subscription), yours, or service-owned (Shield Advanced, Firewall Manager). No default action; reusable across Web ACLs; capacity fixed at creation, max 5,000 WCU.
+- **Rules = type + statement + action.** Regular or **rate-based** (per aggregation key, default source IP; 1/2/5/10-minute window; minimum limit 10; optional scope-down such as `/login`). Match on country, IP, label, headers, cookies, query, URI path, body, method; AND/OR/NOT.
+- **Body inspection:** first **8 KB** on ALB and AppSync; **16 KB** default (up to 64 KB, extra cost) on CloudFront, API Gateway, Cognito, App Runner, Verified Access.
+- **Actions:** Allow and Block **stop** evaluation; Count continues; CAPTCHA and Challenge continue for a valid token, otherwise block. **No Allow on rate-based rules.** Block can return a custom response; the others can add `x-amzn-waf-` request headers. **Labels** let a Count rule mark a request for a later rule in the same Web ACL.
+- **Logs:** S3 (every 5 minutes), CloudWatch Logs, or Firehose; names must start with `aws-waf-logs-`. React fast with CloudWatch Logs or Firehose, not S3.
+- **Pricing:** $5 per Web ACL per month, $1 per rule or rule group per month, $0.60 per million requests. Extras: Bot Control, CAPTCHA, Fraud Control (ATP, ACFP), Anti-DDoS, Marketplace groups, more than 1,500 WCU, larger body inspection.
+
+> [!tip] Exam Tip
+>
+> | Requirement | Answer |
+> | --- | --- |
+> | SQL injection or XSS | WAF |
+> | Rate limit per IP, HTTP flood, login brute force | WAF rate-based rule |
+> | Block countries at Layer 7 | WAF geo match (or CloudFront geo restriction) |
+> | Auto-update blocked IPs from logs or public lists | WAF plus Lambda/EventBridge feedback loop |
+> | Same WAF rules in every account of an Organization | Firewall Manager |
+> | Block an IP range for all protocols at the subnet | NACL |
+> | Third-party firewall, IDS/IPS, non-HTTP inspection | Gateway Load Balancer |
 
 ## Key Service Properties to Memorize
 

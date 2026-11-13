@@ -76,12 +76,12 @@ METHOD https://{api_id}.execute-api.us-east-1.amazonaws.com/{stage}/{resource}
 GET https://abc123.execute-api.us-east-1.amazonaws.com/prod/orders
 ```
 
-| URL/request component | API Gateway concept |
-| --- | --- |
-| `abc123.execute-api.us-east-1.amazonaws.com` | Default API hostname; `abc123` identifies the API |
-| `/prod` | Stage selecting a deployment of that API |
-| `/orders` | Resource path within that deployed API |
-| `GET` | Method on the resource; carried in the HTTP request, not in the URL |
+| URL/request component                        | API Gateway concept                                                 |
+| -------------------------------------------- | ------------------------------------------------------------------- |
+| `abc123.execute-api.us-east-1.amazonaws.com` | Default API hostname; `abc123` identifies the API                   |
+| `/prod`                                      | Stage selecting a deployment of that API                            |
+| `/orders`                                    | Resource path within that deployed API                              |
+| `GET`                                        | Method on the resource; carried in the HTTP request, not in the URL |
 
 This makes **API → hostname, Stage → deployment path prefix, Resource → resource path, Method → HTTP verb** a useful reading rule for the default URL. The API is still the configuration container, not a DNS record or an HTTP route alone.
 
@@ -146,11 +146,11 @@ The **Lambda authorizer path** is the right half, and it is the flow the diagram
 
 Three endpoint types can be configured for an API:
 
-| Endpoint type | Behavior | When to use |
-| --- | --- | --- |
-| **Edge-optimized** | Incoming requests are routed to the **nearest CloudFront point of presence** | Geographically distributed clients |
-| **Regional** | A regional endpoint with **no CloudFront network** in front, so lower overhead | Clients in the **same region** |
-| **Private** | Only accessible **inside a VPC through an interface endpoint** | Completely **private** APIs |
+| Endpoint type      | Behavior                                                                       | When to use                        |
+| ------------------ | ------------------------------------------------------------------------------ | ---------------------------------- |
+| **Edge-optimized** | Incoming requests are routed to the **nearest CloudFront point of presence**   | Geographically distributed clients |
+| **Regional**       | A regional endpoint with **no CloudFront network** in front, so lower overhead | Clients in the **same region**     |
+| **Private**        | Only accessible **inside a VPC through an interface endpoint**                 | Completely **private** APIs        |
 
 The private endpoint type is the same [interface VPC endpoint / PrivateLink](vpc.md) mechanism used by other private-service access patterns. Access to a private API is additionally governed by an [API Gateway resource policy](../concepts/resource-vs-identity-policies.md) — [a private REST API requires one to grant access](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-private-apis.html).
 
@@ -208,13 +208,13 @@ Caching is **configured per stage**, which matters both for the exam and in prod
 
 **Without a cache**, every request hits the backend integrations. **With a cache**, backends are called **only on a cache miss**, which reduces load, reduces cost, and improves performance through lower latency.
 
-| Property | Value |
-| --- | --- |
-| Cache size | **500 MB (0.5 GB) to 237 GB** |
-| Default TTL | **300 seconds** |
-| TTL range | **0 (disabled) to 3,600 seconds** |
-| Encryption | **Can be encrypted** |
-| Scope | **Per stage** |
+| Property    | Value                             |
+| ----------- | --------------------------------- |
+| Cache size  | **500 MB (0.5 GB) to 237 GB**     |
+| Default TTL | **300 seconds**                   |
+| TTL range   | **0 (disabled) to 3,600 seconds** |
+| Encryption  | **Can be encrypted**              |
+| Scope       | **Per stage**                     |
 
 ![API Gateway caching diagram: a client laptop on the left joined to a central API Gateway STAGE icon by a solid pink double-headed arrow, with an orange dashed double-headed arrow running right from the stage to a dashed box of integrations listing DDB, SNS, Step Functions, HTTP Endpoints, and Lambda; three boxes labelled PROD, STAGE, and DEV sit under that arrow beside the caption that cache is defined per stage within API Gateway; a green double-headed arrow runs down from the stage to an API Cache box; a bullseye and sad-face icon on the left carries the caption that calls are only made to backend integrations if the request is a cache miss; top-left facts state cache TTL default 300 seconds, configurable min 0 and max 3600 seconds, can be encrypted, cache size 500MB to 237GB; top-right states reduced load and cost, improved performance](../assets/api-gateway-caching.png)
 
@@ -232,14 +232,14 @@ The three boxes labelled PROD, STAGE, and DEV in the middle of the diagram exist
 
 Error codes fall into two categories: **4xx** are client errors (something wrong on the client side, or in how it is making the request) and **5xx** are server errors (a valid request, but a backend problem).
 
-| Code | Meaning | Notes |
-| --- | --- | --- |
-| **400** | Generic **client-side** error | Hard to diagnose — many possible root causes |
-| **403** | **Access denied** | The authorizer denied the request, **or** something like **WAF** filtered it |
-| **429** | **Throttling** | A configured throttle amount was exceeded |
-| **502** | **Bad Gateway** | Backend returned **invalid output**, for example a Lambda returning something malformed |
-| **503** | **Service unavailable** | Backing endpoint offline or having major service issues |
-| **504** | **Integration failure or timeout** | Backend did not respond within the integration timeout |
+| Code    | Meaning                            | Notes                                                                                   |
+| ------- | ---------------------------------- | --------------------------------------------------------------------------------------- |
+| **400** | Generic **client-side** error      | Hard to diagnose — many possible root causes                                            |
+| **403** | **Access denied**                  | The authorizer denied the request, **or** something like **[WAF](waf.md)** filtered it  |
+| **429** | **Throttling**                     | A configured throttle amount was exceeded                                               |
+| **502** | **Bad Gateway**                    | Backend returned **invalid output**, for example a Lambda returning something malformed |
+| **503** | **Service unavailable**            | Backing endpoint offline or having major service issues                                 |
+| **504** | **Integration failure or timeout** | Backend did not respond within the integration timeout                                  |
 
 > [!tip] Exam Tip — memorize the mapping
 > **429** is throttling, **502** is bad backend output, **503** is backend offline, **504** is timeout, **403** is access denied.
@@ -257,10 +257,10 @@ Throttling is what produces a **429**. API Gateway applies limits at several lev
 
 ## Course-vs-current-AWS discrepancies
 
-| Topic | Course framing | Current AWS reality |
-| --- | --- | --- |
+| Topic                   | Course framing                            | Current AWS reality                                                                                                                                                                                               |
+| ----------------------- | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Integration timeout** | 29-second **hard limit**, producing a 504 | Since **June 2024** it can be raised beyond 29 seconds for Regional and private **REST** APIs via Service Quotas, at the cost of a possible throttle-quota reduction. Floor still 50 ms. It is a soft default now |
-| **"V1/V2" versioning** | Drawn as an API Gateway property | API Gateway has **deployments (IDs)** and **stages (names)**; versioning is a **backend** concept, for example a Lambda alias |
+| **"V1/V2" versioning**  | Drawn as an API Gateway property          | API Gateway has **deployments (IDs)** and **stages (names)**; versioning is a **backend** concept, for example a Lambda alias                                                                                     |
 
 ## Exam Traps
 
@@ -287,17 +287,17 @@ Throttling is what produces a **429**. API Gateway applies limits at several lev
 
 ## Quick Reference
 
-| Dimension | Values |
-| --- | --- |
-| API types | HTTP, REST, WebSocket |
-| Endpoint types | Edge-optimized, Regional, Private |
-| Auth methods | Open, Cognito user pools, Lambda authorizer, IAM |
-| Integrations | Lambda, HTTP endpoints (AWS or on-premises), direct AWS services (DynamoDB, SNS, Step Functions, and others) |
-| Phases | Request (authorize, validate, transform), Integration, Response (transform, prepare, return) |
-| Cache | Per stage · TTL 300 s default (0 to 3,600) · 0.5 to 237 GB · encryptable · REST only · `GET` by default |
-| Integration timeout | 29 s default producing a 504 (raisable beyond 29 s on Regional and private REST APIs since 2024) |
-| Account throttle default | 10,000 RPS per region, 5,000 burst |
-| Monitoring | CloudWatch logs and metrics, on both the client and integration sides |
+| Dimension                | Values                                                                                                       |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| API types                | HTTP, REST, WebSocket                                                                                        |
+| Endpoint types           | Edge-optimized, Regional, Private                                                                            |
+| Auth methods             | Open, Cognito user pools, Lambda authorizer, IAM                                                             |
+| Integrations             | Lambda, HTTP endpoints (AWS or on-premises), direct AWS services (DynamoDB, SNS, Step Functions, and others) |
+| Phases                   | Request (authorize, validate, transform), Integration, Response (transform, prepare, return)                 |
+| Cache                    | Per stage · TTL 300 s default (0 to 3,600) · 0.5 to 237 GB · encryptable · REST only · `GET` by default      |
+| Integration timeout      | 29 s default producing a 504 (raisable beyond 29 s on Regional and private REST APIs since 2024)             |
+| Account throttle default | 10,000 RPS per region, 5,000 burst                                                                           |
+| Monitoring               | CloudWatch logs and metrics, on both the client and integration sides                                        |
 
 ## References
 

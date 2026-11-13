@@ -1,9 +1,9 @@
 ---
 title: Networking Concepts
 type: concept
-tags: [networking, eni, elastic-network-interface, osi, firewall, ephemeral-ports, ip-addresses, routing]
+tags: [networking, eni, elastic-network-interface, osi, firewall, layer-7-firewall, waf, ephemeral-ports, ip-addresses, routing]
 certs: [aws-saa]
-updated: 2026-11-12
+updated: 2026-11-13
 ---
 
 # Networking Concepts
@@ -24,12 +24,12 @@ For the per-attribute breakdown (primary vs secondary ENIs, MAC, private/public 
 
 Understanding OSI layers clarifies *what each control can and cannot do*:
 
-| AWS Construct | OSI Layer | Attaches to | Notes |
-| --- | --- | --- | --- |
-| Route table | L3 only | Subnet | IP destinations and next hops; no port/protocol awareness |
-| NACL | L3/4 | Subnet (L3 construct) | Stateless; ICMP rules = L3, TCP/UDP rules = L4 |
-| Security Group | L3/4 | ENI (L3/4 construct) | Stateful; same filter criteria as NACL |
-| WAF | L7 | ALB / CloudFront / API GW | Inspects HTTP content: headers, URLs, body |
+| AWS Construct             | OSI Layer | Attaches to                                   | Notes                                                                                                |
+| ------------------------- | --------- | --------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Route table               | L3 only   | Subnet                                        | IP destinations and next hops; no port/protocol awareness                                            |
+| NACL                      | L3/4      | Subnet (L3 construct)                         | Stateless; ICMP rules = L3, TCP/UDP rules = L4                                                       |
+| Security Group            | L3/4      | ENI (L3/4 construct)                          | Stateful; same filter criteria as NACL                                                               |
+| [WAF](../services/waf.md) | L7        | CloudFront / ALB / API GW / AppSync / Cognito | Inspects HTTP content: headers, URLs, body (see [Layer 7 Firewalls](#layer-7-application-firewalls)) |
 
 Both [NACLs](../services/vpc.md#network-acl-nacl) and [Security Groups](../services/vpc.md#security-groups-sg) operate at L3/4 — neither inspects application-layer content. The real distinction between them is **stateful vs stateless** and **where they attach** (subnet vs ENI), not OSI layer.
 
@@ -37,14 +37,50 @@ Both [NACLs](../services/vpc.md#network-acl-nacl) and [Security Groups](../servi
 
 AWS networking enforces security at two complementary layers. See [Identity and Access Concepts](identity-and-access.md) for the third layer (IAM) which sits above the network entirely.
 
-| | NACL | Security Group |
-| --- | --- | --- |
-| OSI layer | 3/4 | 3/4 |
-| Attaches to | Subnet | ENI |
-| Stateful? | No | Yes |
-| Explicit Deny? | Yes | No |
+|                | NACL   | Security Group |
+| -------------- | ------ | -------------- |
+| OSI layer      | 3/4    | 3/4            |
+| Attaches to    | Subnet | ENI            |
+| Stateful?      | No     | Yes            |
+| Explicit Deny? | Yes    | No             |
 
 Best practice: use [Security Groups](../services/vpc.md#security-groups-sg) as the primary control; add [NACLs](../services/vpc.md#network-acl-nacl) only when you need explicit IP blocking.
+
+## Layer 7 (Application) Firewalls
+
+A firewall can only understand the layers it operates at and the layers below. That one fact explains what each kind of firewall can and cannot do.
+
+### What Layer 3/4 and Session-Aware Firewalls See
+
+![Two firewalls between a laptop and a server. Top: a Layer 3/4 firewall sees the request from laptop to server and the response from server to laptop as two separate, unrelated flows of packets and segments. Bottom: a firewall with Layer 5 session capability treats request and response as one session, which reduces admin overhead and allows contextual security. A red band across the middle says the application layer (Layer 7) is opaque to the layers below and is just data](../assets/l3-l4-l5-firewalls.png)
+
+A **Layer 3/4 firewall** sees packets and segments: IP addresses, protocols, ports, and TCP flags. It sees a request from the client and a response from the server as **two separate, unrelated flows**, so it needs one rule for each direction. This is how a [NACL](../services/vpc.md#network-acl-nacl) behaves, and why NACLs need [ephemeral port](#ephemeral-ports) rules for return traffic.
+
+A firewall that tracks **sessions** sees the request and its response as **one conversation**. This means one rule instead of two, and it allows contextual security: the firewall can treat a packet differently depending on whether it is a reply to a request it already allowed. A [security group](../services/vpc.md#security-groups-sg) works this way. The lecture calls this "Layer 5 (session) capability". In practice it is called a **stateful** firewall, and the state it tracks is the Layer 4 connection, not the OSI session layer.
+
+Both kinds share the same limit: the application data on top is **opaque**. HTTP headers, URLs, and request bodies are just bytes. To these firewalls, a normal product image, an SQL injection attempt, and a malware download look the same, as long as they use an allowed IP and port.
+
+### What a Layer 7 Firewall Adds
+
+![A Layer 7 firewall between a laptop and a web server. The client's HTTPS connection is terminated and decrypted on the firewall, and a new encrypted connection is made from the firewall to the backend. Between the two, the firewall reads plain HTTP and can identify normal or abnormal requests and protocol-specific attacks. Data can be inspected and blocked, replaced, or tagged (adult content, spam, off-topic, malware, exploits), and specific applications such as Facebook can be identified, blocked, or adjusted. The firewall keeps all Layer 3, 4, and 5 features but can react to Layer 7 elements such as DNS names, rate, content, and headers](../assets/l7-firewall.png)
+
+A **Layer 7 firewall** understands one or more application protocols, such as HTTP. It keeps everything the lower-layer firewalls do and adds:
+
+- **Protocol awareness.** It knows how a valid HTTP request is built (method, host, headers, body), so it can tell a normal request from an abnormal one and stop protocol-specific attacks.
+- **Visibility into encrypted traffic.** For HTTPS, the client's TLS connection ends at the firewall. The firewall reads the request as plain HTTP, then opens a **new** encrypted connection to the backend server. The client and server do not notice. See [TLS/HTTPS](tls-https.md) for how termination works.
+- **Content decisions.** Data can be inspected and **blocked**, **replaced** (for example, swapping an inappropriate image for a placeholder), or **tagged**. Rules can target spam, adult content, malware, and exploits, or specific applications such as Facebook. They can also stop business data from leaving for services such as Dropbox.
+- **Layer 7 criteria.** Rules can use DNS names, request rate, content, and headers.
+
+What a Layer 7 firewall understands depends on its software. Some understand only HTTP; others understand protocols such as SMTP for email.
+
+### Layer 7 Firewalls in AWS
+
+| Option                                                                                                             | What it is                                                                                         | Where it inspects                                           |
+| ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| [AWS WAF](../services/waf.md)                                                                                      | Managed HTTP/HTTPS firewall attached to CloudFront, ALB, API Gateway, AppSync, Cognito, and others | Inbound web requests, after the host service terminates TLS |
+| [Gateway Load Balancer](../services/elb.md#gwlb-vs-waf--complementary-not-substitutes) plus third-party appliances | Routes all IP traffic through vendor firewalls that may understand many protocols                  | Inbound, outbound, and east-west traffic of any protocol    |
+
+AWS WAF does not decrypt traffic itself. The service it is attached to, such as CloudFront or an ALB, terminates HTTPS and hands WAF the plain request. This is why WAF cannot be attached to a [Network Load Balancer](../services/elb.md) passing TLS through, or to an EC2 instance directly.
 
 ## Observing Network Traffic
 
@@ -70,13 +106,13 @@ Peering also does not share a peer's internet/NAT gateway, VPN, Direct Connect c
 
 ## Internet Connectivity Patterns
 
-| Scenario | Solution |
-| --- | --- |
-| Private subnet → internet (IPv4) | NAT GW in public subnet + route `0.0.0.0/0 → NAT GW` |
-| Public subnet → internet (IPv4) | IGW + route `0.0.0.0/0 → IGW` |
-| IPv6 bidirectional | IGW + route `::/0 → IGW` |
-| IPv6 outbound only | Egress-Only IGW + route `::/0 → EIGW` |
-| Private → same-Region S3/DynamoDB (no internet) | [Gateway endpoint](../services/vpc-gateway-endpoints.md) + service-prefix-list route |
+| Scenario                                         | Solution                                                                                         |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| Private subnet → internet (IPv4)                 | NAT GW in public subnet + route `0.0.0.0/0 → NAT GW`                                             |
+| Public subnet → internet (IPv4)                  | IGW + route `0.0.0.0/0 → IGW`                                                                    |
+| IPv6 bidirectional                               | IGW + route `::/0 → IGW`                                                                         |
+| IPv6 outbound only                               | Egress-Only IGW + route `::/0 → EIGW`                                                            |
+| Private → same-Region S3/DynamoDB (no internet)  | [Gateway endpoint](../services/vpc-gateway-endpoints.md) + service-prefix-list route             |
 | Private → other supported services (no internet) | [PrivateLink interface endpoint](../services/vpc-interface-endpoints.md) + endpoint ENIs and DNS |
 
 See [VPC](../services/vpc.md) for the full details on each of these components.
@@ -102,12 +138,12 @@ When a client connects to a server, the OS assigns a random **ephemeral (source)
 
 ## IP Address Types
 
-| Type | Scope | Configured in OS? |
-| --- | --- | --- |
-| Private IPv4 | Within VPC | Yes |
-| Public IPv4 | Internet-routable | No — mapped at IGW |
-| Elastic IP (EIP) | Static public IPv4 | No — mapped at IGW |
-| IPv6 | Globally unique, public | Yes |
+| Type             | Scope                   | Configured in OS?  |
+| ---------------- | ----------------------- | ------------------ |
+| Private IPv4     | Within VPC              | Yes                |
+| Public IPv4      | Internet-routable       | No — mapped at IGW |
+| Elastic IP (EIP) | Static public IPv4      | No — mapped at IGW |
+| IPv6             | Globally unique, public | Yes                |
 
 > [!tip] Exam Tip
 > A public IPv4 address is **not visible inside the EC2 OS** — the OS only sees the private IP. The IGW performs the 1:1 NAT translation. IPv6 is different: it's configured directly in the OS.
@@ -123,3 +159,5 @@ When a client connects to a server, the OS assigns a random **ephemeral (source)
 - [Identity and Access Concepts](identity-and-access.md)
 - [DNS](dns.md)
 - [TLS/HTTPS](tls-https.md)
+- [AWS WAF](../services/waf.md)
+- Adrian Cantrill, AWS Certified Solutions Architect – Associate (SAA-C03): "Application Layer (L7) Firewall"

@@ -70,7 +70,7 @@ Origins are configured in the distribution and **referenced by behaviors**; the 
 
 These settings belong to the distribution itself. **Price class and viewer TLS security policy are not nested inside individual behaviors.** Changing either affects the shared configuration used across the distribution.
 
-Alternate names, the viewer certificate, **SNI versus dedicated-IP SSL support**, WAF association, supported viewer HTTP versions, and logging also belong at this level. The SNI/dedicated-IP choice applies to the distribution's custom viewer certificate; it cannot vary by behavior. See [SNI certificate selection](#sni-select-certificates-by-hostname-on-shared-edge-ips).
+Alternate names, the viewer certificate, **SNI versus dedicated-IP SSL support**, [WAF](waf.md) association, supported viewer HTTP versions, and logging also belong at this level. The SNI/dedicated-IP choice applies to the distribution's custom viewer certificate; it cannot vary by behavior. See [SNI certificate selection](#sni-select-certificates-by-hostname-on-shared-edge-ips).
 
 #### Price Class: Cost Versus Edge Proximity
 
@@ -113,13 +113,13 @@ See [Origin Types and Origin Paths](#origin-types-and-origin-paths) for the diff
 
 ## Origin Types and Origin Paths
 
-| Origin choice | What changes |
-| --- | --- |
-| Standard S3 bucket endpoint | Native bucket integration; OAC or legacy OAI; no custom server port or installed bucket certificate |
-| S3 static website endpoint | Treated as a custom origin; HTTP-only origin leg; OAC/OAI do not apply |
-| Custom HTTP server | Examples: public ALB, EC2, or on-premises server; configurable origin protocol, HTTP/HTTPS ports, TLS settings, path, and headers |
-| VPC origin | Current private-origin option for supported ALB/NLB/EC2 resources in private subnets |
-| Origin group | Primary/secondary origin failover for supported request methods and configured failure conditions |
+| Origin choice               | What changes                                                                                                                      |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Standard S3 bucket endpoint | Native bucket integration; OAC or legacy OAI; no custom server port or installed bucket certificate                               |
+| S3 static website endpoint  | Treated as a custom origin; HTTP-only origin leg; OAC/OAI do not apply                                                            |
+| Custom HTTP server          | Examples: public ALB, EC2, or on-premises server; configurable origin protocol, HTTP/HTTPS ports, TLS settings, path, and headers |
+| VPC origin                  | Current private-origin option for supported ALB/NLB/EC2 resources in private subnets                                              |
+| Origin group                | Primary/secondary origin failover for supported request methods and configured failure conditions                                 |
 
 S3 bucket origins and custom web origins expose different configuration options. An **origin path** prepends a directory: origin path `/production` plus requested `/images/cat.jpg` fetches `/production/images/cat.jpg`. It does not automatically strip a behavior pattern from the request URI.
 
@@ -147,11 +147,11 @@ The final stages show alternative revalidation outcomes: `304 Not Modified` if u
 
 **Default TTL, Minimum TTL, and Maximum TTL are CloudFront configuration values, not origin headers.** They live in a **cache policy attached to a cache behavior**, so their effect is scoped to requests using that behavior, rather than the whole distribution. Multiple behaviors can share a cache policy; changing that policy affects every behavior using it. With legacy cache settings, these values are configured directly on the behavior. [AWS cache-policy settings](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cache-key-understand-cache-policy.html)
 
-| CloudFront setting | Purpose |
-| --- | --- |
-| Default TTL | Fallback freshness duration when the origin supplies no applicable freshness directive; 24 hours is the legacy default, not a universal policy value |
-| Minimum TTL | Lower bound on the freshness duration CloudFront applies |
-| Maximum TTL | Upper bound on freshness derived from the origin's caching headers |
+| CloudFront setting | Purpose                                                                                                                                              |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Default TTL        | Fallback freshness duration when the origin supplies no applicable freshness directive; 24 hours is the legacy default, not a universal policy value |
+| Minimum TTL        | Lower bound on the freshness duration CloudFront applies                                                                                             |
+| Maximum TTL        | Upper bound on freshness derived from the origin's caching headers                                                                                   |
 
 For example, `/images/*` can use a long-lived cache policy while `/api/*` uses a policy that disables caching. Both behaviors can belong to the same distribution.
 
@@ -162,11 +162,11 @@ For example, `/images/*` can use a long-lived cache policy while `/api/*` uses a
 - **S3 bucket origin:** set the object's standard `Cache-Control` and `Expires` metadata fields; S3 emits the corresponding response headers when serving it. These are not custom `x-amz-meta-*` fields.
 - **Application/web-server origin:** configure the server or application to emit these headers on its HTTP responses.
 
-| Origin response header/directive | Purpose |
-| --- | --- |
-| `Cache-Control: s-maxage=N` | Shared-cache freshness, including CloudFront; takes precedence over `max-age` for CloudFront |
-| `Cache-Control: max-age=N` | Freshness used by CloudFront when no `s-maxage` is present; also controls browser freshness |
-| `Expires` | Absolute expiry time used when no overriding Cache-Control freshness directive applies |
+| Origin response header/directive | Purpose                                                                                      |
+| -------------------------------- | -------------------------------------------------------------------------------------------- |
+| `Cache-Control: s-maxage=N`      | Shared-cache freshness, including CloudFront; takes precedence over `max-age` for CloudFront |
+| `Cache-Control: max-age=N`       | Freshness used by CloudFront when no `s-maxage` is present; also controls browser freshness  |
+| `Expires`                        | Absolute expiry time used when no overriding Cache-Control freshness directive applies       |
 
 CloudFront combines these per-response directives with the selected behavior's cache-policy settings. For example, an origin response containing `Cache-Control: max-age=60, s-maxage=3600` specifies 60 seconds for browser freshness and 3,600 seconds for shared-cache freshness; CloudFront still applies its configured minimum/maximum TTL bounds. [AWS expiration reference](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Expiration.html)
 
@@ -239,10 +239,10 @@ The **viewer protocol policy**, per behavior, allows HTTP/HTTPS, redirects HTTP 
 
 **SNI removes the need for a dedicated edge IP solely to select the correct viewer certificate.** A client includes the requested hostname in its TLS **ClientHello**. CloudFront uses that hostname to find the distribution and return its certificate, allowing different distributions/certificates to share an edge IP.
 
-| Certificate-selection approach | How CloudFront identifies the certificate |
-| --- | --- |
-| Dedicated-IP SSL for a client without SNI | Destination edge IP → associated certificate |
-| SNI | ClientHello hostname → distribution → associated certificate |
+| Certificate-selection approach            | How CloudFront identifies the certificate                    |
+| ----------------------------------------- | ------------------------------------------------------------ |
+| Dedicated-IP SSL for a client without SNI | Destination edge IP → associated certificate                 |
+| SNI                                       | ClientHello hostname → distribution → associated certificate |
 
 ```text
 Shared edge IP
@@ -266,9 +266,9 @@ Public custom-origin HTTPS needs a trusted certificate and chain matching the co
 
 After authenticating a user and checking their entitlement, your application can issue temporary access through a **signed URL** or **signed cookies**. CloudFront verifies the signed authorization before serving protected content, including cache hits.
 
-| Mechanism | What the viewer receives | When to use it |
-| --- | --- | --- |
-| Signed URL | A content URL with authorization parameters, including a signature | A specific download, a temporary sharing link, or a client that does not support cookies |
+| Mechanism      | What the viewer receives                                           | When to use it                                                                                 |
+| -------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| Signed URL     | A content URL with authorization parameters, including a signature | A specific download, a temporary sharing link, or a client that does not support cookies       |
 | Signed cookies | Cookies carrying signed authorization; content URLs stay unchanged | Several related protected resources, such as a subscriber's image collection or video segments |
 
 Signed URLs commonly grant access to a specific object, but custom policies can cover wildcard resources. Policy scope, expiry, optional start time, and supported IP restrictions determine access. These are CloudFront signatures, distinct from S3 presigned URLs. [AWS signed URL reference](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-signed-urls.html)
@@ -297,13 +297,13 @@ Implement the intended object set with an actual wildcard path pattern such as `
 
 CloudFront expects **specific cookie names and signed values**, not an arbitrary session cookie or JWT. One grant has **three required name/value pairs**, issued in separate `Set-Cookie` response headers. The policy type determines the first cookie:
 
-| Cookie name | Canned policy | Custom policy | Value |
-| --- | --- | --- | --- |
-| `CloudFront-Expires` | Required | Not used | Access expiry as a UTC Unix timestamp in seconds |
-| `CloudFront-Policy` | Not used | Required | Encoded JSON access policy |
-| `CloudFront-Signature` | Required | Required | Encoded cryptographic signature of the policy |
-| `CloudFront-Key-Pair-Id` | Required | Required | **Public key ID** whose key belongs to a trusted key group on the protected behavior; not the key-group ID |
-| `CloudFront-Hash-Algorithm` | Optional fourth cookie | Optional fourth cookie | `SHA1` or `SHA256`; omission defaults to `SHA1`, and SHA-256 signatures require `SHA256` here |
+| Cookie name                 | Canned policy          | Custom policy          | Value                                                                                                      |
+| --------------------------- | ---------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `CloudFront-Expires`        | Required               | Not used               | Access expiry as a UTC Unix timestamp in seconds                                                           |
+| `CloudFront-Policy`         | Not used               | Required               | Encoded JSON access policy                                                                                 |
+| `CloudFront-Signature`      | Required               | Required               | Encoded cryptographic signature of the policy                                                              |
+| `CloudFront-Key-Pair-Id`    | Required               | Required               | **Public key ID** whose key belongs to a trusted key group on the protected behavior; not the key-group ID |
+| `CloudFront-Hash-Algorithm` | Optional fourth cookie | Optional fourth cookie | `SHA1` or `SHA256`; omission defaults to `SHA1`, and SHA-256 signatures require `SHA256` here              |
 
 A canned policy sends expiry without transmitting the policy JSON. A custom policy sends the policy, supporting wildcard resource scope and optional start-time/IP conditions. [AWS canned-cookie format](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-setting-signed-cookie-canned-policy.html), [AWS custom-cookie format](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-setting-signed-cookie-custom-policy.html)
 
@@ -394,24 +394,24 @@ X-Amz-Date: <request-timestamp>
 X-Amz-Security-Token: <temporary-session-token>
 ```
 
-| Field | Purpose |
-| --- | --- |
-| `AWS4-HMAC-SHA256` | Identifies the signing algorithm |
-| `AccessKeyId` in `Credential` | Identifies the credentials used to sign the request |
-| Date, Region, and service in `Credential` | Define the signing scope |
-| `SignedHeaders` and `Signature` | Identify the signed headers and provide the signature to verify |
-| `X-Amz-Date` and `X-Amz-Security-Token` | Supply the request timestamp and temporary-credential session token |
+| Field                                     | Purpose                                                             |
+| ----------------------------------------- | ------------------------------------------------------------------- |
+| `AWS4-HMAC-SHA256`                        | Identifies the signing algorithm                                    |
+| `AccessKeyId` in `Credential`             | Identifies the credentials used to sign the request                 |
+| Date, Region, and service in `Credential` | Define the signing scope                                            |
+| `SignedHeaders` and `Signature`           | Identify the signed headers and provide the signature to verify     |
+| `X-Amz-Date` and `X-Amz-Security-Token`   | Supply the request timestamp and temporary-credential session token |
 
 AWS uses these fields to identify the credentials, check their validity, and verify the signature against the received request. Successful verification establishes the authenticated identity and the integrity of the signed request data. AWS manages the credentials and their rotation throughout this process. [AWS SigV4 authentication fields](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_sigv-signing-elements.html)
 
 **Second, evaluate authorization.** S3 evaluates the authenticated request against the applicable access policies. In an OAC bucket-policy grant, four elements describe the permitted access:
 
-| Policy element | Meaning in a read-only OAC grant |
-| --- | --- |
-| `Principal` | The CloudFront service, `cloudfront.amazonaws.com` |
+| Policy element                   | Meaning in a read-only OAC grant                                  |
+| -------------------------------- | ----------------------------------------------------------------- |
+| `Principal`                      | The CloudFront service, `cloudfront.amazonaws.com`                |
 | `Condition` with `AWS:SourceArn` | The distribution on whose behalf CloudFront is making the request |
-| `Action` | The permitted operation, such as `s3:GetObject` |
-| `Resource` | The bucket objects covered by the grant |
+| `Action`                         | The permitted operation, such as `s3:GetObject`                   |
+| `Resource`                       | The bucket objects covered by the grant                           |
 
 For example, when distribution `EXAMPLEDISTRIBUTION` fetches `images/cat.jpg`, AWS authenticates the signed request, then S3 evaluates whether the policies permit that distribution to read that object. If the authorization decision allows access, S3 returns the object to CloudFront, which can cache it and serve it to the viewer. Otherwise, S3 rejects the request.
 
@@ -456,10 +456,10 @@ OAI is a CloudFront identity, not an IAM role. It is configured for the relevant
 
 For a publicly reachable custom origin, two complementary methods help prevent viewers from bypassing CloudFront:
 
-| Method | What it checks | Where it is configured |
-| --- | --- | --- |
-| Secret custom header | Does the request carry the expected secret? | CloudFront **origin settings** add the header; the origin application or ALB listener validates it |
-| Source-IP restriction | Did the connection come from CloudFront's origin-facing servers? | The origin's firewall or security group permits CloudFront source ranges |
+| Method                | What it checks                                                   | Where it is configured                                                                             |
+| --------------------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Secret custom header  | Does the request carry the expected secret?                      | CloudFront **origin settings** add the header; the origin application or ALB listener validates it |
+| Source-IP restriction | Did the connection come from CloudFront's origin-facing servers? | The origin's firewall or security group permits CloudFront source ranges                           |
 
 You can use either method or combine them. In the architecture below, the **upper origin** illustrates header validation; the **lower origin** illustrates firewall filtering. They are two alternatives, not two sequential hops.
 

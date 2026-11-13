@@ -14,11 +14,11 @@ An **Elastic Load Balancer (ELB)** accepts connections from clients and distribu
 
 "ELB" refers to the whole family, which has three course-covered types split across two versions:
 
-| Version | Type | Layer / Protocols | Notes |
-| --- | --- | --- | --- |
-| v1 | **Classic Load Balancer (CLB)** | HTTP, HTTPS plus lower-level; *not a true L7 device* | Introduced 2009. Legacy — avoid for new deployments; migrate off. One SSL certificate per CLB. More expensive. |
-| v2 | **Application Load Balancer (ALB)** | True Layer 7: HTTP, HTTPS, WebSocket | Preferred for HTTP/S workloads. |
-| v2 | **Network Load Balancer (NLB)** | Layer 4: TCP, TLS, UDP | For non-HTTP/S workloads: email, SSH, gaming and other custom protocols. |
+| Version | Type                                | Layer / Protocols                                    | Notes                                                                                                          |
+| ------- | ----------------------------------- | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| v1      | **Classic Load Balancer (CLB)**     | HTTP, HTTPS plus lower-level; *not a true L7 device* | Introduced 2009. Legacy — avoid for new deployments; migrate off. One SSL certificate per CLB. More expensive. |
+| v2      | **Application Load Balancer (ALB)** | True Layer 7: HTTP, HTTPS, WebSocket                 | Preferred for HTTP/S workloads.                                                                                |
+| v2      | **Network Load Balancer (NLB)**     | Layer 4: TCP, TLS, UDP                               | For non-HTTP/S workloads: email, SSH, gaming and other custom protocols.                                       |
 
 v2 load balancers are faster and support **target groups and rules**, so one load balancer can serve many purposes (for example, routing by customer).
 
@@ -44,10 +44,10 @@ What you provision as a "single load balancer object" is actually **multiple loa
 
 This choice controls **the IP addressing of the nodes only** — nothing else about the nodes or features differs:
 
-| Scheme | Node IPs | Use |
-| --- | --- | --- |
-| **Internet-facing** | Public **and** private | Reachable from the internet |
-| **Internal** | Private only | Separating application tiers / private routing |
+| Scheme              | Node IPs               | Use                                            |
+| ------------------- | ---------------------- | ---------------------------------------------- |
+| **Internet-facing** | Public **and** private | Reachable from the internet                    |
+| **Internal**        | Private only           | Separating application tiers / private routing |
 
 > [!warning] Gotcha — internet-facing does not force public instances
 > An **internet-facing load balancer can forward to both public and private [EC2](../services/ec2.md) instances.** Backend targets do **not** need public addressing — the only requirement is that the **load balancer nodes can reach the targets** (via their private IPs). This matters for "how many subnets/tiers are required" questions: an internet-facing load balancer does not force the instances behind it to be public.
@@ -210,11 +210,11 @@ There are three ways an ELB can handle encrypted connections, and the exam tests
 
 Bridging is the ALB default because terminating the connection strips the SSL wrapper off the HTTP inside, letting the ALB **see and act on the HTTP** — the entire basis of the [L7 rules](#rules--the-core-of-alb-flexibility) above. An ALB cannot route on content it cannot read.
 
-| Pros | Cons |
-| --- | --- |
-| ELB sees plaintext HTTP, enabling L7 routing decisions | Certificate stored on the ELB, so **AWS has some level of access** to it |
-| | Certs must be distributed and maintained on every instance (admin overhead) |
-| | Every instance performs crypto — CPU overhead, significant at high volume |
+| Pros                                                   | Cons                                                                        |
+| ------------------------------------------------------ | --------------------------------------------------------------------------- |
+| ELB sees plaintext HTTP, enabling L7 routing decisions | Certificate stored on the ELB, so **AWS has some level of access** to it    |
+|                                                        | Certs must be distributed and maintained on every instance (admin overhead) |
+|                                                        | Every instance performs crypto — CPU overhead, significant at high volume   |
 
 ### Pass-through (NLB, TCP listener)
 
@@ -222,10 +222,10 @@ Bridging is the ALB default because terminating the connection strips the SSL wr
 - Certificate lives on the **instances only** — never on the load balancer, **never exposed to AWS**. For stronger key control it can pair with **CloudHSM**.
 - The NLB balances on what it *can* see: source/destination IP and port.
 
-| Pros | Cons |
-| --- | --- |
+| Pros                                                    | Cons                                                              |
+| ------------------------------------------------------- | ----------------------------------------------------------------- |
 | **No certificate exposure to AWS** — fully self-managed | **No HTTP-based load balancing** — the L7 data is never decrypted |
-| Can pair with **CloudHSM** for stronger key control | Instances still need certs **and** the compute for crypto |
+| Can pair with **CloudHSM** for stronger key control     | Instances still need certs **and** the compute for crypto         |
 
 The security-framework angle is why this mode matters on the exam: pass-through is the only one of the three where **AWS never touches your private key**.
 
@@ -234,25 +234,25 @@ The security-framework angle is why this mode matters on the exam: pass-through 
 - Client to ELB: **HTTPS listener**, terminated on the ELB — **certificate required on the ELB**.
 - ELB to instances: **plain HTTP**, never re-encrypted.
 
-| Pros | Cons |
-| --- | --- |
-| **No certificates on instances** | Data crosses the **AWS network in plaintext** |
-| **No crypto compute on instances** — lower per-instance overhead, potentially **smaller instance types** | Cert still stored on the ELB (AWS access) |
-| Encrypted across the public internet, where it matters most | |
+| Pros                                                                                                     | Cons                                          |
+| -------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| **No certificates on instances**                                                                         | Data crosses the **AWS network in plaintext** |
+| **No crypto compute on instances** — lower per-instance overhead, potentially **smaller instance types** | Cert still stored on the ELB (AWS access)     |
+| Encrypted across the public internet, where it matters most                                              |                                               |
 
 ### Connection modes quick reference
 
-| | **Bridging** | **Pass-through** | **Offload** |
-| --- | --- | --- | --- |
-| Typical LB | **ALB (default)** | **NLB** | ALB (or NLB with TLS listener) |
-| Listener protocol | HTTPS | **TCP** | HTTPS |
-| Terminated on LB? | Yes | No | Yes |
-| Cert on LB? | Yes | No | Yes |
-| Cert on instances? | Yes | Yes | No |
-| Crypto on instances? | Yes | Yes | No |
-| LB can see HTTP? | Yes | No | Yes |
-| Cert exposed to AWS? | Yes | No | Yes |
-| Encrypted LB to instance? | Yes | Yes (never decrypted) | No — **plaintext** |
+|                           | **Bridging**      | **Pass-through**      | **Offload**                    |
+| ------------------------- | ----------------- | --------------------- | ------------------------------ |
+| Typical LB                | **ALB (default)** | **NLB**               | ALB (or NLB with TLS listener) |
+| Listener protocol         | HTTPS             | **TCP**               | HTTPS                          |
+| Terminated on LB?         | Yes               | No                    | Yes                            |
+| Cert on LB?               | Yes               | No                    | Yes                            |
+| Cert on instances?        | Yes               | Yes                   | No                             |
+| Crypto on instances?      | Yes               | Yes                   | No                             |
+| LB can see HTTP?          | Yes               | No                    | Yes                            |
+| Cert exposed to AWS?      | Yes               | No                    | Yes                            |
+| Encrypted LB to instance? | Yes               | Yes (never decrypted) | No — **plaintext**             |
 
 > [!warning] Gotcha — the listener protocol determines the mode, not the load balancer type
 > The course presents NLB as *the* pass-through option, but NLB has supported **TLS termination since January 2019**, with ACM integration and optional re-encryption to targets ([AWS What's New](https://aws.amazon.com/about-aws/whats-new/2019/01/network-load-balancer-now-supports-tls-termination/)). So: **NLB + TCP listener = pass-through; NLB + TLS listener (or any HTTPS listener) = terminated on the LB.** Pass-through is a choice, not a limitation.
@@ -326,21 +326,21 @@ Otherwise choose an **ALB**: its Layer 7 features (rules, host/path routing, hea
 
 ### ALB vs NLB quick comparison
 
-| Attribute | ALB | NLB |
-| --- | --- | --- |
-| OSI layer | **Layer 7** (application) | **Layer 4** (transport) |
-| Listener protocols | **HTTP, HTTPS** only | **TCP, UDP, TCP_UDP, TLS** |
-| Understands HTTP / headers / cookies | Yes | No |
-| Host / path / header / query / source-IP routing | Yes (rules) | No |
-| SSL/TLS behaviour | **Always terminated** on the LB (cert required) | **TCP listener = pass-through** (unbroken); **TLS listener = terminates** |
-| Unbroken end-to-end encryption to instances | No | Yes (TCP listener) |
-| Performance / latency | Higher latency | Much lower latency; millions of requests/sec |
-| Static IP addresses | No (DNS name only) | Yes (Elastic IP; whitelisting) |
-| Health checks | **Application-aware** (L7 request) | Basic (course framing; HTTP/HTTPS checks exist today) |
-| Redirects, fixed responses, OIDC/Cognito auth | Yes | No |
-| PrivateLink support | No | **Yes** |
-| Non-HTTP protocols (SMTP, SSH, game, finance) | No | Yes |
-| Certificate consolidation (SNI, many domains) | Yes | N/A (no L7) |
+| Attribute                                        | ALB                                             | NLB                                                                       |
+| ------------------------------------------------ | ----------------------------------------------- | ------------------------------------------------------------------------- |
+| OSI layer                                        | **Layer 7** (application)                       | **Layer 4** (transport)                                                   |
+| Listener protocols                               | **HTTP, HTTPS** only                            | **TCP, UDP, TCP_UDP, TLS**                                                |
+| Understands HTTP / headers / cookies             | Yes                                             | No                                                                        |
+| Host / path / header / query / source-IP routing | Yes (rules)                                     | No                                                                        |
+| SSL/TLS behaviour                                | **Always terminated** on the LB (cert required) | **TCP listener = pass-through** (unbroken); **TLS listener = terminates** |
+| Unbroken end-to-end encryption to instances      | No                                              | Yes (TCP listener)                                                        |
+| Performance / latency                            | Higher latency                                  | Much lower latency; millions of requests/sec                              |
+| Static IP addresses                              | No (DNS name only)                              | Yes (Elastic IP; whitelisting)                                            |
+| Health checks                                    | **Application-aware** (L7 request)              | Basic (course framing; HTTP/HTTPS checks exist today)                     |
+| Redirects, fixed responses, OIDC/Cognito auth    | Yes                                             | No                                                                        |
+| PrivateLink support                              | No                                              | **Yes**                                                                   |
+| Non-HTTP protocols (SMTP, SSH, game, finance)    | No                                              | Yes                                                                       |
+| Certificate consolidation (SNI, many domains)    | Yes                                             | N/A (no L7)                                                               |
 
 ### Course vs current AWS
 
@@ -353,10 +353,10 @@ A **Gateway Load Balancer (GWLB)** lets you run and scale **third-party network 
 
 Two components make it work:
 
-| Component | Lives in | Role |
-| --- | --- | --- |
+| Component                                  | Lives in                                                | Role                                                                                                  |
+| ------------------------------------------ | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
 | **Gateway Load Balancer Endpoint (GWLBE)** | The VPC whose traffic you want inspected (consumer VPC) | A VPC endpoint that **can be used as a route table target**, so it can be injected into traffic flows |
-| **Gateway Load Balancer (GWLB)** | The VPC hosting the appliances (provider/security VPC) | Load balances packets across backend appliance instances, encapsulating with GENEVE |
+| **Gateway Load Balancer (GWLB)**           | The VPC hosting the appliances (provider/security VPC)  | Load balances packets across backend appliance instances, encapsulating with GENEVE                   |
 
 Per AWS, GWLB operates at layer 3 of the OSI model, listens for all IP packets across all ports, forwards traffic to the target group specified in the listener rule, maintains flow stickiness to a specific target appliance using 5-tuple (default), 3-tuple, or 2-tuple, and exchanges application traffic with its registered appliance instances using the GENEVE protocol on port 6081 ([ELB — What is a Gateway Load Balancer?](https://docs.aws.amazon.com/elasticloadbalancing/latest/gateway/introduction.html)).
 
@@ -493,16 +493,16 @@ Order of operations at the IGW on the inbound leg:
 
 A useful intuition: **WAF is the security guard at the building's front door**, checking only the people arriving to browse the website; **GWLB plus a third-party appliance is the full-body scanner in the basement**, through which every package and person — inbound *and* outbound, web or not — must pass. They inspect different things at different layers, and they are not alternatives.
 
-| | **AWS WAF** | **Gateway Load Balancer** |
-| --- | --- | --- |
-| **What it is** | A managed AWS service (a rule engine) | A traffic-steering mechanism for *your* appliances |
-| **OSI layer** | Layer 7 — HTTP/HTTPS | Layer 3 (packet level) |
-| **What it inspects** | Request URI, headers, body, query strings, cookies | Every IP packet, all ports, all protocols |
-| **What it understands** | Web requests | Nothing — it delegates understanding to the appliance |
-| **Who writes the logic** | You (rules) or AWS/vendors (managed rule groups) | The third-party vendor (Palo Alto, Fortinet, Check Point, etc.) |
-| **Where it attaches** | CloudFront, ALB, API Gateway, AppSync, Cognito | A route table, as a next hop |
-| **Protocol coverage** | HTTP/HTTPS only | Any IP traffic — SSH, RDP, SMTP, database protocols, custom TCP/UDP |
-| **Traffic direction** | Inbound requests to the protected resource | Both directions, inbound and outbound |
+|                          | **[AWS WAF](waf.md)**                                                                | **Gateway Load Balancer**                                           |
+| ------------------------ | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------- |
+| **What it is**           | A managed AWS service (a rule engine)                                                | A traffic-steering mechanism for *your* appliances                  |
+| **OSI layer**            | Layer 7 — HTTP/HTTPS                                                                 | Layer 3 (packet level)                                              |
+| **What it inspects**     | Request URI, headers, body, query strings, cookies                                   | Every IP packet, all ports, all protocols                           |
+| **What it understands**  | Web requests                                                                         | Nothing — it delegates understanding to the appliance               |
+| **Who writes the logic** | You (rules) or AWS/vendors (managed rule groups)                                     | The third-party vendor (Palo Alto, Fortinet, Check Point, etc.)     |
+| **Where it attaches**    | CloudFront, ALB, API Gateway, AppSync, Cognito, App Runner, Verified Access, Amplify | A route table, as a next hop                                        |
+| **Protocol coverage**    | HTTP/HTTPS only                                                                      | Any IP traffic — SSH, RDP, SMTP, database protocols, custom TCP/UDP |
+| **Traffic direction**    | Inbound requests to the protected resource                                           | Both directions, inbound and outbound                               |
 
 Unlike traditional network firewalls that operate at the network layer, WAF operates at the application layer (Layer 7), providing granular control over HTTP and HTTPS traffic, using customizable rules that inspect IP addresses, HTTP headers, HTTP body, URI strings, SQL injection patterns, and cross-site scripting ([AWS WAF FAQs](https://aws.amazon.com/waf/faqs/)).
 
@@ -546,16 +546,16 @@ The sharpest question about GWLB is why inspected traffic is not simply re-captu
 
 Trace it with the diagram's numbering:
 
-| Step | Packet at | Table consulted | Result |
-| --- | --- | --- | --- |
-| 2 | IGW, inbound | **Ingress (gateway) route table** | `10.16.96.0/20 → GWLBE2` |
-| 3 | GWLBE2 | *none — PrivateLink* | to GWLB |
-| 6 | GWLB, post-inspection | *none — GENEVE metadata* | to GWLBE2 |
-| 7 | GWLBE2, decapsulated | **GWLBE subnet route table** | `10.16.0.0/16 → LOCAL`, to ALB subnet |
-| 10 | ALB subnet, outbound | **ALB subnet route table** | `0.0.0.0/0 → GWLBE2` |
-| 11 | GWLBE2 | *none — PrivateLink* | to GWLB |
-| 14 | GWLB, post-inspection | *none — GENEVE metadata* | to GWLBE2 |
-| 15 | GWLBE2, decapsulated | **GWLBE subnet route table** | `0.0.0.0/0 → IGW` |
+| Step | Packet at             | Table consulted                   | Result                                |
+| ---- | --------------------- | --------------------------------- | ------------------------------------- |
+| 2    | IGW, inbound          | **Ingress (gateway) route table** | `10.16.96.0/20 → GWLBE2`              |
+| 3    | GWLBE2                | *none — PrivateLink*              | to GWLB                               |
+| 6    | GWLB, post-inspection | *none — GENEVE metadata*          | to GWLBE2                             |
+| 7    | GWLBE2, decapsulated  | **GWLBE subnet route table**      | `10.16.0.0/16 → LOCAL`, to ALB subnet |
+| 10   | ALB subnet, outbound  | **ALB subnet route table**        | `0.0.0.0/0 → GWLBE2`                  |
+| 11   | GWLBE2                | *none — PrivateLink*              | to GWLB                               |
+| 14   | GWLB, post-inspection | *none — GENEVE metadata*          | to GWLBE2                             |
+| 15   | GWLBE2, decapsulated  | **GWLBE subnet route table**      | `0.0.0.0/0 → IGW`                     |
 
 At step 7 the destination is the ALB's private IP (inside the VPC CIDR) so **LOCAL** matches; at step 15 it is the client's public IP so the **default route to the IGW** matches. In neither case is the GWLBE a candidate target — it does not appear in that table.
 
@@ -586,47 +586,47 @@ At step 7 the destination is the ALB's private IP (inside the VPC CIDR) so **LOC
 
 ### GWLB Quick Reference
 
-| Attribute | Value |
-| --- | --- |
-| OSI layer | 3 (ELB docs); L3+L4 per Prescriptive Guidance — see gotcha above |
-| Protocol to targets | GENEVE, UDP **6081** |
-| MTU | 8500 bytes |
-| Flow stickiness | 5-tuple (default), 3-tuple, or 2-tuple |
-| Target types | `instance` or `ip` (private IPs) |
-| Target group protocol | GENEVE / port 6081 |
-| Listener | Single default action, forwards to one target group |
-| Endpoint type | Gateway Load Balancer Endpoint (PrivateLink), usable as route table next hop |
-| Subnet constraint | GWLBE and application servers must be in **different subnets** |
-| Packet alteration | None — original SRC/DST IP and ports preserved |
-| Access logs | Not produced by GWLB (transparent); enable on appliances or use VPC Flow Logs |
-| Primary use case | Scaling third-party inline security appliances |
-| Typical vendors | Palo Alto, Fortinet, Check Point, Cisco, Trend Micro |
+| Attribute             | Value                                                                         |
+| --------------------- | ----------------------------------------------------------------------------- |
+| OSI layer             | 3 (ELB docs); L3+L4 per Prescriptive Guidance — see gotcha above              |
+| Protocol to targets   | GENEVE, UDP **6081**                                                          |
+| MTU                   | 8500 bytes                                                                    |
+| Flow stickiness       | 5-tuple (default), 3-tuple, or 2-tuple                                        |
+| Target types          | `instance` or `ip` (private IPs)                                              |
+| Target group protocol | GENEVE / port 6081                                                            |
+| Listener              | Single default action, forwards to one target group                           |
+| Endpoint type         | Gateway Load Balancer Endpoint (PrivateLink), usable as route table next hop  |
+| Subnet constraint     | GWLBE and application servers must be in **different subnets**                |
+| Packet alteration     | None — original SRC/DST IP and ports preserved                                |
+| Access logs           | Not produced by GWLB (transparent); enable on appliances or use VPC Flow Logs |
+| Primary use case      | Scaling third-party inline security appliances                                |
+| Typical vendors       | Palo Alto, Fortinet, Check Point, Cisco, Trend Micro                          |
 
 ## Quick Reference
 
-| Topic | Key fact |
-| --- | --- |
-| Family | CLB (v1), ALB + NLB (v2). Prefer v2 always. |
-| ALB | L7; HTTP/HTTPS/WebSocket; cross-zone **on** by default at the LB level; target groups can override |
-| NLB | L4; TCP/TLS/UDP; static IPs (Elastic IP); can technically run in 1 AZ |
-| CLB | v1 legacy; 1 SSL certificate per LB; avoid |
-| GWLB | L3; **GENEVE / UDP 6081**; steers packets *through* third-party appliances via a route-table-target endpoint; see [GWLB Deep Dive](#gateway-load-balancer-gwlb--deep-dive) |
-| Real object | Multiple **nodes** in each chosen subnet, auto-scaling |
-| DNS | Single **A record** resolving to **all** nodes |
-| Node distribution | DNS tends to spread clients statistically across nodes; heavy client-side DNS caching can skew traffic |
-| Internet-facing | Nodes get **public + private** IPs; can reach **public and private** targets |
-| Internal | Nodes get **private** IPs only; used to separate tiers |
-| Listener | Front-side configuration: protocol + port the LB accepts on |
-| Subnet count | **One subnet per AZ**, **2+ AZs** (ALB requires it) |
-| Subnet size | **8+ free IPs**; recommend **/27 or larger**; /28 is the strict minimum |
-| Cross-zone | Fixes uneven load; distributes across **all** instances in **all** AZs |
-| ALB SSL/TLS | **Always terminated** on the LB; cert required on the LB; never unbroken end-to-end |
-| NLB TCP listener | **Pass-through** — the unbroken end-to-end encryption answer |
-| SSL modes | **Bridging** = terminate + re-encrypt (certs on LB **and** instances); **pass-through** = never decrypted (certs on instances only, no AWS exposure); **offload** = terminate + plain HTTP behind (cert on LB only, no instance crypto) |
-| Mode selector | The **listener protocol** decides: TCP listener = pass-through; HTTPS/TLS listener = terminated |
-| Stickiness | **Target-group** setting; `AWSALB` cookie; duration **1 second to 7 days**; breaks on instance failure or cookie expiry; causes uneven load — stateless + external state is the proper fix |
-| PrivateLink | **NLB only** |
-| Decision rule | Memorise the 5 NLB reasons (E2E encryption, static IPs, performance, non-HTTP, PrivateLink); otherwise **ALB** |
+| Topic             | Key fact                                                                                                                                                                                                                                |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Family            | CLB (v1), ALB + NLB (v2). Prefer v2 always.                                                                                                                                                                                             |
+| ALB               | L7; HTTP/HTTPS/WebSocket; cross-zone **on** by default at the LB level; target groups can override                                                                                                                                      |
+| NLB               | L4; TCP/TLS/UDP; static IPs (Elastic IP); can technically run in 1 AZ                                                                                                                                                                   |
+| CLB               | v1 legacy; 1 SSL certificate per LB; avoid                                                                                                                                                                                              |
+| GWLB              | L3; **GENEVE / UDP 6081**; steers packets *through* third-party appliances via a route-table-target endpoint; see [GWLB Deep Dive](#gateway-load-balancer-gwlb--deep-dive)                                                              |
+| Real object       | Multiple **nodes** in each chosen subnet, auto-scaling                                                                                                                                                                                  |
+| DNS               | Single **A record** resolving to **all** nodes                                                                                                                                                                                          |
+| Node distribution | DNS tends to spread clients statistically across nodes; heavy client-side DNS caching can skew traffic                                                                                                                                  |
+| Internet-facing   | Nodes get **public + private** IPs; can reach **public and private** targets                                                                                                                                                            |
+| Internal          | Nodes get **private** IPs only; used to separate tiers                                                                                                                                                                                  |
+| Listener          | Front-side configuration: protocol + port the LB accepts on                                                                                                                                                                             |
+| Subnet count      | **One subnet per AZ**, **2+ AZs** (ALB requires it)                                                                                                                                                                                     |
+| Subnet size       | **8+ free IPs**; recommend **/27 or larger**; /28 is the strict minimum                                                                                                                                                                 |
+| Cross-zone        | Fixes uneven load; distributes across **all** instances in **all** AZs                                                                                                                                                                  |
+| ALB SSL/TLS       | **Always terminated** on the LB; cert required on the LB; never unbroken end-to-end                                                                                                                                                     |
+| NLB TCP listener  | **Pass-through** — the unbroken end-to-end encryption answer                                                                                                                                                                            |
+| SSL modes         | **Bridging** = terminate + re-encrypt (certs on LB **and** instances); **pass-through** = never decrypted (certs on instances only, no AWS exposure); **offload** = terminate + plain HTTP behind (cert on LB only, no instance crypto) |
+| Mode selector     | The **listener protocol** decides: TCP listener = pass-through; HTTPS/TLS listener = terminated                                                                                                                                         |
+| Stickiness        | **Target-group** setting; `AWSALB` cookie; duration **1 second to 7 days**; breaks on instance failure or cookie expiry; causes uneven load — stateless + external state is the proper fix                                              |
+| PrivateLink       | **NLB only**                                                                                                                                                                                                                            |
+| Decision rule     | Memorise the 5 NLB reasons (E2E encryption, static IPs, performance, non-HTTP, PrivateLink); otherwise **ALB**                                                                                                                          |
 
 ## References
 

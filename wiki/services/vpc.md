@@ -130,7 +130,7 @@ Peering is **non-transitive**: A–B and B–C do not connect A to C. The [topol
 | Tracks connections? | No                         | Yes                   |
 | Return traffic      | Must be explicitly allowed | Automatically allowed |
 
-Both operate at **Layer 3/4** — they filter by IP/CIDR (L3) and by protocol + port (L4). A rule for ICMP (no ports) is purely L3; a rule for TCP/UDP with a port range is L4. Neither inspects application-layer content (HTTP headers, URLs, etc.) — that is AWS WAF's job (Layer 7).
+Both operate at **Layer 3/4** — they filter by IP/CIDR (L3) and by protocol + port (L4). A rule for ICMP (no ports) is purely L3; a rule for TCP/UDP with a port range is L4. Neither inspects application-layer content (HTTP headers, URLs, etc.) — that is [AWS WAF](waf.md)'s job (Layer 7); see [Layer 7 Firewalls](../concepts/networking.md#layer-7-application-firewalls).
 
 **Stateless** — every connection needs two explicit rules (request port + ephemeral response port):
 

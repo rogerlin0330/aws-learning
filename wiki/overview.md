@@ -57,7 +57,7 @@ AWS enforces security at multiple independent layers — an attacker must defeat
 - **[IAM](services/iam.md) policies** — API-level: what actions are allowed on which resources (global)
 - **[Security Groups](services/vpc.md#security-groups-sg)** — L3/4 stateful firewall on each ENI (instance level)
 - **[NACLs](services/vpc.md#network-acl-nacl)** — L3/4 stateless firewall at the subnet boundary
-- **WAF** — L7 HTTP content inspection (future page)
+- **[WAF](services/waf.md)** — L7 HTTP content inspection on CloudFront, ALB, API Gateway, and other HTTP services: SQL injection, XSS, rate limits, bots, geo blocking
 
 See [Networking Concepts](concepts/networking.md) for OSI layer breakdown and [Identity and Access Concepts](concepts/identity-and-access.md) for how IAM evaluation works.
 

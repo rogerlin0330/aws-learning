@@ -22,80 +22,80 @@ This page is the canonical scope reference. When a new service page is added to 
 
 ## The four tiers
 
-| Tier | What it means | Failure domain |
-| --- | --- | --- |
-| **Global** | Single namespace across all regions; no region segment in the ARN | Service-wide outage (rare) |
-| **Regional** | Lives in exactly one region; multi-AZ resilient by default for most managed services | One region |
-| **AZ-scoped** | Pinned to one Availability Zone; loss of that AZ loses the resource | One AZ |
-| **Edge** | Delivered from a global network of Points of Presence (POPs); requests route to the nearest one | One POP (transparent failover) |
+| Tier          | What it means                                                                                   | Failure domain                 |
+| ------------- | ----------------------------------------------------------------------------------------------- | ------------------------------ |
+| **Global**    | Single namespace across all regions; no region segment in the ARN                               | Service-wide outage (rare)     |
+| **Regional**  | Lives in exactly one region; multi-AZ resilient by default for most managed services            | One region                     |
+| **AZ-scoped** | Pinned to one Availability Zone; loss of that AZ loses the resource                             | One AZ                         |
+| **Edge**      | Delivered from a global network of Points of Presence (POPs); requests route to the nearest one | One POP (transparent failover) |
 
 ## Global resources
 
 Single namespace, no region in the ARN. Control plane is multi-region by design.
 
-| Resource / Service | Notes |
-| --- | --- |
-| [IAM](../services/iam.md) users, groups, roles, policies | All IAM principals and policies are global; one IAM database per account. STS endpoints exist per region but issue credentials valid globally |
-| [Route 53](../services/route53.md) hosted zones, records | Authoritative DNS data is global; health checkers run from multiple regions |
-| [Organizations](../services/organizations.md) | The org structure (root, OUs, SCPs) is global; member accounts are global entities |
-| [Control Tower](../services/control-tower.md) | Governed from the management account across the org; the landing zone spans the regions you enable, and the **home region is always available** (cannot be denied) |
-| [S3](../services/s3.md) bucket **namespace** | Bucket names are globally unique — but the bucket data itself is regional (see below) |
-| CloudFront distributions | Global control plane; data is served from edge POPs (see Edge tier) |
-| WAF (for CloudFront) | Global WebACLs attach to CloudFront; regional WebACLs attach to ALB/API Gateway |
+| Resource / Service                                       | Notes                                                                                                                                                                                                      |
+| -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [IAM](../services/iam.md) users, groups, roles, policies | All IAM principals and policies are global; one IAM database per account. STS endpoints exist per region but issue credentials valid globally                                                              |
+| [Route 53](../services/route53.md) hosted zones, records | Authoritative DNS data is global; health checkers run from multiple regions                                                                                                                                |
+| [Organizations](../services/organizations.md)            | The org structure (root, OUs, SCPs) is global; member accounts are global entities                                                                                                                         |
+| [Control Tower](../services/control-tower.md)            | Governed from the management account across the org; the landing zone spans the regions you enable, and the **home region is always available** (cannot be denied)                                         |
+| [S3](../services/s3.md) bucket **namespace**             | Bucket names are globally unique — but the bucket data itself is regional (see below)                                                                                                                      |
+| CloudFront distributions                                 | Global control plane; data is served from edge POPs (see Edge tier)                                                                                                                                        |
+| [WAF](../services/waf.md) (for CloudFront)               | CloudFront-scope Web ACLs are created in us-east-1 and attach to CloudFront (and Amplify); regional Web ACLs attach to ALB, API Gateway, AppSync, Cognito, and other regional resources in the same Region |
 
 ## Regional resources
 
 Live in exactly one region. Most managed services are multi-AZ resilient within the region. To use them in another region, you must **copy, replicate, or recreate**.
 
-| Resource / Service | Notes |
-| --- | --- |
-| [VPC](../services/vpc.md) and its components (route tables, NACLs, IGW, security groups) | VPC is regional; subnets inside it are AZ-scoped (see below) |
-| [EC2](../services/ec2.md) AMI | Region-specific; use **AMI Copy** to use in another region. New AMI ID is generated per region |
-| [EBS](../services/ebs.md) snapshot | Stored in [S3](../services/s3.md) within the region; use **Snapshot Copy** to move cross-region |
-| [S3](../services/s3.md) bucket (data) | Bucket lives in one region with multi-AZ resilience; CRR replicates to another region |
-| [KMS](../services/kms.md) keys | Regional by default; **multi-region keys** are an opt-in feature that creates linked replicas in other regions |
-| [CloudWatch](../services/cloudwatch.md) log groups, metrics, alarms | All CloudWatch data is per-region; cross-region dashboards aggregate, they don't replicate |
-| [CloudTrail](../services/cloudtrail.md) trail | Regional service; an all-regions trail spans every region as one logical trail. **Global service events** (IAM, STS, CloudFront, Route 53) deliver to **`us-east-1`** |
-| Lambda functions | Regional; cross-region invoke is allowed but the function itself doesn't exist elsewhere |
-| [DynamoDB](../services/dynamodb.md) tables | Regional with automatic multi-AZ replication; [global tables](../services/dynamodb.md#global-tables) add cross-Region replicas with MREC or MRSC consistency |
-| [DAX](../services/dynamodb.md#dynamodb-accelerator-dax) cluster | Regional and VPC-based; place cache nodes across AZs for high availability |
-| [Glue Data Catalog](../services/glue.md#scope-and-organization) | Default/root catalog per account per Region; supports nested/federated catalogs, not automatic global replication |
-| [AppFlow](../services/appflow.md) flows and connector profiles | Regional configuration; an S3 source/destination bucket must be in the flow's Region |
-| SNS topics, SQS queues | Regional |
-| ELB (ALB / NLB / CLB) | Regional load balancer; targets can span multiple AZs in the region |
-| Auto Scaling Group | Regional; can launch instances across multiple AZs within the region |
-| [EFS](../services/efs.md) file system | Regional service (the file system itself), but **mount targets** are AZ-scoped (see below) |
-| RDS DB instance | The DB resource is regional in terms of API, but the primary instance is placed in **one AZ** — Multi-AZ adds a standby in another AZ |
-| [DMS](../services/dms.md) replication instance | DMS is a regional service; a DMS Standard replication instance is placed in VPC subnets and Multi-AZ adds a standby in another AZ. DMS Serverless hides the instance placement behind serverless replications |
-| [SSM Parameter Store](../services/ssm.md) | Regional; multi-AZ resilient within the Region but **no built-in cross-Region replication** — recreate the parameter in each Region (one `put-parameter` per Region) |
+| Resource / Service                                                                       | Notes                                                                                                                                                                                                         |
+| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [VPC](../services/vpc.md) and its components (route tables, NACLs, IGW, security groups) | VPC is regional; subnets inside it are AZ-scoped (see below)                                                                                                                                                  |
+| [EC2](../services/ec2.md) AMI                                                            | Region-specific; use **AMI Copy** to use in another region. New AMI ID is generated per region                                                                                                                |
+| [EBS](../services/ebs.md) snapshot                                                       | Stored in [S3](../services/s3.md) within the region; use **Snapshot Copy** to move cross-region                                                                                                               |
+| [S3](../services/s3.md) bucket (data)                                                    | Bucket lives in one region with multi-AZ resilience; CRR replicates to another region                                                                                                                         |
+| [KMS](../services/kms.md) keys                                                           | Regional by default; **multi-region keys** are an opt-in feature that creates linked replicas in other regions                                                                                                |
+| [CloudWatch](../services/cloudwatch.md) log groups, metrics, alarms                      | All CloudWatch data is per-region; cross-region dashboards aggregate, they don't replicate                                                                                                                    |
+| [CloudTrail](../services/cloudtrail.md) trail                                            | Regional service; an all-regions trail spans every region as one logical trail. **Global service events** (IAM, STS, CloudFront, Route 53) deliver to **`us-east-1`**                                         |
+| Lambda functions                                                                         | Regional; cross-region invoke is allowed but the function itself doesn't exist elsewhere                                                                                                                      |
+| [DynamoDB](../services/dynamodb.md) tables                                               | Regional with automatic multi-AZ replication; [global tables](../services/dynamodb.md#global-tables) add cross-Region replicas with MREC or MRSC consistency                                                  |
+| [DAX](../services/dynamodb.md#dynamodb-accelerator-dax) cluster                          | Regional and VPC-based; place cache nodes across AZs for high availability                                                                                                                                    |
+| [Glue Data Catalog](../services/glue.md#scope-and-organization)                          | Default/root catalog per account per Region; supports nested/federated catalogs, not automatic global replication                                                                                             |
+| [AppFlow](../services/appflow.md) flows and connector profiles                           | Regional configuration; an S3 source/destination bucket must be in the flow's Region                                                                                                                          |
+| SNS topics, SQS queues                                                                   | Regional                                                                                                                                                                                                      |
+| ELB (ALB / NLB / CLB)                                                                    | Regional load balancer; targets can span multiple AZs in the region                                                                                                                                           |
+| Auto Scaling Group                                                                       | Regional; can launch instances across multiple AZs within the region                                                                                                                                          |
+| [EFS](../services/efs.md) file system                                                    | Regional service (the file system itself), but **mount targets** are AZ-scoped (see below)                                                                                                                    |
+| RDS DB instance                                                                          | The DB resource is regional in terms of API, but the primary instance is placed in **one AZ** — Multi-AZ adds a standby in another AZ                                                                         |
+| [DMS](../services/dms.md) replication instance                                           | DMS is a regional service; a DMS Standard replication instance is placed in VPC subnets and Multi-AZ adds a standby in another AZ. DMS Serverless hides the instance placement behind serverless replications |
+| [SSM Parameter Store](../services/ssm.md)                                                | Regional; multi-AZ resilient within the Region but **no built-in cross-Region replication** — recreate the parameter in each Region (one `put-parameter` per Region)                                          |
 
 ## AZ-scoped resources
 
 Pinned to a single Availability Zone. Lose the AZ, lose the resource. To move across AZs in the same region, you typically need a snapshot or AMI as the carrier.
 
-| Resource / Service | Notes |
-| --- | --- |
-| [EC2](../services/ec2.md) instance | AZ-bound through its host. Stop/start may land on a new host **in the same AZ**, never a different AZ |
-| [EC2](../services/ec2.md) dedicated host | Physical AWS hardware in one AZ |
-| [EBS](../services/ebs.md) volume | Lives in one AZ; can only attach to instances in that same AZ. Snapshot 1, restore to other AZ to "move" it |
+| Resource / Service                       | Notes                                                                                                          |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| [EC2](../services/ec2.md) instance       | AZ-bound through its host. Stop/start may land on a new host **in the same AZ**, never a different AZ          |
+| [EC2](../services/ec2.md) dedicated host | Physical AWS hardware in one AZ                                                                                |
+| [EBS](../services/ebs.md) volume         | Lives in one AZ; can only attach to instances in that same AZ. Snapshot 1, restore to other AZ to "move" it    |
 | [EC2](../services/ec2.md) instance store | Physically attached to the host; not just AZ-scoped, but **host-scoped** — destroyed on stop or host migration |
-| [VPC](../services/vpc.md) subnet | Each subnet is in exactly one AZ; CIDR cannot span AZs |
-| [EC2](../services/ec2.md) ENI | Lives in one subnet, so one AZ; can be detached and reattached to a different instance in the same AZ |
-| NAT Gateway (zonal mode) | Default mode: deployed into one subnet, dies with the AZ. Regional NAT Gateway is the multi-AZ alternative |
-| [EFS](../services/efs.md) mount target | One per AZ; the file system is regional, but you need a mount target in each AZ you want to mount from |
-| RDS DB instance (primary) | The actual running database process is in one AZ. Multi-AZ is a deployment option, not the default |
+| [VPC](../services/vpc.md) subnet         | Each subnet is in exactly one AZ; CIDR cannot span AZs                                                         |
+| [EC2](../services/ec2.md) ENI            | Lives in one subnet, so one AZ; can be detached and reattached to a different instance in the same AZ          |
+| NAT Gateway (zonal mode)                 | Default mode: deployed into one subnet, dies with the AZ. Regional NAT Gateway is the multi-AZ alternative     |
+| [EFS](../services/efs.md) mount target   | One per AZ; the file system is regional, but you need a mount target in each AZ you want to mount from         |
+| RDS DB instance (primary)                | The actual running database process is in one AZ. Multi-AZ is a deployment option, not the default             |
 
 ## Edge resources
 
 Delivered from a global network of Points of Presence. You don't pick a region; AWS routes requests to the nearest POP.
 
-| Resource / Service | Notes |
-| --- | --- |
-| CloudFront POPs | Cache and serve content from 400+ edge locations; origin is regional |
-| Global Accelerator | Anycast IPs advertised from edge POPs; traffic enters AWS backbone at the nearest POP |
-| Lambda@Edge | Functions deployed once via CloudFront, replicated to edge POPs |
-| CloudFront Functions | Lighter-weight edge compute; runs at the POP itself |
-| Route 53 resolution | DNS resolution served from edge POPs (the hosted zone data is global) |
+| Resource / Service   | Notes                                                                                 |
+| -------------------- | ------------------------------------------------------------------------------------- |
+| CloudFront POPs      | Cache and serve content from 400+ edge locations; origin is regional                  |
+| Global Accelerator   | Anycast IPs advertised from edge POPs; traffic enters AWS backbone at the nearest POP |
+| Lambda@Edge          | Functions deployed once via CloudFront, replicated to edge POPs                       |
+| CloudFront Functions | Lighter-weight edge compute; runs at the POP itself                                   |
+| Route 53 resolution  | DNS resolution served from edge POPs (the hosted zone data is global)                 |
 
 ## Common gotchas
 
