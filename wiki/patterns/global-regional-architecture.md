@@ -60,7 +60,7 @@ Consumed by the compute tier: [EBS](../services/ebs.md) (block), [EFS](../servic
 
 ### Database Tier
 
-Structured data storage: [RDS](../services/rds.md), [Aurora](../services/aurora.md), DynamoDB, and Redshift (data warehousing).
+Structured data storage: [RDS](../services/rds.md), [Aurora](../services/aurora.md), DynamoDB, and [Redshift](../services/redshift.md) (data warehousing).
 
 ### Caching Tier
 

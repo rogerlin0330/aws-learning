@@ -14,12 +14,12 @@ updated: 2026-11-12
 
 Four products, one line each:
 
-| Product                                                                    | Job                                                                                                        | Real-time?                                      |
-| -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| **Kinesis Data Streams**                                                   | Ingest huge volumes of data; let many consumers read it independently, with a persistence window           | Yes, real-time (~200 ms)                        |
-| **Kinesis Data Firehose** (now *Amazon Data Firehose*)                     | Managed **delivery** of streaming data to destinations (S3, Redshift, and more); optional Lambda transform | **Near** real-time (~60 s in course/exam terms) |
-| **Kinesis Data Analytics** (now *Amazon Managed Service for Apache Flink*) | Real-time **stream processing**, taught as SQL                                                             | Yes, unless the output is Firehose              |
-| **Kinesis Video Streams**                                                  | Ingest **live video and time-serialized media** from producers; integrate with analytics services          | Yes, live                                       |
+| Product                                                                    | Job                                                                                                                       | Real-time?                                      |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| **Kinesis Data Streams**                                                   | Ingest huge volumes of data; let many consumers read it independently, with a persistence window                          | Yes, real-time (~200 ms)                        |
+| **Kinesis Data Firehose** (now *Amazon Data Firehose*)                     | Managed **delivery** of streaming data to destinations (S3, [Redshift](redshift.md), and more); optional Lambda transform | **Near** real-time (~60 s in course/exam terms) |
+| **Kinesis Data Analytics** (now *Amazon Managed Service for Apache Flink*) | Real-time **stream processing**, taught as SQL                                                                            | Yes, unless the output is Firehose              |
+| **Kinesis Video Streams**                                                  | Ingest **live video and time-serialized media** from producers; integrate with analytics services                         | Yes, live                                       |
 
 > [!warning] Two of these products were renamed and one was discontinued in the form the course teaches
 > The course names — Kinesis Data Firehose and Kinesis Data Analytics — are still the terms the exam is most likely to use, so learn them. AWS reality has moved on: Firehose is now **Amazon Data Firehose**, the Flink variant of Data Analytics is **Amazon Managed Service for Apache Flink**, and the **SQL** variant of Data Analytics was **discontinued on 27 January 2026**. Changes are flagged inline and collected in [Course vs current AWS reality](#course-vs-current-aws-reality).

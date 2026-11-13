@@ -66,7 +66,7 @@ This shared metadata layer helps teams reuse datasets without rebuilding every d
 
 ## Worked Example — S3 Lease Records to Shared Catalog Consumers
 
-This illustrative example follows the updated source note. Operations produces monthly lease records; finance queries them with Athena, data engineering prepares them with Glue, and analytics uses Redshift Spectrum or EMR. Names and inferred types below are examples, not guaranteed crawler output.
+This illustrative example follows the updated source note. Operations produces monthly lease records; finance queries them with Athena, data engineering prepares them with Glue, and analytics uses [Redshift Spectrum](redshift.md#querying-data-without-loading-it) or EMR. Names and inferred types below are examples, not guaranteed crawler output.
 
 ### 1. Land the CSV files in S3
 

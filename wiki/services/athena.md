@@ -16,12 +16,12 @@ The idea in one sentence: **keep the raw data in S3, describe its shape with a t
 
 Both engines read source data from S3 and run serverless, but they are used differently. The SQL engine is for **asking questions** about data. The Spark engine is for **working on** data with code. [Athena for Apache Spark](athena-spark.md) covers the Spark engine in full.
 
-| | SQL engine (this page) | Apache Spark engine |
-| --- | --- | --- |
-| How you work | SQL statements in the query editor | PySpark code in notebook cells |
-| Typical use | Ad hoc queries: filter, join, aggregate | Multi-step data engineering: ETL transforms, ML data preparation |
-| Pricing | Per TB scanned, or Capacity Reservations | Per DPU-hour of session compute only |
-| Where results go | Query result location in S3, or managed storage | Calculation results in S3, and shown in notebook cells |
+|                  | SQL engine (this page)                          | Apache Spark engine                                              |
+| ---------------- | ----------------------------------------------- | ---------------------------------------------------------------- |
+| How you work     | SQL statements in the query editor              | PySpark code in notebook cells                                   |
+| Typical use      | Ad hoc queries: filter, join, aggregate         | Multi-step data engineering: ETL transforms, ML data preparation |
+| Pricing          | Per TB scanned, or Capacity Reservations        | Per DPU-hour of session compute only                             |
+| Where results go | Query result location in S3, or managed storage | Calculation results in S3, and shown in notebook cells           |
 
 Each [workgroup](#workgroups) is created for one engine, so using both means using two workgroups.
 
@@ -35,7 +35,7 @@ Each [workgroup](#workgroups) is created for one engine, so using both means usi
 | Data already cataloged in the **[Glue Data Catalog](glue.md#data-catalog-and-crawlers)** | Athena reuses those table definitions directly                                                                                                                                                                                                                                                                       |
 | Occasional queries that **join S3 data with another source**                             | [Federated query](#federated-query) connectors reach DynamoDB, RDS engines, CloudWatch Logs, and others                                                                                                                                                                                                              |
 
-It is a weaker fit for constant, high-concurrency dashboards over heavily modeled data (consider Redshift), for millisecond lookups (use a database such as [DynamoDB](dynamodb.md)), and for heavy repeated transformation pipelines (use [Glue](glue.md) jobs or EMR, then query the output with Athena).
+It is a weaker fit for constant, high-concurrency dashboards over heavily modeled data (consider [Redshift](redshift.md)), for millisecond lookups (use a database such as [DynamoDB](dynamodb.md)), and for heavy repeated transformation pipelines (use [Glue](glue.md) jobs or EMR, then query the output with Athena).
 
 ## Schema-on-Read Architecture
 
@@ -126,15 +126,15 @@ By default Athena queries S3. **Federated query** extends it to non-S3 sources t
 
 ## Athena vs Neighboring Services
 
-| Need                                                                              | Service                                                                              |
-| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| Ad hoc SQL across **many** S3 objects, with joins and aggregations                | **Athena**                                                                           |
-| Filter rows or columns inside **one** S3 object (legacy, closed to new customers) | [S3 Select](s3.md#server-side-filtering--s3-select--glacier-select)                  |
-| Discover schemas and **transform** data before analysis                           | [Glue](glue.md) crawlers and ETL jobs                                                |
-| Persistent data warehouse for heavy, repeated BI queries                          | Amazon Redshift; Redshift Spectrum queries S3 from an existing Redshift cluster      |
-| Large custom processing on Spark, Hadoop, or similar                              | Amazon EMR (or [Athena for Apache Spark](athena-spark.md) for interactive notebooks) |
-| Interactive dashboards on top of Athena results                                   | Amazon QuickSight, using Athena as its data source                                   |
-| Operational log search and near-real-time analysis                                | [CloudWatch Logs Insights](cloudwatch.md) or OpenSearch                              |
+| Need                                                                              | Service                                                                                                                                        |
+| --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ad hoc SQL across **many** S3 objects, with joins and aggregations                | **Athena**                                                                                                                                     |
+| Filter rows or columns inside **one** S3 object (legacy, closed to new customers) | [S3 Select](s3.md#server-side-filtering--s3-select--glacier-select)                                                                            |
+| Discover schemas and **transform** data before analysis                           | [Glue](glue.md) crawlers and ETL jobs                                                                                                          |
+| Persistent data warehouse for heavy, repeated BI queries                          | [Amazon Redshift](redshift.md); [Redshift Spectrum](redshift.md#querying-data-without-loading-it) queries S3 from an existing Redshift cluster |
+| Large custom processing on Spark, Hadoop, or similar                              | Amazon EMR (or [Athena for Apache Spark](athena-spark.md) for interactive notebooks)                                                           |
+| Interactive dashboards on top of Athena results                                   | Amazon QuickSight, using Athena as its data source                                                                                             |
+| Operational log search and near-real-time analysis                                | [CloudWatch Logs Insights](cloudwatch.md) or OpenSearch                                                                                        |
 
 > [!warning] Gotcha: Redshift Spectrum vs Athena
 > Both query S3 in place with SQL. Spectrum **requires an existing Redshift cluster** and suits teams that already run Redshift and want to join warehouse tables with S3 data. If the scenario has **no warehouse** and wants **serverless, pay-per-query** access, choose Athena.

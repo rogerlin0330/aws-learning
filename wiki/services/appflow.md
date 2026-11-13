@@ -10,7 +10,7 @@ updated: 2026-11-04
 
 ## Overview
 
-Amazon AppFlow is a **fully managed integration service** that transfers records between supported SaaS applications and AWS services. Typical uses include Salesforce contacts into Redshift and Zendesk tickets into [S3](s3.md). In a [data integration architecture](../concepts/data-integration.md), AppFlow handles connector-based ingestion with built-in field operations; [Glue](glue.md) can perform further preparation and maintain shared metadata. [AWS AppFlow overview](https://docs.aws.amazon.com/appflow/latest/userguide/what-is-appflow.html).
+Amazon AppFlow is a **fully managed integration service** that transfers records between supported SaaS applications and AWS services. Typical uses include Salesforce contacts into [Redshift](redshift.md) and Zendesk tickets into [S3](s3.md). In a [data integration architecture](../concepts/data-integration.md), AppFlow handles connector-based ingestion with built-in field operations; [Glue](glue.md) can perform further preparation and maintain shared metadata. [AWS AppFlow overview](https://docs.aws.amazon.com/appflow/latest/userguide/what-is-appflow.html).
 
 The useful mental model is **connector → reusable connection → flow**. A connector implements an application's integration; a connection supplies access details; a flow defines the actual transfer. Check supported source/destination directions and objects for the chosen connector rather than assuming every application pairing works both ways.
 
@@ -31,21 +31,21 @@ The source diagram illustrates a Slack-to-Redshift flow. The pink boundary is th
 
 The funnel is a conceptual illustration: filters select records, whereas validation also has a configured failure action. Do not infer that every validation failure always silently drops a record. [AWS flow configuration](https://docs.aws.amazon.com/appflow/latest/userguide/create-flow-console.html).
 
-| Building block | Responsibility |
-| --- | --- |
-| Connector | Application-specific integration, including supported entities and operations |
-| Connection / connector profile | Reusable application configuration and authentication details |
-| Flow | Source, destination, mapping, optional processing, and trigger configuration |
-| Flow run | An execution of that configuration |
+| Building block                 | Responsibility                                                                |
+| ------------------------------ | ----------------------------------------------------------------------------- |
+| Connector                      | Application-specific integration, including supported entities and operations |
+| Connection / connector profile | Reusable application configuration and authentication details                 |
+| Flow                           | Source, destination, mapping, optional processing, and trigger configuration  |
+| Flow run                       | An execution of that configuration                                            |
 
 **Connections are not universally two credential profiles.** SaaS endpoints typically need a connection; S3 instead uses bucket/prefix configuration and AWS permissions. AppFlow requires its S3 bucket to be in the flow's Region. Treat flows and connector profiles as [Regional resources](../concepts/resource-scope.md#regional-resources). [AWS S3 connection instructions](https://docs.aws.amazon.com/appflow/latest/userguide/s3.html).
 
 ## Triggers and Incremental Transfers
 
-| Trigger | Behavior |
-| --- | --- |
-| On demand | Run the configured transfer when requested |
-| Scheduled | Run repeatedly; supported frequency depends on the source |
+| Trigger         | Behavior                                                                                      |
+| --------------- | --------------------------------------------------------------------------------------------- |
+| On demand       | Run the configured transfer when requested                                                    |
+| Scheduled       | Run repeatedly; supported frequency depends on the source                                     |
 | Event triggered | React to supported source SaaS change events; unavailable for sources without that capability |
 
 Scheduled flows can transfer a **full snapshot** or **incremental records since the last successful run**. The selected timestamp matters: a creation timestamp identifies new records, while a suitable modification timestamp is needed to identify edits. Incremental transfer is not a blanket promise of database replication semantics, deletion propagation, or exactly-once delivery. [AWS flow triggers](https://docs.aws.amazon.com/appflow/latest/userguide/flow-triggers.html).

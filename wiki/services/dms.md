@@ -14,7 +14,7 @@ Modern DMS is broader than the older "replication instance" mental model. The cl
 
 ## Where DMS Fits
 
-DMS sits between source and target data stores. It moves table data, can keep applying source changes with CDC, and can stream into AWS analytics targets such as [S3](s3.md), Redshift, [Kinesis](kinesis.md), OpenSearch, DynamoDB, DocumentDB, Neptune, and relational engines such as [RDS](rds.md) and [Aurora](aurora.md).
+DMS sits between source and target data stores. It moves table data, can keep applying source changes with CDC, and can stream into AWS analytics targets such as [S3](s3.md), [Redshift](redshift.md), [Kinesis](kinesis.md), OpenSearch, DynamoDB, DocumentDB, Neptune, and relational engines such as [RDS](rds.md) and [Aurora](aurora.md).
 
 ![DMS architecture: a source database feeds a source endpoint, a DMS replication instance runs one or more replication tasks, a destination endpoint points at the target database, and the supported task modes are Full Load, Full Load plus CDC, and CDC Only. The side note names SCT as the schema-conversion companion for engine changes.](../assets/dms-architecture.png)
 
@@ -33,13 +33,13 @@ For SaaS application records exposed through connectors rather than a database m
 
 DMS Standard is the provisioned model. You create a replication instance in a [VPC](vpc.md), connect it to source and target endpoints, then run replication tasks on it.
 
-| Component | Role |
-| --- | --- |
-| **Replication instance** | The compute engine for DMS Standard; AWS creates it on EC2 in a VPC. It handles reads from the source, buffering, formatting, and writes to the target. |
-| **Source endpoint** | Connection information, credentials, network settings, and engine-specific options for the source data store. |
-| **Target endpoint** | Connection information and engine-specific write options for the target data store. |
-| **Replication task** | The unit of work: selected schemas/tables, table mappings, transformation rules, load mode, logging, error handling, CDC settings, and validation. |
-| **Replication subnet group** | The subnets where DMS can place the replication instance. This is the same placement idea as an RDS DB subnet group. |
+| Component                    | Role                                                                                                                                                    |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Replication instance**     | The compute engine for DMS Standard; AWS creates it on EC2 in a VPC. It handles reads from the source, buffering, formatting, and writes to the target. |
+| **Source endpoint**          | Connection information, credentials, network settings, and engine-specific options for the source data store.                                           |
+| **Target endpoint**          | Connection information and engine-specific write options for the target data store.                                                                     |
+| **Replication task**         | The unit of work: selected schemas/tables, table mappings, transformation rules, load mode, logging, error handling, CDC settings, and validation.      |
+| **Replication subnet group** | The subnets where DMS can place the replication instance. This is the same placement idea as an RDS DB subnet group.                                    |
 
 A replication instance can run multiple tasks, but it must be sized for the aggregate workload. Most processing happens in memory, while large transactions, cached changes, and log files can buffer to disk. For HA, DMS Standard supports Multi-AZ replication instances, where DMS maintains a synchronous standby in another AZ.
 
@@ -57,11 +57,11 @@ Use DMS Serverless when migration load is variable, when you do not want to righ
 
 ## Migration Task Modes
 
-| Mode | What it does | Use when |
-| --- | --- | --- |
-| **Full load** | Copies existing data from source to target, then stops. | You can afford downtime or the source will not keep changing during the migration. |
-| **Full load plus CDC** | Copies existing data while capturing source changes, then applies the cached changes and keeps replicating ongoing changes until cutover. | You need minimal downtime and the source must stay online during the load. |
-| **CDC only** | Replicates changes only, starting from a known log position or time. | Existing data was bulk-loaded by another method, such as native engine tooling, SCT extraction, or physical transfer. |
+| Mode                   | What it does                                                                                                                              | Use when                                                                                                              |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| **Full load**          | Copies existing data from source to target, then stops.                                                                                   | You can afford downtime or the source will not keep changing during the migration.                                    |
+| **Full load plus CDC** | Copies existing data while capturing source changes, then applies the cached changes and keeps replicating ongoing changes until cutover. | You need minimal downtime and the source must stay online during the load.                                            |
+| **CDC only**           | Replicates changes only, starting from a known log position or time.                                                                      | Existing data was bulk-loaded by another method, such as native engine tooling, SCT extraction, or physical transfer. |
 
 > [!tip] Exam Tip
 > "No downtime" or "minimal downtime" database migration means **full load plus CDC**. The application keeps writing to the source while DMS loads old data and captures new changes; cutover happens after the target catches up.
@@ -71,10 +71,10 @@ Use DMS Serverless when migration load is variable, when you do not want to righ
 
 ## Homogeneous vs Heterogeneous
 
-| Migration type | Meaning | Schema tooling |
-| --- | --- | --- |
-| **Homogeneous** | Same or compatible engine, such as self-managed MySQL to Amazon RDS for MySQL. | Usually use native engine tooling or DMS homogeneous migration features; no cross-engine conversion is needed. |
-| **Heterogeneous** | Engine changes, such as Oracle to Aurora PostgreSQL or SQL Server to MySQL. | Use **DMS Schema Conversion** or **AWS SCT** to assess and convert schema/code, then use DMS to move data and replicate changes. |
+| Migration type    | Meaning                                                                        | Schema tooling                                                                                                                   |
+| ----------------- | ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| **Homogeneous**   | Same or compatible engine, such as self-managed MySQL to Amazon RDS for MySQL. | Usually use native engine tooling or DMS homogeneous migration features; no cross-engine conversion is needed.                   |
+| **Heterogeneous** | Engine changes, such as Oracle to Aurora PostgreSQL or SQL Server to MySQL.    | Use **DMS Schema Conversion** or **AWS SCT** to assess and convert schema/code, then use DMS to move data and replicate changes. |
 
 DMS can create basic target tables and primary keys when they do not exist, but serious production migrations should not treat data movement and schema conversion as the same job. Tables, indexes, stored procedures, functions, data types, views, triggers, and engine-specific SQL often need assessment and conversion before the data load.
 

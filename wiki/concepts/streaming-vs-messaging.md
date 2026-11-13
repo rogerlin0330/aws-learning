@@ -107,7 +107,7 @@ Choose **MSK** when:
 Choose **Kinesis Data Streams** when:
 
 - The work is **net-new on AWS** and nobody on the team is a Kafka operator.
-- Producers and consumers are **AWS services**: Lambda, Firehose into S3 or Redshift, Managed Flink, IoT.
+- Producers and consumers are **AWS services**: Lambda, Firehose into S3 or [Redshift](../services/redshift.md), Managed Flink, IoT.
 - You want **no cluster at all** — no version upgrades, no broker sizing, no partition-count planning beyond shards.
 - Traffic is **spiky or unpredictable**, which suits on-demand capacity mode.
 
