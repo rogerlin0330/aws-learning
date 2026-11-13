@@ -12,11 +12,11 @@ updated: 2026-11-12
 
 AWS Glue is a **serverless data integration service** for discovering, preparing, and moving data. Its two central responsibilities are **cataloging metadata** and **running transformations**. These fit into a larger [data integration architecture](../concepts/data-integration.md), where storage, metadata, processing, queries, and orchestration have separate jobs.
 
-| Component | Responsibility | Result |
-| --- | --- | --- |
-| **Crawler** | Inspect supported stores and infer schemas | Table and partition metadata |
+| Component        | Responsibility                                           | Result                                          |
+| ---------------- | -------------------------------------------------------- | ----------------------------------------------- |
+| **Crawler**      | Inspect supported stores and infer schemas               | Table and partition metadata                    |
 | **Data Catalog** | Persist and share metadata such as schemas and locations | Definitions that jobs and query engines can use |
-| **Glue job** | Execute extraction, transformation, and loading logic | Prepared data in a destination store |
+| **Glue job**     | Execute extraction, transformation, and loading logic    | Prepared data in a destination store            |
 
 For example, a crawler can describe JSON files in [S3](s3.md), while a job cleans their records and writes Parquet files for analysis. Creating a catalog entry does **not** copy the underlying dataset or transform its contents. Glue Studio can generate job code from a visual workflow, and developers can also author scripts directly. [AWS Glue overview](https://docs.aws.amazon.com/glue/latest/dg/what-is-glue.html).
 
@@ -54,13 +54,13 @@ Configure the crawler's source locations, [IAM role](iam.md#iam-roles), and any 
 
 ### Consumers of catalog metadata
 
-| Consumer | How it uses the catalog |
-| --- | --- |
-| **Glue jobs** | Locate datasets and use their schemas during processing |
+| Consumer                | How it uses the catalog                                                                                   |
+| ----------------------- | --------------------------------------------------------------------------------------------------------- |
+| **Glue jobs**           | Locate datasets and use their schemas during processing                                                   |
 | **[Athena](athena.md)** | Use table definitions to query S3 data with SQL ([schema-on-read](athena.md#schema-on-read-architecture)) |
-| **Redshift Spectrum** | Use external table definitions when querying S3 |
-| **EMR** | Use a shared metastore for compatible processing engines |
-| **Lake Formation** | Apply governance and fine-grained permissions to cataloged resources and data |
+| **Redshift Spectrum**   | Use external table definitions when querying S3                                                           |
+| **EMR**                 | Use a shared metastore for compatible processing engines                                                  |
+| **Lake Formation**      | Apply governance and fine-grained permissions to cataloged resources and data                             |
 
 This shared metadata layer helps teams reuse datasets without rebuilding every definition. **Discovery and authorization remain separate**: catalog visibility alone does not confer access to records. [AWS catalog integrations](https://docs.aws.amazon.com/glue/latest/dg/catalog-and-crawler.html).
 
@@ -88,11 +88,11 @@ S3 stores the bytes and object metadata; uploading the files does not create an 
 
 ### 2. Configure discovery and inspect the inferred schema
 
-| You configure | The crawler infers or populates |
-| --- | --- |
-| Source prefix `s3://company-data/leases/` | File format, such as CSV |
-| IAM role with source and catalog permissions | Columns and candidate data types |
-| Target catalog database `raw` | Table definitions and partition metadata |
+| You configure                                                                        | The crawler infers or populates          |
+| ------------------------------------------------------------------------------------ | ---------------------------------------- |
+| Source prefix `s3://company-data/leases/`                                            | File format, such as CSV                 |
+| IAM role with source and catalog permissions                                         | Columns and candidate data types         |
+| Target catalog database `raw`                                                        | Table definitions and partition metadata |
 | Crawl schedule or initiation mechanism, classifiers, and grouping settings as needed | Grouping of compatible files into tables |
 
 You do not have to hand-author every column before crawling. Glue tries configured **custom classifiers before built-in classifiers**; use a custom classifier when the default parsing needs adjustment, such as an unusual delimiter or format. Review the results: inference can leave dates as strings or interpret an identifier such as `unit` as a number. Changing a catalog type alone does not rewrite stored values. [AWS classifiers](https://docs.aws.amazon.com/glue/latest/dg/add-classifier.html).
@@ -103,13 +103,13 @@ For Hive-style prefixes such as `year=2026/month=10/`, the crawler derives parti
 
 Assume discovery produces a table named `raw.leases`, and its reviewed definition is:
 
-| Property | Illustrative value |
-| --- | --- |
-| Columns | `lease_id string`, `property string`, `unit bigint`, `monthly_rent double`, `start_date string` |
-| Partition keys | `year string`, `month string` — values derived from prefixes, not CSV columns |
-| Location | `s3://company-data/leases/` |
+| Property                   | Illustrative value                                                                              |
+| -------------------------- | ----------------------------------------------------------------------------------------------- |
+| Columns                    | `lease_id string`, `property string`, `unit bigint`, `monthly_rent double`, `start_date string` |
+| Partition keys             | `year string`, `month string` — values derived from prefixes, not CSV columns                   |
+| Location                   | `s3://company-data/leases/`                                                                     |
 | Classification and parsing | CSV; a compatible SerDe (serializer/deserializer), delimiter, and header-handling configuration |
-| Registered partitions | `year=2026/month=10` and `year=2026/month=11`, each with its S3 location |
+| Registered partitions      | `year=2026/month=10` and `year=2026/month=11`, each with its S3 location                        |
 
 The catalog holds this **description**, while the records remain in S3. Ensure the CSV header is handled correctly by each consuming engine; schema inference is not a substitute for inspecting a sample query. For curated financial data, an explicit decimal rent type and a string unit identifier may be more appropriate than the raw inferred types.
 
@@ -161,13 +161,13 @@ The shared definition is what breaks the data silo: several authorized teams can
 
 ## Jobs, Sources, and Targets
 
-A job defines the processing logic and execution settings; a **job run** is one execution. Apache Spark jobs support distributed transformations, while streaming ETL jobs continuously consume sources such as [Kinesis Data Streams](kinesis.md#kinesis-data-streams) and [Kafka/MSK](../concepts/streaming-vs-messaging.md#kinesis-vs-kafka-and-amazon-msk).
+A job defines the processing logic and execution settings; a **job run** is one execution. Apache Spark jobs support distributed transformations (for interactive, exploratory Spark in notebooks rather than scheduled jobs, see [Athena for Apache Spark](athena-spark.md#athena-spark-vs-glue-etl-vs-emr)), while streaming ETL jobs continuously consume sources such as [Kinesis Data Streams](kinesis.md#kinesis-data-streams) and [Kafka/MSK](../concepts/streaming-vs-messaging.md#kinesis-vs-kafka-and-amazon-msk).
 
-| Path | Examples | Important distinction |
-| --- | --- | --- |
-| Batch input | S3, RDS/JDBC databases, DynamoDB | Connector and permissions determine what can be read |
-| Streaming input | Kinesis Data Streams, Kafka, MSK | Continuous jobs; no crawler support for the stream itself |
-| Output | S3, JDBC databases, DynamoDB through its writer connector | The course's target list is illustrative, not exhaustive |
+| Path            | Examples                                                  | Important distinction                                     |
+| --------------- | --------------------------------------------------------- | --------------------------------------------------------- |
+| Batch input     | S3, RDS/JDBC databases, DynamoDB                          | Connector and permissions determine what can be read      |
+| Streaming input | Kinesis Data Streams, Kafka, MSK                          | Continuous jobs; no crawler support for the stream itself |
+| Output          | S3, JDBC databases, DynamoDB through its writer connector | The course's target list is illustrative, not exhaustive  |
 
 Glue has supported **writing to DynamoDB since Glue 1.0**. It can also write to Kinesis Data Streams from scripts. Do not memorize the note's source/target asymmetry as a service restriction. [AWS DynamoDB connector](https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-etl-connect-dynamodb-home.html), [AWS streaming ETL](https://docs.aws.amazon.com/glue/latest/dg/add-job-streaming.html).
 
@@ -181,12 +181,12 @@ AWS operates the execution infrastructure. You still own transformation correctn
 
 Glue jobs can start manually, through APIs, or through Glue triggers:
 
-| Trigger type | Purpose |
-| --- | --- |
-| `ON_DEMAND` | Start the configured actions when explicitly requested |
-| `SCHEDULED` | Run on a cron schedule |
-| `CONDITIONAL` | React to specified completion states of preceding jobs or crawlers |
-| `EVENT` | Start a workflow from EventBridge events, optionally collected into batches |
+| Trigger type  | Purpose                                                                     |
+| ------------- | --------------------------------------------------------------------------- |
+| `ON_DEMAND`   | Start the configured actions when explicitly requested                      |
+| `SCHEDULED`   | Run on a cron schedule                                                      |
+| `CONDITIONAL` | React to specified completion states of preceding jobs or crawlers          |
+| `EVENT`       | Start a workflow from EventBridge events, optionally collected into batches |
 
 These are Glue trigger types; scheduling does **not** require EventBridge. A conditional trigger's dependencies must have been started through triggers; manually running an upstream job is not equivalent to starting its trigger chain. [AWS trigger API](https://docs.aws.amazon.com/glue/latest/dg/aws-glue-api-jobs-trigger.html), [trigger dependency rules](https://docs.aws.amazon.com/glue/latest/dg/about-triggers.html).
 
@@ -198,11 +198,11 @@ For a process spanning multiple AWS services, [Step Functions](step-functions.md
 
 Keep three meters separate rather than reading “pay for jobs” as the entire bill:
 
-| Meter | Billing basis |
-| --- | --- |
-| ETL jobs | DPU-hours (Data Processing Unit capacity × runtime), billed per second; Spark jobs on Glue 2.0+ have a one-minute minimum |
-| Crawlers | Compute runtime, billed per second with a ten-minute minimum per crawl |
-| Data Catalog | Metadata storage and requests; the first million stored objects and first million requests per month are free |
+| Meter        | Billing basis                                                                                                             |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| ETL jobs     | DPU-hours (Data Processing Unit capacity × runtime), billed per second; Spark jobs on Glue 2.0+ have a one-minute minimum |
+| Crawlers     | Compute runtime, billed per second with a ten-minute minimum per crawl                                                    |
+| Data Catalog | Metadata storage and requests; the first million stored objects and first million requests per month are free             |
 
 The one-minute job minimum does not apply to every Glue feature. Storage, query-engine usage, and optional catalog optimization can add separate charges. Use the current regional rates when estimating cost; the useful design lesson is to budget for **discovery, processing, metadata, and storage separately**. [AWS cost-modeling guidance](https://docs.aws.amazon.com/whitepapers/latest/cost-modeling-data-lakes/cost-optimization-in-analytics-services.html), [AWS Glue pricing](https://aws.amazon.com/glue/pricing/).
 

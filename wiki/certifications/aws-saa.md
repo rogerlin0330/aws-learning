@@ -2225,7 +2225,7 @@ See [AWS Glue](../services/glue.md) for the diagram and current service details,
 
 See [Athena](../services/athena.md) for the schema-on-read diagram, pricing models, workgroups, and federated query.
 
-- **Serverless, interactive SQL over data in [S3](../services/s3.md).** No cluster, no database to load, no ETL required before the first query. Athena also offers an Apache Spark engine; the exam focuses on SQL.
+- **Serverless, interactive SQL over data in [S3](../services/s3.md).** No cluster, no database to load, no ETL required before the first query. Athena also offers an [Apache Spark engine](../services/athena-spark.md) for PySpark notebooks; the exam focuses on SQL.
 - **Schema-on-read.** Source data stays in S3 **unchanged**; table definitions in the [Glue Data Catalog](../services/glue.md#data-catalog-and-crawlers) describe how to read it and are applied only at query time. Athena tables hold metadata, not rows.
 - **Formats:** CSV/TSV, JSON, Ion, Avro, Parquet, ORC, Apache web logs, and native support for [CloudTrail](../services/cloudtrail.md), [VPC Flow Logs](../services/vpc-flow-logs.md), [ELB](../services/elb.md) access logs, and Cost and Usage Reports.
 - **Pricing:** per TB **scanned** (10 MB minimum per query, no base cost), or **Capacity Reservations** billed per DPU-hour for predictable cost and dedicated capacity (4 DPU and 1-minute minimum since February 2026).
@@ -2247,6 +2247,10 @@ See [Athena](../services/athena.md) for the schema-on-read diagram, pricing mode
 > | Join S3 data with DynamoDB or RDS without moving it first | Athena **federated query** |
 > | Filter inside a single S3 object | S3 Select (legacy), not Athena |
 > | Already running Redshift; join warehouse tables with S3 data | Redshift Spectrum |
+> | Interactive PySpark notebooks over S3 data, no cluster to manage | **[Athena for Apache Spark](../services/athena-spark.md)** |
+> | Scheduled production Spark ETL pipeline | **Glue** ETL jobs, not Athena Spark |
+
+- **Athena for Apache Spark:** PySpark code in notebooks runs in a serverless Spark session on DPUs, working on in-memory DataFrames that disappear when the session ends. Pricing is **per DPU-hour only** (no per-TB scanned pricing, no Capacity Reservations). A workgroup's engine type, SQL or Spark, is **fixed at creation**.
 
 > [!warning] Gotcha
 > "Athena only queries S3" is outdated: federated query reaches other sources. And "unstructured data" in course material means parseable text such as logs, not arbitrary binaries like images.

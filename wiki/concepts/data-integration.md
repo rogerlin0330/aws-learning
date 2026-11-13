@@ -18,7 +18,7 @@ A data pipeline is easier to design when each service has a clear responsibility
 | Storage | Where are the records? | S3 objects; see [storage fundamentals](storage.md#object-storage) |
 | Catalog | Where is the dataset, and what structure does it have? | Glue Data Catalog table definitions |
 | Discovery | How do we infer those definitions? | Glue crawlers |
-| Transformation | How should the records change? | Glue jobs that clean, join, enrich, or convert formats |
+| Transformation | How should the records change? | Glue jobs that clean, join, enrich, or convert formats; [Athena for Apache Spark](../services/athena-spark.md) notebooks for interactive PySpark work |
 | Query | What answer can we compute from the records? | [Athena](../services/athena.md) SQL over S3, Redshift Spectrum, or an EMR processing engine |
 | Orchestration | What runs next, and what happens on failure? | Glue workflows or Step Functions |
 | Governance | Who may discover or use the data? | [IAM](../services/iam.md) and Lake Formation permissions |

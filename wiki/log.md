@@ -1644,3 +1644,7 @@ Added a "How producers write to a stream" section to the Kinesis page: AWS SDK `
 ## [2026-11-12] update | Athena Glue crawler demo link
 
 Replaced the bare "Live Demo" YouTube URL in the Athena Stage 2 example with a labelled "See also" link to a Glue crawler setup demo, fixing the markdownlint MD034 bare-URL error.
+
+## [2026-11-12] ingest | Athena for Apache Spark
+
+Transcribed the "Amazon Athena (Apache Spark)" lecture with local Whisper and created a separate `athena-spark.md` page instead of extending the 375-line SQL-focused Athena page: SQL-vs-Spark choice, architecture diagram (S3 source, notebook, Spark session on DPUs, in-memory DataFrames, calculation results), an order-cleaning PySpark example tied to the SQL walkthrough, per-DPU-hour pricing (no per-TB or Capacity Reservations), workgroup engine fixed at creation, and Athena Spark vs Glue vs EMR. Corrected course-era claims: DPUs can be sized per session, Spark code can modify S3 data, and Apache Spark 3.5 (November 2025) runs in SageMaker Unified Studio with Spark Connect while PySpark engine version 3 reaches end of life on April 1, 2027. Added a two-engine comparison to `athena.md` and links from aws-saa, glue, data-integration, overview, and index.
