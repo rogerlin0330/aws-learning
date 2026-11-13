@@ -1632,3 +1632,7 @@ Transcribed the Athena (SQL) lecture with local Whisper into the private transcr
 ## [2026-11-12] update | Athena partition projection
 
 Rewrote the partition projection explanation as input (partition columns), mapping rule (projection types and `storage.location.template`), and output (S3 prefixes), with how range filters and missing filters are enumerated. Corrected "without querying the Glue Data Catalog": only the partition lookup is skipped, the table definition is still read from the catalog. Added a gotcha that projected partitions are invisible to other catalog consumers. Added an `orders_projected` CREATE TABLE example with a `date` projection over `year/month` folders, a property-by-property walkthrough, and how equality and range filters become S3 prefixes; corrected that `date` interval is optional only at day or month precision.
+
+## [2026-11-12] update | Athena log sources
+
+Added a gotcha under the schema-on-read diagram: logs must be delivered to S3 before standard Athena tables can read them (ELB access logs S3-only, CloudTrail trails always S3, VPC Flow Logs need the S3 destination), with CloudWatch Logs Insights or the federated CloudWatch Logs connector as alternatives.

@@ -39,6 +39,9 @@ Athena reverses the order:
 
 How to read the diagram: the top row lists source formats, all landing in one S3 bucket as the unchanged source data. The blue schema band with its tables sits between the bucket and Athena, because data passes through the table definitions only when it is read. The right-hand notes give the billing model (data consumed during the query) and the output (S3 by default, consumable by other services).
 
+> [!warning] Gotcha: logs must reach S3 before Athena can read them
+> Clarification on the diagram above: A standard Athena table can only point at an `s3://` location (other sources are reached through [federated query](#federated-query) instead). [ELB](elb.md) access logs go only to S3, and a [CloudTrail](cloudtrail.md) trail always writes to S3. [VPC Flow Logs](vpc-flow-logs.md#destinations-and-analysis) can go to CloudWatch Logs, S3, or Firehose, so choose S3 as the destination when you plan to query them with Athena. If the logs live only in CloudWatch Logs, use CloudWatch Logs Insights, or use Athena federated query with the CloudWatch Logs connector, which adds Lambda cost and gets no benefit from partitioning or Parquet ([AWS — Querying AWS service logs](https://docs.aws.amazon.com/athena/latest/ug/querying-aws-service-logs.html)).
+
 For two hands-on ways to create the table definitions, writing SQL DDL in Athena or running a Glue crawler, see [Real-World Examples of How to Use Athena](#real-world-examples-of-how-to-use-athena) at the end of this page.
 
 > [!tip] Exam Tip
