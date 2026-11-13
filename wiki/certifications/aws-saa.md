@@ -1844,6 +1844,30 @@ See [ElastiCache](../services/elasticache.md) for the caching and session-state 
 > [!warning] Gotcha
 > Valkey/Redis OSS transactions run commands in sequence without interleaving, but they **do not roll back** if one command fails at execution time; they are not relational ACID transactions. Sharding is not Memcached-only: Valkey/Redis OSS cluster mode enabled also partitions data. Memcached's real gap is **replication and backups**.
 
+## Amazon Neptune
+
+See [Neptune](../services/neptune.md) for the graph data model diagram, an openCypher fraud-detection example, and the comparison with other AWS databases.
+
+- **Managed graph database.** Relationships are as important as the data. **Nodes** are things with a label and key-value properties; **relationships** are directional and named, can change freely, and can be followed in either direction.
+- **Why not relational:** relationships in a relational database are designed in advance, and each hop is another join, which is expensive and hard at scale.
+- **Architecture like [Aurora](../services/aurora.md):** a primary plus up to **15 read replicas** that also act as failover targets, on a shared cluster volume with six copies across three AZs. Multi-AZ means replicas in other AZs; read scaling means adding replicas.
+- **Private in a VPC by default.** Public endpoints are opt-in per instance and require **IAM database authentication**.
+- **Continuous backups** to S3 with **point-in-time recovery** (1–35 days retention).
+- **Neptune Serverless** scales in **NCUs** (about 2 GiB of memory each, 1–128). **Global Database** has one writer Region and up to **five read-only secondary Regions**. **Neptune Analytics** is a separate in-memory engine for graph algorithms and vector search, not the transactional database.
+- **Query languages:** Gremlin and openCypher (property graph), SPARQL (RDF).
+
+> [!tip] Exam Tip
+>
+> | Requirement | Candidate |
+> | --- | --- |
+> | "Graph", nodes and relationships, fluid or ever-changing relationships | [Neptune](../services/neptune.md) |
+> | Social network, followers, friends of friends | Neptune |
+> | Fraud detection by linking people, addresses, and cards | Neptune |
+> | Recommendations based on connections between users and products | Neptune |
+> | Network or IT dependency mapping, drug interactions, knowledge graphs | Neptune |
+> | Graph algorithms or GraphRAG context for generative AI | Neptune Analytics |
+> | Key-value lookups at massive scale | DynamoDB, not Neptune |
+
 ## Scaling — Horizontal vs Vertical
 
 See [Scaling — Horizontal vs Vertical](../patterns/scaling.md) for the full treatment.

@@ -3,7 +3,7 @@ title: Aurora
 type: service
 tags: [aurora, database, relational, rds, dms, cluster, cluster-volume, shared-storage, replicas, failover, cluster-endpoint, reader-endpoint, custom-endpoint, instance-endpoint, storage-billing, high-watermark, dynamic-resizing, backtrack, fast-clone, copy-on-write, serverless, aurora-serverless, acu, proxy-fleet, data-api, scale-to-zero, global-database, cross-region, dr, rpo, rto, switchover, multi-master, quorum, read-scaling, high-availability, mysql, postgresql, savings-plans, reserved-instances]
 certs: [aws-saa]
-updated: 2026-07-03
+updated: 2026-11-13
 ---
 
 # Aurora
@@ -51,6 +51,8 @@ Aurora does **not** use local or per-instance storage. The cluster has one logic
 - By default **only the primary writes**; the primary and all replicas read.
 - **Self-healing**: Aurora automatically detects failed disk segments and repairs them from the other copies — disk failure alone rarely requires a snapshot or point-in-time restore.
 - Because storage belongs to the cluster, **adding or removing replicas involves no storage provisioning** — replica changes are fast and cheap.
+
+[Neptune](neptune.md), AWS's graph database, uses the same cluster design: a primary and up to 15 replicas sharing one volume with six copies across three AZs.
 
 > [!warning] Gotcha — maximum volume size: 128 TiB vs 256 TiB
 > The course (and most exam material) says **128 TiB**. Since **July 2025** AWS supports **256 TiB** on recent engine versions (Aurora MySQL 3.10+, Aurora PostgreSQL 15.13+/16.9+/17.5+). Expect **128 TiB** on the exam; know 256 TiB is the current real-world ceiling.

@@ -3,7 +3,7 @@ title: AWS Backup
 type: service
 tags: [aws-backup, backup, data-protection, vault, vault-lock, worm, cold-storage, pitr, dr]
 certs: [aws-saa]
-updated: 2026-07-07
+updated: 2026-11-13
 ---
 
 # AWS Backup
@@ -22,7 +22,7 @@ AWS Backup covers most of the stateful services documented in this wiki:
 | Compute | [EC2](ec2.md), VMware running within AWS |
 | Block storage | [EBS](ebs.md) |
 | File storage | [EFS](efs.md), FSx (all variants) |
-| Databases | [Aurora](aurora.md), [RDS](rds.md), Neptune, DynamoDB, DocumentDB |
+| Databases | [Aurora](aurora.md), [RDS](rds.md), [Neptune](neptune.md), [DynamoDB](dynamodb.md), DocumentDB |
 | Object storage | [S3](s3.md) |
 
 ![AWS Backup supported products diagram: a context bar at the top reads "Supports a wide range of AWS products"; below it, color-coded columns group services by category — Compute (EC2, VMware), Block Storage (EBS), File Storage (EFS, FSx), Databases (Aurora, RDS, Neptune, DynamoDB, DocumentDB), Object Storage (S3) — with arrows from every service flowing right into a single central AWS Backup icon, reinforcing the central-management theme.](../assets/aws-backup-supported-products.png)

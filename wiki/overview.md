@@ -44,6 +44,8 @@ For analytics, [AppFlow](services/appflow.md) can bring supported SaaS records i
 
 [ElastiCache](services/elasticache.md) is the general-purpose caching tier. It sits in front of [RDS](services/rds.md), [Aurora](services/aurora.md), or other data sources so read-heavy workloads scale without a proportional rise in database reads, and it holds session state so instances behind a [load balancer](services/elb.md) stay [stateless](patterns/scaling.md#the-critical-consideration--sessions). Both uses require application changes. The engine choice is a resilience choice: Valkey/Redis OSS replicate, fail over, and back up, while Memcached does not.
 
+[Neptune](services/neptune.md) is the graph database for data where relationships matter as much as the records: social networks, fraud detection, recommendations, dependency maps, and knowledge graphs. It is managed like [RDS](services/rds.md) and built like [Aurora](services/aurora.md), with replicas on a shared cluster volume, so the choice between them comes down to the data model rather than resilience.
+
 ## Key Cross-Cutting Themes
 
 ### Security is Defense in Depth
@@ -97,6 +99,7 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 
 - [DynamoDB](services/dynamodb.md) — Managed tables, key design, capacity and consistency, indexes, Streams, global replication, caching, and expiry
 - [ElastiCache](services/elasticache.md) — In-memory caching and session state with Valkey, Redis OSS, or Memcached
+- [Neptune](services/neptune.md) — Managed graph database; nodes and relationships, Aurora-style cluster, Serverless, Global Database, Neptune Analytics, and graph use cases
 
 - [CloudFront](services/cloudfront.md) — HTTP delivery, cache behaviors, freshness, private content, origin protection, and TLS
 - [Global Accelerator](services/global-accelerator.md) — Anycast entry IPs, regional endpoint routing, and TCP/UDP acceleration
