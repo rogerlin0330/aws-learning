@@ -251,7 +251,7 @@ The downside is that we now maintain the partitions ourselves. Each new month fo
 
 ### Stage 2: Orders grow to hundreds of columns, so a crawler learns the schema
 
-> Live Demo: https://www.youtube.com/watch?v=gfUNDP0QiEQ
+> See also: [A Demo on how to setup a AWS Glue Crawler](https://www.youtube.com/watch?v=gfUNDP0QiEQ)
 
 As our platform iterates, the order data becomes much more complex. Merchants ask for line-item detail, payment and tax breakdowns, shipping and fulfillment status, discount codes, and marketing attribution, and each new feature adds columns to the export.
 
