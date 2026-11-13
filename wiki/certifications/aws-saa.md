@@ -1868,6 +1868,29 @@ See [Neptune](../services/neptune.md) for the graph data model diagram, an openC
 > | Graph algorithms or GraphRAG context for generative AI | Neptune Analytics |
 > | Key-value lookups at massive scale | DynamoDB, not Neptune |
 
+## Amazon OpenSearch Service
+
+See [OpenSearch](../services/opensearch.md) for the architecture diagram, ingestion paths, and the comparison with Athena and CloudWatch Logs Insights.
+
+- **Managed search and analytics.** Runs OpenSearch and OpenSearch Dashboards, forked from **Elasticsearch** and **Kibana**; the service was called Amazon Elasticsearch Service until 2021, so older questions use those names.
+- **Two jobs, both near real time:** **full-text search** and **log analytics**. JSON documents are indexed on arrival, every field is searchable, and a domain makes new data searchable within about a second.
+- **Domain:** you choose instance types and node counts, pay per instance-hour whether or not it is queried, and there is no automatic scaling of node count. In a VPC or public (chosen at creation). Multi-AZ across 2 or 3 AZs, which protects data only if indexes have **replica shards**; **Multi-AZ with Standby** uses 3 AZs with one on standby and fails over in under a minute. **UltraWarm** and **cold storage** keep older indexes searchable at lower cost.
+- **Serverless:** no nodes; set minimum and maximum **OCUs** (6 GiB each). Since the next generation became GA in May 2026, a collection group can **scale to zero** after 10 idle minutes, with a 10 to 30 second cold start; a non-zero minimum avoids it. Refresh is about 10 seconds.
+- **Sources:** **Firehose** and **CloudWatch Logs** subscription filters deliver directly (the CloudWatch Logs path uses a Lambda function behind the scenes); Kinesis Data Streams, S3, and DynamoDB need **Lambda** in between, or use **OpenSearch Ingestion**, a managed pipeline that filters and transforms with no servers.
+- **Outputs:** **OpenSearch Dashboards** (built-in UI: search, visualize, alert), **Quick Sight**, or custom applications. They all query the index; none of them receives the data.
+
+> [!tip] Exam Tip
+>
+> | Requirement | Candidate |
+> | --- | --- |
+> | Search or log analytics in **near real time** | [OpenSearch](../services/opensearch.md) |
+> | Elasticsearch, Kibana, or ELK as a managed service | OpenSearch |
+> | Real-time clickstream analysis and dashboards | Kinesis, then OpenSearch, then Quick Sight |
+> | Search VPC Flow Logs or CloudTrail with dashboards and alerts | CloudWatch Logs or Firehose into OpenSearch |
+> | Ingest and transform from many sources with no Lambda or servers | OpenSearch Ingestion |
+> | Semantic search or a vector store for RAG | OpenSearch vector search |
+> | Store cheaply and query occasionally | [S3](../services/s3.md) plus [Athena](../services/athena.md), not OpenSearch |
+
 ## Scaling — Horizontal vs Vertical
 
 See [Scaling — Horizontal vs Vertical](../patterns/scaling.md) for the full treatment.

@@ -76,6 +76,8 @@ CloudWatch Logs is the default log destination for most AWS services. Key integr
 | [EC2](ec2.md) | OS and application logs (via CloudWatch Agent) |
 | Route 53 | DNS query logs |
 
+Logs can also leave CloudWatch Logs through a **subscription filter**, which streams matching events from a log group to Kinesis Data Streams, [Amazon Data Firehose](kinesis.md#kinesis-data-firehose-now-amazon-data-firehose), Lambda, or [Amazon OpenSearch Service](opensearch.md) ([AWS: subscription filters](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/SubscriptionFilters.html)). The OpenSearch option delivers through a Lambda function and suits near-real-time search and dashboards over the logs.
+
 ## CloudWatch Agent
 
 Standard CloudWatch only sees an instance from the **outside** — host-level metrics measured at the hypervisor, such as CPU utilization. Everything **inside** the guest OS is opaque to CloudWatch by default: memory usage, disk-space-used, per-process and per-core detail, and any system or application **log files**. The **CloudWatch Agent** (the *unified* agent, which replaced the older standalone Logs agent) closes that gap. It runs inside the instance, captures OS-visible metrics and logs, and injects them into CloudWatch (metrics) and [CloudWatch Logs](#cloudwatch-logs).

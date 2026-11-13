@@ -54,7 +54,7 @@ Although Savings Plans replaced most EC2 RI usage, service-specific reservations
 | RDS | Reserved DB Instances |
 | [ElastiCache](../services/elasticache.md) | Reserved Cache Nodes |
 | [Redshift](../services/redshift.md) | Reserved Nodes |
-| OpenSearch (formerly Elasticsearch Service) | Reserved Instances |
+| [OpenSearch](../services/opensearch.md) (formerly Elasticsearch Service) | Reserved Instances |
 | DynamoDB (provisioned capacity) | Reserved Capacity |
 
 > [!warning] Gotcha

@@ -410,18 +410,18 @@ User flagged that the new EC2 Purchase Options page was using informal shorthand
 
 Term-by-term mapping applied across `wiki/patterns/ec2-purchase-options.md`, `wiki/certifications/aws-saa.md` (the Cost Optimization section), `wiki/services/ec2.md` (the two cross-link sentences), and `wiki/index.md` (the Patterns entry):
 
-| Was | Now |
-| --- | --- |
-| On-Demand (as standalone noun) | **On-Demand Instances** |
-| Spot / Spot instances | **Spot Instances** (capital I) |
-| Standard Reserved | **Standard Reserved Instances** |
-| Scheduled Reserved | **Scheduled Reserved Instances** |
-| Regional RI / Zonal RI | **Regional Reserved Instance / Zonal Reserved Instance** |
-| Convertible RI | **Convertible Reserved Instances** |
-| Compute SP / EC2 Instance SP | **Compute Savings Plans / EC2 Instance Savings Plans** |
+| Was                                                         | Now                                                            |
+| ----------------------------------------------------------- | -------------------------------------------------------------- |
+| On-Demand (as standalone noun)                              | **On-Demand Instances**                                        |
+| Spot / Spot instances                                       | **Spot Instances** (capital I)                                 |
+| Standard Reserved                                           | **Standard Reserved Instances**                                |
+| Scheduled Reserved                                          | **Scheduled Reserved Instances**                               |
+| Regional RI / Zonal RI                                      | **Regional Reserved Instance / Zonal Reserved Instance**       |
+| Convertible RI                                              | **Convertible Reserved Instances**                             |
+| Compute SP / EC2 Instance SP                                | **Compute Savings Plans / EC2 Instance Savings Plans**         |
 | On-Demand Capacity Reservation (where used as feature noun) | **On-Demand Capacity Reservations** (matches AWS feature page) |
-| region (capacity discussion) | **Region** (matches AWS convention in feature/limit context) |
-| per-region fee / per-region instance limits | **per-Region fee / per-Region On-Demand Instance limits** |
+| region (capacity discussion)                                | **Region** (matches AWS convention in feature/limit context)   |
+| per-region fee / per-region instance limits                 | **per-Region fee / per-Region On-Demand Instance limits**      |
 
 Kept short forms where AWS itself uses them: section headings (AWS docs use "On-Demand" as a section title), pricing/billing adjective contexts ("On-Demand price", "On-Demand rate"), the abbreviation "Spot" inside a sentence that established "Spot Instances" earlier (kept for sentence flow). The "Spot price" / "spot price" usage stayed lowercase per AWS docs convention.
 
@@ -1660,3 +1660,7 @@ Clarified that Serverless idle compute is free but managed storage remains billa
 ## [2026-11-13] ingest | Amazon Neptune
 
 Transcribed the "Amazon Neptune" lecture with local Whisper into the private transcript folder and reviewed its three slides. Created a Neptune service guide with the lecture's graph data model diagram: nodes with labels and properties, directional named relationships, why relational joins struggle with multi-hop questions, an openCypher query that finds a credit card shared by people at different addresses, and property graph (Gremlin, openCypher) versus RDF (SPARQL). Refined the lecture's "like RDS" framing: Neptune is managed like RDS but built like Aurora, with up to 15 replicas that are also failover targets on a shared volume holding six copies across three AZs. Confirmed the lecture's current claims against AWS documentation: private-by-default VPC placement with opt-in, per-instance public endpoints that require IAM database authentication (engine 1.4.6.x), continuous backups with 1 to 35 days of point-in-time recovery, Serverless NCUs (2 GiB each, 1 to 128, no scale to zero), Global Database with up to five read-only secondary Regions and planned versus detach-and-promote failover, and Neptune Analytics as a separate in-memory engine that backs Bedrock Knowledge Bases GraphRAG. Added use cases, a database selection table, SAA notes, index and overview entries, and links from Aurora and AWS Backup. Raw video preserved unchanged.
+
+## [2026-11-13] ingest | Amazon OpenSearch Service
+
+Transcribed the "Amazon OpenSearch Service" lecture with local Whisper into the private transcript folder and reviewed its three slides. Created an OpenSearch service guide with the lecture's architecture diagram: near-real-time indexing of JSON documents (every field searchable, about one-second refresh on domains), domains versus Serverless, VPC or public access, Multi-AZ, ingestion paths, Dashboards, Quick Sight, and custom applications, the flow-logs and clickstream example, use cases including vector search and RAG, and OpenSearch versus Athena and CloudWatch Logs Insights. Refined lecture claims against AWS documentation: data survives an AZ loss only with replica shards, and Multi-AZ with Standby uses three AZs with failover in under a minute; the CloudWatch Logs "native" path delivers through a Lambda function and targets domains; scale to zero and min/max OCUs apply to next-generation Serverless collection groups (GA May 2026, 10-minute idle, 10 to 30 second cold start), and Serverless refresh is about 10 seconds. Added the dynamic-mapping gotcha, dedicated master nodes, UltraWarm and cold storage, and OpenSearch Ingestion details (Data Prepper, sources, Ingestion OCU billing). Added SAA notes, index and overview entries, and links from Kinesis, Athena, CloudWatch, Neptune, DMS, and Cost Optimization. Raw video preserved unchanged.

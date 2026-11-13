@@ -217,7 +217,7 @@ Low-volume producers hit the timer; high-volume producers hit the size threshold
 
 The course stresses knowing the valid destinations, because that is how you rule Firehose in or out of an answer:
 
-- **S3** · **Redshift** (via an S3 intermediate plus COPY) · **Elasticsearch** (now **OpenSearch Service**) · **Splunk** · **HTTP endpoints** (third-party providers)
+- **S3** · **Redshift** (via an S3 intermediate plus COPY) · **Elasticsearch** (now **[OpenSearch Service](opensearch.md)**) · **Splunk** · **HTTP endpoints** (third-party providers)
 
 Those five remain the reliable exam core. Current Firehose also delivers to **Snowflake**, **Apache Iceberg tables**, **Amazon S3 Tables**, and many more HTTP partners including Datadog, New Relic, Dynatrace, Sumo Logic, LogicMonitor, and MongoDB ([Amazon Data Firehose FAQs](https://aws.amazon.com/firehose/faqs/)).
 
@@ -312,7 +312,7 @@ The course lessons predate several AWS changes. Both framings are kept because e
 > - **What this means:** study the *concept*, because the exam question pattern still tests it. The "SQL-based Kinesis Data Analytics" product framing is historical; modern real-time stream processing on AWS is **Amazon Managed Service for Apache Flink**.
 
 > [!warning] "Elasticsearch" as a destination is now Amazon OpenSearch Service
-> AWS renamed Amazon Elasticsearch Service to **Amazon OpenSearch Service** in 2021. The course diagram and destination list say "Elasticsearch"; current Firehose documentation says OpenSearch Service. Expect either name in a question.
+> AWS renamed Amazon Elasticsearch Service to **[Amazon OpenSearch Service](opensearch.md)** in 2021. The course diagram and destination list say "Elasticsearch"; current Firehose documentation says OpenSearch Service. Expect either name in a question.
 
 > [!note] Firehose destinations have grown well beyond the course five
 > Current supported destinations include the course set **plus** Snowflake, Apache Iceberg tables, Amazon S3 Tables, and many more HTTP partners ([Amazon Data Firehose FAQs](https://aws.amazon.com/firehose/faqs/)). For the exam, the course five remain the reliable core.

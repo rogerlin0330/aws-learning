@@ -134,7 +134,7 @@ By default Athena queries S3. **Federated query** extends it to non-S3 sources t
 | Persistent data warehouse for heavy, repeated BI queries                          | [Amazon Redshift](redshift.md); [Redshift Spectrum](redshift.md#querying-data-without-loading-it) queries S3 from an existing Redshift cluster |
 | Large custom processing on Spark, Hadoop, or similar                              | Amazon EMR (or [Athena for Apache Spark](athena-spark.md) for interactive notebooks)                                                           |
 | Interactive dashboards on top of Athena results                                   | Amazon QuickSight, using Athena as its data source                                                                                             |
-| Operational log search and near-real-time analysis                                | [CloudWatch Logs Insights](cloudwatch.md) or OpenSearch                                                                                        |
+| Operational log search and near-real-time analysis                                | [CloudWatch Logs Insights](cloudwatch.md) or [OpenSearch](opensearch.md)                                                                       |
 
 > [!warning] Gotcha: Redshift Spectrum vs Athena
 > Both query S3 in place with SQL. Spectrum **requires an existing Redshift cluster** and suits teams that already run Redshift and want to join warehouse tables with S3 data. If the scenario has **no warehouse** and wants **serverless, pay-per-query** access, choose Athena.

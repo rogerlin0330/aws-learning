@@ -46,6 +46,8 @@ For analytics, [AppFlow](services/appflow.md) can bring supported SaaS records i
 
 [Neptune](services/neptune.md) is the graph database for data where relationships matter as much as the records: social networks, fraud detection, recommendations, dependency maps, and knowledge graphs. It is managed like [RDS](services/rds.md) and built like [Aurora](services/aurora.md), with replicas on a shared cluster volume, so the choice between them comes down to the data model rather than resilience.
 
+[OpenSearch](services/opensearch.md) is the search and log analytics engine. It indexes every field of each JSON document as it arrives, so logs from [CloudWatch Logs](services/cloudwatch.md) or [Kinesis](services/kinesis.md) Firehose become searchable in near real time, with OpenSearch Dashboards or Quick Sight on top. It also stores embeddings for vector search and RAG. When the data only needs cheap storage and occasional queries, [S3](services/s3.md) with [Athena](services/athena.md) is the lower-cost choice.
+
 ## Key Cross-Cutting Themes
 
 ### Security is Defense in Depth
@@ -77,11 +79,11 @@ Large systems split into **global components** that get the customer to a health
 
 Every AWS service operates at a specific resilience scope. Knowing this is critical for HA design; [Resource Scope](concepts/resource-scope.md) is the detailed reference.
 
-| Tier | Examples |
-| --- | --- |
-| Global | [IAM](services/iam.md), Route 53 |
-| Regional | [VPC](services/vpc.md), IGW, [S3](services/s3.md) |
-| AZ | Subnet, NAT GW, [EC2](services/ec2.md) instance (and its host, ENI, EBS volume, instance store) |
+| Tier     | Examples                                                                                        |
+| -------- | ----------------------------------------------------------------------------------------------- |
+| Global   | [IAM](services/iam.md), Route 53                                                                |
+| Regional | [VPC](services/vpc.md), IGW, [S3](services/s3.md)                                               |
+| AZ       | Subnet, NAT GW, [EC2](services/ec2.md) instance (and its host, ENI, EBS volume, instance store) |
 
 ### The ENI is the Networking Atom
 
@@ -99,6 +101,7 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 
 - [DynamoDB](services/dynamodb.md) — Managed tables, key design, capacity and consistency, indexes, Streams, global replication, caching, and expiry
 - [ElastiCache](services/elasticache.md) — In-memory caching and session state with Valkey, Redis OSS, or Memcached
+- [OpenSearch](services/opensearch.md) — Managed search and log analytics in near real time; domains vs Serverless OCUs, ingestion paths, Dashboards and Quick Sight, and vector search for RAG
 - [Neptune](services/neptune.md) — Managed graph database; nodes and relationships, Aurora-style cluster, Serverless, Global Database, Neptune Analytics, and graph use cases
 
 - [CloudFront](services/cloudfront.md) — HTTP delivery, cache behaviors, freshness, private content, origin protection, and TLS

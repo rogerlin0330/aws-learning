@@ -14,7 +14,7 @@ Modern DMS is broader than the older "replication instance" mental model. The cl
 
 ## Where DMS Fits
 
-DMS sits between source and target data stores. It moves table data, can keep applying source changes with CDC, and can stream into AWS analytics targets such as [S3](s3.md), [Redshift](redshift.md), [Kinesis](kinesis.md), OpenSearch, DynamoDB, DocumentDB, Neptune, and relational engines such as [RDS](rds.md) and [Aurora](aurora.md).
+DMS sits between source and target data stores. It moves table data, can keep applying source changes with CDC, and can stream into AWS analytics targets such as [S3](s3.md), [Redshift](redshift.md), [Kinesis](kinesis.md), [OpenSearch](opensearch.md), DynamoDB, DocumentDB, Neptune, and relational engines such as [RDS](rds.md) and [Aurora](aurora.md).
 
 ![DMS architecture: a source database feeds a source endpoint, a DMS replication instance runs one or more replication tasks, a destination endpoint points at the target database, and the supported task modes are Full Load, Full Load plus CDC, and CDC Only. The side note names SCT as the schema-conversion companion for engine changes.](../assets/dms-architecture.png)
 

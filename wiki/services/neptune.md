@@ -105,7 +105,7 @@ This split mirrors the [OLTP versus OLAP](redshift.md#oltp-vs-olap) split betwee
 | **Biology and life sciences** | Drug-to-drug interactions and which treatments worked for which conditions                                                                                              |
 | **Knowledge graphs**          | Linking entities and concepts across an organization's data (master data), and giving generative AI applications relationship context through **GraphRAG**              |
 
-GraphRAG (graph-based retrieval-augmented generation) gives a model the relationships around the facts it retrieves, not only the text passages that match a question. This helps it answer questions that need several connected facts.
+GraphRAG (graph-based retrieval-augmented generation) gives a model the relationships around the facts it retrieves, not only the text passages that match a question. This helps it answer questions that need several connected facts. When retrieval only needs to match by meaning, without relationships, a vector store such as [OpenSearch](opensearch.md#use-cases) vector search is the usual choice.
 
 ## Choosing Neptune Among AWS Databases
 
