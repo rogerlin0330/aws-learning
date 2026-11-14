@@ -3,12 +3,14 @@ title: Systems Manager (SSM)
 type: service
 tags: [ssm, systems-manager, parameter-store, secrets, configuration, security, kms]
 certs: [aws-saa]
-updated: 2026-07-02
+updated: 2026-11-13
 ---
 
 # Systems Manager (SSM)
 
 **AWS Systems Manager (SSM)** is a suite of operations-management capabilities for AWS and on-premises resources: **Parameter Store** (config/secrets storage), **Session Manager** (browser/CLI shell without SSH), **Run Command** (remote command execution), **Patch Manager**, **State Manager**, **Automation**, **Fleet Manager**, **Inventory**, and more. Most run through the **SSM Agent** preinstalled on current AWS AMIs.
+
+[AWS Config](config.md#native-remediation-with-ssm-automation) uses **Automation** documents for its native remediation of non-compliant resources.
 
 This page currently documents **Parameter Store** in depth; other SSM capabilities will be added as sibling sections as they are ingested.
 
@@ -24,10 +26,10 @@ A parameter is just a **name** plus a **value**, where the value holds the actua
 
 Three parameter **types**:
 
-| Type | Description |
-| --- | --- |
-| **String** | A single plain-text value |
-| **StringList** | A comma-separated list of values |
+| Type             | Description                                       |
+| ---------------- | ------------------------------------------------- |
+| **String**       | A single plain-text value                         |
+| **StringList**   | A comma-separated list of values                  |
 | **SecureString** | An encrypted value, integrated with [KMS](kms.md) |
 
 Typical uses: license codes, database connection strings (hostnames, ports), DB usernames, full application configs, and passwords.
@@ -134,11 +136,11 @@ An advanced parameter (max **8 KB**) uses **[envelope encryption](kms.md#data-en
 
 #### IAM / KMS permissions for SecureString
 
-| Action | Required KMS permission |
-| --- | --- |
-| Encrypt a **standard** SecureString | `kms:Encrypt` |
-| Encrypt an **advanced** SecureString | `kms:GenerateDataKey` |
-| Decrypt **either** tier | `kms:Decrypt` |
+| Action                               | Required KMS permission |
+| ------------------------------------ | ----------------------- |
+| Encrypt a **standard** SecureString  | `kms:Encrypt`           |
+| Encrypt an **advanced** SecureString | `kms:GenerateDataKey`   |
+| Decrypt **either** tier              | `kms:Decrypt`           |
 
 The split mirrors the crypto: standard does a direct encrypt, advanced generates a data key. You **cannot** set access-control policies on the default `aws/ssm` managed key — fine-grained encrypt/decrypt control requires a **customer managed key**.
 
@@ -150,13 +152,13 @@ KMS operations use an **encryption context** of `PARAMETER_ARN` set to the ARN o
 
 Tiers are configured **per parameter** (standard is the default) and affect cost, scale, and capabilities:
 
-| | **Standard** | **Advanced** |
-| --- | --- | --- |
-| Parameters per account/Region | 10,000 | 100,000 |
-| Max value size | 4 KB | 8 KB |
-| Parameter policies | No | Yes |
-| Encryption method | Direct KMS encrypt | Envelope encryption (AWS Encryption SDK) |
-| **Cost** | **No additional charge** | **Charged per parameter + per API call** |
+|                               | **Standard**             | **Advanced**                             |
+| ----------------------------- | ------------------------ | ---------------------------------------- |
+| Parameters per account/Region | 10,000                   | 100,000                                  |
+| Max value size                | 4 KB                     | 8 KB                                     |
+| Parameter policies            | No                       | Yes                                      |
+| Encryption method             | Direct KMS encrypt       | Envelope encryption (AWS Encryption SDK) |
+| **Cost**                      | **No additional charge** | **Charged per parameter + per API call** |
 
 **Pricing** (confirm current numbers on the AWS pricing page before quoting):
 
@@ -170,14 +172,14 @@ Tiers are configured **per parameter** (standard is the default) and affect cost
 
 Both store secrets and both encrypt with [KMS](kms.md), so exam questions pit them against each other. The deciding factor is **automatic rotation**:
 
-| Capability | Parameter Store | Secrets Manager |
-| --- | --- | --- |
-| Store strings / secrets | Yes | Yes |
-| KMS encryption | SecureString | Always |
-| Built-in **automatic rotation** | No | **Yes** (Lambda-driven) |
-| Native RDS/Redshift/DocumentDB integration | No | **Yes** |
-| Cross-Region replication | No (build your own) | **Yes** |
-| Cost | Standard tier free | Per secret + per API call |
+| Capability                                 | Parameter Store     | Secrets Manager           |
+| ------------------------------------------ | ------------------- | ------------------------- |
+| Store strings / secrets                    | Yes                 | Yes                       |
+| KMS encryption                             | SecureString        | Always                    |
+| Built-in **automatic rotation**            | No                  | **Yes** (Lambda-driven)   |
+| Native RDS/Redshift/DocumentDB integration | No                  | **Yes**                   |
+| Cross-Region replication                   | No (build your own) | **Yes**                   |
+| Cost                                       | Standard tier free  | Per secret + per API call |
 
 > [!tip] Exam Tip
 > *"Store a DB password and rotate it automatically every 30 days"* points to **Secrets Manager**. *"Store config / secrets cheaply with native CloudFormation and CLI integration, no rotation needed"* points to **Parameter Store** (standard tier). Note Secrets Manager can be referenced **through** Parameter Store using the `/aws/reference/secretsmanager/` prefix, so an app coded against the Parameter Store API can read a Secrets Manager secret.

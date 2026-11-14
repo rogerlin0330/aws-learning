@@ -2580,7 +2580,7 @@ See [Control Tower](../services/control-tower.md) for full details.
 > "Quickly set up a **secure, well-architected, multi-account** environment with governance baked in" → **Control Tower** (not raw Organizations). "Self-service standardized account provisioning with guardrails pre-applied" → **Account Factory**. "Isolated read-only log store from every account" → **Log Archive**. "Governance-change notifications / third-party audit tooling" → **Audit account**.
 
 > [!warning] Gotcha
-> **Preventative ≠ detective.** Preventative guardrails *stop* actions (SCP); detective guardrails only *identify* non-compliance after the fact (Config rules). Detective does not block. Also: **IAM Identity Center and AWS SSO are the same service**; **guardrails and controls are the same thing** (console rename).
+> **Preventative ≠ detective.** Preventative guardrails *stop* actions (SCP); detective guardrails only *identify* non-compliance after the fact ([Config rules](../services/config.md#config-rules)). Detective does not block. Also: **IAM Identity Center and AWS SSO are the same service**; **guardrails and controls are the same thing** (console rename).
 
 ## Cost Optimization
 
@@ -2715,7 +2715,7 @@ See [CloudWatch](../services/cloudwatch.md) for full details.
 
 See [CloudTrail](../services/cloudtrail.md) for full details.
 
-- CloudTrail records **API / account activity** as **events** — who did what, when, from where. This is the **audit** service; [CloudWatch](../services/cloudwatch.md) is the **health/telemetry** service, and **AWS Config** is the **resource-configuration/compliance** service
+- CloudTrail records **API / account activity** as **events** — who did what, when, from where. This is the **audit** service; [CloudWatch](../services/cloudwatch.md) is the **health/telemetry** service, and **[AWS Config](../services/config.md)** is the **resource-configuration/compliance** service
 - **Event History** is on **by default, free, 90 days, management events only** — no S3 storage. For retention beyond 90 days, data events, or log delivery you must create a **trail**
 - **Four event types**: **Management** (control-plane, on by default), **Data** (S3 object access, Lambda invokes — **opt-in, extra cost, high volume**), **Network activity** (supported VPC endpoint activity — opt-in, extra cost), **Insight** (anomaly detection over management-event activity — opt-in)
 - **Trail scope**: **single-region** or **all-regions** (the latter auto-adds new regions). All-regions is the recommended default
@@ -2876,6 +2876,31 @@ See [AWS Shield](../services/shield.md) for the attack types, the full Standard 
 > | 24/7 DDoS experts, or AWS contacts us during an attack | Shield Advanced (SRT, proactive engagement) |
 > | Credits for scaling costs caused by a DDoS attack | Shield Advanced cost protection |
 > | DDoS protection across all accounts in an Organization | Firewall Manager Shield Advanced policy |
+
+## AWS Config
+
+See [AWS Config](../services/config.md) for the architecture diagram, rule types, remediation options, and pricing.
+
+- **Two jobs:** record resource **configuration changes over time**, and evaluate resources against **Config rules** as compliant or non-compliant.
+- **Detective, not preventative.** Config never blocks a change. To stop an action, use IAM or an [SCP](../services/organizations.md#service-control-policies-scps). Proactive evaluation returns a result before deployment, but the caller (a pipeline or CloudFormation hook) decides whether to deploy.
+- **Configuration item (CI):** a resource's configuration at a point in time, with its relationships and the related CloudTrail event. All CIs for a resource are its **configuration history**. Kept 7 years by default; files delivered to an S3 bucket.
+- **Config shows what changed; [CloudTrail](../services/cloudtrail.md) shows who made the call.**
+- **Recording:** **continuous** (default, $0.003 per CI) or **periodic** (one CI per 24 hours if changed, $0.012 per CI). Periodic is cheaper only for resources that change more than four times a day. Record global IAM resources in one Region only.
+- **Rules:** **AWS managed** (`s3-bucket-public-read-prohibited`, `encrypted-volumes`, `root-account-mfa-enabled`, `required-tags`) or **custom** with **Guard** or **Lambda**. Triggered by configuration changes, on a schedule, or both.
+- **Integrations:** **SNS** for a configuration stream and compliance notifications; **EventBridge** receives compliance state changes (for example, to invoke Lambda).
+- **Remediation:** native **SSM Automation documents**, manual or automatic (default 5 attempts). EventBridge to Lambda is a separate, non-Config option.
+- **Regional.** An **aggregator** gives a read-only, multi-account, multi-Region view. **Conformance packs** deploy a set of rules and remediations together, including across an Organization.
+
+> [!tip] Exam Tip
+>
+> | Requirement | Answer |
+> | --- | --- |
+> | Track configuration changes of resources over time | AWS Config |
+> | Who changed this resource? | CloudTrail |
+> | Check resources against standards (public buckets, unencrypted volumes, required tags) | Config rules |
+> | Automatically fix non-compliant resources | Config remediation with SSM Automation (or EventBridge to Lambda) |
+> | Stop the non-compliant change from happening | IAM or SCP, not Config |
+> | Compliance view across all accounts and Regions | Config aggregator |
 
 ## Key Service Properties to Memorize
 

@@ -3,7 +3,7 @@ title: AWS CloudTrail
 type: service
 tags: [cloudtrail, audit, governance, logging, security, observability, management-events, data-events, network-activity-events, insight-events, global-service-events, organizational-trail, log-file-integrity, eventbridge, s3, cloudwatch, kms]
 certs: [aws-saa]
-updated: 2026-07-21
+updated: 2026-11-13
 ---
 
 # AWS CloudTrail
@@ -33,12 +33,12 @@ To do anything beyond the rolling 90-day window — long-term retention, deliver
 
 CloudTrail events come in four types. Older notes that list only management, data, and Insights events are outdated; **network activity events** are now a separate CloudTrail event category. Knowing which are on by default — and which cost extra — is a recurring exam theme.
 
-| Type | What it captures | Examples | Default? |
-| --- | --- | --- | --- |
-| **Management events** | Control-plane operations *on* resources | Create/terminate EC2 instance, create a VPC, console logins, attach an IAM policy | Logged by default |
-| **Data events** | Data-plane operations performed *on or in* a resource | [S3](s3.md) object GET/PUT, Lambda function invocation, DynamoDB item activity | Off by default — opt-in, extra cost |
-| **Network activity events** | AWS API activity that traverses supported VPC endpoints | PrivateLink/VPC endpoint calls to supported AWS services | Off by default — opt-in, extra cost |
-| **Insight events** | Anomaly detection over management-event volume (unusual call rates / error spikes) | Sudden surge in `TerminateInstances`, spike in throttling errors | Off by default — opt-in, extra cost |
+| Type                        | What it captures                                                                   | Examples                                                                          | Default?                            |
+| --------------------------- | ---------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | ----------------------------------- |
+| **Management events**       | Control-plane operations *on* resources                                            | Create/terminate EC2 instance, create a VPC, console logins, attach an IAM policy | Logged by default                   |
+| **Data events**             | Data-plane operations performed *on or in* a resource                              | [S3](s3.md) object GET/PUT, Lambda function invocation, DynamoDB item activity    | Off by default — opt-in, extra cost |
+| **Network activity events** | AWS API activity that traverses supported VPC endpoints                            | PrivateLink/VPC endpoint calls to supported AWS services                          | Off by default — opt-in, extra cost |
+| **Insight events**          | Anomaly detection over management-event volume (unusual call rates / error spikes) | Sudden surge in `TerminateInstances`, spike in throttling errors                  | Off by default — opt-in, extra cost |
 
 > [!tip] Why data events are off by default
 > Data events are **far higher volume** than management events — logging every individual S3 object access on a busy bucket would generate enormous quantities of records and cost. You enable them deliberately, on the specific resources you need to audit.
@@ -131,31 +131,34 @@ Read it left to right:
 
 CloudTrail is one of three complementary observability/governance services that appear together on the exam:
 
-| Service | Answers | Granularity |
-| --- | --- | --- |
-| **CloudTrail** | *Who* made *which* API call, when, from where | Account/API activity (audit) |
-| [CloudWatch](cloudwatch.md) | *Is the workload healthy* (metrics) and *what did it log* (CloudWatch Logs) | Operational telemetry |
-| AWS Config | *What is the configuration state* of my resources, and how did it change over time | Resource configuration/compliance |
+| Service                     | Answers                                                                                                               | Granularity                       |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| **CloudTrail**              | *Who* made *which* API call, when, from where, and with what parameters                                               | Account/API activity (audit)      |
+| [CloudWatch](cloudwatch.md) | *Is the workload healthy* (metrics) and *what did it log* (CloudWatch Logs)                                           | Operational telemetry             |
+| [AWS Config](config.md)     | *What the resource looked like* before and after each change, how it changed over time, and *whether it is compliant* | Resource configuration/compliance |
+
+> [!warning] Gotcha: CloudTrail records the API call activity, not the resource state
+> A CloudTrail event shows what the API call asked for in `requestParameters`. For example, an `AuthorizeSecurityGroupIngress` event contains the security group ID and the new rule (TCP 22 from `0.0.0.0/0`). It **cannot** tell you what the resource's state was before the call or what its state is after it, such as the security group's full rule set. Rebuilding that from CloudTrail alone would mean replaying every call that ever touched the resource. That before-and-after view is what [AWS Config](config.md#configuration-items-and-history) records. Each Config configuration item links to the related CloudTrail event, so Config shows how the resource changed and CloudTrail shows the call that caused it.
 
 CloudTrail also underpins finer-grained audit stories on other pages: it is the **structured, IAM-context-rich, near-real-time alternative** to [S3 server access logging](s3.md#access-logging) (via S3 **data events**), and it is what records every `Encrypt` / `Decrypt` / `GenerateDataKey` call when you use [SSE-KMS](s3.md#sse-kms--kms-managed-keys).
 
 ## Exam Recap
 
-| Concept | Key fact |
-| --- | --- |
-| **Default behaviour** | 90-day **Event History**, free, **management events only**, no S3 storage |
-| **Trail needed for** | Long-term retention, S3/CloudWatch delivery, data events, customization |
-| **Default event type** | Management events (includes console logins) |
-| **Data events** | Opt-in, extra cost, high volume (S3 objects, Lambda invokes) |
-| **Network activity events** | Opt-in, extra cost, supported VPC endpoint activity |
-| **Insight events** | Opt-in anomaly detection over management-event activity |
-| **Trail scope** | Single-region **or** all-regions (auto-adds new regions) |
-| **Global services** | IAM, STS, CloudFront (and Route 53) deliver to **`us-east-1`** as global service events |
-| **Storage format** | Compressed **JSON** files in S3, retained indefinitely; optional SSE-KMS |
-| **CloudWatch Logs** | Optional; enables search + metric filters + alarms |
-| **Integrity** | **Log file integrity validation** = SHA-256 hashes + signed digest files |
-| **Org trail** | From the management account; all accounts in one place |
-| **Real-time?** | No — log delivery is ~15 min. For fast reactions use **EventBridge** on management events |
+| Concept                     | Key fact                                                                                  |
+| --------------------------- | ----------------------------------------------------------------------------------------- |
+| **Default behaviour**       | 90-day **Event History**, free, **management events only**, no S3 storage                 |
+| **Trail needed for**        | Long-term retention, S3/CloudWatch delivery, data events, customization                   |
+| **Default event type**      | Management events (includes console logins)                                               |
+| **Data events**             | Opt-in, extra cost, high volume (S3 objects, Lambda invokes)                              |
+| **Network activity events** | Opt-in, extra cost, supported VPC endpoint activity                                       |
+| **Insight events**          | Opt-in anomaly detection over management-event activity                                   |
+| **Trail scope**             | Single-region **or** all-regions (auto-adds new regions)                                  |
+| **Global services**         | IAM, STS, CloudFront (and Route 53) deliver to **`us-east-1`** as global service events   |
+| **Storage format**          | Compressed **JSON** files in S3, retained indefinitely; optional SSE-KMS                  |
+| **CloudWatch Logs**         | Optional; enables search + metric filters + alarms                                        |
+| **Integrity**               | **Log file integrity validation** = SHA-256 hashes + signed digest files                  |
+| **Org trail**               | From the management account; all accounts in one place                                    |
+| **Real-time?**              | No — log delivery is ~15 min. For fast reactions use **EventBridge** on management events |
 
 > [!warning] Gotcha
 > **CloudTrail is not the only thing logging "logs."** Don't confuse it with [CloudWatch Logs](cloudwatch.md) (operational application/OS logs), VPC Flow Logs (network flow records), or S3 access logs (HTTP request records). CloudTrail = **AWS API/account activity audit**.

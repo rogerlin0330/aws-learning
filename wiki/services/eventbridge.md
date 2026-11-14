@@ -3,7 +3,7 @@ title: Amazon EventBridge (CloudWatch Events)
 type: service
 tags: [eventbridge, cloudwatch-events, serverless, event-driven, event-bus, rules, scheduler, lambda, cron, rate, saa]
 certs: [aws-saa]
-updated: 2026-11-04
+updated: 2026-11-13
 ---
 
 # Amazon EventBridge (CloudWatch Events)
@@ -55,10 +55,10 @@ The horizontal band packed with small coloured blocks at the bottom is the **Def
 
 You create **rules** that match events or schedules:
 
-| Rule type | Matches on | Trigger source |
-| --- | --- | --- |
-| **Event pattern rule** | The **pattern / content** of events on a specific bus | An event that matches the pattern |
-| **Schedule rule** | A **schedule expression** (specific times or ranges) | The clock reaching the specified time |
+| Rule type              | Matches on                                            | Trigger source                        |
+| ---------------------- | ----------------------------------------------------- | ------------------------------------- |
+| **Event pattern rule** | The **pattern / content** of events on a specific bus | An event that matches the pattern     |
+| **Schedule rule**      | A **schedule expression** (specific times or ranges)  | The clock reaching the specified time |
 
 Event-pattern rules are linked to a specific event bus (the default unless you say otherwise). Scheduled rules are different: legacy scheduled rules run only on the **default event bus**. [EventBridge Scheduler](#scheduling-rules-vs-eventbridge-scheduler) is the newer bus-less scheduler.
 
@@ -79,12 +79,12 @@ There are **two independent relationships** between EventBridge and [CloudTrail]
 
 The same underlying action can reach EventBridge by **two different routes**, carrying **different payloads**:
 
-| | Native path | CloudTrail path |
-| --- | --- | --- |
-| How it arrives | Service pushes its own event straight to EventBridge | API call recorded by CloudTrail, surfaced onto the bus |
-| Example | EC2 **instance state-change notification** | `StopInstances` API call via CloudTrail |
-| `detail-type` | e.g. `EC2 Instance State-change Notification` | `AWS API Call via CloudTrail` |
-| Includes caller identity? | **No** — won't say *which* IAM user/role | **Yes** — includes the requesting principal |
+|                           | Native path                                          | CloudTrail path                                        |
+| ------------------------- | ---------------------------------------------------- | ------------------------------------------------------ |
+| How it arrives            | Service pushes its own event straight to EventBridge | API call recorded by CloudTrail, surfaced onto the bus |
+| Example                   | EC2 **instance state-change notification**           | `StopInstances` API call via CloudTrail                |
+| `detail-type`             | e.g. `EC2 Instance State-change Notification`        | `AWS API Call via CloudTrail`                          |
+| Includes caller identity? | **No** — won't say *which* IAM user/role             | **Yes** — includes the requesting principal            |
 
 > [!tip] Exam Tip — who made the call?
 > If a question hinges on **"which IAM user/role made the call,"** the answer routes through **CloudTrail** (`AWS API Call via CloudTrail`), not the native service event — the native event omits the IAM principal.
@@ -170,33 +170,34 @@ Different services, different triggers. (For the reverse relationship — reacti
 > - **"If X happens then do Z"** (react to a resource state change, e.g. "run a Lambda when an EC2 instance enters `stopped`") points to an **EventBridge event pattern rule**.
 > - **"Run something on a schedule / cron"** (nightly Lambda, scheduled snapshots, cron-style automation) points to an **EventBridge schedule rule** or **EventBridge Scheduler**.
 > - **Events are JSON** and the **payload is delivered to the target** — targets can act on the event's contents.
+> - **"Fix a resource automatically when it becomes non-compliant"** can be a [Config](config.md#notifications-and-remediation) compliance change event matched by an EventBridge rule that invokes Lambda. Config also has its own native remediation with SSM Automation documents, so EventBridge is not required.
 
 > [!warning] Gotcha — don't confuse the players
 > *Event bus* = the stream; *rule* = the matcher; *target* = the receiver. The EventBridge service **observes** the bus (the purple arrows) — it is **not** the bus itself.
 
 ## Quick Reference
 
-| Concept | CloudWatch Events | EventBridge |
-| --- | --- | --- |
-| Relationship | Original service | Same API, superset of features ("v2") |
-| Event buses | **One**, implicit, not in UI | **Default + custom** buses |
-| AWS service events | Yes | Yes |
-| Third-party / SaaS events | No | Yes |
-| Custom application events | Yes, on the default bus | Yes, including custom buses |
-| Rule types | Event pattern, Schedule | Event pattern, Schedule |
-| Schedule expression forms | cron / rate | cron / rate (or **EventBridge Scheduler**) |
-| Event format | JSON | JSON |
-| Example target | Lambda | Lambda (and many others) |
-| AWS recommendation | — | Use by default for new work |
+| Concept                   | CloudWatch Events            | EventBridge                                |
+| ------------------------- | ---------------------------- | ------------------------------------------ |
+| Relationship              | Original service             | Same API, superset of features ("v2")      |
+| Event buses               | **One**, implicit, not in UI | **Default + custom** buses                 |
+| AWS service events        | Yes                          | Yes                                        |
+| Third-party / SaaS events | No                           | Yes                                        |
+| Custom application events | Yes, on the default bus      | Yes, including custom buses                |
+| Rule types                | Event pattern, Schedule      | Event pattern, Schedule                    |
+| Schedule expression forms | cron / rate                  | cron / rate (or **EventBridge Scheduler**) |
+| Event format              | JSON                         | JSON                                       |
+| Example target            | Lambda                       | Lambda (and many others)                   |
+| AWS recommendation        | —                            | Use by default for new work                |
 
-| Core term | Meaning |
-| --- | --- |
-| **Event bus** | Stream of events from supported services in the account |
-| **Event** | A JSON structure describing a change or occurrence |
-| **Producer (X)** | Supported service that emits an event |
-| **Event pattern rule** | Matches on event content, delivers to target |
-| **Schedule rule (Y)** | Matches a cron / rate time, delivers to target |
-| **Target (Z)** | Service that receives the matched event (e.g. Lambda) |
+| Core term              | Meaning                                                 |
+| ---------------------- | ------------------------------------------------------- |
+| **Event bus**          | Stream of events from supported services in the account |
+| **Event**              | A JSON structure describing a change or occurrence      |
+| **Producer (X)**       | Supported service that emits an event                   |
+| **Event pattern rule** | Matches on event content, delivers to target            |
+| **Schedule rule (Y)**  | Matches a cron / rate time, delivers to target          |
+| **Target (Z)**         | Service that receives the matched event (e.g. Lambda)   |
 
 ## References
 
