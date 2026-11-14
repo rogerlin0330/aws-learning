@@ -16,12 +16,12 @@ When a question wants the *whole* well-architected multi-account environment sto
 
 ![AWS Organizations overview: management account, root container, OUs, consolidated billing, SCPs](../assets/organization-infographic.png)
 
-| Element | What it is |
-| --- | --- |
-| **Standard account** | An AWS account not part of any organization |
-| **Management account** | The account that *creates* the organization. Pays all bills (a.k.a. **payer account**). Formerly called "master." |
-| **Member account** | Any other account in the org — either invited (and accepted) or created directly within the org |
-| **Root container** | The top-level container holding all accounts and OUs. Not the same as the AWS account root user |
+| Element                      | What it is                                                                                                                              |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| **Standard account**         | An AWS account not part of any organization                                                                                             |
+| **Management account**       | The account that *creates* the organization. Pays all bills (a.k.a. **payer account**). Formerly called "master."                       |
+| **Member account**           | Any other account in the org — either invited (and accepted) or created directly within the org                                         |
+| **Root container**           | The top-level container holding all accounts and OUs. Not the same as the AWS account root user                                         |
 | **Organizational Unit (OU)** | A nested container of accounts and/or other OUs — groups accounts by business unit, function, or environment (prod/dev/shared services) |
 
 > [!warning] Gotcha
@@ -56,12 +56,12 @@ The most-tested benefit:
 
 ## Account Management
 
-| Action | How it works |
-| --- | --- |
-| **Invite an existing account** | Org sends an invite; the invited account must accept. Useful for absorbing acquisitions or pre-existing accounts. |
-| **Create a new account in the org** | Just provide a unique email — no invite/accept step. New accounts are members from creation. |
-| **Move an account between OUs** | Drag-and-drop in console or `move-account` API call. Account is unaffected; only its SCP inheritance changes. |
-| **Remove a member account** | Account becomes standard again. Must have its own payment method and tax/contact info before leaving. |
+| Action                              | How it works                                                                                                      |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| **Invite an existing account**      | Org sends an invite; the invited account must accept. Useful for absorbing acquisitions or pre-existing accounts. |
+| **Create a new account in the org** | Just provide a unique email — no invite/accept step. New accounts are members from creation.                      |
+| **Move an account between OUs**     | Drag-and-drop in console or `move-account` API call. Account is unaffected; only its SCP inheritance changes.     |
+| **Remove a member account**         | Account becomes standard again. Must have its own payment method and tax/contact info before leaving.             |
 
 ## Identity Workflow — Role Switching
 
@@ -103,11 +103,11 @@ The two failure modes the diagram makes explicit:
 
 SCPs can attach at three levels and **inherit downward**:
 
-| Attachment | Affects |
-| --- | --- |
-| **Organization root** | Every account in the organization (except the management account) |
-| **Organizational Unit (OU)** | Every account in that OU plus all nested OUs |
-| **Individual account** | Only that account |
+| Attachment                   | Affects                                                           |
+| ---------------------------- | ----------------------------------------------------------------- |
+| **Organization root**        | Every account in the organization (except the management account) |
+| **Organizational Unit (OU)** | Every account in that OU plus all nested OUs                      |
+| **Individual account**       | Only that account                                                 |
 
 The effective SCP at any account is the **stack of every SCP along the path** from the root down to (and including) the account.
 
@@ -126,10 +126,10 @@ The account **root user** is a special principal that **cannot be restricted by 
 
 Two ways to structure SCPs:
 
-| Model | How it works | Trade-off |
-| --- | --- | --- |
-| **Deny list (default, recommended)** | Keep the default **`FullAWSAccess`** SCP that allows everything; add explicit `Deny` statements to block specific services or conditions | Low admin overhead; new AWS services are automatically permitted as they launch |
-| **Allow list** | Remove `FullAWSAccess`; attach explicit `Allow` statements naming each permitted service | More secure but high overhead — every new AWS service has to be added; easy to accidentally block needed access |
+| Model                                | How it works                                                                                                                             | Trade-off                                                                                                       |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| **Deny list (default, recommended)** | Keep the default **`FullAWSAccess`** SCP that allows everything; add explicit `Deny` statements to block specific services or conditions | Low admin overhead; new AWS services are automatically permitted as they launch                                 |
+| **Allow list**                       | Remove `FullAWSAccess`; attach explicit `Allow` statements naming each permitted service                                                 | More secure but high overhead — every new AWS service has to be added; easy to accidentally block needed access |
 
 When you enable SCPs, AWS automatically attaches a default SCP named **`FullAWSAccess`** to the root, every OU, and every account. This is what makes the org default-permissive — remove it (selectively, at one level) to switch to an allow-list at that scope.
 
@@ -149,7 +149,7 @@ Then the result is **intersected with the identity policy's allow set** for the 
 ### Typical Uses
 
 - Restrict member accounts to one or more **specific regions** (compliance / data residency)
-- Forbid disabling **CloudTrail**, **GuardDuty**, **Config**
+- Forbid disabling **[CloudTrail](cloudtrail.md)**, **[GuardDuty](guardduty.md)**, **[Config](config.md)**
 - Block **IAM user creation** to force federation
 - Cap **EC2 instance sizes** in non-prod OUs
 - Deny use of **root user access keys**, root login outside MFA, etc.
@@ -161,13 +161,13 @@ Then the result is **intersected with the identity policy's allow set** for the 
 
 ## Common Exam Patterns
 
-| Symptom in question | Answer |
-| --- | --- |
-| "Many accounts, want one bill" | Consolidated billing via Organizations |
-| "Maximize RI / Savings Plan utilization across accounts" | Organizations (benefits pool automatically) |
-| "Centralize identity, avoid IAM users in every account" | Login account + cross-account role assumption + federation |
-| "Prevent accounts from using a forbidden region / disabling CloudTrail" | SCP attached at the OU |
-| "Restrict the management account itself" | **Trick** — SCPs do not apply to the management account; move workloads to a member account |
+| Symptom in question                                                     | Answer                                                                                      |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| "Many accounts, want one bill"                                          | Consolidated billing via Organizations                                                      |
+| "Maximize RI / Savings Plan utilization across accounts"                | Organizations (benefits pool automatically)                                                 |
+| "Centralize identity, avoid IAM users in every account"                 | Login account + cross-account role assumption + federation                                  |
+| "Prevent accounts from using a forbidden region / disabling CloudTrail" | SCP attached at the OU                                                                      |
+| "Restrict the management account itself"                                | **Trick** — SCPs do not apply to the management account; move workloads to a member account |
 
 ## References
 

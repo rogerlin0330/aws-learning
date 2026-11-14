@@ -42,6 +42,8 @@ For Athena, publish to S3 and define a table matching the files' format and fiel
 
 Firehose is a direct destination; CloudWatch Logs need not sit between it and VPC Flow Logs. Its downstream buffering does not remove the upstream flow-log delay. [AWS Firehose delivery](https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs-firehose.html)
 
+[GuardDuty](guardduty.md) also analyzes flow log data for threat detection, but it reads its own independent stream. You do not need to create a flow log for GuardDuty, and GuardDuty does not keep the logs for you. [AWS GuardDuty data sources](https://docs.aws.amazon.com/guardduty/latest/ug/guardduty_data-sources.html)
+
 ## Timing and Record Format
 
 Flow logs are **delayed telemetry**. Maximum aggregation is normally **10 minutes**, optionally **1 minute**; Nitro instance interfaces aggregate in at most one minute. Publishing then typically takes about **5 minutes to CloudWatch Logs** or **10 minutes to S3**, with no guaranteed delivery deadline. [AWS records guide](https://docs.aws.amazon.com/vpc/latest/userguide/flow-log-records.html)

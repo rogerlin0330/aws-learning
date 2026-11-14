@@ -59,6 +59,7 @@ AWS enforces security at multiple independent layers — an attacker must defeat
 - **[NACLs](services/vpc.md#network-acl-nacl)** — L3/4 stateless firewall at the subnet boundary
 - **[WAF](services/waf.md)** — L7 HTTP content inspection on CloudFront, ALB, API Gateway, and other HTTP services: SQL injection, XSS, rate limits, bots, geo blocking
 - **[Shield](services/shield.md)** — DDoS protection: Standard is free and automatic for L3/4 attacks; Advanced adds L7 protection through WAF, cost protection, and the Shield Response Team
+- **[GuardDuty](services/guardduty.md)** — Detection behind the layers: continuous threat detection over CloudTrail, VPC Flow Logs, and DNS logs with ML and threat intelligence; findings go to EventBridge for notification or automatic remediation
 
 See [Networking Concepts](concepts/networking.md) for OSI layer breakdown and [Identity and Access Concepts](concepts/identity-and-access.md) for how IAM evaluation works.
 
@@ -138,6 +139,7 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 - [Organizations](services/organizations.md) — multi-account management, consolidated billing, SCPs
 - [Control Tower](services/control-tower.md) — "Organizations with superpowers"; orchestrates a well-architected landing zone (foundational OUs + Audit/Log Archive accounts), guardrails (preventative SCP / detective Config), and Account Factory self-service provisioning
 - [CloudWatch](services/cloudwatch.md) — monitoring & observability; log groups, metric filters, alarms, and the **CloudWatch Agent** for in-guest EC2 metrics + OS/application logs
+- [GuardDuty](services/guardduty.md) — continuous threat detection; foundational sources (CloudTrail, VPC Flow Logs, DNS logs) read as independent streams, ML baseline plus threat intelligence, protection plans, findings to EventBridge for SNS or Lambda response, delegated administrator through Organizations, regional
 - [AWS Config](services/config.md) — resource configuration history and compliance; configuration items, continuous vs periodic recording, Config rules (managed, Guard, Lambda), detective not preventative, SNS/EventBridge integration, SSM Automation remediation, aggregators, and conformance packs
 - [CloudTrail](services/cloudtrail.md) — audit & governance; API/account-activity events, Event History vs trails, management/data/Insight events, global service events, organizational trail, log file integrity
 - [EventBridge](services/eventbridge.md) — serverless event bus (formerly CloudWatch Events); "if X happens, or at time Y, then do Z" — producers emit events, rules match on content or schedule, targets (Lambda and others) receive the JSON; the AWS implementation of the [event-driven](patterns/architecture-evolution.md#stage-6--event-driven) router/bus pattern, distinct from CloudWatch Alarms (metric thresholds)

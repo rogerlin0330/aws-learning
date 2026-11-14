@@ -2902,6 +2902,36 @@ See [AWS Config](../services/config.md) for the architecture diagram, rule types
 > | Stop the non-compliant change from happening | IAM or SCP, not Config |
 > | Compliance view across all accounts and Regions | Config aggregator |
 
+## Amazon GuardDuty
+
+See [Amazon GuardDuty](../services/guardduty.md) for the architecture diagram, protection plans, finding types, and tuning options.
+
+- **What it is:** continuous **threat detection**. Combines **ML and anomaly detection** (learns your account's normal activity as a baseline) with **threat intelligence feeds** (known malicious IPs and domains). Identifies unexpected and unauthorized activity as **findings**.
+- **Detective, not preventative.** GuardDuty never blocks traffic or changes resources.
+- **Foundational sources:** [CloudTrail](../services/cloudtrail.md) management events, [VPC Flow Logs](../services/vpc-flow-logs.md), Route 53 Resolver DNS logs. GuardDuty reads its **own independent copy**: you do **not** enable Flow Logs or a trail for it, and it does not store the logs for you.
+- **DNS findings** only when instances use the AWS-provided VPC resolver (the default). Your own DNS servers or a public resolver are invisible to GuardDuty.
+- **Protection plans (optional):** **S3 Protection** (CloudTrail S3 data events; no trail data events needed), EKS audit logs, Runtime Monitoring (agent on EKS, ECS including Fargate, EC2), Malware Protection (EC2 EBS volumes agentless, S3 new uploads, AWS Backup), RDS Protection, Lambda Protection, AI Protection.
+- **Response:** findings go to [EventBridge](../services/eventbridge.md), then **SNS** to notify or **Lambda** to remediate (for example, a NACL deny rule for the attacker's IP). New findings arrive in near real time; updates to existing findings every 6 hours by default (1 hour or 15 minutes optional).
+- **Findings kept 90 days;** export to S3 to keep longer.
+- **Multi-account:** administrator and member accounts. Recommended: a **delegated administrator** through [Organizations](../services/organizations.md) with **auto-enable** for new accounts (up to 50,000 members); or invitations (up to 5,000).
+- **Regional.** Enable in **all Regions**, including unused ones. Use an SCP to stop member accounts from disabling it.
+- **Tuning:** **trusted lists** (no findings) and **threat lists** (always findings) of IP addresses and, since 2025, domains; **suppression rules** auto-archive expected findings.
+- **Suspend** keeps findings and settings; **disable** deletes them.
+
+> [!tip] Exam Tip
+>
+> | Requirement | Answer |
+> | --- | --- |
+> | Intelligent threat detection across accounts with minimal setup | GuardDuty |
+> | Detect EC2 instances talking to known malicious IPs or mining crypto | GuardDuty |
+> | Automatically respond to a finding | EventBridge rule to Lambda |
+> | Notify the security team about findings | EventBridge rule to SNS |
+> | Enable and manage GuardDuty for every account, including new ones | Delegated administrator in Organizations, auto-enable |
+> | Detect suspicious S3 data access or mass deletions | GuardDuty S3 Protection |
+> | Software vulnerabilities on EC2 or container images | Amazon Inspector, not GuardDuty |
+> | Personal data stored in S3 | Amazon Macie, not GuardDuty |
+> | Resource misconfiguration against a standard | AWS Config, not GuardDuty |
+
 ## Key Service Properties to Memorize
 
 | Service | Resilience level |

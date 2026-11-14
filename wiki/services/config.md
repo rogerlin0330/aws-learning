@@ -15,7 +15,7 @@ AWS Config records how the configuration of your AWS resources changes over time
 
 AWS Config is easy to misunderstand because it sounds like a control. It is not. It is a **detective** service: it observes and reports, and it **does not prevent changes**. Blocking an action is the job of [IAM policies](iam.md) and [SCPs](organizations.md#service-control-policies-scps). This is the same split [Control Tower](control-tower.md#axis-2--functional-type) uses for its guardrails: preventative controls are SCPs, detective controls are Config rules.
 
-Config sits alongside two other governance and observability services. [CloudTrail](cloudtrail.md#where-cloudtrail-fits) answers who made an API call, [CloudWatch](cloudwatch.md) answers whether a workload is healthy, and Config answers what a resource's configuration is and how it changed.
+Config sits alongside two other governance and observability services. [CloudTrail](cloudtrail.md#where-cloudtrail-fits) answers who made an API call, [CloudWatch](cloudwatch.md) answers whether a workload is healthy, and Config answers what a resource's configuration is and how it changed. [GuardDuty](guardduty.md) is a different kind of detective service: it looks for threats and malicious activity, not for misconfigured resources.
 
 ## Architecture
 

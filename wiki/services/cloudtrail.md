@@ -140,6 +140,8 @@ CloudTrail is one of three complementary observability/governance services that 
 > [!warning] Gotcha: CloudTrail records the API call activity, not the resource state
 > A CloudTrail event shows what the API call asked for in `requestParameters`. For example, an `AuthorizeSecurityGroupIngress` event contains the security group ID and the new rule (TCP 22 from `0.0.0.0/0`). It **cannot** tell you what the resource's state was before the call or what its state is after it, such as the security group's full rule set. Rebuilding that from CloudTrail alone would mean replaying every call that ever touched the resource. That before-and-after view is what [AWS Config](config.md#configuration-items-and-history) records. Each Config configuration item links to the related CloudTrail event, so Config shows how the resource changed and CloudTrail shows the call that caused it.
 
+CloudTrail records activity but does not judge it. [GuardDuty](guardduty.md) analyzes CloudTrail management events, and S3 data events with its S3 Protection plan, to detect suspicious activity. It reads its own independent copy of the events, so it does not need a trail.
+
 CloudTrail also underpins finer-grained audit stories on other pages: it is the **structured, IAM-context-rich, near-real-time alternative** to [S3 server access logging](s3.md#access-logging) (via S3 **data events**), and it is what records every `Encrypt` / `Decrypt` / `GenerateDataKey` call when you use [SSE-KMS](s3.md#sse-kms--kms-managed-keys).
 
 ## Exam Recap
