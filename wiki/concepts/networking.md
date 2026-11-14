@@ -82,6 +82,8 @@ What a Layer 7 firewall understands depends on its software. Some understand onl
 
 AWS WAF does not decrypt traffic itself. The service it is attached to, such as CloudFront or an ALB, terminates HTTPS and hands WAF the plain request. This is why WAF cannot be attached to a [Network Load Balancer](../services/elb.md) passing TLS through, or to an EC2 instance directly.
 
+A Layer 7 firewall also defends against application-layer DDoS attacks, such as floods of expensive search requests, which look like normal HTTP to lower-layer controls. [AWS Shield](../services/shield.md) covers Layer 3 and 4 DDoS attacks automatically and uses WAF for Layer 7 protection in its Advanced tier.
+
 ## Observing Network Traffic
 
 [VPC Flow Logs](../services/vpc-flow-logs.md) makes ENI traffic visible as delayed metadata. VPC/subnet scopes widen the set of interfaces monitored; they do not turn the logs into packet captures. [CloudWatch Logs](../services/cloudwatch.md) supports operational log analysis, while [S3](../services/s3.md) supports stored-log analysis with [Athena](../services/athena.md).
@@ -160,4 +162,5 @@ When a client connects to a server, the OS assigns a random **ephemeral (source)
 - [DNS](dns.md)
 - [TLS/HTTPS](tls-https.md)
 - [AWS WAF](../services/waf.md)
+- [AWS Shield](../services/shield.md)
 - Adrian Cantrill, AWS Certified Solutions Architect – Associate (SAA-C03): "Application Layer (L7) Firewall"

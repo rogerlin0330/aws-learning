@@ -2834,7 +2834,7 @@ See [AWS WAF](../services/waf.md) for the architecture diagram, rule actions, an
 - **What it is:** AWS's managed **Layer 7** firewall for HTTP/HTTPS. The host service (CloudFront, ALB, API Gateway) terminates TLS and hands WAF the plain request, so WAF can read URI, headers, cookies, query strings, and the body.
 - **Where it attaches:** CloudFront (and Amplify), with the Web ACL in **us-east-1**; or regional resources (ALB, API Gateway REST API, AppSync, Cognito user pool, App Runner, Verified Access) with the Web ACL in the **same Region**. Not an NLB, not EC2 directly. One Web ACL per resource; one Web ACL can serve many resources of the same scope.
 - **Web ACL:** default action **Allow** (block known bad) or **Block** (allow only known good); rules evaluated in priority order. **1,500 WCU** included, up to **5,000** at extra cost (no support ticket). WAF WCU is rule complexity, not DynamoDB write capacity.
-- **Rule groups:** AWS managed (mostly free), Marketplace (seller subscription), yours, or service-owned (Shield Advanced, Firewall Manager). No default action; reusable across Web ACLs; capacity fixed at creation, max 5,000 WCU.
+- **Rule groups:** AWS managed (mostly free), Marketplace (seller subscription), yours, or service-owned ([Shield Advanced](../services/shield.md), Firewall Manager). No default action; reusable across Web ACLs; capacity fixed at creation, max 5,000 WCU.
 - **Rules = type + statement + action.** Regular or **rate-based** (per aggregation key, default source IP; 1/2/5/10-minute window; minimum limit 10; optional scope-down such as `/login`). Match on country, IP, label, headers, cookies, query, URI path, body, method; AND/OR/NOT.
 - **Body inspection:** first **8 KB** on ALB and AppSync; **16 KB** default (up to 64 KB, extra cost) on CloudFront, API Gateway, Cognito, App Runner, Verified Access.
 - **Actions:** Allow and Block **stop** evaluation; Count continues; CAPTCHA and Challenge continue for a valid token, otherwise block. **No Allow on rate-based rules.** Block can return a custom response; the others can add `x-amzn-waf-` request headers. **Labels** let a Count rule mark a request for a later rule in the same Web ACL.
@@ -2852,6 +2852,30 @@ See [AWS WAF](../services/waf.md) for the architecture diagram, rule actions, an
 > | Same WAF rules in every account of an Organization | Firewall Manager |
 > | Block an IP range for all protocols at the subnet | NACL |
 > | Third-party firewall, IDS/IPS, non-HTTP inspection | Gateway Load Balancer |
+
+## AWS Shield
+
+See [AWS Shield](../services/shield.md) for the attack types, the full Standard versus Advanced comparison, and current pricing.
+
+- **DDoS types:** L3 **volumetric** (saturate bandwidth, e.g. UDP reflection), L4 **protocol** (e.g. SYN flood: half-open connections block new ones), L7 **application** (cheap requests that are expensive to answer, e.g. HTTP floods on a search page).
+- **Shield Standard:** free, automatic, always on. Common L3/L4 attacks at the Regional perimeter and the edge. Strongest with **Route 53, CloudFront, and Global Accelerator**. Does **not** stop HTTP floods: use WAF.
+- **Shield Advanced:** **$3,000 per month per payer account** (once for an Organization's consolidated billing), **1-year commitment**, plus data transfer out fees.
+- **Protects:** CloudFront, Route 53 hosted zones, Global Accelerator standard accelerators, ALB, CLB, and **Elastic IPs** (EC2 instances and NLBs only through their EIPs).
+- **Not automatic:** each resource must be explicitly protected, or covered by a **Firewall Manager** Shield Advanced policy.
+- **Cost protection:** credits for attack-driven scaling charges (EC2 Auto Scaling, CloudFront, Route 53, ALB, Global Accelerator); resource must be protected before the attack; request within 15 days after the billing month.
+- **SRT:** 24/7 Shield Response Team with **Business or Enterprise Support**. **Proactive engagement** (SRT contacts you) needs **Route 53 health checks** on the resources and an emergency contact.
+- **WAF integration:** L7 protection uses WAF; basic WAF fees for protected resources are included. Since March 2026 the **Anti-DDoS managed rule group** is the default for HTTP flood mitigation.
+- **Also:** per-resource CloudWatch metrics (`DDoSDetected`), health-based detection (fewer false positives, faster detection), and **protection groups** (manage resources as one unit, new matching resources join automatically).
+
+> [!tip] Exam Tip
+>
+> | Requirement | Answer |
+> | --- | --- |
+> | Basic DDoS protection at no extra cost | Shield Standard (automatic) |
+> | HTTP flood or login flood | WAF rate-based rule or Anti-DDoS managed rule group |
+> | 24/7 DDoS experts, or AWS contacts us during an attack | Shield Advanced (SRT, proactive engagement) |
+> | Credits for scaling costs caused by a DDoS attack | Shield Advanced cost protection |
+> | DDoS protection across all accounts in an Organization | Firewall Manager Shield Advanced policy |
 
 ## Key Service Properties to Memorize
 

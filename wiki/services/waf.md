@@ -110,7 +110,7 @@ A rule group is managed (by AWS or a Marketplace vendor), yours, or service-owne
 | **Managed** by AWS                  | Core rule set (OWASP-style), SQL database, known bad inputs, Amazon IP reputation list, anonymous IP list | Most are free beyond the normal per-rule-group charge   |
 | **Managed** by a Marketplace vendor | Vendor rule sets (for example F5, Fortinet, Imperva)                                                      | A subscription set by the seller, on top of WAF charges |
 | **Yours**                           | Your own allow lists, deny lists, and custom rules                                                        | Normal WAF charges                                      |
-| **Service-owned**                   | Groups created by AWS Shield Advanced or AWS Firewall Manager                                             | Managed by that service                                 |
+| **Service-owned**                   | Groups created by [AWS Shield Advanced](shield.md) or AWS Firewall Manager                                | Managed by that service                                 |
 
 The AWS managed rule groups that cost extra are **Bot Control**, **Fraud Control account takeover prevention (ATP)**, **Fraud Control account creation fraud prevention (ACFP)**, and the **Anti-DDoS** rule group. The original lecture names only Bot Control and ATP; the newer recording adds ACFP and Anti-DDoS.
 
@@ -258,7 +258,7 @@ The base WAF cost is small. The optional threat mitigation features, especially 
 
 ### Other Ways to Pay
 
-- **AWS Shield Advanced** subscribers get limited WAF usage for protected resources as part of the subscription. The saving does not apply to the intelligent threat mitigation features, such as Bot Control and Fraud Control ([AWS WAF pricing](https://aws.amazon.com/waf/pricing/)).
+- **[AWS Shield Advanced](shield.md)** subscribers get the basic WAF charges for protected resources included in the subscription: Web ACL, rule, and request fees for up to 1,500 WCU and up to 50 billion requests per payer account per month. The saving does not apply to the intelligent threat mitigation features, such as Bot Control and Fraud Control, or to WCU and body inspection above the defaults ([AWS Shield pricing](https://aws.amazon.com/shield/pricing/)).
 - **CloudFront flat-rate plans** (November 2025) bundle CloudFront, WAF, DDoS protection, Route 53 DNS, and other services for one monthly price with no overage charges. The tiers are Free ($0), Pro ($15), Business ($200), and Premium ($1,000) per month ([AWS: flat-rate pricing plans](https://aws.amazon.com/about-aws/whats-new/2025/11/aws-flat-rate-pricing-plans); [CloudFront: flat-rate pricing plans](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/flat-rate-pricing-plan.html)). For a small site behind CloudFront, this can replace pay-as-you-go WAF billing.
 - **Logging**: WAF includes 500 MB of CloudWatch Logs (vended logs) ingestion for every million WAF requests. Log volume above that is billed by CloudWatch.
 
@@ -270,9 +270,9 @@ The base WAF cost is small. The optional threat mitigation features, especially 
 | [NACL](vpc.md#network-acl-nacl)                                                            | 3/4, stateless                             | IPs, protocols, ports                          | Subnet-wide IP blocks                                     |
 | **AWS WAF**                                                                                | 7 (HTTP)                                   | URI, headers, cookies, body, IP, country       | SQL injection, XSS, rate limiting, bots, geo blocking     |
 | [Gateway Load Balancer](elb.md#gwlb-vs-waf--complementary-not-substitutes) plus appliances | 3 (all IP traffic)                         | Whatever the third-party appliance understands | Vendor firewalls, IDS/IPS, non-HTTP and egress inspection |
-| AWS Shield                                                                                 | 3/4 (Standard) and 7 (Advanced, using WAF) | Network-level DDoS patterns                    | DDoS protection; Standard is automatic and free           |
+| [AWS Shield](shield.md)                                                                    | 3/4 (Standard) and 7 (Advanced, using WAF) | Network-level DDoS patterns                    | DDoS protection; Standard is automatic and free           |
 
-These are layers, not alternatives. A typical public web application uses security groups on the instances, WAF on the ALB or CloudFront, and Shield Standard automatically. AWS Firewall Manager can push the same WAF rules to every account in an [Organization](organizations.md).
+These are layers, not alternatives. A typical public web application uses security groups on the instances, WAF on the ALB or CloudFront, and [Shield Standard](shield.md#shield-standard) automatically. AWS Firewall Manager can push the same WAF rules to every account in an [Organization](organizations.md).
 
 > [!tip] Exam Tip
 >
