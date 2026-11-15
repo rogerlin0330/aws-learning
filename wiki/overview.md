@@ -61,6 +61,8 @@ AWS enforces security at multiple independent layers — an attacker must defeat
 - **[Shield](services/shield.md)** — DDoS protection: Standard is free and automatic for L3/4 attacks; Advanced adds L7 protection through WAF, cost protection, and the Shield Response Team
 - **[GuardDuty](services/guardduty.md)** — Detection behind the layers: continuous threat detection over CloudTrail, VPC Flow Logs, and DNS logs with ML and threat intelligence; findings go to EventBridge for notification or automatic remediation
 
+[Secrets Manager](services/secrets-manager.md) connects application identity to database credentials: an IAM role authorizes secret retrieval, KMS protects the stored value, and the database authenticates the returned username/password. Its [architecture](services/secrets-manager.md#architecture-retrieve-connect-rotate) separates retrieval from managed or Lambda-based rotation, which updates the stored secret and target credential together. The final [Spring Boot + Druid example](services/secrets-manager.md#example-spring-boot--alibaba-druid--rds-postgresql-auto-rotation) explains how clients refresh credentials for new connections while existing PostgreSQL sessions continue.
+
 See [Networking Concepts](concepts/networking.md) for OSI layer breakdown and [Identity and Access Concepts](concepts/identity-and-access.md) for how IAM evaluation works.
 
 ### Stateful vs Stateless is Everywhere

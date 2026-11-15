@@ -3,7 +3,7 @@ title: RDS — Relational Database Service
 type: service
 tags: [rds, rds-custom, database, relational, db2, ec2, ebs, vpc, subnet-group, multi-az, multi-az-instance, multi-az-cluster, read-replica, synchronous-replication, semi-synchronous-replication, asynchronous-replication, quorum, failover, reader-endpoint, cluster-endpoint, graviton, nvme, aurora, dms, dr, high-availability, acid, cost, backup, snapshot, automated-backup, manual-snapshot, transaction-logs, pitr, point-in-time-recovery, retention, restore, rpo, rto, s3, cross-region-backup, security, encryption, encryption-in-transit, encryption-at-rest, ssl, tls, kms, kms-key, cmk, dek, envelope-encryption, aes-256, tde, transparent-data-encryption, cloudhsm, iam-authentication, generate-db-auth-token, authentication, authorization, credentials-provider-chain, imds, postgresql, jdbc, aws-advanced-jdbc-wrapper, connection-pool, druid, hikaricp, rds-iam, ssl-mode, ca-bundle, session-manager, ssh, rdp, shared-responsibility]
 certs: [aws-saa]
-updated: 2026-07-07
+updated: 2026-11-13
 ---
 
 # RDS — Relational Database Service
@@ -428,6 +428,8 @@ Edition nuances:
 ![Amazon RDS KMS Encryption and TDE: on the left a CloudHSM appliance connects by a blue arrow to an Oracle instance, illustrating that with RDS Oracle the TDE keys can come from CloudHSM and remove AWS from the chain of trust. Two orange HOST boxes in the middle each run RDS instances (left host: Oracle plus a MySQL; right host: another MySQL), with a small key-lock icon showing DEKs resident on each host. Green double arrows between the MySQL engines and the EBS Volumes strip at the bottom are labelled data is encrypted and decrypted by the host — the KMS host-side path. A red double arrow between the two MySQL instances shows replica traffic is also encrypted with the same key. On the right, a KMS key icon sends red arrows loading DEKs onto the hosts as required, and a snapshot icon at the bottom-right shows snapshots of encrypted instances are also encrypted with the same key. Footer text reiterates TDE is native DB-engine encryption, with data encrypted before leaving the instance.](../assets/rds-kms-encryption-vs-tde.png)
 
 The visual contrast to lock in: the **TDE path encrypts inside the engine** (Oracle, left); the **KMS path encrypts on the host** (the green arrows under the MySQL engines). Everything KMS-encrypted — storage, the cross-instance replica traffic, and the snapshot — uses the **same key**.
+
+For password-based applications, [Secrets Manager](secrets-manager.md#example-spring-boot--alibaba-druid--rds-postgresql-auto-rotation) can rotate database credentials automatically. The Spring Boot + Druid example explains credential refresh for new physical connections and why existing PostgreSQL sessions survive password changes.
 
 ### IAM Authentication
 

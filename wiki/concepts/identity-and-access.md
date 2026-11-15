@@ -3,7 +3,7 @@ title: Identity and Access Concepts
 type: concept
 tags: [identity, access, authentication, authorization, iam, policies, roles, federation, scp, credentials]
 certs: [aws-saa, aws-aip]
-updated: 2026-11-04
+updated: 2026-11-13
 ---
 
 # Identity and Access Concepts
@@ -108,6 +108,12 @@ A request can be IAM-allowed but network-blocked, or network-reachable but IAM-d
 | Access Key ID + Secret Access Key + **Session Token** | CLI / API (short-term) | [STS — role assumption](../services/iam.md#how-assumerole-works-sts) |
 
 Temporary STS credentials are always a **triplet** including a session token — that token is what identifies the credentials as belonging to an assumed role rather than to an IAM user. Sessions typically last 15 min – 12 h; permission changes to the role take effect immediately on in-flight sessions.
+
+## Secret Retrieval vs Database Authentication
+
+[Secrets Manager](../services/secrets-manager.md#architecture-retrieve-connect-rotate) illustrates two separate credential layers: an application uses temporary IAM-role credentials to retrieve a secret through an AWS API, then uses the returned username/password to authenticate to [RDS](../services/rds.md). Permission to retrieve the secret does not grant database privileges by itself.
+
+With a customer-managed [KMS key](../services/kms.md), secret retrieval also needs decryption authorization, allowing secret metadata administration and plaintext access to be separated. A rotation Lambda has its own execution role and target-system permissions; these are distinct from the application's read permissions.
 
 ## References
 

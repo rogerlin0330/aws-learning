@@ -170,16 +170,16 @@ Tiers are configured **per parameter** (standard is the default) and affect cost
 
 ### Parameter Store vs Secrets Manager
 
-Both store secrets and both encrypt with [KMS](kms.md), so exam questions pit them against each other. The deciding factor is **automatic rotation**:
+Parameter Store and [Secrets Manager](secrets-manager.md) both store secrets and encrypt with [KMS](kms.md), so exam questions pit them against each other. The deciding factor is **automatic rotation**:
 
-| Capability                                 | Parameter Store     | Secrets Manager           |
-| ------------------------------------------ | ------------------- | ------------------------- |
-| Store strings / secrets                    | Yes                 | Yes                       |
-| KMS encryption                             | SecureString        | Always                    |
-| Built-in **automatic rotation**            | No                  | **Yes** (Lambda-driven)   |
-| Native RDS/Redshift/DocumentDB integration | No                  | **Yes**                   |
-| Cross-Region replication                   | No (build your own) | **Yes**                   |
-| Cost                                       | Standard tier free  | Per secret + per API call |
+| Capability                                 | Parameter Store     | Secrets Manager                   |
+| ------------------------------------------ | ------------------- | --------------------------------- |
+| Store strings / secrets                    | Yes                 | Yes                               |
+| KMS encryption                             | SecureString        | Always                            |
+| Built-in **automatic rotation**            | No                  | **Yes** (managed or Lambda-based) |
+| Native RDS/Redshift/DocumentDB integration | No                  | **Yes**                           |
+| Cross-Region replication                   | No (build your own) | **Yes**                           |
+| Cost                                       | Standard tier free  | Per secret + per API call         |
 
 > [!tip] Exam Tip
 > *"Store a DB password and rotate it automatically every 30 days"* points to **Secrets Manager**. *"Store config / secrets cheaply with native CloudFormation and CLI integration, no rotation needed"* points to **Parameter Store** (standard tier). Note Secrets Manager can be referenced **through** Parameter Store using the `/aws/reference/secretsmanager/` prefix, so an app coded against the Parameter Store API can read a Secrets Manager secret.

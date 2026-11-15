@@ -2,7 +2,7 @@
 title: Wiki Index
 type: overview
 tags: [index, catalog, wiki]
-updated: 2026-11-13
+updated: 2026-11-14
 ---
 
 # Wiki Index
@@ -15,6 +15,7 @@ Section links use GitHub-style heading anchors. In Obsidian, use the GFM Heading
 
 ## Services
 
+- [AWS Secrets Manager](services/secrets-manager.md) — Secret retrieval and IAM/KMS access; managed and Lambda rotation, version labels, and single-user versus alternating-users strategies; Parameter Store comparison; Spring Boot + Druid + RDS PostgreSQL example covering automatic credential refresh, retries, and existing connections
 - [Amazon GuardDuty](services/guardduty.md) — Continuous threat detection; architecture diagram (DNS logs, VPC Flow Logs, CloudTrail management events, and CloudTrail S3 data events plus threat intelligence feeds; findings to EventBridge, then SNS notification and Lambda remediation), ML baseline plus threat intelligence, detective not preventative, foundational sources read as independent streams (no Flow Logs or trail needed, logs not stored), DNS findings only with the VPC resolver, protection plans (S3, EKS, Runtime Monitoring, Malware, RDS, Lambda, AI), finding types and Extended Threat Detection attack sequences, EventBridge delivery (6-hour default for updated findings), 90-day retention, trusted and threat entity lists, suppression rules, administrator and member accounts with an Organizations delegated administrator, regional (enable in all Regions), suspend vs disable, pricing, and GuardDuty vs Config, Inspector, Macie, Detective, and Security Hub
 - [AWS Config](services/config.md) — Resource configuration history and compliance; architecture diagram (standard recorder, configuration items, configuration history, S3 bucket; optional Config rules, SNS, EventBridge, Lambda, SSM Automation), detective not preventative, proactive evaluation, continuous vs periodic recording (periodic costs 4x per CI, records only if changed), global-resource duplicate gotcha, service-linked recorders, managed vs custom Guard/Lambda rules, `required-tags`, rule triggers, conformance packs, native SSM remediation vs EventBridge to Lambda, aggregators, Control Tower and Security Hub CSPM, pricing, and exam recap
 - [AWS Shield](services/shield.md) — DDoS protection; L3 volumetric, L4 protocol (SYN flood), and L7 application attack types; Shield Standard (free, automatic, L3/L4, best with Route 53/CloudFront/Global Accelerator) vs Shield Advanced ($3,000 per month per payer account, 1-year commitment, data transfer out fees, protected resources with NLB and EC2 through EIPs, explicit enablement or Firewall Manager, cost protection credits, Shield Response Team and proactive engagement with Business/Enterprise Support, WAF fees included and Anti-DDoS managed rule group default since March 2026, CloudWatch metrics, health-based detection, protection groups), and network security director preview ended

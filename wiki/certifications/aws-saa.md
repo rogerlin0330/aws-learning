@@ -2822,10 +2822,24 @@ See [Systems Manager — Parameter Store](../services/ssm.md#parameter-store) fo
 - **Permission split** — standard encrypt `kms:Encrypt`; advanced encrypt `kms:GenerateDataKey`; decrypt (both) `kms:Decrypt`
 
 > [!tip] Exam Tip
-> Pattern-match: *"store config/secrets for EC2/Lambda, integrate with IAM, cheap, no rotation"* → **Parameter Store**. *"automatically rotate a DB password"* or *"native RDS secret integration"* → **Secrets Manager**. *"stop hard-coding the AMI ID in CloudFormation"* → **public parameter** (latest AMI ID). *"someone can list the secret name but must not read its value"* → SecureString with **KMS permission withheld** (role separation).
+> Pattern-match: *"store config/secrets for EC2/Lambda, integrate with IAM, cheap, no rotation"* → **Parameter Store**. *"automatically rotate a DB password"* or *"native RDS secret integration"* → **[Secrets Manager](../services/secrets-manager.md)**. *"stop hard-coding the AMI ID in CloudFormation"* → **public parameter** (latest AMI ID). *"someone can list the secret name but must not read its value"* → SecureString with **KMS permission withheld** (role separation).
 
 > [!warning] Gotcha
 > Granting only `ssm:GetParameter` is **not enough** to read a SecureString — without `kms:Decrypt` on the key, the decrypt fails. The reverse trap: a parameter created in `us-east-1` is **not** visible in `us-west-2` (no cross-Region replication).
+
+## AWS Secrets Manager
+
+See [Secrets Manager](../services/secrets-manager.md) for the retrieval/rotation architecture and the application connection-pool example.
+
+- **Purpose:** store and retrieve database passwords, API keys, and tokens without embedding them in code. [SSM Parameter Store](../services/ssm.md#parameter-store) also stores encrypted values; automatic credential rotation and service integration distinguish Secrets Manager.
+- **Two credentials:** the application's [IAM role](../services/iam.md#iam-roles) authorizes secret retrieval; the returned database credentials authenticate its [RDS](../services/rds.md) connection.
+- **Rotation updates both sides:** the secret value and the database/service credential must stay synchronized. Changing only the stored secret does not change the database password.
+- **Two rotation mechanisms:** service-managed rotation for supported credentials such as RDS/[Aurora](../services/aurora.md) master passwords needs no rotation function; other cases use [Lambda](../services/lambda.md) templates/custom code. Lambda needs an execution role, network access, and appropriate target-system permissions.
+- **Encrypted with [KMS](../services/kms.md):** a customer-managed key requires both Secrets Manager access and `kms:Decrypt` authorization, supporting separation of duties. KMS key rotation is separate from password rotation.
+- **Application behavior:** rotation does not refresh a startup-loaded password automatically. Existing PostgreSQL sessions survive password changes; new physical connections need valid credentials.
+
+> [!tip] Exam Tip
+> Automatic database-password rotation points to Secrets Manager. Encrypted configuration without rotation can use Parameter Store. Neither “only Secrets Manager can store passwords” nor “all rotation requires Lambda” is correct.
 
 ## AWS WAF
 
