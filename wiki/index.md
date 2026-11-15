@@ -11,6 +11,8 @@ Section links use GitHub-style heading anchors. In Obsidian, use the GFM Heading
 
 ## Overview
 
+- [Repository Guide](../README.md) — Reading entry points, topic coverage, source organization, certification status, and maintenance workflows
+- [Agent Instructions](../AGENTS.md) / [Claude Instructions](../CLAUDE.md) — Synchronized wiki schema, source verification, lecture ingestion, diagrams, and maintenance checks
 - [Overview](overview.md) — Big-picture synthesis; mental models, resilience tiers, topics covered
 
 ## Services
