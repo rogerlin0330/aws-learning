@@ -1,14 +1,452 @@
 ---
 title: AWS Solutions Architect Associate — Exam Notes
 type: certification
-tags: [athena, schema-on-read, redshift, data-warehouse, olap, iam, vpc, networking, ec2, ami, ami-baking, ami-permissions, ami-marketplace, ami-lifecycle, block-device-mapping, instance-lifecycle, ssh, rdp, key-pair, iaas, shared-responsibility, host, tenancy, dedicated-host, dedicated-instance, instance-store, ephemeral, az-resilience, restart-vs-stop-start, instance-types, general-purpose, compute-optimized, memory-optimized, accelerated-computing, storage-optimized, graviton, burstable, gpu, fpga, eni, elastic-network-interface, primary-eni, secondary-eni, mac-address, private-dns, public-dns, split-horizon-dns, elastic-ip, eip, ipv6, source-destination-check, imds, instance-metadata, imdsv2, link-local, user-data, ssrf, status-checks, system-status-check, instance-status-check, auto-recovery, cloudwatch-alarm, sns, route53, organizations, cost, purchase-options, on-demand, spot, reserved-instances, scheduled-reserved, capacity-reservations, zonal-ri, regional-ri, savings-plans, byol, s3, foundations, object-storage, file-storage, block-storage, efs, fsx, ebs, gp2, gp3, io1, io2, block-express, provisioned-iops, per-instance-ceiling, iops-ratio, raid0, hdd, st1, sc1, throughput-optimized-hdd, cold-hdd, ebs-encryption, dek, envelope-encryption, aes-256, at-rest-encryption, dek-reuse, default-encryption, bucket-naming, bucket-limits, prefix, flat-namespace, regional-resilience, data-sovereignty, cloudwatch, multipart, transfer-acceleration, kms, encryption, sse, sse-kms, sse-s3, sse-c, cse, storage-classes, glacier, intelligent-tiering, lifecycle, replication, crr, srr, rtc, presigned-urls, s3-select, glacier-select, athena, events, event-notifications, eventbridge, lambda-trigger, access-logs, audit, observability, object-lock, worm, retention, legal-hold, compliance-mode, governance-mode, immutability, access-points, mrap, multi-region, vpc-endpoint, failover, dr, scaling, horizontal-scaling, vertical-scaling, stateless, sticky-sessions, elasticity, load-balancer, containers, docker, container-image, container-registry, ecs, eks, kubernetes, k8s, control-plane, etcd, kubelet, pod, ingress, persistent-volume, node-group, fargate-profile, ecr, fargate, task-definition, task-role, cloudtrail, audit, governance, management-events, data-events, insight-events, global-service-events, organizational-trail, log-file-integrity, event-history, eventbridge, control-tower, landing-zone, guardrails, account-factory, iam-identity-center, bootstrapping, cloud-init, boot-time-to-service-time, cloudformation, cfn-init, configsets, cfn-hup, cfn-signal, creation-policy, desired-state, infrastructure-as-code, cloudwatch-agent, cwagent, parameter-store, log-group, log-stream, placement-groups, cluster-placement-group, spread-placement-group, partition-placement-group, hpc, enhanced-networking, topology-aware, walking-the-tree, resolver, hosts-file, root-servers, nslookup, dig, dnssec, rrset, rrsig, dnskey, zsk, ksk, ds-record, trust-anchor, root-signing-ceremony, chain-of-trust, nsec3, cache-poisoning, rds, rds-custom, session-manager, database, relational, subnet-group, multi-az, multi-az-instance, multi-az-cluster, read-replica, synchronous-replication, semi-synchronous-replication, asynchronous-replication, quorum, failover, reader-endpoint, cluster-endpoint, graviton, nvme, aurora, dms, database-migration, cdc, full-load, replication-instance, replication-task, dms-serverless, dcu, schema-conversion, dms-schema-conversion, sct, homogeneous-migration, heterogeneous-migration, acid, base, cap-theorem, consistency, availability, eventual-consistency, dynamodb, nosql, backup, snapshot, automated-backup, manual-snapshot, transaction-logs, pitr, point-in-time-recovery, restore, rpo, rto, cross-region-backup, rds-security, encryption-in-transit, encryption-at-rest, ssl, tls, kms-key, cmk, dek, envelope-encryption, aes-256, tde, transparent-data-encryption, cloudhsm, iam-authentication, generate-db-auth-token, authentication, authorization, cluster-volume, shared-storage, backtrack, fast-clone, aurora-serverless, acu, scale-to-zero, data-api, global-database, multi-master, switchover, database-savings-plans, architecture-fundamentals, global-components, regional-tiers, cloudfront, cdn, web-tier, compute-tier, caching-tier, elasticache, dax, app-services, decoupling, sqs-decoupling, elb, alb, nlb, clb, cross-zone-load-balancing, listeners, internet-facing, internal-load-balancer, sni, listener-rules, end-to-end-encryption, tls-termination, tcp-pass-through, privatelink, oidc, cognito, gwlb, launch-template, launch-configuration, auto-scaling, mixed-instances-policy, ssl-bridging, ssl-offload, session-stickiness, awsalb-cookie, sqs, queues, fifo, standard-queue, visibility-timeout, delay-queue, message-timer, dead-letter-queue, redrive-policy, redrive-allow-policy, max-receive-count, long-polling, short-polling, message-group-id, message-deduplication-id, fair-queues, fanout, idempotency, kinesis, data-streams, shards, partition-key, enhanced-fan-out, firehose, amazon-data-firehose, near-real-time, kinesis-data-analytics, managed-flink, kinesis-video-streams, rekognition, streaming, ingestion, kafka, msk, managed-kafka, log-vs-queue, replay, consumer-group, partitions]
-certs: [aws-saa]
-updated: 2026-11-13
+tags:
+  - athena
+  - schema-on-read
+  - redshift
+  - data-warehouse
+  - olap
+  - iam
+  - vpc
+  - networking
+  - ec2
+  - ami
+  - ami-baking
+  - ami-permissions
+  - ami-marketplace
+  - ami-lifecycle
+  - block-device-mapping
+  - instance-lifecycle
+  - ssh
+  - rdp
+  - key-pair
+  - iaas
+  - shared-responsibility
+  - host
+  - tenancy
+  - dedicated-host
+  - dedicated-instance
+  - instance-store
+  - ephemeral
+  - az-resilience
+  - restart-vs-stop-start
+  - instance-types
+  - general-purpose
+  - compute-optimized
+  - memory-optimized
+  - accelerated-computing
+  - storage-optimized
+  - graviton
+  - burstable
+  - gpu
+  - fpga
+  - eni
+  - elastic-network-interface
+  - primary-eni
+  - secondary-eni
+  - mac-address
+  - private-dns
+  - public-dns
+  - split-horizon-dns
+  - elastic-ip
+  - eip
+  - ipv6
+  - source-destination-check
+  - imds
+  - instance-metadata
+  - imdsv2
+  - link-local
+  - user-data
+  - ssrf
+  - status-checks
+  - system-status-check
+  - instance-status-check
+  - auto-recovery
+  - cloudwatch-alarm
+  - sns
+  - route53
+  - organizations
+  - cost
+  - purchase-options
+  - on-demand
+  - spot
+  - reserved-instances
+  - scheduled-reserved
+  - capacity-reservations
+  - zonal-ri
+  - regional-ri
+  - savings-plans
+  - byol
+  - s3
+  - foundations
+  - object-storage
+  - file-storage
+  - block-storage
+  - efs
+  - fsx
+  - ebs
+  - gp2
+  - gp3
+  - io1
+  - io2
+  - block-express
+  - provisioned-iops
+  - per-instance-ceiling
+  - iops-ratio
+  - raid0
+  - hdd
+  - st1
+  - sc1
+  - throughput-optimized-hdd
+  - cold-hdd
+  - ebs-encryption
+  - dek
+  - envelope-encryption
+  - aes-256
+  - at-rest-encryption
+  - dek-reuse
+  - default-encryption
+  - bucket-naming
+  - bucket-limits
+  - prefix
+  - flat-namespace
+  - regional-resilience
+  - data-sovereignty
+  - cloudwatch
+  - multipart
+  - transfer-acceleration
+  - kms
+  - encryption
+  - sse
+  - sse-kms
+  - sse-s3
+  - sse-c
+  - cse
+  - storage-classes
+  - glacier
+  - intelligent-tiering
+  - lifecycle
+  - replication
+  - crr
+  - srr
+  - rtc
+  - presigned-urls
+  - s3-select
+  - glacier-select
+  - events
+  - event-notifications
+  - eventbridge
+  - lambda-trigger
+  - access-logs
+  - audit
+  - observability
+  - object-lock
+  - worm
+  - retention
+  - legal-hold
+  - compliance-mode
+  - governance-mode
+  - immutability
+  - access-points
+  - mrap
+  - multi-region
+  - vpc-endpoint
+  - failover
+  - dr
+  - scaling
+  - horizontal-scaling
+  - vertical-scaling
+  - stateless
+  - sticky-sessions
+  - elasticity
+  - load-balancer
+  - containers
+  - docker
+  - container-image
+  - container-registry
+  - ecs
+  - eks
+  - kubernetes
+  - k8s
+  - control-plane
+  - etcd
+  - kubelet
+  - pod
+  - ingress
+  - persistent-volume
+  - node-group
+  - fargate-profile
+  - ecr
+  - fargate
+  - task-definition
+  - task-role
+  - cloudtrail
+  - governance
+  - management-events
+  - data-events
+  - insight-events
+  - global-service-events
+  - organizational-trail
+  - log-file-integrity
+  - event-history
+  - control-tower
+  - landing-zone
+  - guardrails
+  - account-factory
+  - iam-identity-center
+  - bootstrapping
+  - cloud-init
+  - boot-time-to-service-time
+  - cloudformation
+  - cfn-init
+  - configsets
+  - cfn-hup
+  - cfn-signal
+  - creation-policy
+  - desired-state
+  - infrastructure-as-code
+  - cloudwatch-agent
+  - cwagent
+  - parameter-store
+  - log-group
+  - log-stream
+  - placement-groups
+  - cluster-placement-group
+  - spread-placement-group
+  - partition-placement-group
+  - hpc
+  - enhanced-networking
+  - topology-aware
+  - walking-the-tree
+  - resolver
+  - hosts-file
+  - root-servers
+  - nslookup
+  - dig
+  - dnssec
+  - rrset
+  - rrsig
+  - dnskey
+  - zsk
+  - ksk
+  - ds-record
+  - trust-anchor
+  - root-signing-ceremony
+  - chain-of-trust
+  - nsec3
+  - cache-poisoning
+  - rds
+  - rds-custom
+  - session-manager
+  - database
+  - relational
+  - subnet-group
+  - multi-az
+  - multi-az-instance
+  - multi-az-cluster
+  - read-replica
+  - synchronous-replication
+  - semi-synchronous-replication
+  - asynchronous-replication
+  - quorum
+  - reader-endpoint
+  - cluster-endpoint
+  - nvme
+  - aurora
+  - dms
+  - database-migration
+  - cdc
+  - full-load
+  - replication-instance
+  - replication-task
+  - dms-serverless
+  - dcu
+  - schema-conversion
+  - dms-schema-conversion
+  - sct
+  - homogeneous-migration
+  - heterogeneous-migration
+  - acid
+  - base
+  - cap-theorem
+  - consistency
+  - availability
+  - eventual-consistency
+  - dynamodb
+  - nosql
+  - backup
+  - snapshot
+  - automated-backup
+  - manual-snapshot
+  - transaction-logs
+  - pitr
+  - point-in-time-recovery
+  - restore
+  - rpo
+  - rto
+  - cross-region-backup
+  - rds-security
+  - encryption-in-transit
+  - encryption-at-rest
+  - ssl
+  - tls
+  - kms-key
+  - cmk
+  - tde
+  - transparent-data-encryption
+  - cloudhsm
+  - iam-authentication
+  - generate-db-auth-token
+  - authentication
+  - authorization
+  - cluster-volume
+  - shared-storage
+  - backtrack
+  - fast-clone
+  - aurora-serverless
+  - acu
+  - scale-to-zero
+  - data-api
+  - global-database
+  - multi-master
+  - switchover
+  - database-savings-plans
+  - architecture-fundamentals
+  - global-components
+  - regional-tiers
+  - cloudfront
+  - cdn
+  - web-tier
+  - compute-tier
+  - caching-tier
+  - elasticache
+  - dax
+  - app-services
+  - decoupling
+  - sqs-decoupling
+  - elb
+  - alb
+  - nlb
+  - clb
+  - cross-zone-load-balancing
+  - listeners
+  - internet-facing
+  - internal-load-balancer
+  - sni
+  - listener-rules
+  - end-to-end-encryption
+  - tls-termination
+  - tcp-pass-through
+  - privatelink
+  - oidc
+  - cognito
+  - gwlb
+  - launch-template
+  - launch-configuration
+  - auto-scaling
+  - mixed-instances-policy
+  - ssl-bridging
+  - ssl-offload
+  - session-stickiness
+  - awsalb-cookie
+  - sqs
+  - queues
+  - fifo
+  - standard-queue
+  - visibility-timeout
+  - delay-queue
+  - message-timer
+  - dead-letter-queue
+  - redrive-policy
+  - redrive-allow-policy
+  - max-receive-count
+  - long-polling
+  - short-polling
+  - message-group-id
+  - message-deduplication-id
+  - fair-queues
+  - fanout
+  - idempotency
+  - kinesis
+  - data-streams
+  - shards
+  - partition-key
+  - enhanced-fan-out
+  - firehose
+  - amazon-data-firehose
+  - near-real-time
+  - kinesis-data-analytics
+  - managed-flink
+  - kinesis-video-streams
+  - rekognition
+  - streaming
+  - ingestion
+  - kafka
+  - msk
+  - managed-kafka
+  - log-vs-queue
+  - replay
+  - consumer-group
+  - partitions
+  - saa-c03
+  - exam-format
+  - scoring
+  - practice-exams
+  - skill-builder
+  - study-plan
+  - exam-dumps
+certs:
+  - aws-saa
+updated: 2026-11-18
 ---
 
 # AWS Solutions Architect Associate (SAA-C03)
 
-A running collection of exam tips, gotchas, and comparison tables. Deep-dive pages: [AppFlow](../services/appflow.md) · [Glue](../services/glue.md) · [Cognito](../services/cognito.md) · [IAM](../services/iam.md) · [VPC](../services/vpc.md) · [EC2](../services/ec2.md) · [SQS](../services/sqs.md) · [SNS](../services/sns.md) · [Kinesis](../services/kinesis.md) · [ECS](../services/ecs.md) · [ECR](../services/ecr.md) · [S3](../services/s3.md) · [RDS](../services/rds.md) · [Aurora](../services/aurora.md) · [DMS](../services/dms.md) · [Route 53](../services/route53.md) · [Organizations](../services/organizations.md) · [Control Tower](../services/control-tower.md) · [CloudWatch](../services/cloudwatch.md) · [KMS](../services/kms.md) · [EKS](../services/eks.md) · [Networking](../concepts/networking.md) · [Identity & Access](../concepts/identity-and-access.md) · [Resource vs Identity Policies](../concepts/resource-vs-identity-policies.md) · [DNS](../concepts/dns.md) · [DNSSEC](../concepts/dnssec.md) · [Database Models](../concepts/db-transaction-model.md) · [TLS/HTTPS](../concepts/tls-https.md) · [Containers](../concepts/containers.md) · [Kubernetes](../concepts/kubernetes.md) · [CloudFormation](../services/cloudformation.md) · [Cost Optimization](../patterns/cost-optimization.md) · [Scaling](../patterns/scaling.md) · [Boot Time to Service Time](../patterns/boot-time-optimization.md) · [Global & Regional Architecture](../patterns/global-regional-architecture.md).
+A running collection of exam tips, gotchas, and comparison tables. For the exam format, scoring rules, and domain weights, see [Exam Format and Domains](#exam-format-and-domains); for practice exams and a study plan, see [Practice Resources and Study Plan](#practice-resources-and-study-plan). Deep-dive pages: [AppFlow](../services/appflow.md) · [Glue](../services/glue.md) · [Cognito](../services/cognito.md) · [IAM](../services/iam.md) · [VPC](../services/vpc.md) · [EC2](../services/ec2.md) · [SQS](../services/sqs.md) · [SNS](../services/sns.md) · [Kinesis](../services/kinesis.md) · [ECS](../services/ecs.md) · [ECR](../services/ecr.md) · [S3](../services/s3.md) · [RDS](../services/rds.md) · [Aurora](../services/aurora.md) · [DMS](../services/dms.md) · [Route 53](../services/route53.md) · [Organizations](../services/organizations.md) · [Control Tower](../services/control-tower.md) · [CloudWatch](../services/cloudwatch.md) · [KMS](../services/kms.md) · [EKS](../services/eks.md) · [Networking](../concepts/networking.md) · [Identity & Access](../concepts/identity-and-access.md) · [Resource vs Identity Policies](../concepts/resource-vs-identity-policies.md) · [DNS](../concepts/dns.md) · [DNSSEC](../concepts/dnssec.md) · [Database Models](../concepts/db-transaction-model.md) · [TLS/HTTPS](../concepts/tls-https.md) · [Containers](../concepts/containers.md) · [Kubernetes](../concepts/kubernetes.md) · [CloudFormation](../services/cloudformation.md) · [Cost Optimization](../patterns/cost-optimization.md) · [Scaling](../patterns/scaling.md) · [Boot Time to Service Time](../patterns/boot-time-optimization.md) · [Global & Regional Architecture](../patterns/global-regional-architecture.md).
+
+## Exam Format and Domains
+
+Facts in this section and in [Practice Resources and Study Plan](#practice-resources-and-study-plan) were checked against AWS pages on 2026-11-18 unless marked otherwise. Prices, question counts, and product contents change often, so recheck them before you buy.
+
+### Format and Scoring
+
+| Item            | SAA-C03                                                                                                                                                                            |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Questions       | 65 in total: 50 scored and 15 unscored ([exam guide](https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html)) |
+| Duration        | 130 minutes ([certification page](https://aws.amazon.com/certification/certified-solutions-architect-associate/))                                                                  |
+| Cost            | 150 USD, plus taxes and exchange-rate differences ([certification page](https://aws.amazon.com/certification/certified-solutions-architect-associate/))                            |
+| Passing score   | 720 on a scaled score of 100–1,000 ([exam guide](https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html))     |
+| Validity        | 3 years ([certification page](https://aws.amazon.com/certification/certified-solutions-architect-associate/))                                                                      |
+| Version history | SAA-C03 replaced SAA-C02 in August 2022                                                                                                                                            |
+
+The exam guide lists two question types ([exam guide](https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html)):
+
+- **Multiple choice:** one correct response and three distractors.
+- **Multiple response:** two or more correct responses out of five or more options. The question tells you how many to pick. "Pick 2 of 5" and "pick 3 of 6" are the common shapes, but AWS does not limit it to those two.
+
+How scoring works, from the same exam guide:
+
+- The 15 unscored questions are not marked, so treat every question as if it counts.
+- Unanswered questions are scored as incorrect, and there is no penalty for guessing. Never leave a question blank.
+- The scoring model is compensatory. You need 720 overall, not a passing score in every domain.
+
+> [!warning] Gotcha
+> The exam guide does not say whether multiple-response questions get partial credit. Study material often says "no partial credit", which is the safe assumption, but AWS does not state it in the SAA-C03 guide. Either way, aim to get every selected option right.
+
+> [!warning] Gotcha
+> As of 2026-11-18, AWS has not announced an SAA-C04 exam guide or a retirement date for SAA-C03. Pages that describe SAA-C04 as live come from practice-exam vendors and dump sites, not from AWS. Check the [AWS certification page](https://aws.amazon.com/certification/certified-solutions-architect-associate/) before believing a version change.
+
+### Content Domains
+
+The domain weights come from the [exam guide](https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html). The "wiki coverage" column is this wiki's own mapping of where to study each domain, not AWS's task list.
+
+| Domain                                  | Weight | Wiki coverage                                                                                                                                                                                                                                                                                                                        |
+| --------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1. Design Secure Architectures          | 30%    | [Identity and Access](../concepts/identity-and-access.md), [IAM](../services/iam.md), [Resource vs Identity Policies](../concepts/resource-vs-identity-policies.md), [KMS](../services/kms.md), [VPC](../services/vpc.md), [WAF](../services/waf.md), [Shield](../services/shield.md), [Organizations](../services/organizations.md) |
+| 2. Design Resilient Architectures       | 26%    | [Global and Regional Architecture](../patterns/global-regional-architecture.md), [Architecture Evolution](../patterns/architecture-evolution.md), [SQS](../services/sqs.md), [RDS](../services/rds.md), [Aurora](../services/aurora.md), [Route 53](../services/route53.md), [AWS Backup](../services/aws-backup.md)                 |
+| 3. Design High-Performing Architectures | 24%    | [Scaling](../patterns/scaling.md), [EBS](../services/ebs.md), [ElastiCache](../services/elasticache.md), [DynamoDB](../services/dynamodb.md), [CloudFront](../services/cloudfront.md), [Kinesis](../services/kinesis.md)                                                                                                             |
+| 4. Design Cost-Optimized Architectures  | 20%    | [Cost Optimization](../patterns/cost-optimization.md), [EC2 Purchase Options](../patterns/ec2-purchase-options.md), [S3 storage classes](#s3-storage-classes), [Serverless Architecture](../patterns/serverless-architecture.md)                                                                                                     |
 
 ## Architecture Fundamentals — Global vs Regional
 
@@ -53,20 +491,20 @@ See [Cognito](../services/cognito.md) for the three diagram walkthroughs and [Id
 > [!tip] Exam Tip
 > **User pool = sign-in + directory + application tokens. Identity pool = temporary AWS credentials through an [IAM role](../services/iam.md#iam-roles).** Use both when managed sign-in and direct AWS access are both required; either can also stand alone.
 
-| Question trigger | Answer or distinction |
-| --- | --- |
-| Sign-up/sign-in, user directory, MFA | Cognito **user pool** |
-| Mobile/web clients call [S3](../services/s3.md) or [DynamoDB](../services/dynamodb.md) directly with temporary credentials | Cognito **identity pool** |
-| Guest AWS access without registration | Enable identity-pool guest access with a restricted unauthenticated role |
-| Logged-in users call an [API Gateway](../services/api-gateway.md) REST API | User pool + `COGNITO_USER_POOLS` authorizer |
-| Logged-in users call an API Gateway HTTP API | JWT authorizer with the user pool issuer/audience; scopes as needed |
-| Browser sign-in in front of an [ALB](../services/elb.md) application | User pool + HTTPS listener `authenticate-cognito` action |
-| Many sign-in providers and direct AWS access | User pool standardizes tokens → identity pool trusts that user pool; upstream providers still require configuration |
-| Which user pool token goes into the identity pool? | **ID token**, not access token |
-| Avoid embedded long-term AWS keys | Identity pool returns temporary access key ID + secret access key + session token |
-| Millions of users; option proposes an IAM user per customer | Use application identities/federation; IAM has a 5,000-user account limit |
-| User pool JWT used directly as an S3 credential | Incorrect: exchange for AWS credentials, or use a backend that has its own role |
-| Identity pool used with a `COGNITO_USER_POOLS` authorizer | Incorrect pool type: that authorizer validates **user pool** tokens |
+| Question trigger                                                                                                           | Answer or distinction                                                                                               |
+| -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Sign-up/sign-in, user directory, MFA                                                                                       | Cognito **user pool**                                                                                               |
+| Mobile/web clients call [S3](../services/s3.md) or [DynamoDB](../services/dynamodb.md) directly with temporary credentials | Cognito **identity pool**                                                                                           |
+| Guest AWS access without registration                                                                                      | Enable identity-pool guest access with a restricted unauthenticated role                                            |
+| Logged-in users call an [API Gateway](../services/api-gateway.md) REST API                                                 | User pool + `COGNITO_USER_POOLS` authorizer                                                                         |
+| Logged-in users call an API Gateway HTTP API                                                                               | JWT authorizer with the user pool issuer/audience; scopes as needed                                                 |
+| Browser sign-in in front of an [ALB](../services/elb.md) application                                                       | User pool + HTTPS listener `authenticate-cognito` action                                                            |
+| Many sign-in providers and direct AWS access                                                                               | User pool standardizes tokens → identity pool trusts that user pool; upstream providers still require configuration |
+| Which user pool token goes into the identity pool?                                                                         | **ID token**, not access token                                                                                      |
+| Avoid embedded long-term AWS keys                                                                                          | Identity pool returns temporary access key ID + secret access key + session token                                   |
+| Millions of users; option proposes an IAM user per customer                                                                | Use application identities/federation; IAM has a 5,000-user account limit                                           |
+| User pool JWT used directly as an S3 credential                                                                            | Incorrect: exchange for AWS credentials, or use a backend that has its own role                                     |
+| Identity pool used with a `COGNITO_USER_POOLS` authorizer                                                                  | Incorrect pool type: that authorizer validates **user pool** tokens                                                 |
 
 > [!warning] Gotcha
 > An identity pool does **not** require two roles in every configuration: the unauthenticated role is for enabled guest access. It stores identity mappings, not a password directory. “Temporary credentials” still means the client holds credentials at runtime; it does not mean there are no credentials in the client.
@@ -95,13 +533,13 @@ See [IAM Roles](../services/iam.md#iam-roles) for full details.
 
 #### When the answer is "use a role"
 
-| Scenario | Mechanism |
-| --- | --- |
-| AWS service acting on your behalf (Lambda, EC2 → S3) | **Service role** — trust policy trusts the service principal (e.g. `lambda.amazonaws.com`) |
-| Emergency / rare elevated access | **Break-glass role** — assume only on demand, CloudTrail logged |
-| Existing corporate IdP (Active Directory, Okta) | **SAML federation** — `sts:AssumeRoleWithSAML` |
-| Mobile/web app with millions of users (Google/Facebook login) | **Web identity federation** — `sts:AssumeRoleWithWebIdentity` |
-| Access to another AWS account / AWS Organizations | **Cross-account role** — `sts:AssumeRole` |
+| Scenario                                                      | Mechanism                                                                                  |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| AWS service acting on your behalf (Lambda, EC2 → S3)          | **Service role** — trust policy trusts the service principal (e.g. `lambda.amazonaws.com`) |
+| Emergency / rare elevated access                              | **Break-glass role** — assume only on demand, CloudTrail logged                            |
+| Existing corporate IdP (Active Directory, Okta)               | **SAML federation** — `sts:AssumeRoleWithSAML`                                             |
+| Mobile/web app with millions of users (Google/Facebook login) | **Web identity federation** — `sts:AssumeRoleWithWebIdentity`                              |
+| Access to another AWS account / AWS Organizations             | **Cross-account role** — `sts:AssumeRole`                                                  |
 
 > [!tip] Exam Tip
 > Pattern-match: "company has existing AD" or "millions of mobile users" → IAM **role + federation**, not IAM users. "Lambda needs to write to S3" → **execution role**, never embedded access keys. "Two AWS accounts" → cross-account **role assumption**, not a duplicate IAM user.
@@ -142,25 +580,25 @@ See [S3 — Foundations](../services/s3.md#foundations) for full details.
 
 ### S3 foundations cheat sheet
 
-| Keyword in the question | Answer |
-| --- | --- |
-| "Globally unique" bucket name | ✅ S3 — names collide across **all accounts and regions** |
-| Bucket name with `_`, uppercase, or `1.1.1.1` shape | ❌ Invalid bucket name |
-| Max object size | **5 TB** (multipart above 5 GB) |
-| Min object size | **0 bytes** |
-| Max objects per bucket | **Unlimited** |
-| Default general-purpose bucket quota per account | **10,000** |
-| Higher bucket quota | **Adjustable** via quota increase |
-| "Thousands of users, one bucket each" | ❌ Use **one bucket + per-user prefix** |
-| "Mount as a drive / volume" | ❌ Not S3 — use **EBS** (block) or **EFS / FSx** (file) |
-| "Network file share for Windows / Linux" | ❌ Not S3 — use **FSx** or **EFS** |
-| "Default destination for an AWS service's output" | ✅ S3 |
-| "Large-scale distribution to many users" | ✅ S3 |
-| "Offload static assets from EC2" | ✅ S3 |
-| "Folder" in S3 | Actually a **prefix** — flat structure underneath |
-| Data leaves the home region automatically? | ❌ No — only via explicit **Replication** or **MRAP** |
-| Blast radius of an S3 bucket | **The region** it was created in |
-| Resilience model | Replicated **across AZs within the region** |
+| Keyword in the question                             | Answer                                                   |
+| --------------------------------------------------- | -------------------------------------------------------- |
+| "Globally unique" bucket name                       | ✅ S3 — names collide across **all accounts and regions** |
+| Bucket name with `_`, uppercase, or `1.1.1.1` shape | ❌ Invalid bucket name                                    |
+| Max object size                                     | **5 TB** (multipart above 5 GB)                          |
+| Min object size                                     | **0 bytes**                                              |
+| Max objects per bucket                              | **Unlimited**                                            |
+| Default general-purpose bucket quota per account    | **10,000**                                               |
+| Higher bucket quota                                 | **Adjustable** via quota increase                        |
+| "Thousands of users, one bucket each"               | ❌ Use **one bucket + per-user prefix**                   |
+| "Mount as a drive / volume"                         | ❌ Not S3 — use **EBS** (block) or **EFS / FSx** (file)   |
+| "Network file share for Windows / Linux"            | ❌ Not S3 — use **FSx** or **EFS**                        |
+| "Default destination for an AWS service's output"   | ✅ S3                                                     |
+| "Large-scale distribution to many users"            | ✅ S3                                                     |
+| "Offload static assets from EC2"                    | ✅ S3                                                     |
+| "Folder" in S3                                      | Actually a **prefix** — flat structure underneath        |
+| Data leaves the home region automatically?          | ❌ No — only via explicit **Replication** or **MRAP**     |
+| Blast radius of an S3 bucket                        | **The region** it was created in                         |
+| Resilience model                                    | Replicated **across AZs within the region**              |
 
 > [!tip] Exam Tip
 > When multiple storage options appear next to each other (S3, EBS, EFS, FSx), **the access verb is the discriminator**, not the data type. *"Mount", "format", "drive letter", "block device"* → not S3. *"Shared file share between EC2 instances"* → EFS (Linux) / FSx (Windows). *"Whole-object HTTP", "static asset hosting", "data lake", "service input/output"* → S3.
@@ -181,11 +619,11 @@ See [S3](../services/s3.md) for full details.
 
 ### Common condition patterns
 
-| Goal | Condition |
-| --- | --- |
-| Lock to corporate IP | `"NotIpAddress": {"aws:SourceIp": "1.3.3.7/32"}` with `Deny` |
-| Require MFA on a prefix | `"Null": {"aws:MultiFactorAuthAge": true}` with `Deny` (matches *no MFA*) |
-| Restrict to a VPC endpoint | `"StringNotEquals": {"aws:SourceVpce": "vpce-…"}` with `Deny` |
+| Goal                       | Condition                                                                 |
+| -------------------------- | ------------------------------------------------------------------------- |
+| Lock to corporate IP       | `"NotIpAddress": {"aws:SourceIp": "1.3.3.7/32"}` with `Deny`              |
+| Require MFA on a prefix    | `"Null": {"aws:MultiFactorAuthAge": true}` with `Deny` (matches *no MFA*) |
+| Restrict to a VPC endpoint | `"StringNotEquals": {"aws:SourceVpce": "vpce-…"}` with `Deny`             |
 
 > [!tip] Exam Tip
 > *"Bucket policy says public-read but anonymous requests get 403"* → **Block Public Access** is on. *"Want to keep accidental public-policy mistakes from leaking data"* → leave Block Public Access on at the **account** level. *"Need a public website bucket"* → must explicitly disable the relevant Block Public Access switches.
@@ -208,22 +646,22 @@ See [S3 — Pre-Signed URLs](../services/s3.md#pre-signed-urls) for full details
 
 #### AccessDenied diagnosis
 
-| Symptom | Cause |
-| --- | --- |
-| 403 immediately, never worked | Generator never had permission to the object |
-| Worked briefly, now 403 | Generator was a role; **STS credentials expired** before the URL did — switch to an IAM user |
-| Worked yesterday, now 403, identity unchanged | URL has **expired** past its encoded timestamp |
-| Worked yesterday, now 403, URL still in window | Generator's permissions were **revoked** or modified |
+| Symptom                                        | Cause                                                                                        |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| 403 immediately, never worked                  | Generator never had permission to the object                                                 |
+| Worked briefly, now 403                        | Generator was a role; **STS credentials expired** before the URL did — switch to an IAM user |
+| Worked yesterday, now 403, identity unchanged  | URL has **expired** past its encoded timestamp                                               |
+| Worked yesterday, now 403, URL still in window | Generator's permissions were **revoked** or modified                                         |
 
 #### Pre-signed URL vs bucket policy
 
-| Goal | Tool |
-| --- | --- |
-| One external user, one object, short-lived | **Pre-signed URL** |
-| Many users, one bucket, persistent | [Bucket policy](../services/s3.md#bucket-policies) |
-| Public read of many objects | [Bucket policy](../services/s3.md#bucket-policies) with `Principal: "*"` |
-| Direct browser-to-S3 upload from a web app | **Pre-signed URL** signed for `PUT` |
-| Offload large media downloads from app server | **Pre-signed URL** signed for `GET` |
+| Goal                                          | Tool                                                                     |
+| --------------------------------------------- | ------------------------------------------------------------------------ |
+| One external user, one object, short-lived    | **Pre-signed URL**                                                       |
+| Many users, one bucket, persistent            | [Bucket policy](../services/s3.md#bucket-policies)                       |
+| Public read of many objects                   | [Bucket policy](../services/s3.md#bucket-policies) with `Principal: "*"` |
+| Direct browser-to-S3 upload from a web app    | **Pre-signed URL** signed for `PUT`                                      |
+| Offload large media downloads from app server | **Pre-signed URL** signed for `GET`                                      |
 
 > [!tip] Exam Tip
 > Pattern-match: *"time-limited access to one object for someone without AWS creds"* → **pre-signed URL**. *"users upload directly to S3 from the browser"* → pre-signed URL signed for **`PUT`**. *"app server's bandwidth is saturated serving large media"* → pre-signed URL for **`GET`**, browser fetches directly from S3. *"pre-signed URL works briefly then 403s"* → role-as-generator + STS expiry — **use an IAM user**. *"AccessDenied on a freshly-issued URL"* → generator never had the underlying permission.
@@ -263,20 +701,20 @@ See [S3 — Object Lock](../services/s3.md#object-lock) for full details.
 
 #### Compliance vs Governance vs Legal Hold
 
-| Mode | Time-bound? | Bypass possible? | Use when |
-| --- | --- | --- | --- |
-| **Compliance retention** | Yes (days/years) | **No — not even by root** | Regulatory mandate to retain unmodified for N years (SEC 17a-4, HIPAA, FINRA) |
-| **Governance retention** | Yes (days/years) | Yes — `s3:BypassGovernanceRetention` + `x-amz-bypass-governance-retention: true` header | Internal anti-tampering with an authorized admin escape hatch |
-| **Legal Hold** | No (binary flag) | Yes — `s3:PutObjectLegalHold` to toggle OFF | Active legal case / indefinite preservation with no predefined end date |
+| Mode                     | Time-bound?      | Bypass possible?                                                                        | Use when                                                                      |
+| ------------------------ | ---------------- | --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| **Compliance retention** | Yes (days/years) | **No — not even by root**                                                               | Regulatory mandate to retain unmodified for N years (SEC 17a-4, HIPAA, FINRA) |
+| **Governance retention** | Yes (days/years) | Yes — `s3:BypassGovernanceRetention` + `x-amz-bypass-governance-retention: true` header | Internal anti-tampering with an authorized admin escape hatch                 |
+| **Legal Hold**           | No (binary flag) | Yes — `s3:PutObjectLegalHold` to toggle OFF                                             | Active legal case / indefinite preservation with no predefined end date       |
 
 #### Required permissions
 
-| Action | Permission |
-| --- | --- |
-| Configure Object Lock on a bucket | `s3:PutBucketObjectLockConfiguration` |
-| Set/change retention on a version | `s3:PutObjectRetention` |
-| Bypass Governance mode | `s3:BypassGovernanceRetention` + `x-amz-bypass-governance-retention: true` header |
-| Add or remove a legal hold | `s3:PutObjectLegalHold` |
+| Action                            | Permission                                                                        |
+| --------------------------------- | --------------------------------------------------------------------------------- |
+| Configure Object Lock on a bucket | `s3:PutBucketObjectLockConfiguration`                                             |
+| Set/change retention on a version | `s3:PutObjectRetention`                                                           |
+| Bypass Governance mode            | `s3:BypassGovernanceRetention` + `x-amz-bypass-governance-retention: true` header |
+| Add or remove a legal hold        | `s3:PutObjectLegalHold`                                                           |
 
 > [!tip] Exam Tip
 > Pattern-match: *"WORM" / "immutable storage" / "regulatory retention"* → **Object Lock**. *"no one, including the root user, can delete or modify for N years"* → **Compliance mode** (the "even root" wording is the giveaway — MFA Delete won't satisfy this; only Compliance does). *"admins must be able to override the lock for emergencies"* → **Governance mode** + scoped `s3:BypassGovernanceRetention`. *"indefinite hold with no defined end date — active legal case"* → **Legal Hold**. *"enable Object Lock on an existing bucket"* → **console, CLI, API, or SDK**; the old Support-only answer is outdated. *"Object Lock applies to objects or to versions?"* → **versions**. *"object lock + MFA Delete"* — these solve different problems: MFA Delete gates the bucket-versioning toggle and per-version permanent delete with a second factor (compromised-IAM-admin scenario); Object Lock is the WORM/regulatory-retention answer (no-one-can-touch-this-version-period scenario).
@@ -303,12 +741,12 @@ See [S3 — Upload Performance](../services/s3.md#upload-performance) for full d
 - TA costs **extra per GB** transferred; AWS provides a Speed Comparison tool to verify benefit before enabling
 - Multipart and TA are **orthogonal and combinable** — multipart parallelizes the bytes, TA shortens the network path
 
-| Goal | Mechanism |
-| --- | --- |
-| Upload a 50 GB file (reliability, throughput) | **Multipart upload** (required — > 5 GB) |
-| Globally distributed clients uploading to one bucket | **Transfer Acceleration** |
-| Large files **and** geographically far clients | **Both** — multipart over the TA endpoint |
-| Bulk transfer of petabytes from on-prem | **Snowball / DataSync** (beyond TA's domain) |
+| Goal                                                 | Mechanism                                    |
+| ---------------------------------------------------- | -------------------------------------------- |
+| Upload a 50 GB file (reliability, throughput)        | **Multipart upload** (required — > 5 GB)     |
+| Globally distributed clients uploading to one bucket | **Transfer Acceleration**                    |
+| Large files **and** geographically far clients       | **Both** — multipart over the TA endpoint    |
+| Bulk transfer of petabytes from on-prem              | **Snowball / DataSync** (beyond TA's domain) |
 
 > [!tip] Exam Tip
 > Pattern-match: *"large object, unreliable connection, want to resume on failure"* → **multipart upload**. *"users on multiple continents uploading to one bucket"* → **Transfer Acceleration**. *"file > 5 GB"* → multipart is **required**, not a choice. *"reduce orphaned-upload storage charges"* → lifecycle rule with `AbortIncompleteMultipartUpload`.
@@ -329,25 +767,25 @@ See [S3 — Storage Classes](../services/s3.md#storage-classes) for full details
 
 #### Class-by-class anchor table
 
-| Class | First-byte latency | Min. duration | Min. size | Retrieval fee | Key trade-off |
-| --- | --- | --- | --- | --- | --- |
-| **Standard** | ms | None | None | None | The default — baseline cost |
-| **Standard-IA** | ms | 30 days | 128 KB | $0.01/GB | ~½× storage cost; retrieval + minimums |
-| **One Zone-IA** | ms | 30 days | 128 KB | $0.01/GB | ~20% cheaper than IA; **single AZ** |
-| **Glacier Instant Retrieval** | ms | 90 days | 128 KB | $0.03/GB | Cheap storage + instant access; per-GET fee |
-| **Glacier Flexible Retrieval** | minutes–hours | 90 days | 40 KB | Expedited $0.03 / Std $0.01 / **Bulk free** | Archival; retrieval job required |
-| **Glacier Deep Archive** | hours | 180 days | 40 KB | Std $0.02 / Bulk $0.0025 | Cheapest tier; **no Expedited** option |
-| **Intelligent-Tiering** | varies by tier | None (90d archive-instant) | None | None (monitoring fee) | Auto-moves objects; useful only for **unknown** access patterns |
+| Class                          | First-byte latency | Min. duration              | Min. size | Retrieval fee                               | Key trade-off                                                   |
+| ------------------------------ | ------------------ | -------------------------- | --------- | ------------------------------------------- | --------------------------------------------------------------- |
+| **Standard**                   | ms                 | None                       | None      | None                                        | The default — baseline cost                                     |
+| **Standard-IA**                | ms                 | 30 days                    | 128 KB    | $0.01/GB                                    | ~½× storage cost; retrieval + minimums                          |
+| **One Zone-IA**                | ms                 | 30 days                    | 128 KB    | $0.01/GB                                    | ~20% cheaper than IA; **single AZ**                             |
+| **Glacier Instant Retrieval**  | ms                 | 90 days                    | 128 KB    | $0.03/GB                                    | Cheap storage + instant access; per-GET fee                     |
+| **Glacier Flexible Retrieval** | minutes–hours      | 90 days                    | 40 KB     | Expedited $0.03 / Std $0.01 / **Bulk free** | Archival; retrieval job required                                |
+| **Glacier Deep Archive**       | hours              | 180 days                   | 40 KB     | Std $0.02 / Bulk $0.0025                    | Cheapest tier; **no Expedited** option                          |
+| **Intelligent-Tiering**        | varies by tier     | None (90d archive-instant) | None      | None (monitoring fee)                       | Auto-moves objects; useful only for **unknown** access patterns |
 
 #### Glacier retrieval-tier timing
 
-| Tier | Restore time | Per-GB fee |
-| --- | --- | --- |
-| Glacier Flexible — Expedited | 1–5 min | $0.03/GB |
-| Glacier Flexible — Standard | 3–5 hr | $0.01/GB |
-| Glacier Flexible — Bulk | 5–12 hr | **Free** |
-| Deep Archive — Standard | within 12 hr | $0.02/GB |
-| Deep Archive — Bulk | up to 48 hr | $0.0025/GB |
+| Tier                         | Restore time | Per-GB fee |
+| ---------------------------- | ------------ | ---------- |
+| Glacier Flexible — Expedited | 1–5 min      | $0.03/GB   |
+| Glacier Flexible — Standard  | 3–5 hr       | $0.01/GB   |
+| Glacier Flexible — Bulk      | 5–12 hr      | **Free**   |
+| Deep Archive — Standard      | within 12 hr | $0.02/GB   |
+| Deep Archive — Bulk          | up to 48 hr  | $0.0025/GB |
 
 #### Lifecycle Configuration
 
@@ -367,15 +805,15 @@ See [S3 — Lifecycle Configuration](../services/s3.md#lifecycle-configuration) 
 
 Every class can transition down to a colder class, with **one exception**: **One Zone-IA cannot transition to Glacier Instant Retrieval**. Every other source class (Standard, Standard-IA, Intelligent-Tiering, even Glacier Instant Retrieval itself) can target GIR. Memorize this single asymmetry.
 
-| From | Can transition to |
-| --- | --- |
-| Standard | All other classes |
-| Standard-IA | Intelligent-Tiering, One Zone-IA, GIR, Glacier Flexible, Glacier Deep Archive |
-| Intelligent-Tiering | Varies by IT access tier — narrows as the source tier gets colder (Frequent/Infrequent → One Zone-IA + Glacier classes; Archive Instant Access → GIR + Glacier classes only; Archive Access → Glacier Flexible/Deep only; Deep Archive Access → Deep Archive only) |
-| One Zone-IA | Glacier Flexible, Glacier Deep Archive ⚠️ (**not** GIR) |
-| Glacier Instant Retrieval | Glacier Flexible, Glacier Deep Archive |
-| Glacier Flexible Retrieval | Glacier Deep Archive |
-| Glacier Deep Archive | (terminal) |
+| From                       | Can transition to                                                                                                                                                                                                                                                  |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Standard                   | All other classes                                                                                                                                                                                                                                                  |
+| Standard-IA                | Intelligent-Tiering, One Zone-IA, GIR, Glacier Flexible, Glacier Deep Archive                                                                                                                                                                                      |
+| Intelligent-Tiering        | Varies by IT access tier — narrows as the source tier gets colder (Frequent/Infrequent → One Zone-IA + Glacier classes; Archive Instant Access → GIR + Glacier classes only; Archive Access → Glacier Flexible/Deep only; Deep Archive Access → Deep Archive only) |
+| One Zone-IA                | Glacier Flexible, Glacier Deep Archive ⚠️ (**not** GIR)                                                                                                                                                                                                             |
+| Glacier Instant Retrieval  | Glacier Flexible, Glacier Deep Archive                                                                                                                                                                                                                             |
+| Glacier Flexible Retrieval | Glacier Deep Archive                                                                                                                                                                                                                                               |
+| Glacier Deep Archive       | (terminal)                                                                                                                                                                                                                                                         |
 
 > [!tip] Exam Tip
 > Pattern-match: *"transition objects to a cheaper tier automatically as they age"* → **lifecycle transition**. *"delete objects after N days"* → **lifecycle expiration**. *"move data based on access pattern"* → **Intelligent-Tiering**, not lifecycle. *"Standard → Glacier on day 5"* → blocked by the **30-day Standard minimum**. *"single rule: GIR day 4 → Deep Archive day 20"* → blocked by the **single-rule minimum-duration gap** (GIR's 90-day minimum); the Deep Archive transition must be on day 94 or later, or split into two rules. *"One Zone-IA → Glacier Instant Retrieval"* → **not allowed**; route via a hot tier with `CopyObject` first. *"my lifecycle rule isn't moving any of my small log files"* → since Sept 2024, **objects < 128 KB don't transition by default** — add `ObjectSizeGreaterThan`.
@@ -419,32 +857,32 @@ See [S3 — Replication](../services/s3.md#replication) for full details.
 
 #### What is NOT replicated
 
-| Not replicated | Why / detail |
-| --- | --- |
-| **Pre-existing objects** | Configure **S3 Batch Replication** to backfill |
-| **Lifecycle transitions / expirations** | System events aren't replicated; user-driven events are. Configure the same lifecycle rule on **both** buckets if you want symmetric behaviour |
-| **Glacier Flexible Retrieval and Deep Archive objects** | Treat those classes as a separate product. (Glacier *Instant* Retrieval **is** replicable) |
-| **Delete markers** (by default) | Can be opted in per rule |
-| **Versioned (permanent) deletes** | **Never** replicated, by design — replication is for survival, not synchronized destruction |
-| **Objects not owned by the source account** | Replication requires source-account ownership. Cross-account writes with third-party ownership are silently skipped |
+| Not replicated                                          | Why / detail                                                                                                                                   |
+| ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Pre-existing objects**                                | Configure **S3 Batch Replication** to backfill                                                                                                 |
+| **Lifecycle transitions / expirations**                 | System events aren't replicated; user-driven events are. Configure the same lifecycle rule on **both** buckets if you want symmetric behaviour |
+| **Glacier Flexible Retrieval and Deep Archive objects** | Treat those classes as a separate product. (Glacier *Instant* Retrieval **is** replicable)                                                     |
+| **Delete markers** (by default)                         | Can be opted in per rule                                                                                                                       |
+| **Versioned (permanent) deletes**                       | **Never** replicated, by design — replication is for survival, not synchronized destruction                                                    |
+| **Objects not owned by the source account**             | Replication requires source-account ownership. Cross-account writes with third-party ownership are silently skipped                            |
 
 #### Encryption support
 
-| Method | Replication |
-| --- | --- |
-| Unencrypted | ✅ Default |
-| **SSE-S3** | ✅ Default |
+| Method      | Replication                                                                                                |
+| ----------- | ---------------------------------------------------------------------------------------------------------- |
+| Unencrypted | ✅ Default                                                                                                  |
+| **SSE-S3**  | ✅ Default                                                                                                  |
 | **SSE-KMS** | ✅ Requires extra config — KMS key permissions on both sides, destination key named in the replication rule |
-| **SSE-C** | ⚠️ Only recently supported — historically blocked |
+| **SSE-C**   | ⚠️ Only recently supported — historically blocked                                                           |
 
 #### Use-case lookup
 
-| Scenario | CRR or SRR? |
-| --- | --- |
-| DR / survive region failure | **CRR** |
-| Read latency reduction for global users | **CRR** |
-| Centralize logs from many buckets | **SRR** |
-| Prod ↔ test data sync | **SRR** |
+| Scenario                                                                        | CRR or SRR?           |
+| ------------------------------------------------------------------------------- | --------------------- |
+| DR / survive region failure                                                     | **CRR**               |
+| Read latency reduction for global users                                         | **CRR**               |
+| Centralize logs from many buckets                                               | **SRR**               |
+| Prod ↔ test data sync                                                           | **SRR**               |
 | Sovereignty-bound resilience (data must stay in region, isolated audit account) | **SRR** cross-account |
 
 > [!tip] Exam Tip
@@ -470,13 +908,13 @@ See [S3 — Server-Side Filtering](../services/s3.md#server-side-filtering--s3-s
 
 #### Decision lookup
 
-| Scenario | Answer |
-| --- | --- |
-| "Retrieve only specific rows/columns from a large CSV/JSON/Parquet object" | **S3 Select** |
-| Same scenario but the object is in Glacier Flexible / Deep Archive | **Glacier Select** (still a retrieval job) |
-| "Query across many S3 objects, with joins or aggregations" | **Athena**, not S3 Select |
-| "App downloads the whole object then filters in memory" | The **anti-pattern** S3 Select fixes |
-| Source object is an image / video / binary archive | **Plain GetObject** — S3 Select doesn't apply |
+| Scenario                                                                   | Answer                                        |
+| -------------------------------------------------------------------------- | --------------------------------------------- |
+| "Retrieve only specific rows/columns from a large CSV/JSON/Parquet object" | **S3 Select**                                 |
+| Same scenario but the object is in Glacier Flexible / Deep Archive         | **Glacier Select** (still a retrieval job)    |
+| "Query across many S3 objects, with joins or aggregations"                 | **Athena**, not S3 Select                     |
+| "App downloads the whole object then filters in memory"                    | The **anti-pattern** S3 Select fixes          |
+| Source object is an image / video / binary archive                         | **Plain GetObject** — S3 Select doesn't apply |
 
 > [!tip] Exam Tip
 > Pattern-match: *"reduce data transferred from S3 / filter at the source"* → **S3 Select**. *"SQL-like expression on one object"* → **S3 Select**. *"400% faster / 80% cheaper"* → S3 Select / Glacier Select. *"object lives in Glacier and we need to filter on restore"* → **Glacier Select** (still a retrieval job — Expedited / Standard / Bulk choice still applies). *"query across thousands of files / joins / aggregations"* → **Athena**.
@@ -500,14 +938,14 @@ See [S3 — Event Notifications](../services/s3.md#event-notifications) for full
 
 #### Native S3 Events vs EventBridge
 
-| Need | Pick |
-| --- | --- |
-| Trigger Lambda on object upload, simple bucket-local config | **S3 Event Notifications** (or EventBridge) |
-| Destinations beyond Lambda/SQS/SNS (Step Functions, [Kinesis](../services/kinesis.md), custom buses, SaaS) | **EventBridge** |
-| Rich event-pattern filtering (any field, not just key prefix/suffix) | **EventBridge** |
-| Lifecycle / intelligent-tiering / fine-grained replication events | **EventBridge** |
-| Cross-account fan-out | **EventBridge** |
-| Default for new workflows | **EventBridge** unless a specific reason to use the native feature |
+| Need                                                                                                       | Pick                                                               |
+| ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Trigger Lambda on object upload, simple bucket-local config                                                | **S3 Event Notifications** (or EventBridge)                        |
+| Destinations beyond Lambda/SQS/SNS (Step Functions, [Kinesis](../services/kinesis.md), custom buses, SaaS) | **EventBridge**                                                    |
+| Rich event-pattern filtering (any field, not just key prefix/suffix)                                       | **EventBridge**                                                    |
+| Lifecycle / intelligent-tiering / fine-grained replication events                                          | **EventBridge**                                                    |
+| Cross-account fan-out                                                                                      | **EventBridge**                                                    |
+| Default for new workflows                                                                                  | **EventBridge** unless a specific reason to use the native feature |
 
 > [!tip] Exam Tip
 > Pattern-match: *"trigger Lambda when a file lands in S3"* → **S3 Event Notifications → Lambda** (also acceptable: EventBridge → Lambda). *"three destinations / Lambda, SQS, SNS only"* → native S3 Event Notifications. *"events delivered as JSON"* → yes. *"what permits S3 to invoke / send / publish"* → **resource policy on the destination** trusting **`s3.amazonaws.com`**. *"notify when Glacier restore completes"* → `s3:ObjectRestore:Completed`. *"detect failed cross-region replication"* → `s3:ObjectReplication:*` (or EventBridge). *"events not arriving, no error in CloudTrail on the bucket side"* → check the **destination's resource policy** — bucket isn't the requester, so IAM errors surface on the destination, not the bucket.
@@ -530,12 +968,12 @@ See [S3 — Access Logging](../services/s3.md#access-logging) for full details.
 
 #### Access Logs vs CloudTrail Data Events
 
-| Need | Pick |
-| --- | --- |
-| Bulk, cheap, request-level audit log; no per-event charge | **S3 Access Logs** |
-| Near-real-time, structured JSON, full IAM context (principal, session, MFA, source IP) | **CloudTrail data events** |
-| Native integration with CloudWatch / EventBridge / Detective for alerting | **CloudTrail data events** |
-| Compliance evidence of every read/write at minimal cost | **S3 Access Logs** + lifecycle to Glacier |
+| Need                                                                                   | Pick                                      |
+| -------------------------------------------------------------------------------------- | ----------------------------------------- |
+| Bulk, cheap, request-level audit log; no per-event charge                              | **S3 Access Logs**                        |
+| Near-real-time, structured JSON, full IAM context (principal, session, MFA, source IP) | **CloudTrail data events**                |
+| Native integration with CloudWatch / EventBridge / Detective for alerting              | **CloudTrail data events**                |
+| Compliance evidence of every read/write at minimal cost                                | **S3 Access Logs** + lifecycle to Glacier |
 
 > [!tip] Exam Tip
 > Pattern-match: *"who accessed which objects in my bucket, cheapest option"* → **S3 Access Logs**. *"where do I enable logging / where do logs go"* → enable on **source bucket**, delivered to **target bucket**. *"target bucket constraints"* → **same region and same account**, destination bucket must not have Object Lock enabled, no Requester Pays. *"how does S3 get permission to write into the target bucket"* → **bucket policy** granting `s3:PutObject` to **`logging.s3.amazonaws.com`**. *"why is logging not showing up immediately"* → **best-efforts; can take hours**. *"record / attribute delimiter"* → **newline / space**. *"log retention"* → **your responsibility — use Lifecycle**. *"need real-time / structured / IAM-context-rich logs for security automation"* → **CloudTrail data events**, not access logs. *"need to trigger Lambda on object upload"* → **Event Notifications**, not access logs (access logs are batch/delayed).
@@ -579,22 +1017,22 @@ See [S3 — Access Points and MRAP](../services/s3.md#access-points-and-multi-re
 
 #### Access Points & MRAP — decision lookup
 
-| Keyword in question | Answer |
-| --- | --- |
-| "Bucket policy too large / too complex / 20 KB limit" | **Regular S3 Access Points** |
-| "Many teams need scoped views into one bucket" | **Regular Access Points** + **delegation** (`s3:DataAccessPointAccount`) |
-| "Restrict bucket access to one specific VPC" | **VPC-origin Access Point** + VPC endpoint policy naming both ARNs |
-| "Single global S3 endpoint" / "lowest-latency S3 bucket from anywhere" | **MRAP** |
-| "Active/active S3 in multiple regions behind one endpoint" | **MRAP** + **mesh CRR** |
-| "Automatic regional failover for S3" | **MRAP** with **active/passive** failover configuration |
-| "Add another bucket to the MRAP later" | **Not supported** — backing buckets fixed at creation; recreate the MRAP |
-| "Object not found right after writing through the MRAP" | **Consistency lag** — async CRR hasn't propagated; mitigate with **RTC** or read-from-write-region |
-| "Guaranteed 15-minute replication SLA" | **[Replication Time Control (RTC)](../services/s3.md#replication-time-control-rtc)** |
-| "MRAP / AP name uniqueness" | **Account-scoped** (bucket names are globally unique; APs and MRAPs are not) |
-| "CLI to use an MRAP" | `s3://<MRAP-ARN>/key` — **ARN**, not bucket name |
-| "Access point cannot be a…" | **[Replication](../services/s3.md#replication) destination** |
-| "SCP to force VPC-only access points" | `Deny s3:CreateAccessPoint` when `s3:AccessPointNetworkOrigin != VPC` |
-| "Bucket policy delegation to access points" | Use `s3:DataAccessPointAccount` to grant `*` to any AP in the account |
+| Keyword in question                                                    | Answer                                                                                             |
+| ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| "Bucket policy too large / too complex / 20 KB limit"                  | **Regular S3 Access Points**                                                                       |
+| "Many teams need scoped views into one bucket"                         | **Regular Access Points** + **delegation** (`s3:DataAccessPointAccount`)                           |
+| "Restrict bucket access to one specific VPC"                           | **VPC-origin Access Point** + VPC endpoint policy naming both ARNs                                 |
+| "Single global S3 endpoint" / "lowest-latency S3 bucket from anywhere" | **MRAP**                                                                                           |
+| "Active/active S3 in multiple regions behind one endpoint"             | **MRAP** + **mesh CRR**                                                                            |
+| "Automatic regional failover for S3"                                   | **MRAP** with **active/passive** failover configuration                                            |
+| "Add another bucket to the MRAP later"                                 | **Not supported** — backing buckets fixed at creation; recreate the MRAP                           |
+| "Object not found right after writing through the MRAP"                | **Consistency lag** — async CRR hasn't propagated; mitigate with **RTC** or read-from-write-region |
+| "Guaranteed 15-minute replication SLA"                                 | **[Replication Time Control (RTC)](../services/s3.md#replication-time-control-rtc)**               |
+| "MRAP / AP name uniqueness"                                            | **Account-scoped** (bucket names are globally unique; APs and MRAPs are not)                       |
+| "CLI to use an MRAP"                                                   | `s3://<MRAP-ARN>/key` — **ARN**, not bucket name                                                   |
+| "Access point cannot be a…"                                            | **[Replication](../services/s3.md#replication) destination**                                       |
+| "SCP to force VPC-only access points"                                  | `Deny s3:CreateAccessPoint` when `s3:AccessPointNetworkOrigin != VPC`                              |
+| "Bucket policy delegation to access points"                            | Use `s3:DataAccessPointAccount` to grant `*` to any AP in the account                              |
 
 > [!tip] Exam Tip
 > Pattern-match: *"bucket policy too large / many teams"* → **regular Access Points** with delegation. *"VPC-only S3"* → **VPC-origin AP** + VPC endpoint policy + (optionally) deny-non-VPC bucket policy. *"single global S3 endpoint / latency-route to closest bucket / multi-region S3 DR"* → **MRAP** + **mesh CRR** (+ **RTC** if the question stresses consistency or 15-minute SLA). *"object not found right after writing through MRAP"* → **consistency lag**; RTC narrows but doesn't eliminate it. *"can I add a bucket to the MRAP later?"* → **No** — fixed at creation. *"who grants the permission in a cross-account access point?"* → the **bucket owner** (the AP is just a doorway; the bucket policy is the real authority).
@@ -679,22 +1117,22 @@ See [VPC Interface Endpoints](../services/vpc-interface-endpoints.md) and its [g
 
 ### IGW vs NAT GW
 
-| | IGW | NAT GW |
-| --- | --- | --- |
-| Direction | Bidirectional (public subnet) | Outbound only (private subnet) |
-| IP mapping | 1:1 (private ↔ Elastic IP) | Many-to-one |
-| Resilience | Regional | Zonal or Regional (see below) |
-| IPv6 support | Yes | No |
+|              | IGW                           | NAT GW                         |
+| ------------ | ----------------------------- | ------------------------------ |
+| Direction    | Bidirectional (public subnet) | Outbound only (private subnet) |
+| IP mapping   | 1:1 (private ↔ Elastic IP)    | Many-to-one                    |
+| Resilience   | Regional                      | Zonal or Regional (see below)  |
+| IPv6 support | Yes                           | No                             |
 
 ### Zonal vs Regional NAT GW (availability mode — as of Nov 2025)
 
-| | Zonal NAT GW | Regional NAT GW (RNAT) |
-| --- | --- | --- |
-| Scope | Single AZ | VPC-level |
-| Public subnet required? | Yes | No |
-| High availability | Manual — one per AZ, per-AZ routes | Automatic — single ID, auto-expands |
-| Private NAT support | Yes | No |
-| Use when | Private NAT; strict per-AZ IP control | Most public egress use cases |
+|                         | Zonal NAT GW                          | Regional NAT GW (RNAT)              |
+| ----------------------- | ------------------------------------- | ----------------------------------- |
+| Scope                   | Single AZ                             | VPC-level                           |
+| Public subnet required? | Yes                                   | No                                  |
+| High availability       | Manual — one per AZ, per-AZ routes    | Automatic — single ID, auto-expands |
+| Private NAT support     | Yes                                   | No                                  |
+| Use when                | Private NAT; strict per-AZ IP control | Most public egress use cases        |
 
 > [!tip] Exam Tip
 > Pre-Nov 2025 courses only cover **zonal** NAT GW. For region resilience with zonal: deploy one per AZ, configure each AZ's route table to its local NAT GW. With **regional** NAT GW, a single ID covers all AZs automatically — no public subnet needed.
@@ -739,44 +1177,44 @@ See [EC2](../services/ec2.md) for full details.
 
 ### EC2 state-based costs
 
-| Component | Running | Stopped | Terminated |
-| --- | :-: | :-: | :-: |
-| CPU / Memory / Network | 💰 Charged | ✅ Free | ✅ Free |
-| **EBS volumes** | 💰 Charged | 💰 **Still charged** | ✅ Free (deleted) |
-| Public IPv4 (auto-assigned) | Held | Released | Released |
-| Instance-store volumes | Present | **Lost** | Lost |
-| Elastic IP (attached) | Free | Small hourly charge while idle | Charge continues until **released** |
+| Component                   |  Running  |            Stopped             |             Terminated              |
+| --------------------------- | :-------: | :----------------------------: | :---------------------------------: |
+| CPU / Memory / Network      | 💰 Charged |             ✅ Free             |               ✅ Free                |
+| **EBS volumes**             | 💰 Charged |      💰 **Still charged**       |          ✅ Free (deleted)           |
+| Public IPv4 (auto-assigned) |   Held    |            Released            |              Released               |
+| Instance-store volumes      |  Present  |            **Lost**            |                Lost                 |
+| Elastic IP (attached)       |   Free    | Small hourly charge while idle | Charge continues until **released** |
 
 ### EC2 cheat sheet
 
-| Keyword in the question | Answer |
-| --- | --- |
-| "Stopped the instance to save money, still being billed" | **[EBS](../services/ec2.md#storage-options) storage** still charged — only **Terminate** ends all costs |
-| "Restore terminated instance" | ❌ Not possible — Terminate is irreversible; snapshot/AMI **before** terminating |
-| "Single instance survives AZ failure" | ❌ Impossible — instance is AZ-scoped; need multi-AZ fleet |
-| "Move instance to another AZ" | Snapshot EBS / capture AMI → launch new instance in target AZ; instances don't natively cross AZs |
-| "Attach EBS volume from another AZ" | ❌ Impossible — EBS is AZ-scoped; snapshot → create volume in target AZ |
-| "Multiple ENIs on different subnets" | OK only if the subnets are in the **same AZ** |
-| "Rebooted, lost scratch disk" | Was it really a reboot? **Stop/Start** can land on a new host → **instance-store lost**. Restart keeps the same host |
-| "Public IP changed after I cycled the instance" | Stop/Start releases auto public IPv4; use an **Elastic IP** for stability |
-| "Use the same AMI in another region" | **Copy AMI** to the destination region first (`aws ec2 copy-image`); copied AMIs default back to **Private** permissions |
-| "Use the same AMI in another AZ" | **No copy needed** — an AMI deploys to any AZ in its home region |
-| "Edit an existing AMI to add a package" | **Cannot edit** — launch from it, configure, capture a new AMI |
-| "Cost of an AMI sitting in an account" | Billed on the **EBS snapshots' used data**, not the AMI container or the volume's allocated size |
-| "Marketplace AMI billing" | Normal instance hourly rate **plus** a per-hour software-license charge bundled into the AMI |
-| "Build many identical web servers from a configured master" | **AMI baking** — configure one, capture as AMI, launch the fleet |
-| "Per-socket Windows / Oracle / SQL Server licensing" | **Dedicated Host** — pay per host, target the host, satisfy BYOL per-socket licensing |
-| "No hardware co-tenancy but I don't care about the host" | **Dedicated Instance** — single-tenant hardware, host stays opaque |
-| "Instance has no internet despite being in public subnet" | Check public IP assignment, SG inbound, route to [IGW](../services/vpc.md#internet-gateway-igw), NACL ephemeral return |
-| "Connect to Windows EC2" | RDP/3389 + use **private key to decrypt admin password** |
-| "Connect to Linux EC2" | SSH/22 + private key (direct auth, no password) |
-| "Lost the SSH key" | Create a new key pair; detach root volume → attach to recovery instance to re-key (no AWS recovery) |
-| "Launch many instances from a configured image" | Create an **AMI** from the configured instance, then launch from it |
-| "Share an AMI with another AWS account" | Set permission to **Explicit** with that account's ID |
-| "Instance-level firewall" | [Security Group](../services/vpc.md#security-groups-sg) on the [ENI](../concepts/networking.md) — not a subnet-level control |
-| "Service role for EC2 to call S3 / KMS / etc." | [IAM role](../services/iam.md#iam-roles) attached to the instance — **never embed access keys** |
-| "Per-second vs per-hour billing" | Per-second (60s minimum) on most Linux + Windows; per-hour on certain commercial AMIs |
-| "Long-running 24/7 server with a specific OS" | **EC2** (Lambda has a 15-min runtime cap; containers / Beanstalk are deviations that require a reason) |
+| Keyword in the question                                     | Answer                                                                                                                       |
+| ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| "Stopped the instance to save money, still being billed"    | **[EBS](../services/ec2.md#storage-options) storage** still charged — only **Terminate** ends all costs                      |
+| "Restore terminated instance"                               | ❌ Not possible — Terminate is irreversible; snapshot/AMI **before** terminating                                              |
+| "Single instance survives AZ failure"                       | ❌ Impossible — instance is AZ-scoped; need multi-AZ fleet                                                                    |
+| "Move instance to another AZ"                               | Snapshot EBS / capture AMI → launch new instance in target AZ; instances don't natively cross AZs                            |
+| "Attach EBS volume from another AZ"                         | ❌ Impossible — EBS is AZ-scoped; snapshot → create volume in target AZ                                                       |
+| "Multiple ENIs on different subnets"                        | OK only if the subnets are in the **same AZ**                                                                                |
+| "Rebooted, lost scratch disk"                               | Was it really a reboot? **Stop/Start** can land on a new host → **instance-store lost**. Restart keeps the same host         |
+| "Public IP changed after I cycled the instance"             | Stop/Start releases auto public IPv4; use an **Elastic IP** for stability                                                    |
+| "Use the same AMI in another region"                        | **Copy AMI** to the destination region first (`aws ec2 copy-image`); copied AMIs default back to **Private** permissions     |
+| "Use the same AMI in another AZ"                            | **No copy needed** — an AMI deploys to any AZ in its home region                                                             |
+| "Edit an existing AMI to add a package"                     | **Cannot edit** — launch from it, configure, capture a new AMI                                                               |
+| "Cost of an AMI sitting in an account"                      | Billed on the **EBS snapshots' used data**, not the AMI container or the volume's allocated size                             |
+| "Marketplace AMI billing"                                   | Normal instance hourly rate **plus** a per-hour software-license charge bundled into the AMI                                 |
+| "Build many identical web servers from a configured master" | **AMI baking** — configure one, capture as AMI, launch the fleet                                                             |
+| "Per-socket Windows / Oracle / SQL Server licensing"        | **Dedicated Host** — pay per host, target the host, satisfy BYOL per-socket licensing                                        |
+| "No hardware co-tenancy but I don't care about the host"    | **Dedicated Instance** — single-tenant hardware, host stays opaque                                                           |
+| "Instance has no internet despite being in public subnet"   | Check public IP assignment, SG inbound, route to [IGW](../services/vpc.md#internet-gateway-igw), NACL ephemeral return       |
+| "Connect to Windows EC2"                                    | RDP/3389 + use **private key to decrypt admin password**                                                                     |
+| "Connect to Linux EC2"                                      | SSH/22 + private key (direct auth, no password)                                                                              |
+| "Lost the SSH key"                                          | Create a new key pair; detach root volume → attach to recovery instance to re-key (no AWS recovery)                          |
+| "Launch many instances from a configured image"             | Create an **AMI** from the configured instance, then launch from it                                                          |
+| "Share an AMI with another AWS account"                     | Set permission to **Explicit** with that account's ID                                                                        |
+| "Instance-level firewall"                                   | [Security Group](../services/vpc.md#security-groups-sg) on the [ENI](../concepts/networking.md) — not a subnet-level control |
+| "Service role for EC2 to call S3 / KMS / etc."              | [IAM role](../services/iam.md#iam-roles) attached to the instance — **never embed access keys**                              |
+| "Per-second vs per-hour billing"                            | Per-second (60s minimum) on most Linux + Windows; per-hour on certain commercial AMIs                                        |
+| "Long-running 24/7 server with a specific OS"               | **EC2** (Lambda has a 15-min runtime cap; containers / Beanstalk are deviations that require a reason)                       |
 
 > [!tip] Exam Tip
 > Pattern-match: *"reduce cost of an idle instance overnight"* → **stop** it (saves compute) — but note **storage still bills**. *"reduce cost permanently"* → **terminate** + snapshot first if data matters. *"instance fails, AZ failed"* → expected behaviour; HA is a **multi-AZ fleet** concern, not an instance property. *"AMI not available in region X"* → **copy** AMI from source region. *"cannot SSH but security group + route are correct"* → check **NACL ephemeral return ports** (NACLs are stateless). *"scratch disk gone after cycling the instance"* → it was a **stop/start**, not a restart; the instance may have moved to a new host. *"BYOL with per-socket licensing"* → **Dedicated Host**.
@@ -810,17 +1248,17 @@ See [Containers](../concepts/containers.md) for the full concept page.
 
 #### Containers cheat sheet
 
-| Keyword in the question | Answer |
-| --- | --- |
-| "Runs as a process, not a full OS" | **Container** |
-| "Full guest OS, kernel, and boot lifecycle" | **VM / EC2 instance** |
-| "Package app plus dependencies for portability" | **Container image** |
-| "Build instructions for the image" | **Dockerfile** |
-| "Read-only filesystem layers" | **Image layers** |
-| "Per-container runtime filesystem changes" | **Read/write layer** |
-| "Where images are pushed and pulled" | **Container registry** |
-| "Docker Hub" | A public registry, not the whole container ecosystem |
-| "Same image, many running copies" | Many containers sharing the image layers |
+| Keyword in the question                         | Answer                                               |
+| ----------------------------------------------- | ---------------------------------------------------- |
+| "Runs as a process, not a full OS"              | **Container**                                        |
+| "Full guest OS, kernel, and boot lifecycle"     | **VM / EC2 instance**                                |
+| "Package app plus dependencies for portability" | **Container image**                                  |
+| "Build instructions for the image"              | **Dockerfile**                                       |
+| "Read-only filesystem layers"                   | **Image layers**                                     |
+| "Per-container runtime filesystem changes"      | **Read/write layer**                                 |
+| "Where images are pushed and pulled"            | **Container registry**                               |
+| "Docker Hub"                                    | A public registry, not the whole container ecosystem |
+| "Same image, many running copies"               | Many containers sharing the image layers             |
 
 > [!tip] Exam Tip
 > Pattern-match: portability, consistency, high density, and fast startup point to containers. Full OS control, per-socket licensing, or traditional VM migration points back to [EC2](../services/ec2.md#when-to-use-ec2).
@@ -848,19 +1286,19 @@ See [ECS](../services/ecs.md) for the full service page and [Containers](../conc
 
 #### ECS cheat sheet
 
-| Keyword in the question | Answer |
-| --- | --- |
-| "Containerized app on AWS, managed orchestration" | **ECS** |
-| "Where does ECS get the image?" | **Container registry**, commonly ECR |
-| "One running copy of an application" | **Task** |
-| "Application template with one or more containers" | **Task definition** |
-| "One container inside a task definition" | **Container definition** |
-| "Keep 5 copies running and replace failed copies" | **ECS service** |
-| "Container app needs S3 / [DynamoDB](../services/dynamodb.md) / KMS permissions" | **ECS task role** |
-| "Pull image from ECR and write logs" | **Task execution role** |
-| "Large, steady, price-sensitive container workload" | **ECS on EC2** |
-| "Small / bursty / periodic / no host management" | **ECS on Fargate** |
-| "Serverless but still has VPC networking" | **Fargate task with ENI** |
+| Keyword in the question                                                          | Answer                               |
+| -------------------------------------------------------------------------------- | ------------------------------------ |
+| "Containerized app on AWS, managed orchestration"                                | **ECS**                              |
+| "Where does ECS get the image?"                                                  | **Container registry**, commonly ECR |
+| "One running copy of an application"                                             | **Task**                             |
+| "Application template with one or more containers"                               | **Task definition**                  |
+| "One container inside a task definition"                                         | **Container definition**             |
+| "Keep 5 copies running and replace failed copies"                                | **ECS service**                      |
+| "Container app needs S3 / [DynamoDB](../services/dynamodb.md) / KMS permissions" | **ECS task role**                    |
+| "Pull image from ECR and write logs"                                             | **Task execution role**              |
+| "Large, steady, price-sensitive container workload"                              | **ECS on EC2**                       |
+| "Small / bursty / periodic / no host management"                                 | **ECS on Fargate**                   |
+| "Serverless but still has VPC networking"                                        | **Fargate task with ENI**            |
 
 > [!tip] Exam Tip
 > Pattern-match ECS launch type questions by the management line. If the company wants host control, Spot / Reserved economics, or dense packing for steady load, use ECS on EC2. If the company wants no host management or has small, bursty, or periodic container work, use ECS on Fargate.
@@ -884,20 +1322,20 @@ See [ECR](../services/ecr.md) for the full service page.
 
 #### ECR cheat sheet
 
-| Keyword in the question | Answer |
-| --- | --- |
-| "Managed container image registry on AWS" | **ECR** |
-| "Tags must be unique within…" | The **repository** |
-| "Anyone can pull, no credentials" | **Public** registry |
-| "Permissions required for pull and push" | **Private** registry |
-| "Grant another AWS account pull access" | **Repository (resource) policy** |
-| "CVE / vulnerability scan, OS + language packages, layer-by-layer" | **Enhanced scanning (Inspector)** |
-| "Lighter, default image scan" | **Basic scanning** |
-| "Metrics on push / pull / auth" | **CloudWatch** |
-| "Audit who called which ECR API" | **CloudTrail** |
-| "Trigger a workflow when a new image is pushed" | **EventBridge** |
-| "Copy images to another region or account" | **Replication** (cross-region and cross-account) |
-| "ECS can't pull the private image" | Check the **task execution role** permissions |
+| Keyword in the question                                            | Answer                                           |
+| ------------------------------------------------------------------ | ------------------------------------------------ |
+| "Managed container image registry on AWS"                          | **ECR**                                          |
+| "Tags must be unique within…"                                      | The **repository**                               |
+| "Anyone can pull, no credentials"                                  | **Public** registry                              |
+| "Permissions required for pull and push"                           | **Private** registry                             |
+| "Grant another AWS account pull access"                            | **Repository (resource) policy**                 |
+| "CVE / vulnerability scan, OS + language packages, layer-by-layer" | **Enhanced scanning (Inspector)**                |
+| "Lighter, default image scan"                                      | **Basic scanning**                               |
+| "Metrics on push / pull / auth"                                    | **CloudWatch**                                   |
+| "Audit who called which ECR API"                                   | **CloudTrail**                                   |
+| "Trigger a workflow when a new image is pushed"                    | **EventBridge**                                  |
+| "Copy images to another region or account"                         | **Replication** (cross-region and cross-account) |
+| "ECS can't pull the private image"                                 | Check the **task execution role** permissions    |
 
 > [!tip] Exam Tip
 > The two highest-value ECR facts: **Enhanced scanning is the Inspector tier** (OS + software packages, layer-by-layer) — Basic is the lighter option; and **ECR replication is both cross-region and cross-account**. For "who pulls the image on ECS," the answer is the **task execution role**.
@@ -924,23 +1362,23 @@ See [Kubernetes](../concepts/kubernetes.md) for the cloud-agnostic concept and [
 
 #### Kubernetes & EKS cheat sheet
 
-| Keyword in the question | Answer |
-| --- | --- |
-| "Container orchestration," open standard, avoid lock-in | **Kubernetes / EKS** |
-| "Front end for the control plane" | **kube-apiserver** |
-| "Cluster key/value backing store" | **etcd** |
-| "Assigns pods to nodes" | **kube-scheduler** |
-| "Responds to node outages" | **Node Controller** (in kube-controller-manager) |
-| "Network proxy on every node" | **kube-proxy** (node component) |
-| "Consistent abstraction over pods / the app" | **Service** |
-| "External access to a service" | **Ingress** (+ Ingress Controller) |
-| "Run to completion, then finish" | **Job** |
-| "Storage that outlives a pod" | **Persistent Volume** (EBS/EFS/FSx on EKS) |
-| "Managed Kubernetes on AWS" | **EKS** |
-| "Already run Kubernetes elsewhere, want managed AWS" | **EKS**, not ECS |
-| "Serverless EKS nodes" | **Fargate** via a **Fargate profile** |
-| "EKS worker nodes — where do they run?" | **Your (customer) VPC** |
-| "EKS control plane — where does it run?" | **AWS-managed VPC**, multi-AZ |
+| Keyword in the question                                 | Answer                                           |
+| ------------------------------------------------------- | ------------------------------------------------ |
+| "Container orchestration," open standard, avoid lock-in | **Kubernetes / EKS**                             |
+| "Front end for the control plane"                       | **kube-apiserver**                               |
+| "Cluster key/value backing store"                       | **etcd**                                         |
+| "Assigns pods to nodes"                                 | **kube-scheduler**                               |
+| "Responds to node outages"                              | **Node Controller** (in kube-controller-manager) |
+| "Network proxy on every node"                           | **kube-proxy** (node component)                  |
+| "Consistent abstraction over pods / the app"            | **Service**                                      |
+| "External access to a service"                          | **Ingress** (+ Ingress Controller)               |
+| "Run to completion, then finish"                        | **Job**                                          |
+| "Storage that outlives a pod"                           | **Persistent Volume** (EBS/EFS/FSx on EKS)       |
+| "Managed Kubernetes on AWS"                             | **EKS**                                          |
+| "Already run Kubernetes elsewhere, want managed AWS"    | **EKS**, not ECS                                 |
+| "Serverless EKS nodes"                                  | **Fargate** via a **Fargate profile**            |
+| "EKS worker nodes — where do they run?"                 | **Your (customer) VPC**                          |
+| "EKS control plane — where does it run?"                | **AWS-managed VPC**, multi-AZ                    |
 
 > [!tip] Exam Tip — ECS vs EKS
 > Both run on EC2 or Fargate, so launch type is **not** the differentiator. Choose **EKS** when the scenario wants Kubernetes specifically (cloud-agnostic, open standard, existing K8s workload). Choose **ECS** when an AWS-native orchestrator is fine and you want to avoid EKS's **per-cluster control-plane hourly fee** (ECS has none).
@@ -965,30 +1403,30 @@ See [EC2 — Status Checks and Auto Recovery](../services/ec2.md#status-checks-a
 
 #### Auto Recovery vs Stop/Start vs Restart cheat sheet
 
-| Operation | Host migration | Instance-store data | Auto public IPv4 | Elastic IP |
-| --- | --- | :-: | --- | :-: |
-| **Restart (reboot)** | ❌ Never — same host | Preserved | Preserved | Preserved |
-| **Stop → Start** | Possible (new host, same AZ) | **Lost** | **Released — new IP on Start** | Preserved |
-| **Auto recovery** | Possible (new host, same AZ) | **Lost** (EBS-only requirement) | **Preserved** | Preserved |
+| Operation            | Host migration               |       Instance-store data       | Auto public IPv4               | Elastic IP |
+| -------------------- | ---------------------------- | :-----------------------------: | ------------------------------ | :--------: |
+| **Restart (reboot)** | ❌ Never — same host          |            Preserved            | Preserved                      | Preserved  |
+| **Stop → Start**     | Possible (new host, same AZ) |            **Lost**             | **Released — new IP on Start** | Preserved  |
+| **Auto recovery**    | Possible (new host, same AZ) | **Lost** (EBS-only requirement) | **Preserved**                  | Preserved  |
 
 #### Status Checks & Auto Recovery cheat sheet
 
-| Keyword in the question | Answer |
-| --- | --- |
-| "Healthy instance shows X/Y checks" | **2/2 checks passed** |
-| "The check that failed indicates a host hardware fault" | **System status check** |
-| "The check that failed indicates an OS-level issue / corrupt FS / kernel problem" | **Instance status check** |
-| "Static public IPv4 set on the OS interface" | ❌ Instance check failure pattern — public IPv4 is NAT'd at the IGW, never in the guest |
-| "How do I get notified when a check fails" | **CloudWatch Status Check Alarm → SNS topic** |
-| "Alarm triggers when…" | Either check fails for **at least one consecutive 5-minute period** |
-| "Optional EC2 actions on the alarm" | **Reboot / Stop / Terminate / Recover** |
-| "Self-heal a failed instance, keep its IP, no manual action" | **Recover** (auto recovery) |
-| "Auto recovery preserves which IPs?" | **All of them** — primary private IPv4, auto-assigned public IPv4, **and** Elastic IP |
-| "Auto recovery and AZ failure" | ❌ Same-AZ only — does not survive AZ-wide failure. Use **multi-AZ + ELB + Auto Scaling** for HA |
-| "Auto recovery on an instance with instance-store volumes" | ❌ Not supported — **EBS-only** requirement |
-| "Auto recovery fails during a major regional event" | Likely **no spare host capacity** in the AZ — recovery depends on AWS having a target host to migrate to |
-| "Auto recovery isn't working on this old instance type" | Verify the type is supported — older list **A1, C4, C5, M4, M5, R3, R4, R5**; modern types are broader and most are recovered automatically (Simplified Automatic Recovery) |
-| "Terminate action on a single instance — does it replace?" | ❌ No — Terminate **deletes**; replacement requires pairing with [Auto Scaling](../patterns/scaling.md) |
+| Keyword in the question                                                           | Answer                                                                                                                                                                      |
+| --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| "Healthy instance shows X/Y checks"                                               | **2/2 checks passed**                                                                                                                                                       |
+| "The check that failed indicates a host hardware fault"                           | **System status check**                                                                                                                                                     |
+| "The check that failed indicates an OS-level issue / corrupt FS / kernel problem" | **Instance status check**                                                                                                                                                   |
+| "Static public IPv4 set on the OS interface"                                      | ❌ Instance check failure pattern — public IPv4 is NAT'd at the IGW, never in the guest                                                                                      |
+| "How do I get notified when a check fails"                                        | **CloudWatch Status Check Alarm → SNS topic**                                                                                                                               |
+| "Alarm triggers when…"                                                            | Either check fails for **at least one consecutive 5-minute period**                                                                                                         |
+| "Optional EC2 actions on the alarm"                                               | **Reboot / Stop / Terminate / Recover**                                                                                                                                     |
+| "Self-heal a failed instance, keep its IP, no manual action"                      | **Recover** (auto recovery)                                                                                                                                                 |
+| "Auto recovery preserves which IPs?"                                              | **All of them** — primary private IPv4, auto-assigned public IPv4, **and** Elastic IP                                                                                       |
+| "Auto recovery and AZ failure"                                                    | ❌ Same-AZ only — does not survive AZ-wide failure. Use **multi-AZ + ELB + Auto Scaling** for HA                                                                             |
+| "Auto recovery on an instance with instance-store volumes"                        | ❌ Not supported — **EBS-only** requirement                                                                                                                                  |
+| "Auto recovery fails during a major regional event"                               | Likely **no spare host capacity** in the AZ — recovery depends on AWS having a target host to migrate to                                                                    |
+| "Auto recovery isn't working on this old instance type"                           | Verify the type is supported — older list **A1, C4, C5, M4, M5, R3, R4, R5**; modern types are broader and most are recovered automatically (Simplified Automatic Recovery) |
+| "Terminate action on a single instance — does it replace?"                        | ❌ No — Terminate **deletes**; replacement requires pairing with [Auto Scaling](../patterns/scaling.md)                                                                      |
 
 > [!tip] Exam Tip
 > Pattern-match: *"check the host underneath"* → **System status check**. *"check the OS inside"* → **Instance status check**. *"automated heal that preserves the same IP"* → **Recover** (auto recovery), not Stop/Start. *"automated heal that survives AZ failure"* → ❌ not auto recovery — you need a **multi-AZ fleet behind a load balancer**. *"alarm fires after 5 minutes of failed checks"* → standard Status Check Alarm trigger. *"notify the team when an instance becomes unhealthy"* → **CloudWatch Status Check Alarm + SNS**.
@@ -1014,13 +1452,13 @@ See [EC2 — Instance Types](../services/ec2.md#instance-types) for full details
 
 #### Instance category quick-pick
 
-| Category | Keyword in the question | Typical families |
-| --- | --- | --- |
-| **General Purpose** | "default", "balanced", "burst", "low average load" | T3, T3a, M5, M5a, M5n, A1, M6g |
-| **Compute Optimized** | "CPU-intensive", "HPC", "media encoding", "gaming server", "scientific modelling" | C5, C5n |
-| **Memory Optimized** | "in-memory database", "cache", "Redis", "real-time analytics", "large dataset in RAM" | R5, R5a, X1, z1d, High Memory |
-| **Accelerated Computing** | "GPU", "ML training/inference", "FPGA", "parallel processing", "genomics" | P3, G4, F1, Inf1 |
-| **Storage Optimized** | "NoSQL", "Elasticsearch", "data warehouse", "high IOPS local storage", "Hadoop/HDFS" | I3/I3en, D2, H1 |
+| Category                  | Keyword in the question                                                               | Typical families               |
+| ------------------------- | ------------------------------------------------------------------------------------- | ------------------------------ |
+| **General Purpose**       | "default", "balanced", "burst", "low average load"                                    | T3, T3a, M5, M5a, M5n, A1, M6g |
+| **Compute Optimized**     | "CPU-intensive", "HPC", "media encoding", "gaming server", "scientific modelling"     | C5, C5n                        |
+| **Memory Optimized**      | "in-memory database", "cache", "Redis", "real-time analytics", "large dataset in RAM" | R5, R5a, X1, z1d, High Memory  |
+| **Accelerated Computing** | "GPU", "ML training/inference", "FPGA", "parallel processing", "genomics"             | P3, G4, F1, Inf1               |
+| **Storage Optimized**     | "NoSQL", "Elasticsearch", "data warehouse", "high IOPS local storage", "Hadoop/HDFS"  | I3/I3en, D2, H1                |
 
 > [!tip] Exam Tip
 > Pattern-match: *"T3 performance degraded over time under consistent load"* → **CPU credit exhaustion** — switch to **M5** for sustained CPU workloads. *"max RAM per dollar / in-memory workload"* → **R5 / X1**. *"GPU / ML training"* → **P3 / G4**. *"programmable hardware / genomics / financial analysis"* → **F1 (FPGA)**. *"large NVMe SSD, NoSQL or analytics"* → **I3/I3en**. *"Hadoop / HDD-heavy throughput"* → **D2 / H1**. *"ARM-native, cost-optimised"* → **A1 / M6g (Graviton)**.
@@ -1041,19 +1479,19 @@ See [EC2 — Instance Store](../services/ec2.md#instance-store) and [EBS vs Inst
 
 #### Instance store vs EBS — decision table
 
-| If the question emphasizes… | Pick |
-| --- | --- |
-| Persistence / durability | **EBS** |
-| Resilience within an AZ + snapshots | **EBS** |
-| Detach & reattach to another instance | **EBS** |
+| If the question emphasizes…               | Pick                                       |
+| ----------------------------------------- | ------------------------------------------ |
+| Persistence / durability                  | **EBS**                                    |
+| Resilience within an AZ + snapshots       | **EBS**                                    |
+| Detach & reattach to another instance     | **EBS**                                    |
 | Resilience **with** app-level replication | **Instance store** (across many instances) |
-| Lowest cost HDD | **ST1 / SC1** |
-| Throughput / streaming | **ST1** |
-| Boot volume | **Not ST1/SC1** |
-| 16,000–64,000 IOPS per volume | **IO1 / IO2** |
-| Up to 256,000 IOPS per volume | **IO2 Block Express** |
-| Max per instance (RAID 0 over EBS) | **~260,000 IOPS** |
-| More than 260,000 IOPS, non-persistent OK | **Instance store** (i3: ~2 million IOPS) |
+| Lowest cost HDD                           | **ST1 / SC1**                              |
+| Throughput / streaming                    | **ST1**                                    |
+| Boot volume                               | **Not ST1/SC1**                            |
+| 16,000–64,000 IOPS per volume             | **IO1 / IO2**                              |
+| Up to 256,000 IOPS per volume             | **IO2 Block Express**                      |
+| Max per instance (RAID 0 over EBS)        | **~260,000 IOPS**                          |
+| More than 260,000 IOPS, non-persistent OK | **Instance store** (i3: ~2 million IOPS)   |
 
 > [!tip] Exam Tip
 > Pattern-match: *"highest possible storage performance, data loss acceptable"* → **instance store**. *"app replicates its own data (Cassandra, HDFS)"* → **instance store** across many instances — let the app provide durability, keep the speed and the cost saving. *"need more than ~260,000 IOPS per instance"* → **instance store** (RAID 0 over EBS is capped at ~260,000; i3 reaches millions). *"add volumes after launch"* → only **EBS** — instance store is **launch-time only**. *"D3 for sequential throughput"* → instance store (~4.6 GB/s) beats any EBS HDD. *"i3 for NVMe IOPS"* → instance store (~2 million IOPS) vs IO2 Block Express (256,000/volume, ~260,000/instance).
@@ -1085,31 +1523,31 @@ See [EC2 — Network Interfaces (ENIs)](../services/ec2.md#network-interfaces-en
 
 The EC2 public DNS name resolves **differently depending on caller location**:
 
-| Caller | Public DNS name resolves to |
-| --- | --- |
-| Inside the VPC | **Private IPv4** |
-| Outside the VPC | **Public IPv4** |
+| Caller          | Public DNS name resolves to |
+| --------------- | --------------------------- |
+| Inside the VPC  | **Private IPv4**            |
+| Outside the VPC | **Public IPv4**             |
 
 One hostname works everywhere; **intra-VPC traffic stays private** (never hairpins through the IGW). This is what makes VPC peering and hybrid networking work cleanly when apps connect by public DNS name. See [DNS — Split-Horizon DNS](../concepts/dns.md#split-horizon-dns).
 
 #### ENI / DNS / EIP cheat sheet
 
-| Keyword in the question | Answer |
-| --- | --- |
-| "Security Group attaches to…" | **ENI**, not the instance or subnet |
-| "Different SGs for different IPs on one instance" | Split IPs across **multiple ENIs** |
-| "Multiple ENIs on different subnets" | Allowed only if those subnets are in the **same AZ** |
-| "Move the licence with the server when I replace it" | **Secondary ENI** with the MAC-bound licence + re-attach on the replacement |
-| "Stable public IPv4 across stop/start" | **Elastic IP** (EIP) |
-| "Detached my EIP and the original public IP came back" | ❌ Wrong — a **new, different** dynamic public IP is assigned; the original is lost |
-| "Public IP changed after rebooting" | Likely a **Stop/Start in disguise** — reboot preserves the auto public IPv4 |
-| "Internal DNS name doesn't resolve from on-prem" | `ip-…ec2.internal` is **VPC-only**; use Route 53 Resolver inbound endpoints or split-view PHZ for hybrid |
-| "Public DNS name resolves to a private IP from inside the VPC" | **Split-horizon DNS** — intended behaviour |
-| "Apps in two peered VPCs connect via public DNS — does traffic leave AWS?" | **No** — split-horizon DNS resolves to the **private IP** on both sides |
-| "EC2 acting as a NAT instance drops packets" | **Source/destination check** is still enabled — disable it on the NAT instance's ENI |
-| "Configure the public IPv4 inside the guest OS" | ❌ Not possible — public IPv4 is invisible to the OS; only IPv6 is OS-visible |
-| "Cannot SSH after stop/start, OS firewall unchanged" | New auto public IPv4 was assigned — update your SSH target (or attach an **EIP** for stability) |
-| "Need every existing public IP to remain forever" | **Allocate an EIP** *before* detaching anything — otherwise the dynamic IP is permanently lost on first EIP swap |
+| Keyword in the question                                                    | Answer                                                                                                           |
+| -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| "Security Group attaches to…"                                              | **ENI**, not the instance or subnet                                                                              |
+| "Different SGs for different IPs on one instance"                          | Split IPs across **multiple ENIs**                                                                               |
+| "Multiple ENIs on different subnets"                                       | Allowed only if those subnets are in the **same AZ**                                                             |
+| "Move the licence with the server when I replace it"                       | **Secondary ENI** with the MAC-bound licence + re-attach on the replacement                                      |
+| "Stable public IPv4 across stop/start"                                     | **Elastic IP** (EIP)                                                                                             |
+| "Detached my EIP and the original public IP came back"                     | ❌ Wrong — a **new, different** dynamic public IP is assigned; the original is lost                               |
+| "Public IP changed after rebooting"                                        | Likely a **Stop/Start in disguise** — reboot preserves the auto public IPv4                                      |
+| "Internal DNS name doesn't resolve from on-prem"                           | `ip-…ec2.internal` is **VPC-only**; use Route 53 Resolver inbound endpoints or split-view PHZ for hybrid         |
+| "Public DNS name resolves to a private IP from inside the VPC"             | **Split-horizon DNS** — intended behaviour                                                                       |
+| "Apps in two peered VPCs connect via public DNS — does traffic leave AWS?" | **No** — split-horizon DNS resolves to the **private IP** on both sides                                          |
+| "EC2 acting as a NAT instance drops packets"                               | **Source/destination check** is still enabled — disable it on the NAT instance's ENI                             |
+| "Configure the public IPv4 inside the guest OS"                            | ❌ Not possible — public IPv4 is invisible to the OS; only IPv6 is OS-visible                                     |
+| "Cannot SSH after stop/start, OS firewall unchanged"                       | New auto public IPv4 was assigned — update your SSH target (or attach an **EIP** for stability)                  |
+| "Need every existing public IP to remain forever"                          | **Allocate an EIP** *before* detaching anything — otherwise the dynamic IP is permanently lost on first EIP swap |
 
 > [!tip] Exam Tip
 > Pattern-match by ownership: *"X is attached to the instance"* — read it as *"X is attached to the instance's primary ENI."* The handful of exceptions matter: things that live on the **EC2 host** (instance store, host-affinity, dedicated-host BYOL) or in the **subnet/AZ** ([NACLs](../services/vpc.md#network-acl-nacl), [route tables](../services/vpc.md#route-tables)) are *not* on the ENI. Everything else — IPs, DNS names, MAC, EIPs, IPv6, SGs, source/dest check — is per-ENI.
@@ -1140,19 +1578,19 @@ See [EC2 — Instance Metadata Service (IMDS)](../services/ec2.md#instance-metad
 
 #### IMDS cheat sheet
 
-| Keyword in the question | Answer |
-| --- | --- |
-| The metadata service URL | **`http://169.254.169.254/latest/meta-data/`** |
-| "Code on the instance needs its public IPv4" | **IMDS** — `meta-data/public-ipv4` |
-| "App on EC2 needs to call S3 without storing access keys" | **IAM role on the instance + SDK reads creds from IMDS** at `iam/security-credentials/<role>` |
-| "Bootstrap script needs to read the user-data passed at launch" | `http://169.254.169.254/latest/user-data/` |
-| "Pulled credentials from the metadata service via SSRF" | The **Capital One** pattern — IMDSv1 vulnerability; fix is **enforce IMDSv2** |
-| "Mitigate SSRF against the metadata service" | **`HttpTokens=required`** (forces IMDSv2 session-token handshake) |
-| "Block all metadata access from inside the OS" | Local OS firewall rule blocking `169.254.169.254` — per-instance, high-overhead; IMDSv2 is the real answer |
-| "Metadata service uses TLS" | ❌ No — IMDS is **plain HTTP** over link-local. Confidentiality comes from the local-only addressing, not from encryption |
-| "169.254.169.254 reachable from outside the instance" | ❌ No — link-local; never leaves the instance |
-| "Same IP address for IMDS in `us-east-1` and `ap-southeast-2`" | ✅ Yes — link-local, identical on every instance everywhere |
-| "Which Amazon Linux requires IMDSv2 by default" | **AL2023** (`imds-support=v2.0`, IMDSv1 disabled). **AL2** defaults to `optional` (both enabled) |
+| Keyword in the question                                         | Answer                                                                                                                   |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| The metadata service URL                                        | **`http://169.254.169.254/latest/meta-data/`**                                                                           |
+| "Code on the instance needs its public IPv4"                    | **IMDS** — `meta-data/public-ipv4`                                                                                       |
+| "App on EC2 needs to call S3 without storing access keys"       | **IAM role on the instance + SDK reads creds from IMDS** at `iam/security-credentials/<role>`                            |
+| "Bootstrap script needs to read the user-data passed at launch" | `http://169.254.169.254/latest/user-data/`                                                                               |
+| "Pulled credentials from the metadata service via SSRF"         | The **Capital One** pattern — IMDSv1 vulnerability; fix is **enforce IMDSv2**                                            |
+| "Mitigate SSRF against the metadata service"                    | **`HttpTokens=required`** (forces IMDSv2 session-token handshake)                                                        |
+| "Block all metadata access from inside the OS"                  | Local OS firewall rule blocking `169.254.169.254` — per-instance, high-overhead; IMDSv2 is the real answer               |
+| "Metadata service uses TLS"                                     | ❌ No — IMDS is **plain HTTP** over link-local. Confidentiality comes from the local-only addressing, not from encryption |
+| "169.254.169.254 reachable from outside the instance"           | ❌ No — link-local; never leaves the instance                                                                             |
+| "Same IP address for IMDS in `us-east-1` and `ap-southeast-2`"  | ✅ Yes — link-local, identical on every instance everywhere                                                               |
+| "Which Amazon Linux requires IMDSv2 by default"                 | **AL2023** (`imds-support=v2.0`, IMDSv1 disabled). **AL2** defaults to `optional` (both enabled)                         |
 
 > [!tip] Exam Tip
 > Pattern-match: *"discover own public IPv4 from inside the instance"* → **IMDS** at `meta-data/public-ipv4`. *"SDK on EC2 obtains credentials"* → **IAM role + IMDS** (no static keys). *"SSRF stole the role credentials from metadata"* → **enforce IMDSv2** (`HttpTokens=required`). *"the metadata endpoint URL"* → **`http://169.254.169.254/latest/meta-data/`** — memorize verbatim.
@@ -1182,22 +1620,22 @@ See [EC2 — AMI](../services/ec2.md#ami--amazon-machine-image) for full details
 
 #### AMI cheat sheet
 
-| Keyword in the question | Answer |
-| --- | --- |
-| "Same OS, different AMI IDs across regions" | Yes — AMIs are **regional**; same OS gets a distinct AMI ID in each region |
-| "Move an AMI to another region" | **`aws ec2 copy-image`** — copies the underlying snapshots; permissions reset to Private |
-| "Move an AMI to another AZ" | **No action needed** — an AMI deploys to any AZ in its home region |
-| "Modify an existing AMI" | ❌ Not possible — launch from it, configure, capture a **new** AMI |
-| "Share AMI with a specific AWS account" | **Explicit** permission with that account's ID |
-| "Share AMI with everyone" | **Public** permission — also the model for AWS-provided base images |
-| "Default AMI permission" | **Private** (owner-only) |
-| "Marketplace AMI cost model" | Normal instance hourly rate **plus** a per-hour software-license charge |
-| "What does the AMI actually store?" | AMI ID + permissions + **block device mapping** pointing at EBS snapshots. **No volume bytes inside the AMI** |
-| "Block device mapping" | A table: snapshot ID + original device ID (e.g. `/dev/xvda` for boot, `/dev/xvdf` for data). Used at launch to recreate the volume layout |
-| "How much does an idle AMI cost?" | **Snapshot used data × $/GB-month** — not the volume's allocated size, not the AMI itself |
-| "Configure once, launch many" | **AMI baking** — capture the configured instance as an AMI |
-| "AMIs created from one AZ" | Deployable to **all AZs in the region** — the AMI's snapshots are stored on S3, which is regional |
-| "Encrypted AMI fails to launch via Auto Scaling" | Auto Scaling needs a **KMS grant** on the AMI's encryption key |
+| Keyword in the question                          | Answer                                                                                                                                    |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| "Same OS, different AMI IDs across regions"      | Yes — AMIs are **regional**; same OS gets a distinct AMI ID in each region                                                                |
+| "Move an AMI to another region"                  | **`aws ec2 copy-image`** — copies the underlying snapshots; permissions reset to Private                                                  |
+| "Move an AMI to another AZ"                      | **No action needed** — an AMI deploys to any AZ in its home region                                                                        |
+| "Modify an existing AMI"                         | ❌ Not possible — launch from it, configure, capture a **new** AMI                                                                         |
+| "Share AMI with a specific AWS account"          | **Explicit** permission with that account's ID                                                                                            |
+| "Share AMI with everyone"                        | **Public** permission — also the model for AWS-provided base images                                                                       |
+| "Default AMI permission"                         | **Private** (owner-only)                                                                                                                  |
+| "Marketplace AMI cost model"                     | Normal instance hourly rate **plus** a per-hour software-license charge                                                                   |
+| "What does the AMI actually store?"              | AMI ID + permissions + **block device mapping** pointing at EBS snapshots. **No volume bytes inside the AMI**                             |
+| "Block device mapping"                           | A table: snapshot ID + original device ID (e.g. `/dev/xvda` for boot, `/dev/xvdf` for data). Used at launch to recreate the volume layout |
+| "How much does an idle AMI cost?"                | **Snapshot used data × $/GB-month** — not the volume's allocated size, not the AMI itself                                                 |
+| "Configure once, launch many"                    | **AMI baking** — capture the configured instance as an AMI                                                                                |
+| "AMIs created from one AZ"                       | Deployable to **all AZs in the region** — the AMI's snapshots are stored on S3, which is regional                                         |
+| "Encrypted AMI fails to launch via Auto Scaling" | Auto Scaling needs a **KMS grant** on the AMI's encryption key                                                                            |
 
 > [!tip] Exam Tip
 > Pattern-match: *"create many identical instances from a customized server"* → **AMI baking** (capture as AMI, then launch). *"AMI not available in region X"* → **copy AMI** to that region first. *"edit an AMI to update the package version"* → ❌ not possible; (1) launch from the AMI, (2) modify the instance, (3) capture a new AMI. *"AMI created in AZ-a — can it launch in AZ-b?"* → ✅ yes, same region is enough. *"Marketplace AMI total cost"* → instance rate **plus** per-hour license. *"Who owns the data in an AMI?"* → the EBS snapshots underneath; the AMI is just a pointer.
@@ -1265,15 +1703,15 @@ See [EC2 — Launch Configurations & Launch Templates](../services/ec2.md#launch
 
 #### LC vs LT trigger-keyword table
 
-| Exam trigger | Points to |
-| --- | --- |
-| "versions", "default/latest version" | **Launch Template** |
-| "launch instances directly from console/CLI" | **Launch Template** |
-| "mixed instance types", "Spot + On-Demand in one ASG" | **Launch Template** (Mixed Instances Policy) |
-| "T2/T3 Unlimited", "placement groups", "Capacity Reservations" | **Launch Template** |
-| "newest instance types" / "recommended" / "modern approach" | **Launch Template** |
-| "only used by Auto Scaling Groups", "no versioning", "older mechanism" | **Launch Configuration** |
-| "edit the existing launch config/template" | **Trap** — neither is editable; new LC or new LT version |
+| Exam trigger                                                           | Points to                                                |
+| ---------------------------------------------------------------------- | -------------------------------------------------------- |
+| "versions", "default/latest version"                                   | **Launch Template**                                      |
+| "launch instances directly from console/CLI"                           | **Launch Template**                                      |
+| "mixed instance types", "Spot + On-Demand in one ASG"                  | **Launch Template** (Mixed Instances Policy)             |
+| "T2/T3 Unlimited", "placement groups", "Capacity Reservations"         | **Launch Template**                                      |
+| "newest instance types" / "recommended" / "modern approach"            | **Launch Template**                                      |
+| "only used by Auto Scaling Groups", "no versioning", "older mechanism" | **Launch Configuration**                                 |
+| "edit the existing launch config/template"                             | **Trap** — neither is editable; new LC or new LT version |
 
 > [!tip] Exam Tip
 > If a question asks for the **recommended** or **modern** approach, or mentions **new instance types, mixed/Spot purchasing, or versioning**, the answer is **launch templates** — launch configurations are legacy and formally deprecated.
@@ -1289,20 +1727,20 @@ See [EC2 — Placement Groups](../services/ec2.md#placement-groups) for full det
 
 #### Placement group decision table
 
-| If the question emphasises… | Pick |
-| --- | --- |
-| Highest performance, lowest latency, fastest node-to-node (HPC, scientific) | **Cluster** |
-| Small number of critical instances, max availability, separate blast radius | **Spread** |
+| If the question emphasises…                                                                              | Pick          |
+| -------------------------------------------------------------------------------------------------------- | ------------- |
+| Highest performance, lowest latency, fastest node-to-node (HPC, scientific)                              | **Cluster**   |
+| Small number of critical instances, max availability, separate blast radius                              | **Spread**    |
 | Large-scale distributed/replicated app, more than 7 instances, topology-aware (HDFS / HBase / Cassandra) | **Partition** |
 
 #### Numbers to memorise
 
-| Fact | Value |
-| --- | --- |
-| Cluster single-stream throughput | **10 Gbps** (vs **5 Gbps** normal) |
-| Spread instances per AZ | **7** (hard limit, **per group** not per account) |
-| Partition *partitions* per AZ | **7** (max) |
-| Partition instances per partition | Unlimited (your choice) |
+| Fact                              | Value                                             |
+| --------------------------------- | ------------------------------------------------- |
+| Cluster single-stream throughput  | **10 Gbps** (vs **5 Gbps** normal)                |
+| Spread instances per AZ           | **7** (hard limit, **per group** not per account) |
+| Partition *partitions* per AZ     | **7** (max)                                       |
+| Partition instances per partition | Unlimited (your choice)                           |
 
 > [!tip] Exam Tip
 > The cluster performance numbers are conditional: you need a **supported instance type** with high-performance networking **and enhanced networking enabled** on all members. Same instance type and launching all members at the same time are **recommended, not mandatory**. And the mnemonic: **C**luster is **C**lose together for **C**ompute performance; **S**pread is **S**eparated, **S**even per AZ; **P**artition gives 7 **P**artitions per AZ for **P**arallel-processing apps at scale.
@@ -1418,13 +1856,13 @@ The Provisioned IOPS SSD family is for workloads that need **extreme, consistent
 
 **Key numbers to know:**
 
-| Attribute | IO1 | IO2 | IO2 Block Express |
-| --- | --- | --- | --- |
-| Max IOPS per volume | 64,000 | 64,000 | **256,000** |
-| Max throughput per volume | 1,000 MB/s | 1,000 MB/s | **4,000 MB/s** |
-| Max IOPS/GB ratio | 50 | 500 | 1,000 |
-| Per-instance max IOPS | 260,000 | 160,000 | 260,000 |
-| Size range | 4 GB – 16 TB | 4 GB – 16 TB | 4 GB – **64 TB** |
+| Attribute                 | IO1          | IO2          | IO2 Block Express |
+| ------------------------- | ------------ | ------------ | ----------------- |
+| Max IOPS per volume       | 64,000       | 64,000       | **256,000**       |
+| Max throughput per volume | 1,000 MB/s   | 1,000 MB/s   | **4,000 MB/s**    |
+| Max IOPS/GB ratio         | 50           | 500          | 1,000             |
+| Per-instance max IOPS     | 260,000      | 160,000      | 260,000           |
+| Size range                | 4 GB – 16 TB | 4 GB – 16 TB | 4 GB – **64 TB**  |
 
 **The two-ceiling rule (most exam-tested concept):**
 
@@ -1451,16 +1889,16 @@ The HDD family is for **sequential, throughput-oriented workloads where cost mat
 
 **Key numbers:**
 
-| Attribute | ST1 (Throughput Optimized) | SC1 (Cold HDD) |
-| --- | --- | --- |
-| Relative cost | Cheap | **Cheapest EBS storage of all** |
-| Size range | 125 GB – 16 TB | 125 GB – 16 TB |
-| I/O block size | **1 MB** (vs 16 KB on SSD) | **1 MB** |
-| Max IOPS | 500 | 250 |
-| Max throughput | 500 MB/s | 250 MB/s |
-| Baseline | 40 MB/s per TB | 12 MB/s per TB |
-| Burst | 250 MB/s per TB | 80 MB/s per TB |
-| Access pattern | Frequent, sequential | Infrequent, cold, archival |
+| Attribute         | ST1 (Throughput Optimized)                | SC1 (Cold HDD)                     |
+| ----------------- | ----------------------------------------- | ---------------------------------- |
+| Relative cost     | Cheap                                     | **Cheapest EBS storage of all**    |
+| Size range        | 125 GB – 16 TB                            | 125 GB – 16 TB                     |
+| I/O block size    | **1 MB** (vs 16 KB on SSD)                | **1 MB**                           |
+| Max IOPS          | 500                                       | 250                                |
+| Max throughput    | 500 MB/s                                  | 250 MB/s                           |
+| Baseline          | 40 MB/s per TB                            | 12 MB/s per TB                     |
+| Burst             | 250 MB/s per TB                           | 80 MB/s per TB                     |
+| Access pattern    | Frequent, sequential                      | Infrequent, cold, archival         |
 | Typical workloads | Big data, data warehouses, log processing | Cold data, archives, few scans/day |
 
 **1 MB I/O block rule:** on HDD, 1 IOPS = 1 MB — so the IOPS and MB/s ceilings are always the same number (500 IOPS = 500 MB/s). The credit bucket scales in **MB/s per TB** (not IOPS per GB like GP2).
@@ -1485,11 +1923,11 @@ See [EBS — Encryption](../services/ebs.md#ebs-encryption) for full details.
 
 #### DEK reuse — the chain rule
 
-| Resource | DEK |
-| --- | --- |
-| Two volumes created **from scratch** | **Different** DEKs |
-| Snapshot of an encrypted volume | **Same DEK** as source |
-| Volume restored from that snapshot | **Same DEK** as snapshot (and source) |
+| Resource                             | DEK                                   |
+| ------------------------------------ | ------------------------------------- |
+| Two volumes created **from scratch** | **Different** DEKs                    |
+| Snapshot of an encrypted volume      | **Same DEK** as source                |
+| Volume restored from that snapshot   | **Same DEK** as snapshot (and source) |
 
 A single DEK threads through: **original volume → its snapshots → restored volumes**. Re-keying requires `CopySnapshot` with a different KMS key.
 
@@ -1519,12 +1957,12 @@ See [EFS](../services/efs.md) for full details.
 
 ### EFS cheat sheet
 
-| Attribute | Course answer | Current AWS reality |
-| --- | --- | --- |
-| Performance modes | **General Purpose** *(default)* / **Max I/O** (parallel workloads, higher latency) | Max I/O is **previous-generation**; AWS recommends General Purpose for all file systems |
-| Throughput modes | **Bursting** *(default; scales with size, like GP2)* / **Provisioned** (size-independent, like IO1) | A third mode, **Elastic** (auto-scales to demand), is now the **console default** |
-| Storage classes | **Standard** *(default)* / **Infrequent Access** | Plus **One Zone / One Zone-IA** and **Archive** |
-| Cost optimization | **Lifecycle policies** move data between classes (like [S3](../services/s3.md#lifecycle-configuration)) | Same |
+| Attribute         | Course answer                                                                                           | Current AWS reality                                                                     |
+| ----------------- | ------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Performance modes | **General Purpose** *(default)* / **Max I/O** (parallel workloads, higher latency)                      | Max I/O is **previous-generation**; AWS recommends General Purpose for all file systems |
+| Throughput modes  | **Bursting** *(default; scales with size, like GP2)* / **Provisioned** (size-independent, like IO1)     | A third mode, **Elastic** (auto-scales to demand), is now the **console default**       |
+| Storage classes   | **Standard** *(default)* / **Infrequent Access**                                                        | Plus **One Zone / One Zone-IA** and **Archive**                                         |
+| Cost optimization | **Lifecycle policies** move data between classes (like [S3](../services/s3.md#lifecycle-configuration)) | Same                                                                                    |
 
 > [!tip] Exam Tip
 > Pattern-match: *"shared file storage across multiple Linux instances"* means **EFS**. *"Latency-sensitive general file serving"* means **General Purpose**; *"highly parallel big-data / media processing"* means **Max I/O**. *"Throughput scales with stored data"* means **Bursting**; *"throughput independent of size"* means **Provisioned**. *"Automatically move rarely-used files to a cheaper tier"* means **lifecycle policy to IA**.
@@ -1566,14 +2004,14 @@ Niche topic — **awareness only** (know it exists and what gap it fills). See [
 
 ### Multi-AZ vs Read Replicas
 
-| | Standby (Multi-AZ) | Read Replica |
-| --- | --- | --- |
-| Replication | **Synchronous** | **Asynchronous** |
-| Scope | Same region, different AZ | Same- **or cross-region** |
-| Purpose | **HA / failover** | **Read scaling + DR** |
-| App-readable? | **No** | **Yes** (own endpoint) |
-| Automatic failover? | **Yes** (CNAME repoint) | **No** — manual **promotion** only |
-| App changes needed? | No (same CNAME) | **Yes** — point reads at the replica endpoint |
+|                     | Standby (Multi-AZ)        | Read Replica                                  |
+| ------------------- | ------------------------- | --------------------------------------------- |
+| Replication         | **Synchronous**           | **Asynchronous**                              |
+| Scope               | Same region, different AZ | Same- **or cross-region**                     |
+| Purpose             | **HA / failover**         | **Read scaling + DR**                         |
+| App-readable?       | **No**                    | **Yes** (own endpoint)                        |
+| Automatic failover? | **Yes** (CNAME repoint)   | **No** — manual **promotion** only            |
+| App changes needed? | No (same CNAME)           | **Yes** — point reads at the replica endpoint |
 
 - **Count:** **5** read replicas per instance (the long-standing/course number) or **up to 15** in current AWS docs — know both. **Cascading** replicas (replicas of replicas) are allowed but **lag compounds** at each hop
 - **Db2/Oracle exception:** RDS for Db2 standby replicas and RDS for Oracle mounted replicas don't accept user connections, so they are **DR-only** rather than read-scaling targets
@@ -1587,16 +2025,16 @@ Niche topic — **awareness only** (know it exists and what gap it fills). See [
 
 There are **two** Multi-AZ architectures — both **in-region HA only** (not DR), both **not** in the free tier:
 
-| | Multi-AZ **Instance** | Multi-AZ **Cluster** |
-| --- | --- | --- |
-| Topology | 1 primary + **1 standby** (2 AZs) | 1 writer + **2 readers** (3 AZs) |
-| Standby readable? | **No** — passive failover target | **Yes** — readers serve reads |
-| Read scaling? | No (need a read replica) | **Yes** via the reader endpoint |
-| Replication | **Synchronous**, storage-level | **Semi-synchronous** quorum (≥ 1 reader ack), transaction-log |
-| Failover | **60–120 s** (DNS repoint) | **~35 s** floor / **25–75 s** typical (no crash recovery) |
-| Storage / HW | EBS, standard | **Local NVMe SSD flushed to EBS**, **Graviton** |
-| Engines | Db2, MariaDB, MySQL, Oracle, PostgreSQL, **SQL Server** | **MySQL & PostgreSQL only** |
-| Endpoints | Single **database CNAME** | **Cluster** (writer) / **Reader** / **Instance** (test-only) |
+|                   | Multi-AZ **Instance**                                   | Multi-AZ **Cluster**                                          |
+| ----------------- | ------------------------------------------------------- | ------------------------------------------------------------- |
+| Topology          | 1 primary + **1 standby** (2 AZs)                       | 1 writer + **2 readers** (3 AZs)                              |
+| Standby readable? | **No** — passive failover target                        | **Yes** — readers serve reads                                 |
+| Read scaling?     | No (need a read replica)                                | **Yes** via the reader endpoint                               |
+| Replication       | **Synchronous**, storage-level                          | **Semi-synchronous** quorum (≥ 1 reader ack), transaction-log |
+| Failover          | **60–120 s** (DNS repoint)                              | **~35 s** floor / **25–75 s** typical (no crash recovery)     |
+| Storage / HW      | EBS, standard                                           | **Local NVMe SSD flushed to EBS**, **Graviton**               |
+| Engines           | Db2, MariaDB, MySQL, Oracle, PostgreSQL, **SQL Server** | **MySQL & PostgreSQL only**                                   |
+| Endpoints         | Single **database CNAME**                               | **Cluster** (writer) / **Reader** / **Instance** (test-only)  |
 
 - Instance-mode failover is a **DNS repoint**, not a data-recovery op — the standby already holds a synchronous copy, so the 60–120 s is DNS propagation + client caching. **Disable app-side DNS caching** to shorten it
 - Cluster-mode replication is **semi-synchronous** in AWS docs (commit on **≥ 1 of 2** standbys), even though some material says "synchronous" — know both framings
@@ -1613,13 +2051,13 @@ There are **two** Multi-AZ architectures — both **in-region HA only** (not DR)
 
 Two mechanisms, both stored in **AWS-managed [S3](../services/s3.md)** (regionally resilient; **invisible in your own S3 console** — exam trap):
 
-| | Manual snapshot | Automated backup |
-| --- | --- | --- |
-| Trigger | **You** (or a script) | **RDS, once/day** in a backup window |
-| Extra stream | None | **Transaction logs every 5 min** |
-| Retention | **Never expires** — manual delete only; **survives instance deletion** | **0–35 days** (0 = disabled) |
-| PITR | ❌ restores only to its **fixed moment** | ✅ **~5-min Recovery Point Objective (RPO)** point-in-time recovery |
-| Scope | **Instance-level** (all DBs) | Instance-level |
+|              | Manual snapshot                                                        | Automated backup                                                   |
+| ------------ | ---------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Trigger      | **You** (or a script)                                                  | **RDS, once/day** in a backup window                               |
+| Extra stream | None                                                                   | **Transaction logs every 5 min**                                   |
+| Retention    | **Never expires** — manual delete only; **survives instance deletion** | **0–35 days** (0 = disabled)                                       |
+| PITR         | ❌ restores only to its **fixed moment**                                | ✅ **~5-min Recovery Point Objective (RPO)** point-in-time recovery |
+| Scope        | **Instance-level** (all DBs)                                           | Instance-level                                                     |
 
 - **First snapshot is full, the rest incremental** — true for **both** manual snapshots **and** automated backups (AWS treats an automated backup as an automated snapshot)
 - **PITR works** by restoring the closest snapshot then **replaying transaction logs** to the chosen time — so it requires automated backups; a manual snapshot alone can't do it
@@ -1641,11 +2079,11 @@ Four separate concerns — keep **authentication vs authorization** and **in-tra
 - **No AWS in the chain of trust** — **RDS Oracle + TDE + CloudHSM** (you hold the keys; AWS never sees them). Oracle-specific
 - **IAM authentication** — log in with a **15-minute token** from **`GenerateDBAuthToken`** instead of a DB password. **Authentication only — never authorization**: once in, the **local DB user** still governs permissions. Must be explicitly enabled; **TLS is mandatory** (token is sent as a cleartext password); mint a **fresh token per new connection**
 
-| At-rest mechanism | Who encrypts | Engines |
-| --- | --- | --- |
-| **KMS + EBS** (default) | **The host**, below the engine | **All** engines |
-| **TDE** | **The DB engine** itself | **SQL Server & Oracle only** |
-| **TDE + CloudHSM** | The engine, with **your** keys | **Oracle only** |
+| At-rest mechanism       | Who encrypts                   | Engines                      |
+| ----------------------- | ------------------------------ | ---------------------------- |
+| **KMS + EBS** (default) | **The host**, below the engine | **All** engines              |
+| **TDE**                 | **The DB engine** itself       | **SQL Server & Oracle only** |
+| **TDE + CloudHSM**      | The engine, with **your** keys | **Oracle only**              |
 
 > [!tip] Exam Tip
 > Pattern-match: *"force/require SSL"* → **per-user mandatory TLS**. *"default at-rest, host does the encryption"* → **KMS + EBS** (KMS key → DEKs, AES-256). *"engine-native encryption"* → **TDE** (SQL Server/Oracle only — never MySQL/MariaDB/PostgreSQL). *"AWS must have no access to the keys"* → **Oracle + TDE + CloudHSM**. *"log in without a stored DB password using an AWS identity"* → **IAM authentication** (`GenerateDBAuthToken`, 15-min token). *"does IAM decide what the user can do in the DB?"* → **No, the local DB user does**.
@@ -1689,17 +2127,17 @@ See [DMS](../services/dms.md) for full details.
 - **On-premises to on-premises is not supported.** Current AWS FAQ wording requires the source or target database, or both, to reside in RDS or on EC2.
 - **Large constrained-network migrations** can pair SCT/Snowball/[S3](../services/s3.md) for the baseline load with DMS CDC for the catch-up stream.
 
-| Trigger | Answer |
-| --- | --- |
-| "Migrate database with minimal downtime" | **DMS Full Load + CDC** |
-| "Replicate only changes; data already loaded" | **CDC Only** |
-| "One-time copy; downtime acceptable" | **Full Load** |
-| "Replication instance" | DMS Standard |
-| "Serverless replications" / "DCUs" | DMS Serverless |
-| "Same database engine" | Homogeneous; no SCT/schema conversion |
-| "Different database engine" | DMS Schema Conversion or AWS SCT plus DMS |
-| "Both databases are on-premises" | Not supported by DMS |
-| "Multi-TB migration, network too slow" | Snowball/S3 baseline plus DMS CDC |
+| Trigger                                       | Answer                                    |
+| --------------------------------------------- | ----------------------------------------- |
+| "Migrate database with minimal downtime"      | **DMS Full Load + CDC**                   |
+| "Replicate only changes; data already loaded" | **CDC Only**                              |
+| "One-time copy; downtime acceptable"          | **Full Load**                             |
+| "Replication instance"                        | DMS Standard                              |
+| "Serverless replications" / "DCUs"            | DMS Serverless                            |
+| "Same database engine"                        | Homogeneous; no SCT/schema conversion     |
+| "Different database engine"                   | DMS Schema Conversion or AWS SCT plus DMS |
+| "Both databases are on-premises"              | Not supported by DMS                      |
+| "Multi-TB migration, network too slow"        | Snowball/S3 baseline plus DMS CDC         |
 
 > [!warning] Gotchas
 >
@@ -1721,11 +2159,11 @@ See [Aurora](../services/aurora.md) for full details. Treat Aurora as a **separa
 
 ### Backtrack vs fast clone vs restore
 
-| Feature | What it does | Key limit |
-| --- | --- | --- |
-| **Backtrack** | **In-place rewind** of the *same* cluster to a past time — endpoints unchanged | Enable per cluster; **Aurora MySQL only** |
-| **Fast clone** | New DB **referencing** source storage (copy-on-write) — near-instant, stores **only differences** | — |
-| **Restore** (snapshot/PITR) | Always a **new cluster** + new endpoints | Same as RDS |
+| Feature                     | What it does                                                                                      | Key limit                                 |
+| --------------------------- | ------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| **Backtrack**               | **In-place rewind** of the *same* cluster to a past time — endpoints unchanged                    | Enable per cluster; **Aurora MySQL only** |
+| **Fast clone**              | New DB **referencing** source storage (copy-on-write) — near-instant, stores **only differences** | —                                         |
+| **Restore** (snapshot/PITR) | Always a **new cluster** + new endpoints                                                          | Same as RDS                               |
 
 ### Aurora Serverless
 
@@ -1904,16 +2342,16 @@ See [Scaling — Horizontal vs Vertical](../patterns/scaling.md) for the full tr
 
 ### Scaling — pattern-match cheat-sheet
 
-| Question pattern | Answer |
-| --- | --- |
-| "App is a monolith on one instance, traffic doubled" | **Vertical scaling** — resize to a larger instance type |
-| "Cannot tolerate downtime, need to scale during business hours" | **Horizontal scaling** — adding instances doesn't disrupt existing connections |
-| "Users get logged out at random after deploying behind ALB" | **Move sessions off-host** to [ElastiCache](../services/elasticache.md) / [DynamoDB](../services/dynamodb.md), not sticky sessions |
-| "Shopping cart empties intermittently across instances" | **Stateless app + external session store** |
-| "Legacy app, on-host sessions, no time to refactor" | **ALB sticky sessions** — migration aid only |
-| "Need infinite scale" | **Horizontal** — vertical has a hard cap |
-| "Need fault tolerance, not just scalability" | **Horizontal scaling across multiple AZs** — load balancer + Auto Scaling Group; vertical can't reach this |
-| "Cheapest at large total capacity" | **Many small commodity instances (horizontal)** — large instances carry a price premium |
+| Question pattern                                                | Answer                                                                                                                             |
+| --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| "App is a monolith on one instance, traffic doubled"            | **Vertical scaling** — resize to a larger instance type                                                                            |
+| "Cannot tolerate downtime, need to scale during business hours" | **Horizontal scaling** — adding instances doesn't disrupt existing connections                                                     |
+| "Users get logged out at random after deploying behind ALB"     | **Move sessions off-host** to [ElastiCache](../services/elasticache.md) / [DynamoDB](../services/dynamodb.md), not sticky sessions |
+| "Shopping cart empties intermittently across instances"         | **Stateless app + external session store**                                                                                         |
+| "Legacy app, on-host sessions, no time to refactor"             | **ALB sticky sessions** — migration aid only                                                                                       |
+| "Need infinite scale"                                           | **Horizontal** — vertical has a hard cap                                                                                           |
+| "Need fault tolerance, not just scalability"                    | **Horizontal scaling across multiple AZs** — load balancer + Auto Scaling Group; vertical can't reach this                         |
+| "Cheapest at large total capacity"                              | **Many small commodity instances (horizontal)** — large instances carry a price premium                                            |
 
 > [!tip] Mnemonic
 > **Many Bobs = horizontal. One giant Bob = vertical.** Adding workers = scale out; growing one worker = scale up.
@@ -1938,22 +2376,22 @@ See [ELB](../services/elb.md) for the full treatment.
 
 ### ELB — pattern-match cheat-sheet
 
-| Question pattern | Answer |
-| --- | --- |
-| "Load balance HTTP/HTTPS/WebSocket" | **ALB** (Layer 7) |
-| "Load balance email / SSH / gaming / custom TCP or UDP protocol" | **NLB** (Layer 4) |
-| "Route by path / host / headers / cookies; HTTP redirect; built-in OIDC/Cognito auth" | **ALB** — rules are L7-only |
-| "Unbroken / end-to-end encryption from client to instances" | **NLB with a TCP listener** — never ALB (always terminates), and not the NLB TLS listener (terminates too) |
-| "Millions of requests per second / lowest latency / highest performance" | **NLB** |
-| "Expose a service to other VPCs via PrivateLink" | **NLB** |
-| "Need static IP / Elastic IP / whitelist a fixed IP for the LB" | **NLB** — the only type with static IPs |
-| "Performance-critical AND path-based routing in one question" | **ALB** — L7 routing forces ALB; you can't have both on one LB |
-| "Application-aware health checks (verify the app responds)" | **ALB** — NLB checks are shallow (ICMP / TCP handshake per the course) |
-| "Uneven load across AZs (one instance overloaded)" | **Enable cross-zone load balancing** |
-| "Minimum subnet size for a load balancer" | **/27** if offered (AWS-recommended); **/28** only if /27 absent (satisfies the 8-free-IP rule) |
-| "Do backend instances behind an internet-facing LB need public IPs?" | **No** — targets can stay private |
-| "Tiers must scale independently without reconfiguration" | Insert an **internal load balancer** between tiers |
-| "Migrating off a Classic Load Balancer" / "one SSL cert per LB / no SNI" | Move to **ALB** (SNI = many certs on one LB; or NLB per protocol) |
+| Question pattern                                                                      | Answer                                                                                                     |
+| ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| "Load balance HTTP/HTTPS/WebSocket"                                                   | **ALB** (Layer 7)                                                                                          |
+| "Load balance email / SSH / gaming / custom TCP or UDP protocol"                      | **NLB** (Layer 4)                                                                                          |
+| "Route by path / host / headers / cookies; HTTP redirect; built-in OIDC/Cognito auth" | **ALB** — rules are L7-only                                                                                |
+| "Unbroken / end-to-end encryption from client to instances"                           | **NLB with a TCP listener** — never ALB (always terminates), and not the NLB TLS listener (terminates too) |
+| "Millions of requests per second / lowest latency / highest performance"              | **NLB**                                                                                                    |
+| "Expose a service to other VPCs via PrivateLink"                                      | **NLB**                                                                                                    |
+| "Need static IP / Elastic IP / whitelist a fixed IP for the LB"                       | **NLB** — the only type with static IPs                                                                    |
+| "Performance-critical AND path-based routing in one question"                         | **ALB** — L7 routing forces ALB; you can't have both on one LB                                             |
+| "Application-aware health checks (verify the app responds)"                           | **ALB** — NLB checks are shallow (ICMP / TCP handshake per the course)                                     |
+| "Uneven load across AZs (one instance overloaded)"                                    | **Enable cross-zone load balancing**                                                                       |
+| "Minimum subnet size for a load balancer"                                             | **/27** if offered (AWS-recommended); **/28** only if /27 absent (satisfies the 8-free-IP rule)            |
+| "Do backend instances behind an internet-facing LB need public IPs?"                  | **No** — targets can stay private                                                                          |
+| "Tiers must scale independently without reconfiguration"                              | Insert an **internal load balancer** between tiers                                                         |
+| "Migrating off a Classic Load Balancer" / "one SSL cert per LB / no SNI"              | Move to **ALB** (SNI = many certs on one LB; or NLB per protocol)                                          |
 
 > [!warning] Gotcha — node distribution vs instance distribution
 > DNS responses tend to distribute clients across **nodes**; over many clients, that approximates an even split. Cross-zone only changes what a node does with its share — whether it can send to instances in other AZs.
@@ -1971,23 +2409,23 @@ See [SSL/TLS connection modes](../services/elb.md#ssltls-connection-modes--bridg
 - **Two stickiness types**: duration-based (`AWSALB`) and application-based (**`AWSALBAPP-`** cookie, app-set, February 2021). **CLB** uses **`AWSELB`**.
 - **Lost carts / repeated logins has two answers**: stickiness is the *quick fix*; externalising state to [DynamoDB](../services/dynamodb.md) / ElastiCache is the *well-architected* answer — "best practice" / "scalable" / "even load distribution" wording points to stateless.
 
-| Trigger phrase | Answer |
-| --- | --- |
-| "Certificate must not be exposed to AWS" / "regulatory control of private keys" / "CloudHSM" | **Pass-through** (NLB, TCP listener) |
-| "Route based on URL path / host header / HTTP headers" + HTTPS | **Bridging** (ALB, HTTPS listener) |
-| "Reduce cryptographic overhead on instances" / "smaller instance types" / "no certs on backends" | **Offload** |
-| "Default mode of the Application Load Balancer" | **Bridging** |
-| "End-to-end encryption" | **Pass-through** (or bridging — read whether the LB needs to see HTTP) |
-| "Listener configured for TCP" | **Pass-through** — no decryption |
-| "Listener configured for HTTPS" | Terminated on the LB — bridging *or* offload |
-| Compliance requires encryption in transit "end-to-end" / "at all times" | **Offload is wrong** (plaintext on the AWS network) |
-| "Users being logged out" / "shopping cart emptied" / "session lost" | **Stickiness** (quick fix) or **externalise state** (best practice) |
-| "AWSALB cookie" | ALB **duration-based** stickiness |
-| "AWSELB cookie" | **CLB** stickiness |
-| "AWSALBAPP-" cookie | ALB **application-based** stickiness |
-| "Uneven load across backend instances" (stickiness in scenario) | Stickiness is the **cause** |
-| "Stateless" / "session state in [DynamoDB](../services/dynamodb.md)" | No stickiness needed — fair balancing |
-| "1 second to 7 days" | Stickiness duration range |
+| Trigger phrase                                                                                   | Answer                                                                 |
+| ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
+| "Certificate must not be exposed to AWS" / "regulatory control of private keys" / "CloudHSM"     | **Pass-through** (NLB, TCP listener)                                   |
+| "Route based on URL path / host header / HTTP headers" + HTTPS                                   | **Bridging** (ALB, HTTPS listener)                                     |
+| "Reduce cryptographic overhead on instances" / "smaller instance types" / "no certs on backends" | **Offload**                                                            |
+| "Default mode of the Application Load Balancer"                                                  | **Bridging**                                                           |
+| "End-to-end encryption"                                                                          | **Pass-through** (or bridging — read whether the LB needs to see HTTP) |
+| "Listener configured for TCP"                                                                    | **Pass-through** — no decryption                                       |
+| "Listener configured for HTTPS"                                                                  | Terminated on the LB — bridging *or* offload                           |
+| Compliance requires encryption in transit "end-to-end" / "at all times"                          | **Offload is wrong** (plaintext on the AWS network)                    |
+| "Users being logged out" / "shopping cart emptied" / "session lost"                              | **Stickiness** (quick fix) or **externalise state** (best practice)    |
+| "AWSALB cookie"                                                                                  | ALB **duration-based** stickiness                                      |
+| "AWSELB cookie"                                                                                  | **CLB** stickiness                                                     |
+| "AWSALBAPP-" cookie                                                                              | ALB **application-based** stickiness                                   |
+| "Uneven load across backend instances" (stickiness in scenario)                                  | Stickiness is the **cause**                                            |
+| "Stateless" / "session state in [DynamoDB](../services/dynamodb.md)"                             | No stickiness needed — fair balancing                                  |
+| "1 second to 7 days"                                                                             | Stickiness duration range                                              |
 
 ## EC2 Auto Scaling — Auto Scaling Groups (ASG)
 
@@ -2009,25 +2447,25 @@ See [EC2 Auto Scaling](../services/ec2-auto-scaling.md) for the full treatment.
 
 ### ASG — pattern-match cheat-sheet
 
-| Question pattern | Answer |
-| --- | --- |
-| "Maintain average CPU at 40%" / "keep metric at a value" / "set and forget" / "thermostat" | **Target tracking** |
-| "Respond differently by how large the breach is" / "graduated response" / "granular control" | **Step scaling** |
-| "Policy stopped responding while a scaling activity was in progress" | **Simple scaling** cooldown is the culprit; recommend **step** |
-| "Known/predictable traffic pattern" / "every day at 9am" | **Scheduled scaling** |
-| "Worker pool" / "queue depth" / "process backlog" | **SQS-based scaling** on `ApproximateNumberOfMessagesVisible` |
-| "Requests per instance behind an ALB" | **Target tracking** with `ALBRequestCountPerTarget` (ALB only) |
-| "AWS manages the alarm for you" | **Target tracking** (you own simple/step alarms) |
-| "Scaling keeps flapping/thrashing" | Widen the **dead band** between scale-out and scale-in thresholds |
-| "Warm-up delay before a new instance counts toward metrics" (target tracking/step) | **Default instance warmup**, not cooldown |
-| "Cheapest HA for a single EC2 instance" | ASG with **min = desired = max = 1** across multiple AZs |
-| "Run a script before the instance receives traffic" / "pre-load or warm cache" | **Launch lifecycle hook** (`Pending:Wait`) |
-| "Copy logs off / back up / drain / graceful shutdown before termination" | **Terminate lifecycle hook** (`Terminating:Wait`) |
-| "Need more time in the hook wait state" | `RecordLifecycleActionHeartbeat` |
-| "Signal the hook is done / resume immediately" | `CompleteLifecycleAction` |
-| "Maintenance on one ASG instance without termination or scaling interference" | Set the instance to **Standby** |
-| "Notify a topic when scaling occurs" / "event-driven response to scaling" | Lifecycle hooks with **SNS** / **EventBridge** |
-| "Pre-initialised instances kept stopped and ready" | **Warm pools** (not plain lifecycle hooks) |
+| Question pattern                                                                             | Answer                                                            |
+| -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| "Maintain average CPU at 40%" / "keep metric at a value" / "set and forget" / "thermostat"   | **Target tracking**                                               |
+| "Respond differently by how large the breach is" / "graduated response" / "granular control" | **Step scaling**                                                  |
+| "Policy stopped responding while a scaling activity was in progress"                         | **Simple scaling** cooldown is the culprit; recommend **step**    |
+| "Known/predictable traffic pattern" / "every day at 9am"                                     | **Scheduled scaling**                                             |
+| "Worker pool" / "queue depth" / "process backlog"                                            | **SQS-based scaling** on `ApproximateNumberOfMessagesVisible`     |
+| "Requests per instance behind an ALB"                                                        | **Target tracking** with `ALBRequestCountPerTarget` (ALB only)    |
+| "AWS manages the alarm for you"                                                              | **Target tracking** (you own simple/step alarms)                  |
+| "Scaling keeps flapping/thrashing"                                                           | Widen the **dead band** between scale-out and scale-in thresholds |
+| "Warm-up delay before a new instance counts toward metrics" (target tracking/step)           | **Default instance warmup**, not cooldown                         |
+| "Cheapest HA for a single EC2 instance"                                                      | ASG with **min = desired = max = 1** across multiple AZs          |
+| "Run a script before the instance receives traffic" / "pre-load or warm cache"               | **Launch lifecycle hook** (`Pending:Wait`)                        |
+| "Copy logs off / back up / drain / graceful shutdown before termination"                     | **Terminate lifecycle hook** (`Terminating:Wait`)                 |
+| "Need more time in the hook wait state"                                                      | `RecordLifecycleActionHeartbeat`                                  |
+| "Signal the hook is done / resume immediately"                                               | `CompleteLifecycleAction`                                         |
+| "Maintenance on one ASG instance without termination or scaling interference"                | Set the instance to **Standby**                                   |
+| "Notify a topic when scaling occurs" / "event-driven response to scaling"                    | Lifecycle hooks with **SNS** / **EventBridge**                    |
+| "Pre-initialised instances kept stopped and ready"                                           | **Warm pools** (not plain lifecycle hooks)                        |
 
 > [!warning] Gotcha — ASG traps
 >
@@ -2053,15 +2491,15 @@ See [Lambda](../services/lambda.md) for full details.
 - **Versions immutable** (own ARN); `$LATEST` and **aliases mutable**
 - **Cold start** (~100 ms, full context build) vs **warm start** (~1–2 ms, reused context); pin capacity with **provisioned concurrency**; declare reusable objects (DB connections) **outside the handler**
 
-| If the question says... | Think... |
-| --- | --- |
-| serverless / event-driven / short-running compute | **Lambda** |
-| "Docker" (bare term) | **NOT Lambda** (ECS) |
-| work exceeds 15 minutes | **Step Functions** (not one Lambda) |
-| async invoke + retries re-run | **idempotent function** |
-| Lambda reads from [Kinesis](../services/kinesis.md)/SQS/DynamoDB Streams but code doesn't call them | **execution role still needs source permissions (ESM)** |
-| Lambda can't reach Aurora/RDS/EFS | **put Lambda in the VPC** (+ EC2 network permissions on the role) |
-| too many DB connections from Lambda | **[RDS Proxy](../services/rds-proxy.md)** |
+| If the question says...                                                                             | Think...                                                          |
+| --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| serverless / event-driven / short-running compute                                                   | **Lambda**                                                        |
+| "Docker" (bare term)                                                                                | **NOT Lambda** (ECS)                                              |
+| work exceeds 15 minutes                                                                             | **Step Functions** (not one Lambda)                               |
+| async invoke + retries re-run                                                                       | **idempotent function**                                           |
+| Lambda reads from [Kinesis](../services/kinesis.md)/SQS/DynamoDB Streams but code doesn't call them | **execution role still needs source permissions (ESM)**           |
+| Lambda can't reach Aurora/RDS/EFS                                                                   | **put Lambda in the VPC** (+ EC2 network permissions on the role) |
+| too many DB connections from Lambda                                                                 | **[RDS Proxy](../services/rds-proxy.md)**                         |
 
 ## EventBridge (CloudWatch Events)
 
@@ -2078,16 +2516,16 @@ See [EventBridge](../services/eventbridge.md) for full details.
 - **CloudTrail as a source:** an API call reaches EventBridge tagged **`AWS API Call via CloudTrail`**. If the question needs the **IAM caller identity**, it must come via **CloudTrail**, not the native service event (the native event omits the principal)
 - **CloudTrail events reaching EventBridge:** the CloudTrail path requires an **active trail with logging enabled**. Management events are the trail default; data and network activity events need explicit selectors. **Write/mutating** management events match an ordinary `ENABLED` EventBridge rule; **read-only** (`Describe`/`Get`/`List`) management events match only a rule set to `ENABLED_WITH_ALL_CLOUDTRAIL_MANAGEMENT_EVENTS`
 
-| If the question says... | Think... |
-| --- | --- |
-| react when an EC2/resource changes state | **EventBridge event pattern rule** |
-| run a Lambda nightly / on a cron | **EventBridge schedule rule (or Scheduler)** |
-| SaaS partner events | **EventBridge** (not CloudWatch Events) |
-| multiple / custom event buses | **EventBridge** |
-| react fast to an API call | **EventBridge on [CloudTrail](../services/cloudtrail.md) events from an active trail** |
-| react based on *who* made the API call | **CloudTrail-path event** (`AWS API Call via CloudTrail`), not the native event |
-| react to S3 object-level / Lambda-invoke calls | **configure trail data-event selectors first**, then EventBridge |
-| metric crosses a threshold | **[CloudWatch Alarm](../services/cloudwatch.md#metric-filters-and-alarms)** (not EventBridge) |
+| If the question says...                        | Think...                                                                                      |
+| ---------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| react when an EC2/resource changes state       | **EventBridge event pattern rule**                                                            |
+| run a Lambda nightly / on a cron               | **EventBridge schedule rule (or Scheduler)**                                                  |
+| SaaS partner events                            | **EventBridge** (not CloudWatch Events)                                                       |
+| multiple / custom event buses                  | **EventBridge**                                                                               |
+| react fast to an API call                      | **EventBridge on [CloudTrail](../services/cloudtrail.md) events from an active trail**        |
+| react based on *who* made the API call         | **CloudTrail-path event** (`AWS API Call via CloudTrail`), not the native event               |
+| react to S3 object-level / Lambda-invoke calls | **configure trail data-event selectors first**, then EventBridge                              |
+| metric crosses a threshold                     | **[CloudWatch Alarm](../services/cloudwatch.md#metric-filters-and-alarms)** (not EventBridge) |
 
 ## SNS — Simple Notification Service
 
@@ -2103,15 +2541,15 @@ See [SNS](../services/sns.md) for full details.
 - **Delivery status** is confirmable for **HTTP/S, Lambda, SQS**; failed deliveries retry per a delivery policy and are **lost unless a DLQ** (an SQS queue) is attached
 - **Standard vs FIFO topic:** FIFO gives **strict ordering + dedup** but delivers to **SQS queues only** — strict ordering *plus* email/SMS/HTTP is a mismatch. FIFO throughput is **3,000 msg/s or 20 MB/s per topic**, **300 msg/s per message group**
 
-| If the question says... | Think... |
-| --- | --- |
-| deliver one message to multiple queues / decouple one event into parallel workers | **SNS fanout to SQS** |
-| let a subscriber receive only relevant messages | **subscription filter policy** |
-| send a message larger than 256 KB | **S3-backed Extended Client Library (2 GB)** |
-| grant another account access to a topic | **topic (resource) policy** |
-| strict ordering **and** email/SMS delivery | **mismatch** — FIFO topics are SQS-only |
-| which endpoints can confirm delivery | **HTTP/S, Lambda, SQS** |
-| notify a human/topic when an alarm, stack, or scaling event fires | **publish to an SNS topic** |
+| If the question says...                                                           | Think...                                     |
+| --------------------------------------------------------------------------------- | -------------------------------------------- |
+| deliver one message to multiple queues / decouple one event into parallel workers | **SNS fanout to SQS**                        |
+| let a subscriber receive only relevant messages                                   | **subscription filter policy**               |
+| send a message larger than 256 KB                                                 | **S3-backed Extended Client Library (2 GB)** |
+| grant another account access to a topic                                           | **topic (resource) policy**                  |
+| strict ordering **and** email/SMS delivery                                        | **mismatch** — FIFO topics are SQS-only      |
+| which endpoints can confirm delivery                                              | **HTTP/S, Lambda, SQS**                      |
+| notify a human/topic when an alarm, stack, or scaling event fires                 | **publish to an SNS topic**                  |
 
 ## SQS — Simple Queue Service
 
@@ -2133,26 +2571,26 @@ See [SQS](../services/sqs.md) for full details.
 - **Access control:** identity policy **or** queue policy for same-account; **queue policy only** for cross-account (it is a resource policy, like an S3 bucket policy)
 - **Encryption:** at rest via **KMS or SSE-SQS**; **in transit by default**
 
-| If the question says... | Think... |
-| --- | --- |
-| one upload/event must start several independent parallel pipelines | **SNS fanout to multiple SQS queues** |
-| message reappears and another worker picks it up | **visibility timeout** (not deleted, so it comes back) |
-| hidden the moment it is added, before any consumer sees it | **delay queue** (`DelaySeconds`) |
-| need a delay longer than 15 minutes | **not SQS** — EventBridge Scheduler |
-| per-message delay on a FIFO queue | **message timers are not supported on FIFO** |
-| ordering matters / no duplicates at ingest | **FIFO queue** + `MessageDeduplicationId` |
-| maximum throughput, duplicates tolerable | **Standard queue** + idempotent consumers |
-| consumer might process the same message twice | **idempotency** — FIFO does not fix this |
-| `MessageGroupId` on a **standard** queue | **fair queues** (tenant fairness), *not* ordering |
-| poison message / infinite reprocessing | **DLQ** + `maxReceiveCount` |
-| alert me when messages fail permanently | **CloudWatch alarm on the DLQ** |
-| messages vanished from the DLQ early | **enqueue timestamp is not reset** — set DLQ retention longer |
-| which source queues may use this DLQ | **redrive allow policy**, not the redrive policy |
-| reprocess after fixing the consumer | **DLQ redrive to source** |
-| reduce cost / eliminate empty receives | **long polling**, up to 20 s |
-| scale a worker fleet on backlog | **ASG on `ApproximateNumberOfMessagesVisible`** |
-| payload too large for a message | **S3 + pointer** (Extended Client Library, 2 GB) |
-| grant another account access to a queue | **queue policy** (resource policy) |
+| If the question says...                                            | Think...                                                      |
+| ------------------------------------------------------------------ | ------------------------------------------------------------- |
+| one upload/event must start several independent parallel pipelines | **SNS fanout to multiple SQS queues**                         |
+| message reappears and another worker picks it up                   | **visibility timeout** (not deleted, so it comes back)        |
+| hidden the moment it is added, before any consumer sees it         | **delay queue** (`DelaySeconds`)                              |
+| need a delay longer than 15 minutes                                | **not SQS** — EventBridge Scheduler                           |
+| per-message delay on a FIFO queue                                  | **message timers are not supported on FIFO**                  |
+| ordering matters / no duplicates at ingest                         | **FIFO queue** + `MessageDeduplicationId`                     |
+| maximum throughput, duplicates tolerable                           | **Standard queue** + idempotent consumers                     |
+| consumer might process the same message twice                      | **idempotency** — FIFO does not fix this                      |
+| `MessageGroupId` on a **standard** queue                           | **fair queues** (tenant fairness), *not* ordering             |
+| poison message / infinite reprocessing                             | **DLQ** + `maxReceiveCount`                                   |
+| alert me when messages fail permanently                            | **CloudWatch alarm on the DLQ**                               |
+| messages vanished from the DLQ early                               | **enqueue timestamp is not reset** — set DLQ retention longer |
+| which source queues may use this DLQ                               | **redrive allow policy**, not the redrive policy              |
+| reprocess after fixing the consumer                                | **DLQ redrive to source**                                     |
+| reduce cost / eliminate empty receives                             | **long polling**, up to 20 s                                  |
+| scale a worker fleet on backlog                                    | **ASG on `ApproximateNumberOfMessagesVisible`**               |
+| payload too large for a message                                    | **S3 + pointer** (Extended Client Library, 2 GB)              |
+| grant another account access to a queue                            | **queue policy** (resource policy)                            |
 
 ## Step Functions
 
@@ -2168,19 +2606,19 @@ See [Step Functions](../services/step-functions.md) for full details.
 - **Permissions:** the state machine **assumes an [IAM role](../services/iam.md#iam-roles)** at runtime for temporary credentials — same pattern as a Lambda execution role or an EC2 instance role
 - **Triggers:** [API Gateway](../services/api-gateway.md), IoT rules, [EventBridge](../services/eventbridge.md), Lambda, or manual start
 
-| If the question says... | Think... |
-| --- | --- |
-| work exceeds 15 minutes / must hold state across steps | **Step Functions**, not chained Lambdas |
-| long-running, durable, auditable, "up to one year" | **Standard** workflow |
-| high-volume, IoT, streaming, under 5 minutes | **Express** workflow |
-| "convert an existing Standard state machine to Express" | **Not possible** — recreate it (distractor) |
-| wait for a period of time or until a specific time | **Wait** state |
-| branch on the input | **Choice** state |
-| do the same thing for every item in a list | **Map** state |
-| run several things at once | **Parallel** state |
-| actually invoke Lambda / SNS / SQS / ECS from the workflow | **Task** state |
-| workflow definition format | **ASL, JSON-based** |
-| how the workflow gets permissions | **IAM role assumed at runtime** |
+| If the question says...                                    | Think...                                    |
+| ---------------------------------------------------------- | ------------------------------------------- |
+| work exceeds 15 minutes / must hold state across steps     | **Step Functions**, not chained Lambdas     |
+| long-running, durable, auditable, "up to one year"         | **Standard** workflow                       |
+| high-volume, IoT, streaming, under 5 minutes               | **Express** workflow                        |
+| "convert an existing Standard state machine to Express"    | **Not possible** — recreate it (distractor) |
+| wait for a period of time or until a specific time         | **Wait** state                              |
+| branch on the input                                        | **Choice** state                            |
+| do the same thing for every item in a list                 | **Map** state                               |
+| run several things at once                                 | **Parallel** state                          |
+| actually invoke Lambda / SNS / SQS / ECS from the workflow | **Task** state                              |
+| workflow definition format                                 | **ASL, JSON-based**                         |
+| how the workflow gets permissions                          | **IAM role assumed at runtime**             |
 
 ## API Gateway
 
@@ -2200,24 +2638,24 @@ See [API Gateway](../services/api-gateway.md) for full details.
 - **Integration timeout:** **29 seconds** by default, producing a **504**. Since June 2024 it can be raised beyond 29 s for **Regional and private REST APIs** via Service Quotas, possibly at the cost of a lower throttle quota — but 29 s is still the exam answer
 - **Monitoring:** [CloudWatch](../services/cloudwatch.md) logs and metrics on both the client and integration sides
 
-| If the question says... | Think... |
-| --- | --- |
-| "cache per…" | **Per stage** (TTL 300 s default, max 3,600 s, 0.5 GB to 237 GB, encryptable) |
-| "validate a Cognito token" | **Cognito user pools** — native validation |
-| "custom / bearer token / external identity provider" | **Lambda authorizer** (returns an IAM policy plus a principal) |
-| "credentials in headers" | **IAM** authentication |
-| "nearest CloudFront point of presence" | **Edge-optimized** endpoint |
-| "only inside a VPC / interface endpoint" | **Private** endpoint |
-| "same region, low overhead" | **Regional** endpoint |
-| "gradually shift a percentage of traffic to a new version" | **Canary** deployment on a stage |
-| "redeploy while canary is enabled" | Lands on the **canary, not the base** |
-| **429** | **Throttling** |
-| **502** | Backend returned **bad or invalid output** |
-| **503** | Backend **offline** / service unavailable |
-| **504** | **Integration timeout** (29-second default) |
-| **403** | **Access denied** (authorizer or WAF) |
-| "write to [DynamoDB](../services/dynamodb.md) / start a Step Functions execution / publish to SNS with no compute" | **Direct AWS service integration** |
-| "consistent front end during a migration" | API Gateway as a **migration façade** |
+| If the question says...                                                                                            | Think...                                                                      |
+| ------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
+| "cache per…"                                                                                                       | **Per stage** (TTL 300 s default, max 3,600 s, 0.5 GB to 237 GB, encryptable) |
+| "validate a Cognito token"                                                                                         | **Cognito user pools** — native validation                                    |
+| "custom / bearer token / external identity provider"                                                               | **Lambda authorizer** (returns an IAM policy plus a principal)                |
+| "credentials in headers"                                                                                           | **IAM** authentication                                                        |
+| "nearest CloudFront point of presence"                                                                             | **Edge-optimized** endpoint                                                   |
+| "only inside a VPC / interface endpoint"                                                                           | **Private** endpoint                                                          |
+| "same region, low overhead"                                                                                        | **Regional** endpoint                                                         |
+| "gradually shift a percentage of traffic to a new version"                                                         | **Canary** deployment on a stage                                              |
+| "redeploy while canary is enabled"                                                                                 | Lands on the **canary, not the base**                                         |
+| **429**                                                                                                            | **Throttling**                                                                |
+| **502**                                                                                                            | Backend returned **bad or invalid output**                                    |
+| **503**                                                                                                            | Backend **offline** / service unavailable                                     |
+| **504**                                                                                                            | **Integration timeout** (29-second default)                                   |
+| **403**                                                                                                            | **Access denied** (authorizer or WAF)                                         |
+| "write to [DynamoDB](../services/dynamodb.md) / start a Step Functions execution / publish to SNS with no compute" | **Direct AWS service integration**                                            |
+| "consistent front end during a migration"                                                                          | API Gateway as a **migration façade**                                         |
 
 ## Amazon AppFlow
 
@@ -2226,16 +2664,16 @@ See [Amazon AppFlow](../services/appflow.md) for the diagram and walkthrough, an
 > [!tip] Exam Tip
 > Supported SaaS records → [S3](../services/s3.md)/Redshift with minimal custom code suggests AppFlow. Mapping, masking, filtering, and validation can be configured in a flow. A reusable connection supplies access settings; a flow defines the transfer.
 
-| Scenario | Choice or qualification |
-| --- | --- |
-| Supported SaaS transfer must avoid the public internet | AppFlow + [PrivateLink](../services/vpc.md#aws-privatelink), if the connector and SaaS account support it; console metadata calls still use public endpoints |
-| Run when source SaaS records change | Event-triggered flow, only for sources that expose supported change events |
-| Scheduled incremental transfer | Records since the last successful run; a creation timestamp alone does not capture edits |
-| No suitable built-in connector | Check the [supported applications](https://docs.aws.amazon.com/appflow/latest/userguide/app-specific.html) first; a Java/Python custom connector requires a feasibility check and implementation, not guaranteed support for any application |
-| Land records in S3 and register their schema | AppFlow can populate the [Glue Data Catalog](../services/glue.md#data-catalog-and-crawlers) for configured output; a crawler is not mandatory |
-| Database migration / CDC rather than SaaS connector transfer | [DMS](../services/dms.md); its targets are not limited to databases |
-| Event matching and routing | [EventBridge](../services/eventbridge.md); it can also receive supported events through AppFlow |
-| Retained streaming records / managed stream delivery | [Kinesis Data Streams / Data Firehose](../services/kinesis.md) respectively |
+| Scenario                                                     | Choice or qualification                                                                                                                                                                                                                      |
+| ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Supported SaaS transfer must avoid the public internet       | AppFlow + [PrivateLink](../services/vpc.md#aws-privatelink), if the connector and SaaS account support it; console metadata calls still use public endpoints                                                                                 |
+| Run when source SaaS records change                          | Event-triggered flow, only for sources that expose supported change events                                                                                                                                                                   |
+| Scheduled incremental transfer                               | Records since the last successful run; a creation timestamp alone does not capture edits                                                                                                                                                     |
+| No suitable built-in connector                               | Check the [supported applications](https://docs.aws.amazon.com/appflow/latest/userguide/app-specific.html) first; a Java/Python custom connector requires a feasibility check and implementation, not guaranteed support for any application |
+| Land records in S3 and register their schema                 | AppFlow can populate the [Glue Data Catalog](../services/glue.md#data-catalog-and-crawlers) for configured output; a crawler is not mandatory                                                                                                |
+| Database migration / CDC rather than SaaS connector transfer | [DMS](../services/dms.md); its targets are not limited to databases                                                                                                                                                                          |
+| Event matching and routing                                   | [EventBridge](../services/eventbridge.md); it can also receive supported events through AppFlow                                                                                                                                              |
+| Retained streaming records / managed stream delivery         | [Kinesis Data Streams / Data Firehose](../services/kinesis.md) respectively                                                                                                                                                                  |
 
 > [!warning] Gotcha
 > Do not memorize “100 GB per flow” as a universal allowance. Connector-specific size, frequency, and application API quotas still apply. Glue also has external/SaaS connectors: the distinction is the work required, not merely whether the source is outside AWS.
@@ -2247,23 +2685,23 @@ See [AWS Glue](../services/glue.md) for the diagram and current service details,
 > [!tip] Exam Tip
 > **Crawler discovers schemas; Data Catalog stores metadata; job transforms records.** The catalog does not contain the underlying dataset, and publishing metadata does not grant data access.
 
-| Question trigger | Answer or distinction |
-| --- | --- |
-| Serverless ETL, cleaning, restructuring, or enriching datasets | **Glue job** |
-| Automatically discover schemas in [S3](../services/s3.md), [RDS](../services/rds.md), or [DynamoDB](../services/dynamodb.md) | **Glue crawler** → Data Catalog |
-| Shared table definitions for Athena, Redshift Spectrum, or EMR | **Glue Data Catalog** |
-| New S3 partition absent from Athena results | Check partition metadata; crawl again, explicitly add the partition, or use `MSCK REPAIR TABLE` for Hive-style paths |
-| Reduce scanned data in a partitioned Athena query | Filter on **partition keys**; see the [lease-record example](../services/glue.md#worked-example--s3-lease-records-to-shared-catalog-consumers) |
-| Athena partition projection enabled; other engines cannot find new partitions | Projection computes partitions for Athena; it does not register them for Glue, Spectrum, or EMR |
-| How many catalogs? | One **default/root catalog per account per Region**; nested/federated catalogs are also supported |
-| Process [Kinesis Data Streams](../services/kinesis.md#kinesis-data-streams) or [Kafka](../concepts/streaming-vs-messaging.md#kinesis-vs-kafka-and-amazon-msk) continuously | **Glue streaming ETL**, with checkpoints; crawlers do not crawl streams |
-| Write transformed data into [DynamoDB](../services/dynamodb.md) | Supported by the Glue [DynamoDB](../services/dynamodb.md) writer; it is not source-only |
-| Run ETL on a cron schedule | Glue `SCHEDULED` trigger; [EventBridge](../services/eventbridge.md) is not mandatory |
-| Start an ETL workflow when data arrives | EventBridge → Glue workflow with an `EVENT` trigger |
-| Coordinate a Glue job with several AWS services and wait for it | [Step Functions](../services/step-functions.md) Standard workflow with Glue `.sync` integration |
-| Ad hoc SQL over S3, without a data-preparation requirement | **[Athena](../services/athena.md)**; “ad hoc” alone does not imply Glue |
-| Glue versus AWS Data Pipeline for managed ETL | Glue; Data Pipeline is in maintenance mode and closed to new customers since July 25, 2024 |
-| No servers to manage means no permissions/networking work | Incorrect: configure [IAM](../services/iam.md) and [VPC](../services/vpc.md) access as required |
+| Question trigger                                                                                                                                                           | Answer or distinction                                                                                                                          |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Serverless ETL, cleaning, restructuring, or enriching datasets                                                                                                             | **Glue job**                                                                                                                                   |
+| Automatically discover schemas in [S3](../services/s3.md), [RDS](../services/rds.md), or [DynamoDB](../services/dynamodb.md)                                               | **Glue crawler** → Data Catalog                                                                                                                |
+| Shared table definitions for Athena, Redshift Spectrum, or EMR                                                                                                             | **Glue Data Catalog**                                                                                                                          |
+| New S3 partition absent from Athena results                                                                                                                                | Check partition metadata; crawl again, explicitly add the partition, or use `MSCK REPAIR TABLE` for Hive-style paths                           |
+| Reduce scanned data in a partitioned Athena query                                                                                                                          | Filter on **partition keys**; see the [lease-record example](../services/glue.md#worked-example--s3-lease-records-to-shared-catalog-consumers) |
+| Athena partition projection enabled; other engines cannot find new partitions                                                                                              | Projection computes partitions for Athena; it does not register them for Glue, Spectrum, or EMR                                                |
+| How many catalogs?                                                                                                                                                         | One **default/root catalog per account per Region**; nested/federated catalogs are also supported                                              |
+| Process [Kinesis Data Streams](../services/kinesis.md#kinesis-data-streams) or [Kafka](../concepts/streaming-vs-messaging.md#kinesis-vs-kafka-and-amazon-msk) continuously | **Glue streaming ETL**, with checkpoints; crawlers do not crawl streams                                                                        |
+| Write transformed data into [DynamoDB](../services/dynamodb.md)                                                                                                            | Supported by the Glue [DynamoDB](../services/dynamodb.md) writer; it is not source-only                                                        |
+| Run ETL on a cron schedule                                                                                                                                                 | Glue `SCHEDULED` trigger; [EventBridge](../services/eventbridge.md) is not mandatory                                                           |
+| Start an ETL workflow when data arrives                                                                                                                                    | EventBridge → Glue workflow with an `EVENT` trigger                                                                                            |
+| Coordinate a Glue job with several AWS services and wait for it                                                                                                            | [Step Functions](../services/step-functions.md) Standard workflow with Glue `.sync` integration                                                |
+| Ad hoc SQL over S3, without a data-preparation requirement                                                                                                                 | **[Athena](../services/athena.md)**; “ad hoc” alone does not imply Glue                                                                        |
+| Glue versus AWS Data Pipeline for managed ETL                                                                                                                              | Glue; Data Pipeline is in maintenance mode and closed to new customers since July 25, 2024                                                     |
+| No servers to manage means no permissions/networking work                                                                                                                  | Incorrect: configure [IAM](../services/iam.md) and [VPC](../services/vpc.md) access as required                                                |
 
 > [!warning] Gotcha
 > Serverless is a management model, not a promise of zero idle cost. Streaming Glue jobs consume capacity continuously; crawlers and catalog usage have billing separate from ETL jobs.
@@ -2353,26 +2791,26 @@ See [Kinesis](../services/kinesis.md) for full details, and [Streaming vs Messag
 - **Course vs reality:** Firehose is now **Amazon Data Firehose** (Feb 2024); Data Analytics for Flink is **Amazon Managed Service for Apache Flink** (Aug 2023) and the **SQL variant was discontinued on 27 January 2026**; "Elasticsearch" is now **OpenSearch Service**. The old names are still the likely exam wording
 - **Kafka on AWS is [Amazon MSK](../concepts/streaming-vs-messaging.md#kinesis-vs-kafka-and-amazon-msk).** A stream is a Kafka **topic**, a shard is a **partition**, a sequence number is an **offset**. MSK brokers run **in your VPC** (Kinesis is a public regional endpoint), retention can be effectively **unlimited** with tiered storage, and **log compaction** and broker **transactions/exactly-once** have no Kinesis equivalent. **Mention of Apache Kafka, existing Kafka apps, or Kafka APIs means MSK**; "fully managed, no Kafka expertise, AWS-native producers and consumers" means Kinesis. **MSK Serverless** removes capacity planning (200 MBps in / 400 MBps out per cluster) — provisioned MSK still has you sizing brokers
 
-| If the question says... | Think... |
-| --- | --- |
-| "ingest from thousands of devices, sensors, or clickstreams" | **Kinesis Data Streams** |
-| "decouple", "worker tier", "async", "process once then delete" | **[SQS](../services/sqs.md)** |
-| "multiple consumers must replay or re-read the same data" | **Kinesis Data Streams** (rolling window) |
-| "real-time delivery to S3" | **Not Firehose** — Data Streams plus a Lambda consumer |
-| "near real-time delivery to S3 / Redshift / Splunk, nothing to build" | **Firehose** |
-| "load streaming data into Redshift" | **Firehose** (S3 intermediate plus `COPY`) |
-| "persist stream data past the window / archive to a data lake" | **Firehose** |
-| "complex real-time SQL processing of a stream" | **Data Analytics** (now Managed Flink) |
-| "enrich a stream with static reference data" | **Data Analytics** plus an S3 reference table |
-| "live video", "RTSP", "GStreamer", drone or camera feeds | **Kinesis Video Streams** (plus Rekognition) |
-| "each consumer needs the full 2 MB/s with no contention" | **Enhanced fan-out** |
-| "one shard throttles while the others idle" | **Partition key** design |
-| "read the raw video from the S3 bucket" | **Wrong** — Video Streams data is only reachable via the product |
-| "existing Apache Kafka applications", "Kafka APIs", "already running Kafka" | **Amazon MSK** |
-| "Kafka Connect / Kafka Streams / ksqlDB / schema registry" | **Amazon MSK** |
-| "retention beyond 365 days" or "keep the latest value per key forever" | **Kafka/MSK** (tiered storage, log compaction) — not Kinesis |
-| "Kafka, but no capacity planning" | **MSK Serverless** |
-| "streaming brokers must sit inside the VPC" | **MSK** (Kinesis is a public endpoint) |
+| If the question says...                                                     | Think...                                                         |
+| --------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| "ingest from thousands of devices, sensors, or clickstreams"                | **Kinesis Data Streams**                                         |
+| "decouple", "worker tier", "async", "process once then delete"              | **[SQS](../services/sqs.md)**                                    |
+| "multiple consumers must replay or re-read the same data"                   | **Kinesis Data Streams** (rolling window)                        |
+| "real-time delivery to S3"                                                  | **Not Firehose** — Data Streams plus a Lambda consumer           |
+| "near real-time delivery to S3 / Redshift / Splunk, nothing to build"       | **Firehose**                                                     |
+| "load streaming data into Redshift"                                         | **Firehose** (S3 intermediate plus `COPY`)                       |
+| "persist stream data past the window / archive to a data lake"              | **Firehose**                                                     |
+| "complex real-time SQL processing of a stream"                              | **Data Analytics** (now Managed Flink)                           |
+| "enrich a stream with static reference data"                                | **Data Analytics** plus an S3 reference table                    |
+| "live video", "RTSP", "GStreamer", drone or camera feeds                    | **Kinesis Video Streams** (plus Rekognition)                     |
+| "each consumer needs the full 2 MB/s with no contention"                    | **Enhanced fan-out**                                             |
+| "one shard throttles while the others idle"                                 | **Partition key** design                                         |
+| "read the raw video from the S3 bucket"                                     | **Wrong** — Video Streams data is only reachable via the product |
+| "existing Apache Kafka applications", "Kafka APIs", "already running Kafka" | **Amazon MSK**                                                   |
+| "Kafka Connect / Kafka Streams / ksqlDB / schema registry"                  | **Amazon MSK**                                                   |
+| "retention beyond 365 days" or "keep the latest value per key forever"      | **Kafka/MSK** (tiered storage, log compaction) — not Kinesis     |
+| "Kafka, but no capacity planning"                                           | **MSK Serverless**                                               |
+| "streaming brokers must sit inside the VPC"                                 | **MSK** (Kinesis is a public endpoint)                           |
 
 ## DNS and Route 53
 
@@ -2396,14 +2834,14 @@ See [DNS — Resolution Chain](../concepts/dns.md#resolution-chain) for the full
 - DNS's whole job is to **find the one zone** that can give an authoritative answer; the climb from root down to the domain is called **walking the tree**, and **every query hands you the next step** (a referral *is* the NS records for the tier below)
 - The recursive **resolver** (home router or ISP) does the walk on your behalf and **caches** the result; the client only ever talks to the resolver
 
-| Trigger phrase | Answer |
-| --- | --- |
-| "static name-to-IP mapping that overrides DNS, checked first" | **hosts file** (`/etc/hosts`) |
-| "queries on your behalf, runs on a router or ISP, caches" | **recursive resolver** |
-| "hard-coded IPs maintained by the OS vendor, not looked up" | **root servers** |
-| "points `.com` at VeriSign / points a domain at its nameservers" | **NS records = delegation** |
-| "the definitive answer from the source-of-truth nameserver" | **authoritative** |
-| "a cached copy at a resolver, may be stale" | **non-authoritative** (resolvers always label answers this way) |
+| Trigger phrase                                                   | Answer                                                          |
+| ---------------------------------------------------------------- | --------------------------------------------------------------- |
+| "static name-to-IP mapping that overrides DNS, checked first"    | **hosts file** (`/etc/hosts`)                                   |
+| "queries on your behalf, runs on a router or ISP, caches"        | **recursive resolver**                                          |
+| "hard-coded IPs maintained by the OS vendor, not looked up"      | **root servers**                                                |
+| "points `.com` at VeriSign / points a domain at its nameservers" | **NS records = delegation**                                     |
+| "the definitive answer from the source-of-truth nameserver"      | **authoritative**                                               |
+| "a cached copy at a resolver, may be stale"                      | **non-authoritative** (resolvers always label answers this way) |
 
 > [!warning] Gotcha
 > An authoritative answer is **not always an IP** — it can be a **CNAME** (another name), forcing the resolver to **walk the tree again** for that name. Chained CNAMEs stack latency and are a real cause of slow apps. And the **hosts file overrides DNS**: it's checked before any query, so a stale entry there is the classic *"why isn't my DNS change working?"* trap.
@@ -2432,14 +2870,14 @@ See [Registrar vs DNS Hosting](../services/route53.md#registrar-vs-dns-hosting-i
 
 See [DNS — Record Types](../concepts/dns.md#dns-record-types) for full details and diagrams.
 
-| Record | Maps / does | Trigger keywords |
-| --- | --- | --- |
-| **NS** | Delegation — parent zone points at the child zone's nameservers | "delegation", "points at the servers hosting the zone" |
-| **A** | Hostname to **IPv4** | "hostname to IPv4" |
-| **AAAA** | Hostname to **IPv6** | "hostname to IPv6" |
-| **CNAME** | Host to **another host (name)** | "alias", "shortcut", "reduce admin overhead" — ⚠️ never an IP |
-| **MX** | Find the **mail server (SMTP)** for a domain | "mail server", "email delivery" |
-| **TXT** | Arbitrary text on a domain | "prove domain ownership", "verification", "SPF / anti-spam" |
+| Record    | Maps / does                                                     | Trigger keywords                                             |
+| --------- | --------------------------------------------------------------- | ------------------------------------------------------------ |
+| **NS**    | Delegation — parent zone points at the child zone's nameservers | "delegation", "points at the servers hosting the zone"       |
+| **A**     | Hostname to **IPv4**                                            | "hostname to IPv4"                                           |
+| **AAAA**  | Hostname to **IPv6**                                            | "hostname to IPv6"                                           |
+| **CNAME** | Host to **another host (name)**                                 | "alias", "shortcut", "reduce admin overhead" — ⚠️ never an IP |
+| **MX**    | Find the **mail server (SMTP)** for a domain                    | "mail server", "email delivery"                              |
+| **TXT**   | Arbitrary text on a domain                                      | "prove domain ownership", "verification", "SPF / anti-spam"  |
 
 - **CNAME → name only, never an IP**, and never at the **zone apex** — use a Route 53 **Alias** for the apex case
 - **MX: lower priority number = higher priority** (tried first). A value with **no trailing dot** is a host inside the same zone (`mail` means `mail.example.com`); a value **with a trailing dot** is an FQDN that can point to an external provider (Office 365, etc.). The host name itself is arbitrary
@@ -2452,15 +2890,15 @@ See [DNS — Record Types](../concepts/dns.md#dns-record-types) for full details
 
 ### Route 53 Routing Policies
 
-| Policy | When to use | Health checks? |
-| --- | --- | --- |
-| Simple | Single endpoint | No |
-| Weighted | A/B testing, gradual traffic shifts, simple load balancing | Optional |
-| Latency | Route to lowest-latency AWS region (performance) | Optional |
-| Failover | Active/passive HA; primary + secondary | Required on primary |
-| Geolocation | Restrict/route by user's state/country/continent | Optional |
-| Geoproximity | Closest resource by physical distance, tunable with bias | Optional |
-| Multi-value | Return multiple IPs; improve availability (not a load balancer) | Optional, per record |
+| Policy       | When to use                                                     | Health checks?       |
+| ------------ | --------------------------------------------------------------- | -------------------- |
+| Simple       | Single endpoint                                                 | No                   |
+| Weighted     | A/B testing, gradual traffic shifts, simple load balancing      | Optional             |
+| Latency      | Route to lowest-latency AWS region (performance)                | Optional             |
+| Failover     | Active/passive HA; primary + secondary                          | Required on primary  |
+| Geolocation  | Restrict/route by user's state/country/continent                | Optional             |
+| Geoproximity | Closest resource by physical distance, tunable with bias        | Optional             |
+| Multi-value  | Return multiple IPs; improve availability (not a load balancer) | Optional, per record |
 
 - **Weighted**: each same-name record gets a weight; returned with probability `weight ÷ total weight` — weights **need not sum to 100**. Weight **0** = never returned, **unless all are 0** (then all eligible). Health checks **don't change the denominator**: an unhealthy selected record is skipped and the draw repeats; its share is **not** redistributed. Triggers: "percentage of traffic", "test a new version", "send 5 % to the new build".
 - **Latency**: each record tagged with an **AWS region** (one record per name per region); AWS holds a **latency database** between user location and regions. Returns the **lowest-estimated-latency healthy** record; if unhealthy, the next-lowest. Latency data is **estimated / not real-time**. Triggers: "lowest latency", "best performance for a global app".
@@ -2517,18 +2955,18 @@ Route 53 signing **implementation** specifics (see [Implementing DNSSEC](../serv
 - Create CloudWatch alarms **`DNSSECInternalFailure`** and **`DNSSECKeySigningKeysNeedingAction`** — both flag an urgent KSK/KMS-level problem with the zone
 - Optional **per-VPC validation**: on a DNSSEC-enabled zone, a record that fails validation is **not returned** (non-DNSSEC zones are unaffected)
 
-| Trigger phrase | Answer |
-| --- | --- |
-| "validate DNS data / detect tampered DNS answers" | **DNSSEC** |
-| "protect against cache poisoning / spoofed DNS" | **DNSSEC** |
-| "all records with the same name and type" | **RRSET** (what DNSSEC signs) |
-| "signature of a record set" | **RRSIG** (made by the private ZSK) |
-| "parent holds a hash of the child's key" | **DS record** (hash of the child **KSK**) |
-| "root key, no parent, explicitly trusted" | **trust anchor** (root KSK) |
-| "sign a public hosted zone in AWS" | **Route 53 DNSSEC signing** + a **KMS** KSK + a parent **DS** record |
-| "where must the KMS key for the KSK live?" | **`us-east-1`** |
-| "who creates/rotates the ZSK in Route 53?" | **Route 53 internally** (KMS not involved) |
-| "alarms to set when enabling DNSSEC" | **`DNSSECInternalFailure`**, **`DNSSECKeySigningKeysNeedingAction`** |
+| Trigger phrase                                    | Answer                                                               |
+| ------------------------------------------------- | -------------------------------------------------------------------- |
+| "validate DNS data / detect tampered DNS answers" | **DNSSEC**                                                           |
+| "protect against cache poisoning / spoofed DNS"   | **DNSSEC**                                                           |
+| "all records with the same name and type"         | **RRSET** (what DNSSEC signs)                                        |
+| "signature of a record set"                       | **RRSIG** (made by the private ZSK)                                  |
+| "parent holds a hash of the child's key"          | **DS record** (hash of the child **KSK**)                            |
+| "root key, no parent, explicitly trusted"         | **trust anchor** (root KSK)                                          |
+| "sign a public hosted zone in AWS"                | **Route 53 DNSSEC signing** + a **KMS** KSK + a parent **DS** record |
+| "where must the KMS key for the KSK live?"        | **`us-east-1`**                                                      |
+| "who creates/rotates the ZSK in Route 53?"        | **Route 53 internally** (KMS not involved)                           |
+| "alarms to set when enabling DNSSEC"              | **`DNSSECInternalFailure`**, **`DNSSECKeySigningKeysNeedingAction`** |
 
 > [!warning] DNSSEC Gotchas
 >
@@ -2588,20 +3026,20 @@ See [Cost Optimization](../patterns/cost-optimization.md) for the decision tree 
 
 ### Purchase Plans
 
-| Plan | Term | Discount | What it covers |
-| --- | --- | --- | --- |
-| **On-Demand Instances** | None | None | Per-second EC2 compute; no commitment, **no capacity priority** |
-| **Compute Savings Plans** | 1 / 3 yr | up to ~66 % | EC2 (any family/Region/OS), Fargate, Lambda |
-| **EC2 Instance Savings Plans** | 1 / 3 yr | up to ~72 % | Specific family in a specific Region (size+OS flex) |
-| **Standard Reserved Instances** | 1 / 3 yr | up to ~72 % | Family/OS/Region locked; size flexibility only |
-| **Convertible Reserved Instances** | 1 / 3 yr | up to ~54 % | Exchangeable for different family/OS/tenancy |
-| **Scheduled Reserved Instances** *(retired 2024-09-03)* | 1 yr min | Modest vs On-Demand | Recurring time-window EC2 — **discontinued; use On-Demand Capacity Reservations** |
-| **On-Demand Capacity Reservations** | None (immediate-use) | None | Pure capacity guarantee in one AZ; billed even idle |
-| **Reserved Instances / Reserved Capacity** (service-specific) | 1 / 3 yr | Varies by service and commitment | Eligible database instances or provisioned throughput; DynamoDB reserved capacity applies to provisioned mode |
-| **Database Savings Plans** | 1 yr | Up to 35%, depending on usage | Eligible database usage, including DynamoDB on-demand and provisioned throughput; check service-specific eligibility |
-| **Spot Instances** | None | up to ~90 % | Spare EC2 capacity, 2-minute interruption warning |
-| **Dedicated Instances** | None | Premium (per-Region hourly fee) | No co-tenant hardware; host opaque |
-| **Dedicated Hosts** | None or per-host | Pay-per-host | Socket/core-based **BYOL** licensing; Host Affinity |
+| Plan                                                          | Term                 | Discount                         | What it covers                                                                                                       |
+| ------------------------------------------------------------- | -------------------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| **On-Demand Instances**                                       | None                 | None                             | Per-second EC2 compute; no commitment, **no capacity priority**                                                      |
+| **Compute Savings Plans**                                     | 1 / 3 yr             | up to ~66 %                      | EC2 (any family/Region/OS), Fargate, Lambda                                                                          |
+| **EC2 Instance Savings Plans**                                | 1 / 3 yr             | up to ~72 %                      | Specific family in a specific Region (size+OS flex)                                                                  |
+| **Standard Reserved Instances**                               | 1 / 3 yr             | up to ~72 %                      | Family/OS/Region locked; size flexibility only                                                                       |
+| **Convertible Reserved Instances**                            | 1 / 3 yr             | up to ~54 %                      | Exchangeable for different family/OS/tenancy                                                                         |
+| **Scheduled Reserved Instances** *(retired 2024-09-03)*       | 1 yr min             | Modest vs On-Demand              | Recurring time-window EC2 — **discontinued; use On-Demand Capacity Reservations**                                    |
+| **On-Demand Capacity Reservations**                           | None (immediate-use) | None                             | Pure capacity guarantee in one AZ; billed even idle                                                                  |
+| **Reserved Instances / Reserved Capacity** (service-specific) | 1 / 3 yr             | Varies by service and commitment | Eligible database instances or provisioned throughput; DynamoDB reserved capacity applies to provisioned mode        |
+| **Database Savings Plans**                                    | 1 yr                 | Up to 35%, depending on usage    | Eligible database usage, including DynamoDB on-demand and provisioned throughput; check service-specific eligibility |
+| **Spot Instances**                                            | None                 | up to ~90 %                      | Spare EC2 capacity, 2-minute interruption warning                                                                    |
+| **Dedicated Instances**                                       | None                 | Premium (per-Region hourly fee)  | No co-tenant hardware; host opaque                                                                                   |
+| **Dedicated Hosts**                                           | None or per-host     | Pay-per-host                     | Socket/core-based **BYOL** licensing; Host Affinity                                                                  |
 
 > [!warning] Gotcha
 > **Compute and EC2 Instance Savings Plans do not cover database usage, but Database Savings Plans cover eligible usage, including DynamoDB on-demand and provisioned throughput.** Compare service-specific reservations with Database Savings Plans; their discounts do not stack on the same usage. The older “databases never qualify for Savings Plans” shortcut is incorrect. See [AWS Savings Plans types](https://docs.aws.amazon.com/savingsplans/latest/userguide/plan-types.html) and [Database Savings Plans eligibility](https://aws.amazon.com/savingsplans/faqs/).
@@ -2616,13 +3054,13 @@ See [Cost Optimization](../patterns/cost-optimization.md) for the decision tree 
 
 A reservation has a **billing component** and a **capacity component**, and they are independent.
 
-| Setup | Discount? | Capacity reserved? | Notes |
-| --- | --- | --- | --- |
-| **Regional Reserved Instance** alone | Yes | No | Flexible across AZs/sizes; no capacity guarantee |
-| **On-Demand Capacity Reservation** alone | No | **Yes (one AZ)** | Capacity guaranteed; billed at full On-Demand |
-| **Regional Reserved Instance + On-Demand Capacity Reservation** | Yes | **Yes (one AZ)** | The AWS-recommended combo for both benefits |
-| **Zonal Reserved Instance** | Yes | **Yes (one AZ)** | Both in one purchase; locked to one AZ |
-| **Savings Plan + On-Demand Capacity Reservation** | Yes | **Yes (one AZ)** | Same stacking trick as Regional Reserved Instance |
+| Setup                                                           | Discount? | Capacity reserved? | Notes                                             |
+| --------------------------------------------------------------- | --------- | ------------------ | ------------------------------------------------- |
+| **Regional Reserved Instance** alone                            | Yes       | No                 | Flexible across AZs/sizes; no capacity guarantee  |
+| **On-Demand Capacity Reservation** alone                        | No        | **Yes (one AZ)**   | Capacity guaranteed; billed at full On-Demand     |
+| **Regional Reserved Instance + On-Demand Capacity Reservation** | Yes       | **Yes (one AZ)**   | The AWS-recommended combo for both benefits       |
+| **Zonal Reserved Instance**                                     | Yes       | **Yes (one AZ)**   | Both in one purchase; locked to one AZ            |
+| **Savings Plan + On-Demand Capacity Reservation**               | Yes       | **Yes (one AZ)**   | Same stacking trick as Regional Reserved Instance |
 
 > [!warning] Trap — discount stacking only works with Regional Reserved Instances (or Savings Plans)
 > A **Zonal Reserved Instance's discount does not apply to a separate On-Demand Capacity Reservation** — the Zonal Reserved Instance already includes its own bundled capacity reservation. The "get both discount and capacity" pattern is **Regional Reserved Instance + On-Demand Capacity Reservation** or **Savings Plan + On-Demand Capacity Reservation**.
@@ -2632,24 +3070,24 @@ A reservation has a **billing component** and a **capacity component**, and they
 
 ### EC2 Purchase Options — pattern-match cheat-sheet
 
-| Question pattern | Answer |
-| --- | --- |
-| "Default — short or unknown duration, cannot tolerate interruption" | **On-Demand Instances** |
-| "Cheapest possible — can resume from checkpoint / stateless / batch" | **Spot Instances** |
-| "Spot can be interrupted when ___" | AWS needs capacity back, or Spot price rises **above your configured maximum** |
-| "Two customers both running Spot Instances at different max prices — what do they pay?" | **Same current Spot price** — max only sets price tolerance |
-| "Long-running 24/7/365, lowest possible cost" | **3-year All-Upfront Standard Reserved Instance** |
-| "Long-running, but workload family/OS/tenancy might change mid-term" | **Convertible Reserved Instance** (~54% discount but exchangeable) |
-| "Convertible RI exchange — can I downgrade?" | **No** — exchange requires equal or greater value |
-| "Need EC2 only every Friday for 24 hours" / "recurring time window" | Historically Scheduled Reserved Instances — **retired 2024-09-03**; new answer is **On-Demand Capacity Reservations** in the window |
-| "Guaranteed capacity in one AZ, no long-term commitment" | **On-Demand Capacity Reservations** |
-| "Discount across families and from EC2 to Fargate/Lambda" | **Compute Savings Plans** |
-| "Discount locked to `m5` in `us-east-1`, deepest possible Savings Plan" | **EC2 Instance Savings Plans** |
-| "BYOL Oracle / SQL Server / Windows per-socket licensing" | **Dedicated Hosts** |
-| "No co-tenant hardware, don't need to target the host" | **Dedicated Instances** |
-| "Region-wide capacity shortage — what guarantees launch?" | **Reserved capacity** — Zonal RI or On-Demand Capacity Reservation |
-| "Reserved Instance bought in account A, account A doesn't use it" | Floats automatically to a sibling account with matching usage (default org behaviour) |
-| "Unused Reserved Instance or Capacity Reservation costs anything?" | **Yes — billed whether used or not** |
+| Question pattern                                                                        | Answer                                                                                                                              |
+| --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| "Default — short or unknown duration, cannot tolerate interruption"                     | **On-Demand Instances**                                                                                                             |
+| "Cheapest possible — can resume from checkpoint / stateless / batch"                    | **Spot Instances**                                                                                                                  |
+| "Spot can be interrupted when ___"                                                      | AWS needs capacity back, or Spot price rises **above your configured maximum**                                                      |
+| "Two customers both running Spot Instances at different max prices — what do they pay?" | **Same current Spot price** — max only sets price tolerance                                                                         |
+| "Long-running 24/7/365, lowest possible cost"                                           | **3-year All-Upfront Standard Reserved Instance**                                                                                   |
+| "Long-running, but workload family/OS/tenancy might change mid-term"                    | **Convertible Reserved Instance** (~54% discount but exchangeable)                                                                  |
+| "Convertible RI exchange — can I downgrade?"                                            | **No** — exchange requires equal or greater value                                                                                   |
+| "Need EC2 only every Friday for 24 hours" / "recurring time window"                     | Historically Scheduled Reserved Instances — **retired 2024-09-03**; new answer is **On-Demand Capacity Reservations** in the window |
+| "Guaranteed capacity in one AZ, no long-term commitment"                                | **On-Demand Capacity Reservations**                                                                                                 |
+| "Discount across families and from EC2 to Fargate/Lambda"                               | **Compute Savings Plans**                                                                                                           |
+| "Discount locked to `m5` in `us-east-1`, deepest possible Savings Plan"                 | **EC2 Instance Savings Plans**                                                                                                      |
+| "BYOL Oracle / SQL Server / Windows per-socket licensing"                               | **Dedicated Hosts**                                                                                                                 |
+| "No co-tenant hardware, don't need to target the host"                                  | **Dedicated Instances**                                                                                                             |
+| "Region-wide capacity shortage — what guarantees launch?"                               | **Reserved capacity** — Zonal RI or On-Demand Capacity Reservation                                                                  |
+| "Reserved Instance bought in account A, account A doesn't use it"                       | Floats automatically to a sibling account with matching usage (default org behaviour)                                               |
+| "Unused Reserved Instance or Capacity Reservation costs anything?"                      | **Yes — billed whether used or not**                                                                                                |
 
 > [!warning] Common purchase-option gotchas
 >
@@ -2769,12 +3207,12 @@ See [S3 — Object Encryption](../services/s3.md#object-encryption--sse-and-cse)
 - **In transit (HTTPS)** is automatic and orthogonal to **at rest (SSE/CSE)** — both happen
 - **CSE ≠ SSE-C.** SSE-C is still **server-side** — S3 does the crypto; you just provide the key per request. CSE means S3 never touches plaintext
 
-| Method | Key management | Encryption | Notable property |
-| --- | --- | --- | --- |
-| **CSE** | YOU | YOU | S3 never sees plaintext |
-| **SSE-C** | YOU | S3 | Key supplied per request; S3 stores only a one-way hash |
-| **SSE-S3** | S3 (invisible) | S3 | AES-256; no key control; **no role separation** |
-| **SSE-KMS** | You + [KMS](../services/kms.md) | S3 | Rotation control + **role separation** + CloudTrail audit |
+| Method      | Key management                  | Encryption | Notable property                                          |
+| ----------- | ------------------------------- | ---------- | --------------------------------------------------------- |
+| **CSE**     | YOU                             | YOU        | S3 never sees plaintext                                   |
+| **SSE-C**   | YOU                             | S3         | Key supplied per request; S3 stores only a one-way hash   |
+| **SSE-S3**  | S3 (invisible)                  | S3         | AES-256; no key control; **no role separation**           |
+| **SSE-KMS** | You + [KMS](../services/kms.md) | S3         | Rotation control + **role separation** + CloudTrail audit |
 
 - **SSE-S3** = the default low-overhead option. S3 generates a per-object DEK, encrypts with **AES-256**, and wraps the DEK with an invisible internal master key. You give up key control, rotation control, and role separation
 - **SSE-KMS** = uses [`GenerateDataKey`](../services/kms.md#data-encryption-keys-deks) against a Customer Managed KMS key. The encrypted DEK is stored in object metadata. This is the only SSE flavour that supports **role separation**, **rotation control**, and **CloudTrail-audited key usage**
@@ -2948,19 +3386,19 @@ See [Amazon GuardDuty](../services/guardduty.md) for the architecture diagram, p
 
 ## Key Service Properties to Memorize
 
-| Service | Resilience level |
-| --- | --- |
-| [IAM](../services/iam.md) | Global |
-| [VPC](../services/vpc.md) | Regional |
-| IGW | Regional |
-| Subnet | AZ-specific |
-| NAT GW | Zonal (need one per AZ for HA) |
-| [EC2](../services/ec2.md) instance | AZ-specific |
-| [S3](../services/s3.md) bucket | Regional (globally unique name) |
-| [KMS](../services/kms.md) key | Regional (single-region by default; multi-region keys are a separate feature) |
-| [SSM Parameter Store](../services/ssm.md) parameter | Regional (multi-AZ within Region; no cross-Region replication) |
-| [CloudTrail](../services/cloudtrail.md) trail | Regional (all-regions trail spans every region; global service events → `us-east-1`) |
-| [DMS](../services/dms.md) | Regional; DMS Standard replication instances are placed in VPC subnets, while DMS Serverless hides instance management |
+| Service                                             | Resilience level                                                                                                       |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| [IAM](../services/iam.md)                           | Global                                                                                                                 |
+| [VPC](../services/vpc.md)                           | Regional                                                                                                               |
+| IGW                                                 | Regional                                                                                                               |
+| Subnet                                              | AZ-specific                                                                                                            |
+| NAT GW                                              | Zonal (need one per AZ for HA)                                                                                         |
+| [EC2](../services/ec2.md) instance                  | AZ-specific                                                                                                            |
+| [S3](../services/s3.md) bucket                      | Regional (globally unique name)                                                                                        |
+| [KMS](../services/kms.md) key                       | Regional (single-region by default; multi-region keys are a separate feature)                                          |
+| [SSM Parameter Store](../services/ssm.md) parameter | Regional (multi-AZ within Region; no cross-Region replication)                                                         |
+| [CloudTrail](../services/cloudtrail.md) trail       | Regional (all-regions trail spans every region; global service events → `us-east-1`)                                   |
+| [DMS](../services/dms.md)                           | Regional; DMS Standard replication instances are placed in VPC subnets, while DMS Serverless hides instance management |
 
 ## Common Exam Traps
 
@@ -2983,6 +3421,69 @@ See [Amazon GuardDuty](../services/guardduty.md) for the architecture diagram, p
 
 > [!tip] Exam Tip
 > Cache HTTP objects → CloudFront. Stable anycast entry and global TCP/UDP paths → Global Accelerator. Transform CDN requests/responses → Lambda@Edge. [Edge Delivery](../concepts/edge-delivery.md) connects these choices.
+
+## Practice Resources and Study Plan
+
+Which practice exams to use and in what order. Use these once most of the technical sections above are familiar.
+
+### Official Resources on AWS Skill Builder
+
+AWS gives the Official Practice Question Set and the standard Exam Prep course away for free. The Official Practice Exam and the enhanced Exam Prep course need a Skill Builder subscription ([AWS Certification prep](https://aws.amazon.com/certification/certification-prep/)).
+
+| Resource                       | Cost         | What it is                                                                                                                                                                                      |
+| ------------------------------ | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Official Practice Question Set | Free         | 20 questions written by AWS that show the style of the real exam. It is the closest free match to real exam questions.                                                                          |
+| Exam Prep course (standard)    | Free         | A 2-hour digital course that goes through each domain and reviews sample questions. Pair it with the Question Set.                                                                              |
+| Official Practice Exam         | Subscription | Same question style and rigor as the real exam. It reports pass or fail and a scaled score, which helps you judge readiness. It is not the real exam, so the score is a guide, not a guarantee. |
+| Exam Prep course (enhanced)    | Subscription | 6–8 hours of material: videos, hands-on labs, extra practice questions, and access to the Official Practice Exam.                                                                               |
+
+The source note says the Question Set is also offered in other languages, including Traditional Chinese. That was not reverified here.
+
+The [AWS Training FAQ](https://aws.amazon.com/training/faqs/) lists the Skill Builder Individual subscription at **29 USD per month or 449 USD per year**. The Team subscription is 449 USD per seat per year, with a minimum of 5 seats.
+
+> [!tip] Subscription strategy
+> One month at 29 USD is enough if you only need the Official Practice Exam. Subscribe in the last week or two before the exam, take the practice exam, and then cancel. Individual subscriptions renew automatically unless you cancel, and a full refund is only possible within 3 calendar days of the first purchase ([AWS Training FAQ](https://aws.amazon.com/training/faqs/)). Cancel as soon as you are done so you are not charged for a second month.
+
+### Paid Third-Party Practice Exams
+
+| Provider                                    | Price (approx.)                                | Size                          | Strengths                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ------------------------------------------- | ---------------------------------------------- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tutorials Dojo (Jon Bonso)                  | 14.99 USD list on the TD portal, often on sale | 401 questions                 | The most widely recommended set. Detailed explanations with reference links and cheat sheets. Timed, review, section-based (by domain), topic-based (for example EC2 or S3), and final-test modes, where the final test draws 65 random questions. One year of unlimited access ([Tutorials Dojo](https://portal.tutorialsdojo.com/product/aws-certified-solutions-architect-associate-practice-exams/)). |
+| Stephane Maarek and Abhishek Singh (Udemy)  | Udemy sale price                               | 390 questions (6 tests of 65) | Written from scratch and a companion to Maarek's SAA video course. Short and good for finding gaps. The note says it was last updated in April 2026.                                                                                                                                                                                                                                                      |
+| Digital Cloud Training / Neal Davis (Udemy) | Udemy sale price                               | Several full exams            | Over 125,000 students. Explanations link to their online "Training Notes".                                                                                                                                                                                                                                                                                                                                |
+
+Udemy blocked automated reads, so the two Udemy rows come from the source note (reviewed 2026-11-17) and were not reverified here.
+
+> [!note] Udemy pricing
+> Udemy courses are on sale for roughly 10–20 USD most of the time. Don't pay the list price.
+
+### Free Third-Party Question Banks
+
+Vendors and community authors write these, and quality and accuracy vary. Use them for extra practice volume, not to decide whether you are ready.
+
+| Provider                        | What you get                                                                                                                                                                                                                                |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Training Camp                   | A 50-question full test with a 90-minute timer and an explanation for every option, plus a 25-question quick test ([Training Camp](https://trainingcamp.com/aws-solutions-architect-practice-test/))                                        |
+| Crucial Exams                   | Configurable tests: choose domains, 5–100 questions, and an optional timer (from the source note; not reverified)                                                                                                                           |
+| Open-source SAA-C03 study guide | A community-maintained, MIT-licensed GitHub Pages site with 276+ practice questions, updated April 2026, and not affiliated with AWS ([study guide](https://chathurangavkd.github.io/AWS-Certified-Solutions-Architect-Associate-SAA-C03/)) |
+| Tutorials Dojo blog             | Free sample question sets and an SAA-C03 study path                                                                                                                                                                                         |
+
+### Recommended Study Sequence
+
+1. Finish most of a core course, such as Adrian Cantrill's SAA-C03 course, and work through the technical sections of this page.
+2. Take the free Official Practice Question Set (20 questions) to see the real exam style.
+3. Practice with Tutorials Dojo:
+   - Use section-based and topic-based modes to work on weak domains first. Use the [Content Domains](#content-domains) table to find the wiki pages for each domain.
+   - Switch to timed mode for the last few full exams.
+   - Scoring 80% or more in timed mode again and again is a strong sign you are ready. This is a common rule of thumb from the note, not an AWS figure.
+4. In the final week or two, subscribe to Skill Builder for one month and take the Official Practice Exam as the last check. Then cancel the subscription.
+
+Review the explanations for questions you got right as well as the ones you got wrong. Plenty of correct answers are lucky guesses between two options. The [Common Exam Traps](#common-exam-traps) section collects the distractors that show up most.
+
+### Avoid Exam Dumps
+
+> [!warning] Gotcha
+> Avoid "real exam dump" sites. Their answers are often wrong, and using leaked exam content breaks the AWS Certification Agreement that candidates accept, which can lead to revocation of the certification. The agreement text was not reviewed in this ingest. The same sites are also behind most of the unofficial "SAA-C04" claims mentioned in [Format and Scoring](#format-and-scoring).
 
 ## References
 
@@ -3007,3 +3508,16 @@ See [Amazon GuardDuty](../services/guardduty.md) for the architecture diagram, p
 - [CloudFormation](../services/cloudformation.md)
 - [DMS](../services/dms.md)
 - [Boot Time to Service Time](../patterns/boot-time-optimization.md)
+- [Source note: SAA-C03 Practice Exam Resources](../../raw/aws-cert-study-notes/aws-solution-architect/saa_c03_practice_exam_resources.md) (reviewed by the author 2026-11-17)
+- [AWS Certified Solutions Architect – Associate certification page](https://aws.amazon.com/certification/certified-solutions-architect-associate/) (checked 2026-11-18)
+- [AWS SAA-C03 exam guide](https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html) (checked 2026-11-18)
+- [SAA-C03 exam guide (PDF)](https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.pdf)
+- [AWS Certification prep](https://aws.amazon.com/certification/certification-prep/) (checked 2026-11-18)
+- [AWS Training FAQ: Skill Builder subscriptions](https://aws.amazon.com/training/faqs/) (checked 2026-11-18)
+- [AWS SAA-C03 Step 1: Official Practice Question Set](https://training.resources.awscloud.com/associate-certification-articles/step-1-get-to-know-the-exam-and-exam-style-questions)
+- [Tutorials Dojo: SAA-C03 practice exams](https://portal.tutorialsdojo.com/product/aws-certified-solutions-architect-associate-practice-exams/) (checked 2026-11-18)
+- [Stephane Maarek: SAA-C03 practice exams (Udemy)](https://www.udemy.com/course/practice-exams-aws-certified-solutions-architect-associate) (not reachable for verification)
+- [Digital Cloud Training: SAA-C03 practice tests (Udemy)](https://www.udemy.com/aws-certified-solutions-architect-associate-practice-tests-k) (not reachable for verification)
+- [Training Camp: free SAA-C03 practice test](https://trainingcamp.com/aws-solutions-architect-practice-test/) (checked 2026-11-18)
+- [Crucial Exams: SAA-C03](https://www.crucialexams.com/exams/aws/certified-solutions-architect-associate/saa-c03/practice-tests-practice-questions)
+- [Open-source SAA-C03 study guide](https://chathurangavkd.github.io/AWS-Certified-Solutions-Architect-Associate-SAA-C03/) (checked 2026-11-18)

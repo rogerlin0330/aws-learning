@@ -54,7 +54,7 @@ CLAUDE.md                   # corresponding instructions for Claude
 
 ## Certifications
 
-- **AWS Solutions Architect Associate** (SAA-C03) — [wiki exam prep](wiki/certifications/aws-saa.md) and [raw study notes](raw/aws-cert-study-notes/aws-solution-architect/)
+- **AWS Solutions Architect Associate** (SAA-C03) — [wiki exam prep](wiki/certifications/aws-saa.md), [exam format](wiki/certifications/aws-saa.md#exam-format-and-domains) and [practice resources](wiki/certifications/aws-saa.md#practice-resources-and-study-plan), and [raw study notes](raw/aws-cert-study-notes/aws-solution-architect/)
 - **AWS AI Practitioner** (AIF-C01) — [raw study notes](raw/aws-cert-study-notes/aws-ai-practitioner/); a dedicated wiki certification page has not been created yet
 
 ## How it works

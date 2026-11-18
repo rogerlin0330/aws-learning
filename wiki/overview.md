@@ -2,7 +2,7 @@
 title: AWS Learning — Overview
 type: overview
 tags: [aws, architecture, athena, redshift, data-warehouse, elasticache, caching, valkey, redis, memcached, iam, vpc, organizations, control-tower, cost, s3, ec2, ecs, eks, kubernetes, containers, cloudwatch, cloudtrail, cloudformation, bootstrapping, serverless, lambda, step-functions, api-gateway, orchestration, dns, dnssec, rds, rds-custom, aurora, dms, database, database-migration, multi-az, high-availability, acid, base, cap-theorem, global, regional, tiers, cloudfront, elb, asg, auto-scaling, sqs, sns, messaging, queues, decoupling, fifo, dead-letter-queue, kinesis, streaming, ingestion, firehose, analytics, video-streams, kafka, msk, log-vs-queue]
-updated: 2026-11-13
+updated: 2026-11-18
 ---
 
 # AWS Learning Overview
@@ -181,7 +181,7 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 
 ### Certifications
 
-- [AWS Solutions Architect Associate](certifications/aws-saa.md) — exam tips, comparison tables, common traps
+- [AWS Solutions Architect Associate](certifications/aws-saa.md) — exam tips, comparison tables, common traps, exam format and domains, and practice resources
 
 ## Multi-Account Architecture
 

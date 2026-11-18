@@ -2,7 +2,7 @@
 title: Wiki Index
 type: overview
 tags: [index, catalog, wiki]
-updated: 2026-11-14
+updated: 2026-11-18
 ---
 
 # Wiki Index
@@ -107,4 +107,4 @@ Section links use GitHub-style heading anchors. In Obsidian, use the GFM Heading
 
 ## Certifications
 
-- [AWS Solutions Architect Associate](certifications/aws-saa.md) — Exam tips, comparison tables, common traps for SAA-C03
+- [AWS Solutions Architect Associate](certifications/aws-saa.md) — Exam tips, comparison tables, common traps for SAA-C03; [exam format and domains](certifications/aws-saa.md#exam-format-and-domains) (65 questions, 130 minutes, 720 to pass, no guessing penalty, domain weights mapped to wiki pages) and [practice resources and study plan](certifications/aws-saa.md#practice-resources-and-study-plan) (Skill Builder with the one-month subscription plan, third-party practice exams, study sequence, exam dumps)
