@@ -206,6 +206,15 @@ tags:
   - creation-policy
   - desired-state
   - infrastructure-as-code
+  - change-sets
+  - drift
+  - deletion-policy
+  - stack-roles
+  - custom-resources
+  - nested-stacks
+  - cross-stack-references
+  - stacksets
+  - intrinsic-functions
   - cloudwatch-agent
   - cwagent
   - parameter-store
@@ -403,7 +412,7 @@ updated: 2026-11-18
 
 # AWS Solutions Architect Associate (SAA-C03)
 
-A running collection of exam tips, gotchas, and comparison tables. For the exam format, scoring rules, and domain weights, see [Exam Format and Domains](#exam-format-and-domains); for practice exams and a study plan, see [Practice Resources and Study Plan](#practice-resources-and-study-plan). Deep-dive pages: [AppFlow](../services/appflow.md) · [Glue](../services/glue.md) · [Cognito](../services/cognito.md) · [IAM](../services/iam.md) · [VPC](../services/vpc.md) · [EC2](../services/ec2.md) · [SQS](../services/sqs.md) · [SNS](../services/sns.md) · [Kinesis](../services/kinesis.md) · [ECS](../services/ecs.md) · [ECR](../services/ecr.md) · [S3](../services/s3.md) · [RDS](../services/rds.md) · [Aurora](../services/aurora.md) · [DMS](../services/dms.md) · [Route 53](../services/route53.md) · [Organizations](../services/organizations.md) · [Control Tower](../services/control-tower.md) · [CloudWatch](../services/cloudwatch.md) · [KMS](../services/kms.md) · [EKS](../services/eks.md) · [Networking](../concepts/networking.md) · [Identity & Access](../concepts/identity-and-access.md) · [Resource vs Identity Policies](../concepts/resource-vs-identity-policies.md) · [DNS](../concepts/dns.md) · [DNSSEC](../concepts/dnssec.md) · [Database Models](../concepts/db-transaction-model.md) · [TLS/HTTPS](../concepts/tls-https.md) · [Containers](../concepts/containers.md) · [Kubernetes](../concepts/kubernetes.md) · [CloudFormation](../services/cloudformation.md) · [Cost Optimization](../patterns/cost-optimization.md) · [Scaling](../patterns/scaling.md) · [Boot Time to Service Time](../patterns/boot-time-optimization.md) · [Global & Regional Architecture](../patterns/global-regional-architecture.md).
+A running collection of exam tips, gotchas, and comparison tables. For the exam format, scoring rules, and domain weights, see [Exam Format and Domains](#exam-format-and-domains); for practice exams and a study plan, see [Practice Resources and Study Plan](#practice-resources-and-study-plan). Deep-dive pages: [AppFlow](../services/appflow.md) · [Glue](../services/glue.md) · [Cognito](../services/cognito.md) · [IAM](../services/iam.md) · [VPC](../services/vpc.md) · [EC2](../services/ec2.md) · [SQS](../services/sqs.md) · [SNS](../services/sns.md) · [Kinesis](../services/kinesis.md) · [ECS](../services/ecs.md) · [ECR](../services/ecr.md) · [S3](../services/s3.md) · [RDS](../services/rds.md) · [Aurora](../services/aurora.md) · [DMS](../services/dms.md) · [Route 53](../services/route53.md) · [Organizations](../services/organizations.md) · [Control Tower](../services/control-tower.md) · [CloudWatch](../services/cloudwatch.md) · [KMS](../services/kms.md) · [EKS](../services/eks.md) · [Networking](../concepts/networking.md) · [Identity & Access](../concepts/identity-and-access.md) · [Resource vs Identity Policies](../concepts/resource-vs-identity-policies.md) · [DNS](../concepts/dns.md) · [DNSSEC](../concepts/dnssec.md) · [Database Models](../concepts/db-transaction-model.md) · [TLS/HTTPS](../concepts/tls-https.md) · [Containers](../concepts/containers.md) · [Kubernetes](../concepts/kubernetes.md) · [CloudFormation](../services/cloudformation.md) · [CloudFormation Multi-Stack](../patterns/cloudformation-multi-stack.md) · [Cost Optimization](../patterns/cost-optimization.md) · [Scaling](../patterns/scaling.md) · [Boot Time to Service Time](../patterns/boot-time-optimization.md) · [Global & Regional Architecture](../patterns/global-regional-architecture.md).
 
 ## Exam Format and Domains
 
@@ -1651,7 +1660,7 @@ See [EC2 — AMI](../services/ec2.md#ami--amazon-machine-image) for full details
 
 ### EC2 Bootstrapping — User Data & cfn-init
 
-See [EC2 — Bootstrapping](../services/ec2.md#bootstrapping), [CloudFormation — cfn-init](../services/cloudformation.md), and [Boot Time to Service Time](../patterns/boot-time-optimization.md) for full details.
+See [EC2 — Bootstrapping](../services/ec2.md#bootstrapping), [CloudFormation — cfn-init](../services/cloudformation.md#cfn-init--desired-state-bootstrapping), [CloudFormation — Creation Policies](../services/cloudformation.md#creation-policies--cfn-signal), and [Boot Time to Service Time](../patterns/boot-time-optimization.md) for full details.
 
 - **Bootstrapping** = self-configure at launch. In EC2 it's delivered via **user data**, read from [IMDS](../services/ec2.md#instance-metadata-service-imds) at **`http://169.254.169.254/latest/user-data/`** (same service as metadata, different path)
 - User data **runs once, at first launch only**, **as root**, and is **opaque to EC2** (not validated/interpreted)
@@ -3246,6 +3255,32 @@ See [S3 Bucket Keys](../services/s3.md#s3-bucket-keys-for-sse-kms-cost-and-throt
 > [!tip] Exam Tip
 > Pattern-match: *"SSE-KMS works but the KMS bill is huge on a bucket with millions of objects"* → **enable S3 Bucket Keys**. *"Cheaper than SSE-KMS"* on the same data is a misleading framing — Bucket Keys reduce **KMS request charges**, not the price per byte stored.
 
+## CloudFormation
+
+See [CloudFormation](../services/cloudformation.md) and [CloudFormation Multi-Stack Architectures](../patterns/cloudformation-multi-stack.md) for full details and complete templates. Bootstrapping notes (cfn-init, cfn-hup, creation policies) are under [EC2 Bootstrapping](#ec2-bootstrapping--user-data--cfn-init).
+
+- **Template** = logical resources (desired state); **stack** = the deployment that creates, updates, and deletes the matching **physical resources**. A failed stack creation **rolls back** by default
+- A property change has one of three effects: **no interruption**, **some interruption**, or **replacement** (new physical resource, new ID, possible data loss). **Change sets** preview which one before you execute
+- **Drift** = live settings changed outside CloudFormation. **Drift detection** only reports it. A standard change set ignores it, because it compares templates only. A [drift-aware change set](../services/cloudformation.md#drift-aware-change-sets) (`--deployment-mode REVERT_DRIFT`) also reads the live settings and reverts the drift when executed
+- **Portable templates**: no hard-coded bucket names (global) or AMI IDs (Regional). Use **pseudo parameters** (`AWS::Region`, `AWS::AccountId`, `AWS::StackName`), `!GetAZs` with `!Select`, and an **SSM public parameter** for the latest AMI
+- `!Ref` gives a parameter's value or a resource's main ID; `!GetAtt` gives other attributes. Both create **implicit dependencies**. `DependsOn` forces order where nothing is referenced, for example an **EIP after the internet gateway attachment**
+- **Mappings** = static lookup with `!FindInMap`; **Conditions** = evaluated first, switch resources or properties on and off per environment
+- **`DeletionPolicy`**: `Delete` (default), `Retain`, `RetainExceptOnCreate`, `Snapshot` (EBS, RDS, ElastiCache, Neptune, Redshift; RDS defaults to `Snapshot`). It does **not** apply when an update **replaces** a resource; that is **`UpdateReplacePolicy`**
+- **Stack roles**: CloudFormation assumes an IAM role, so the operator needs only stack permissions plus **`iam:PassRole`**
+- **Custom resources**: Lambda or SNS backed logic for anything CloudFormation cannot do, such as emptying an S3 bucket before stack deletion
+- **Multi-stack**: **nested stacks** share one lifecycle and work around the **500-resource** template quota; **cross-stack references** (Export plus `Fn::ImportValue`, same account and Region, export locked while imported; or `Fn::GetStackOutput`, cross-account and cross-Region since May 2026) share long-lived resources; **StackSets** deploy one template to many accounts and Regions
+
+> [!tip] Exam Tip
+> Trigger phrases: *"preview changes before updating production"* points to **change sets**. *"keep the database when the stack is deleted"* points to **`DeletionPolicy: Snapshot` or `Retain`**. *"stack completes but the app is broken"* points to a **creation policy with cfn-signal**. *"reuse the VPC template in many solutions"* points to **nested stacks**; *"many stacks use one existing shared VPC"* points to **cross-stack references**. *"deploy to every account in an OU, including new ones"* points to **StackSets with service-managed permissions**. *"help desk can deploy stacks without resource permissions"* points to a **stack role**.
+
+> [!warning] Common CloudFormation Gotchas
+>
+> - **`Fn::Base64` is required** for user data in a template; the console encodes it for you, CloudFormation does not
+> - **A resource cannot reference itself** with `Fn::Sub`; read the instance's own ID from IMDS at boot instead
+> - **Non-empty S3 buckets block stack deletion**; empty them with a custom resource or retain the bucket
+> - **An imported export cannot be changed or deleted**, and the producer stack cannot be deleted while it is imported
+> - **Snapshots from `DeletionPolicy` outlive the stack** and keep costing money
+
 ## SSM Parameter Store
 
 See [Systems Manager — Parameter Store](../services/ssm.md#parameter-store) for full details.
@@ -3506,6 +3541,8 @@ Review the explanations for questions you got right as well as the ones you got 
 - [CloudWatch](../services/cloudwatch.md)
 - [CloudTrail](../services/cloudtrail.md)
 - [CloudFormation](../services/cloudformation.md)
+- [CloudFormation Multi-Stack Architectures](../patterns/cloudformation-multi-stack.md)
+- Adrian Cantrill, AWS Certified Solutions Architect – Associate (SAA-C03): CloudFormation section lessons ([course](https://learn.cantrill.io/))
 - [DMS](../services/dms.md)
 - [Boot Time to Service Time](../patterns/boot-time-optimization.md)
 - [Source note: SAA-C03 Practice Exam Resources](../../raw/aws-cert-study-notes/aws-solution-architect/saa_c03_practice_exam_resources.md) (reviewed by the author 2026-11-17)

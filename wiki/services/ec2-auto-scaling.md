@@ -255,7 +255,7 @@ Two more doc-verified details worth knowing:
 - **Warm pools** (not covered in the course) add further lifecycle states such as `Warmed:Stopped` and can also have hooks. If a question mentions pre-initialized instances kept stopped and ready, that is warm pools, not lifecycle hooks alone.
 
 > [!warning] Gotcha — hooks vs health checks vs user data
-> **Health checks** decide _whether to replace_ an unhealthy instance. **Lifecycle hooks** pause a _transition already in progress_. **[User data / cfn-init](ec2.md#bootstrapping)** run at boot with no ASG coordination — a hook actually **holds the ASG state machine** until you signal. Hooks are defined **on the ASG**, not on the launch template.
+> **Health checks** decide _whether to replace_ an unhealthy instance. **Lifecycle hooks** pause a _transition already in progress_. **[User data / cfn-init](ec2.md#bootstrapping)** run at boot with no ASG coordination — a hook actually **holds the ASG state machine** until you signal. Hooks are defined **on the ASG**, not on the launch template. To make a CloudFormation stack wait until an ASG's instances finish bootstrapping, use a [creation policy with cfn-signal](cloudformation.md#example-an-auto-scaling-group-that-must-report-in).
 
 ## Scaling Processes (Suspend / Resume) and Standby
 

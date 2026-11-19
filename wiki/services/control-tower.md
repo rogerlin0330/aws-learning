@@ -28,6 +28,8 @@ Control Tower is a thin orchestration layer over services covered elsewhere in t
 | **[CloudWatch](cloudwatch.md), [CloudTrail](cloudtrail.md), SNS**                                        | Centralized monitoring, auditing, and notifications                                                                     |
 | **Service Catalog**                                                                                      | Front-end for self-service account provisioning (Account Factory)                                                       |
 
+The [CloudFormation](cloudformation.md) work is largely done with [StackSets](../patterns/cloudformation-multi-stack.md#stacksets), which deploy the same baseline template as a stack in every enrolled account and Region.
+
 > [!warning] Gotcha
 > **IAM Identity Center is the product formerly known as AWS SSO.** The exam may use either name — treat them as the same service. Likewise, AWS has rebranded **"guardrails" as "controls"** in the console; older material (and many exam questions) still says guardrails. Same thing.
 

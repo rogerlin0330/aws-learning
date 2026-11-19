@@ -63,6 +63,8 @@ The most-tested benefit:
 | **Move an account between OUs**     | Drag-and-drop in console or `move-account` API call. Account is unaffected; only its SCP inheritance changes.     |
 | **Remove a member account**         | Account becomes standard again. Must have its own payment method and tax/contact info before leaving.             |
 
+Organizations also gives other services an organization-wide deployment target. CloudFormation [StackSets](../patterns/cloudformation-multi-stack.md#stacksets) with service-managed permissions deploy one template to every account in an OU, and can deploy it automatically to accounts that join the OU later.
+
 ## Identity Workflow — Role Switching
 
 Member accounts should generally **not have their own IAM users**. Best practice:

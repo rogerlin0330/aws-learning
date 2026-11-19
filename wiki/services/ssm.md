@@ -47,7 +47,7 @@ Typical uses: license codes, database connection strings (hostnames, ports), DB 
 
 #### Public parameters (AWS-published)
 
-The classic example: when [CloudFormation](cloudformation.md) launches EC2 instances, you don't hard-code an AMI ID. You reference an AWS-published public parameter that resolves to the **latest AMI ID** for a given OS in a given Region, so the template always picks up the current image. The exact path is AWS-maintained per OS and Region; it follows a path-style name and is not worth memorizing.
+The classic example: when [CloudFormation](cloudformation.md) launches EC2 instances, you don't hard-code an AMI ID. You reference an AWS-published public parameter that resolves to the **latest AMI ID** for a given OS in a given Region, so the template always picks up the current image. The exact path is AWS-maintained per OS and Region; it follows a path-style name and is not worth memorizing. A complete template using one is on the CloudFormation page under [Making a template portable](cloudformation.md#making-a-template-portable).
 
 ### Hierarchical Structure
 
