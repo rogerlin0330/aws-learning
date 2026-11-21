@@ -3,7 +3,7 @@ title: CloudFormation
 type: service
 tags: [cloudformation, iac, infrastructure-as-code, template, stack, logical-resource, physical-resource, parameters, pseudo-parameters, intrinsic-functions, mappings, conditions, outputs, dependson, creation-policy, wait-condition, cfn-init, configsets, cfn-signal, cfn-hup, deletion-policy, update-replace-policy, change-sets, drift, stack-roles, custom-resources, bootstrapping, ec2, user-data]
 certs: [aws-saa]
-updated: 2026-11-18
+updated: 2026-11-20
 ---
 
 # CloudFormation
@@ -43,7 +43,7 @@ If creation fails partway through, CloudFormation by default **rolls back**: it 
 
 ### What an update does to a resource
 
-Each changed property has one of three documented effects on the physical resource ([update behaviors of stack resources](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-updating-stacks-update-behaviors.html)):
+When you submit an update, CloudFormation updates resources based on differences between what you submit and the stack's current template. Resources that haven't changed run without disruption during the update process. For updated resources, CloudFormation uses one of the following update behaviors ([update behaviors of stack resources](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-updating-stacks-update-behaviors.html)):
 
 | Update behavior       | What happens                                                                                                                      | Example                                                                 |
 | --------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
@@ -51,7 +51,7 @@ Each changed property has one of three documented effects on the physical resour
 | **Some interruption** | Changed in place but disrupted, such as a stop and start; the physical ID stays the same                                          | Changing an EBS-backed instance's `InstanceType`                        |
 | **Replacement**       | CloudFormation creates a **new** physical resource with a new physical ID, repoints dependent resources, then deletes the old one | Changing an instance's `ImageId`, or an EBS volume's `AvailabilityZone` |
 
-The resource reference for each type lists which properties cause which behavior under "Update requires". Replacement is where data loss happens: a replaced database or volume is a new, empty resource unless you protect it with an [`UpdateReplacePolicy`](#deletion-and-replacement-policies). [Change sets](#change-sets) show the behavior of every change before you run it.
+The update behavior CloudFormation uses depends on which property you update for a given resource type. Each property's behavior is listed under "Update requires" in the [AWS resource and property types reference](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-template-resource-type-ref.html). Replacement is where data loss happens: a replaced database or volume is a new, empty resource unless you protect it with an [`UpdateReplacePolicy`](#deletion-and-replacement-policies). [Change sets](#change-sets) show the behavior of every change before you run it.
 
 ### Portable templates
 
@@ -159,8 +159,8 @@ Outputs:
 
 Two details are easy to miss:
 
-- `!GetAtt WebSecurityGroup.GroupId`, not `!Ref WebSecurityGroup`. For a security group created without `VpcId`, `Ref` returns the group **name**, while `SecurityGroupIds` needs the **ID** ([AWS::EC2::SecurityGroup return values](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-securitygroup.html#aws-resource-ec2-securitygroup-return-values)).
-- The production URL uses the Elastic IP. Associating an EIP changes the instance's public IP and public DNS name, so `WebServer.PublicDnsName`, read when the instance was created, would be stale.
+- `!GetAtt WebSecurityGroup.GroupId`, not `!Ref WebSecurityGroup`. For a security group created without `VpcId`, `Ref` returns the group **name**, while `SecurityGroupIds` needs the **ID** ([AWS::EC2::SecurityGroup return values](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-securitygroup.html#aws-resource-ec2-securitygroup-return-values)). Also, `!Ref WebSecurityGroup.GroupId` is invalid syntax: `!Ref` does not support the dotted `Resource.Attribute` form, which only `!GetAtt` and `${...}` inside `!Sub` accept. It takes only a name: a resource's logical ID, a parameter, or a pseudo parameter.
+- The `WebsiteURL` in `Outputs:` uses the `IsProd` condition to pick the address. In production, the stack also creates `WebServerEIP`, so the URL uses the Elastic IP. In dev, there is no Elastic IP, so the URL uses `WebServer.PublicDnsName`. Associating an Elastic IP releases the instance's original public IPv4 address and changes its public DNS name to match the Elastic IP ([Elastic IP address basics](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/elastic-ip-addresses-eip.html)), so in production the Elastic IP is the stable address to publish.
 
 ## Template Inputs
 
