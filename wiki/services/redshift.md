@@ -146,7 +146,7 @@ Serverless works the same way, except its automatic backups are called **recover
 | **[DMS](dms.md)**                                                         | Migrates data from databases into Redshift, including ongoing changes                                                                                 |
 | **[Glue](glue.md)**                                                       | Transforms data and loads it into Redshift                                                                                                            |
 
-Beyond the course, Redshift can also ingest directly from **Kinesis Data Streams** and **Amazon MSK** with **streaming ingestion** (no S3 staging), and **zero-ETL integrations** replicate data from sources such as Aurora, RDS for MySQL, and DynamoDB without building a pipeline. [AWS — Redshift data ingestion options](https://aws.amazon.com/blogs/big-data/amazon-redshift-data-ingestion-options)
+Beyond the course, Redshift can also ingest directly from **Kinesis Data Streams** and **[Amazon MSK](msk.md)** with **streaming ingestion** (no S3 staging), and **zero-ETL integrations** replicate data from sources such as Aurora, RDS for MySQL, and DynamoDB without building a pipeline. [AWS — Redshift data ingestion options](https://aws.amazon.com/blogs/big-data/amazon-redshift-data-ingestion-options)
 
 [Data Integration](../concepts/data-integration.md) covers how these load, transform, and query roles fit together.
 

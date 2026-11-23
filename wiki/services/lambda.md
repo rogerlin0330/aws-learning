@@ -168,7 +168,7 @@ Supported ESM sources include:
 
 ![Event source mapping: telemetry producers push into a Kinesis Data Stream; the event source mapping polls the stream for source batches, splits them by batch size, and delivers event batches to the Lambda function, borrowing the function's execution-role permissions to read the source and sending failed batches to a DLQ](../assets/lambda-invocation-event-source-mapping.png)
 
-- Used for **streams/queues that don't natively generate events** and require **polling**: **[Kinesis](kinesis.md), DynamoDB Streams, [SQS](sqs.md)**, and **Amazon MSK** ([Managed Streaming for Apache Kafka](../concepts/streaming-vs-messaging.md#kinesis-vs-kafka-and-amazon-msk)).
+- Used for **streams/queues that don't natively generate events** and require **polling**: **[Kinesis](kinesis.md), DynamoDB Streams, [SQS](sqs.md)**, and **[Amazon MSK](msk.md)** (Managed Streaming for Apache Kafka; compared with Kinesis on [Streaming vs Messaging](../concepts/streaming-vs-messaging.md#kinesis-vs-kafka-and-amazon-msk)).
 - A hidden **event source mapping** component polls the source, retrieves **source batches**, splits them by configured **batch size**, and delivers **event batches** to the function.
 - A single invocation may receive **hundreds of events** in a batch — tune batch size carefully so processing completes within the **15-minute timeout**.
 - Persistently failing batches can be sent to an **[SQS queue](sqs.md#dead-letter-queues-dlq) or SNS topic**.
@@ -180,12 +180,12 @@ Supported ESM sources include:
 
 Both **asynchronous invocation and ESM provide automatic reprocessing**, but they use different mechanisms and configuration:
 
-| Invocation path | Who retries after a function error? | Where to configure it |
-| :--- | :--- | :--- |
-| Direct synchronous invocation (`RequestResponse`) | The caller checks the result and decides whether to invoke again. Lambda does not automatically retry function errors. | Caller application or invoking service; SDK retry settings cover eligible request failures such as throttling or network errors, rather than function-code errors. |
-| Asynchronous invocation (`Event`) | Lambda's internal asynchronous queue; function errors are retried twice by default. | Function/version/alias **Asynchronous invocation** settings; **Retry attempts** is configurable from 0 to 2. |
-| ESM: [Kinesis](kinesis.md) / DynamoDB Streams | The ESM reprocesses failed batches. | The **event source mapping**, including `MaximumRetryAttempts` and `MaximumRecordAgeInSeconds`; by default, failed records are retried until they expire in the source. |
-| ESM: [SQS](sqs.md) | By default, all messages in a failed batch become visible again after the visibility timeout, and the ESM reads them again. | The **SQS queue's** visibility timeout and redrive policy (`maxReceiveCount` / [DLQ](sqs.md#dead-letter-queues-dlq)); `maxReceiveCount` counts receives, rather than additional retries. |
+| Invocation path                                   | Who retries after a function error?                                                                                         | Where to configure it                                                                                                                                                                    |
+| :------------------------------------------------ | :-------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Direct synchronous invocation (`RequestResponse`) | The caller checks the result and decides whether to invoke again. Lambda does not automatically retry function errors.      | Caller application or invoking service; SDK retry settings cover eligible request failures such as throttling or network errors, rather than function-code errors.                       |
+| Asynchronous invocation (`Event`)                 | Lambda's internal asynchronous queue; function errors are retried twice by default.                                         | Function/version/alias **Asynchronous invocation** settings; **Retry attempts** is configurable from 0 to 2.                                                                             |
+| ESM: [Kinesis](kinesis.md) / DynamoDB Streams     | The ESM reprocesses failed batches.                                                                                         | The **event source mapping**, including `MaximumRetryAttempts` and `MaximumRecordAgeInSeconds`; by default, failed records are retried until they expire in the source.                  |
+| ESM: [SQS](sqs.md)                                | By default, all messages in a failed batch become visible again after the visibility timeout, and the ESM reads them again. | The **SQS queue's** visibility timeout and redrive policy (`maxReceiveCount` / [DLQ](sqs.md#dead-letter-queues-dlq)); `maxReceiveCount` counts receives, rather than additional retries. |
 
 The async **0–2 Retry attempts** setting applies to function errors. Throttling and service errors use separate queue retries, with backoff, for up to six hours by default; see [AWS async error handling](https://docs.aws.amazon.com/lambda/latest/dg/invocation-async-error-handling.html). For SQS, [partial batch responses](https://docs.aws.amazon.com/lambda/latest/dg/services-sqs-errorhandling.html) let your handler identify failed messages so successfully processed messages are not retried with them.
 
@@ -221,18 +221,18 @@ In default Lambda, an environment handles one invocation at a time, including ti
 
 ![AWS concurrency timeline: requests 1–5 initialize environments A–E, requests 6–8 reuse A–C, request 9 initializes F, and request 10 reuses D](../assets/lambda-concurrency-ten-requests.png)
 
-| Request | Environment action | Why? |
-| :--- | :--- | :--- |
-| 1 | Create A | No environment exists yet. |
-| 2 | Create B | A is occupied. |
-| 3 | Create C | A–B are occupied. |
-| 4 | Create D | A–C are occupied. |
-| 5 | Create E | A–D are occupied. |
-| 6 | Reuse A | Request 1 has completed. |
-| 7 | Reuse B | Request 2 has completed. |
-| 8 | Reuse C | Request 3 has completed. |
-| 9 | Create F | A–E are occupied. |
-| 10 | Reuse D | Request 4 has completed. |
+| Request | Environment action | Why?                       |
+| :------ | :----------------- | :------------------------- |
+| 1       | Create A           | No environment exists yet. |
+| 2       | Create B           | A is occupied.             |
+| 3       | Create C           | A–B are occupied.          |
+| 4       | Create D           | A–C are occupied.          |
+| 5       | Create E           | A–D are occupied.          |
+| 6       | Reuse A            | Request 1 has completed.   |
+| 7       | Reuse B            | Request 2 has completed.   |
+| 8       | Reuse C            | Request 3 has completed.   |
+| 9       | Create F           | A–E are occupied.          |
+| 10      | Reuse D            | Request 4 has completed.   |
 
 Ten total requests use six environments, with six cold starts and four warm invocations. **Concurrency counts overlapping requests**, rather than all requests received. Source: [AWS concurrency walkthrough](https://docs.aws.amazon.com/lambda/latest/dg/lambda-concurrency.html), with the table paraphrased above.
 
@@ -288,25 +288,25 @@ Always assume a fresh, clean context — never *require* reuse — but you *can*
 
 ## Course-vs-Reality Discrepancies
 
-| # | Topic | Course says | Current AWS reality | Source |
-| --- | --- | --- | --- | --- |
-| 1 | Resource policy editing | CLI/API only; **not** editable in console | Viewable **and editable** in console (Configuration → Permissions) | [AWS docs](https://docs.aws.amazon.com/lambda/latest/dg/access-control-resource-based.html) |
-| 2 | Old VPC ENI model | Presented as current-ish "old way" | Superseded by shared-ENI (per SG-plus-subnet) model | AWS Lambda VPC docs |
+| #   | Topic                   | Course says                               | Current AWS reality                                                | Source                                                                                      |
+| --- | ----------------------- | ----------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| 1   | Resource policy editing | CLI/API only; **not** editable in console | Viewable **and editable** in console (Configuration → Permissions) | [AWS docs](https://docs.aws.amazon.com/lambda/latest/dg/access-control-resource-based.html) |
+| 2   | Old VPC ENI model       | Presented as current-ish "old way"        | Superseded by shared-ENI (per SG-plus-subnet) model                | AWS Lambda VPC docs                                                                         |
 
 ## Quick Reference
 
-| Attribute | Value | Notes |
-| --- | --- | --- |
-| Runtimes | Python, Node.js, Ruby, Java, Go, C# | Custom via layers (e.g. Rust) |
-| Memory | 128 MB – 10240 MB, 1 MB steps | Directly set |
-| vCPU | Indirect; **1769 MB = 1 vCPU** | Linear; ~6 vCPUs at 10240 MB |
-| `/tmp` storage | 512 MB default to 10240 MB | Ephemeral scratch only |
-| Timeout | **900 s / 15 min** max | Use [Step Functions](step-functions.md) beyond this |
-| Deployment package | 50 MB zipped / 250 MB unzipped | Container images up to 10 GB uncompressed |
-| Cold start | ~100 ms | Full context creation |
-| Warm start | ~1–2 ms | Context reused |
-| Async retries | 0–2 (configurable) | Lambda handles retry |
-| Invocation types | Sync / Async / ESM | See [Invocation](#invocation) |
+| Attribute          | Value                               | Notes                                               |
+| ------------------ | ----------------------------------- | --------------------------------------------------- |
+| Runtimes           | Python, Node.js, Ruby, Java, Go, C# | Custom via layers (e.g. Rust)                       |
+| Memory             | 128 MB – 10240 MB, 1 MB steps       | Directly set                                        |
+| vCPU               | Indirect; **1769 MB = 1 vCPU**      | Linear; ~6 vCPUs at 10240 MB                        |
+| `/tmp` storage     | 512 MB default to 10240 MB          | Ephemeral scratch only                              |
+| Timeout            | **900 s / 15 min** max              | Use [Step Functions](step-functions.md) beyond this |
+| Deployment package | 50 MB zipped / 250 MB unzipped      | Container images up to 10 GB uncompressed           |
+| Cold start         | ~100 ms                             | Full context creation                               |
+| Warm start         | ~1–2 ms                             | Context reused                                      |
+| Async retries      | 0–2 (configurable)                  | Lambda handles retry                                |
+| Invocation types   | Sync / Async / ESM                  | See [Invocation](#invocation)                       |
 
 ## Exam Traps (consolidated)
 

@@ -26,7 +26,7 @@ Four products, one line each:
 
 Related pages: [SQS](sqs.md) · [SNS](sns.md) · [Lambda](lambda.md) · [S3](s3.md) · [CloudWatch](cloudwatch.md) · [EventBridge](eventbridge.md) · [Streaming vs Messaging](../concepts/streaming-vs-messaging.md) · [Architecture Evolution](../patterns/architecture-evolution.md) · [Global & Regional Architecture](../patterns/global-regional-architecture.md).
 
-For how Data Streams compares with **Apache Kafka** and **Amazon MSK**, see [Streaming vs Messaging](../concepts/streaming-vs-messaging.md#kinesis-vs-kafka-and-amazon-msk).
+For how Data Streams compares with **Apache Kafka** and **[Amazon MSK](msk.md)**, see [Streaming vs Messaging](../concepts/streaming-vs-messaging.md#kinesis-vs-kafka-and-amazon-msk).
 
 ## Kinesis Data Streams
 

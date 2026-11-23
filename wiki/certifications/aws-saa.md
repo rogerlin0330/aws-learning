@@ -397,6 +397,9 @@ tags:
   - kafka
   - msk
   - managed-kafka
+  - msk-serverless
+  - express-brokers
+  - msk-connect
   - log-vs-queue
   - replay
   - consumer-group
@@ -415,7 +418,7 @@ updated: 2026-11-23
 
 # AWS Solutions Architect Associate (SAA-C03)
 
-A running collection of exam tips, gotchas, and comparison tables. For the exam format, scoring rules, and domain weights, see [Exam Format and Domains](#exam-format-and-domains); for practice exams and a study plan, see [Practice Resources and Study Plan](#practice-resources-and-study-plan). Deep-dive pages: [AppFlow](../services/appflow.md) · [Glue](../services/glue.md) · [Cognito](../services/cognito.md) · [IAM](../services/iam.md) · [VPC](../services/vpc.md) · [EC2](../services/ec2.md) · [SQS](../services/sqs.md) · [SNS](../services/sns.md) · [Kinesis](../services/kinesis.md) · [ECS](../services/ecs.md) · [ECR](../services/ecr.md) · [S3](../services/s3.md) · [RDS](../services/rds.md) · [Aurora](../services/aurora.md) · [DMS](../services/dms.md) · [Route 53](../services/route53.md) · [Organizations](../services/organizations.md) · [Control Tower](../services/control-tower.md) · [CloudWatch](../services/cloudwatch.md) · [KMS](../services/kms.md) · [EKS](../services/eks.md) · [Networking](../concepts/networking.md) · [Identity & Access](../concepts/identity-and-access.md) · [Resource vs Identity Policies](../concepts/resource-vs-identity-policies.md) · [DNS](../concepts/dns.md) · [DNSSEC](../concepts/dnssec.md) · [Database Models](../concepts/db-transaction-model.md) · [TLS/HTTPS](../concepts/tls-https.md) · [Containers](../concepts/containers.md) · [Kubernetes](../concepts/kubernetes.md) · [CloudFormation](../services/cloudformation.md) · [CloudFormation Multi-Stack](../patterns/cloudformation-multi-stack.md) · [Cost Optimization](../patterns/cost-optimization.md) · [Scaling](../patterns/scaling.md) · [Boot Time to Service Time](../patterns/boot-time-optimization.md) · [Global & Regional Architecture](../patterns/global-regional-architecture.md).
+A running collection of exam tips, gotchas, and comparison tables. For the exam format, scoring rules, and domain weights, see [Exam Format and Domains](#exam-format-and-domains); for practice exams and a study plan, see [Practice Resources and Study Plan](#practice-resources-and-study-plan). Deep-dive pages: [AppFlow](../services/appflow.md) · [Glue](../services/glue.md) · [Cognito](../services/cognito.md) · [IAM](../services/iam.md) · [VPC](../services/vpc.md) · [EC2](../services/ec2.md) · [SQS](../services/sqs.md) · [SNS](../services/sns.md) · [Kinesis](../services/kinesis.md) · [Amazon MSK](../services/msk.md) · [ECS](../services/ecs.md) · [ECR](../services/ecr.md) · [S3](../services/s3.md) · [RDS](../services/rds.md) · [Aurora](../services/aurora.md) · [DMS](../services/dms.md) · [Route 53](../services/route53.md) · [Organizations](../services/organizations.md) · [Control Tower](../services/control-tower.md) · [CloudWatch](../services/cloudwatch.md) · [KMS](../services/kms.md) · [EKS](../services/eks.md) · [Networking](../concepts/networking.md) · [Identity & Access](../concepts/identity-and-access.md) · [Resource vs Identity Policies](../concepts/resource-vs-identity-policies.md) · [DNS](../concepts/dns.md) · [DNSSEC](../concepts/dnssec.md) · [Database Models](../concepts/db-transaction-model.md) · [TLS/HTTPS](../concepts/tls-https.md) · [Containers](../concepts/containers.md) · [Kubernetes](../concepts/kubernetes.md) · [CloudFormation](../services/cloudformation.md) · [CloudFormation Multi-Stack](../patterns/cloudformation-multi-stack.md) · [Cost Optimization](../patterns/cost-optimization.md) · [Scaling](../patterns/scaling.md) · [Boot Time to Service Time](../patterns/boot-time-optimization.md) · [Global & Regional Architecture](../patterns/global-regional-architecture.md).
 
 ## Exam Format and Domains
 
@@ -2801,7 +2804,7 @@ See [Kinesis](../services/kinesis.md) for full details, and [Streaming vs Messag
 - **Data Analytics:** ingests from Data Streams or Firehose, optionally enriched with **static reference data from [S3](../services/s3.md)**; outputs to Firehose (**near** real-time) or to Lambda / Data Streams (**real-time**). Use it for **complex** real-time processing — Firehose plus Lambda covers only simple transforms
 - **Video Streams:** live video plus non-video time-serialized media (audio, thermal, depth, radar); integrates with **Rekognition** and **Connect**. You **cannot** read the raw media directly off S3, EBS, or EFS — access goes through the product
 - **Course vs reality:** Firehose is now **Amazon Data Firehose** (Feb 2024); Data Analytics for Flink is **Amazon Managed Service for Apache Flink** (Aug 2023) and the **SQL variant was discontinued on 27 January 2026**; "Elasticsearch" is now **OpenSearch Service**. The old names are still the likely exam wording
-- **Kafka on AWS is [Amazon MSK](../concepts/streaming-vs-messaging.md#kinesis-vs-kafka-and-amazon-msk).** A stream is a Kafka **topic**, a shard is a **partition**, a sequence number is an **offset**. MSK brokers run **in your VPC** (Kinesis is a public regional endpoint), retention can be effectively **unlimited** with tiered storage, and **log compaction** and broker **transactions/exactly-once** have no Kinesis equivalent. **Mention of Apache Kafka, existing Kafka apps, or Kafka APIs means MSK**; "fully managed, no Kafka expertise, AWS-native producers and consumers" means Kinesis. **MSK Serverless** removes capacity planning (200 MBps in / 400 MBps out per cluster) — provisioned MSK still has you sizing brokers
+- **Kafka on AWS is [Amazon MSK](../services/msk.md)** ([compared with Kinesis](../concepts/streaming-vs-messaging.md#kinesis-vs-kafka-and-amazon-msk); exam notes in [Amazon MSK](#amazon-msk) below). A stream is a Kafka **topic**, a shard is a **partition**, a sequence number is an **offset**. MSK brokers run **in your VPC** (Kinesis is a public regional endpoint), retention can be effectively **unlimited** with tiered storage, and **log compaction** and broker **transactions/exactly-once** have no Kinesis equivalent. **Mention of Apache Kafka, existing Kafka apps, or Kafka APIs means MSK**; "fully managed, no Kafka expertise, AWS-native producers and consumers" means Kinesis. **MSK Serverless** removes capacity planning (200 MBps in / 400 MBps out per cluster) — provisioned MSK still has you sizing brokers
 
 | If the question says...                                                     | Think...                                                         |
 | --------------------------------------------------------------------------- | ---------------------------------------------------------------- |
@@ -2823,6 +2826,24 @@ See [Kinesis](../services/kinesis.md) for full details, and [Streaming vs Messag
 | "retention beyond 365 days" or "keep the latest value per key forever"      | **Kafka/MSK** (tiered storage, log compaction) — not Kinesis     |
 | "Kafka, but no capacity planning"                                           | **MSK Serverless**                                               |
 | "streaming brokers must sit inside the VPC"                                 | **MSK** (Kinesis is a public endpoint)                           |
+
+## Amazon MSK
+
+See [Amazon MSK](../services/msk.md) for the architecture diagram, public access conditions, and delivery options, and [Streaming vs Messaging](../concepts/streaming-vs-messaging.md#kinesis-vs-kafka-and-amazon-msk) for the Kinesis comparison.
+
+- **What it is:** managed **open-source Apache Kafka**. AWS runs the control plane (creates the cluster, patches it, replaces failed brokers); you own the data plane (topics, producers, consumers) and keep using **Kafka clients**, not AWS SDKs
+- **Log, not queue:** records go to **topics** split into **partitions**. Order holds **within a partition**, not across a topic. Records are **retained** for the configured period and not deleted on read, unlike [SQS](../services/sqs.md)
+- **Independent consumers:** each **consumer group** keeps its own **offsets**, so many applications read the same topic without copies, and any of them can **replay** by moving its offsets back
+- **Deployment options:** **Provisioned** with **Standard** brokers (you size instances and EBS storage) or **Express** brokers (managed storage, faster scaling, always three AZs); **Serverless** (no broker sizing, IAM authentication only, fixed per-cluster quotas, still billed per cluster-hour and partition-hour)
+- **Networking:** brokers are reached through **ENIs in your VPC subnets** and are **private by default**. **Public access** works only on **provisioned** clusters, is turned on **after creation**, and needs public subnets with an internet gateway route, TLS in transit, no plaintext, and authentication enforced. NAT gateways play no part
+- **Authentication:** **IAM**, **SASL/SCRAM** (credentials in Secrets Manager), or **mTLS** (client certificates). mTLS is client authentication; encryption in transit is a separate TLS setting
+- **Data to S3 without a Kafka client:** **MSK Connect** (managed Kafka Connect), **Amazon Data Firehose** with an MSK source (IAM auth required), or built-in **data delivery** on **Express brokers only**. [Athena](../services/athena.md) then queries the S3 data
+
+> [!tip] Exam Tip
+> *"Already uses Apache Kafka"*, *"Kafka clients/APIs"*, or *"migrate an on-premises Kafka cluster without managing brokers"* points to **MSK**. A new design built only from AWS services points to **[Kinesis Data Streams](../services/kinesis.md)**. *"Internet clients must reach the Kafka brokers"* means **provisioned MSK with public access turned on after creation**.
+
+> [!warning] Gotcha
+> MSK Serverless has no public access option and supports only IAM authentication. Provisioned MSK bills every broker-hour even when idle.
 
 ## DNS and Route 53
 
@@ -3455,6 +3476,7 @@ See [Amazon GuardDuty](../services/guardduty.md) for the architecture diagram, p
 | [S3](../services/s3.md) bucket                      | Regional (globally unique name)                                                                                        |
 | [KMS](../services/kms.md) key                       | Regional (single-region by default; multi-region keys are a separate feature)                                          |
 | [CloudHSM](../services/cloudhsm.md) HSM             | AZ-specific (each HSM and its ENI sit in one AZ; spread a cluster across AZs for HA)                                   |
+| [MSK](../services/msk.md) cluster                   | Regional; brokers spread across two or three AZs (Express brokers always use three)                                    |
 | [SSM Parameter Store](../services/ssm.md) parameter | Regional (multi-AZ within Region; no cross-Region replication)                                                         |
 | [CloudTrail](../services/cloudtrail.md) trail       | Regional (all-regions trail spans every region; global service events → `us-east-1`)                                   |
 | [DMS](../services/dms.md)                           | Regional; DMS Standard replication instances are placed in VPC subnets, while DMS Serverless hides instance management |

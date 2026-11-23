@@ -18,7 +18,7 @@ Read the Markdown directly on GitHub or open the repository as an Obsidian vault
 - **Networking and edge delivery:** [VPC](wiki/services/vpc.md), [DNS](wiki/concepts/dns.md), [Route 53](wiki/services/route53.md), [CloudFront](wiki/services/cloudfront.md), and [private service access](wiki/services/vpc-interface-endpoints.md)
 - **Compute and application architecture:** [EC2](wiki/services/ec2.md), [containers](wiki/concepts/containers.md), [Kubernetes](wiki/concepts/kubernetes.md), [Lambda](wiki/services/lambda.md), [API Gateway](wiki/services/api-gateway.md), and [serverless architecture](wiki/patterns/serverless-architecture.md)
 - **Storage, databases, and analytics:** [storage fundamentals](wiki/concepts/storage.md), [S3](wiki/services/s3.md), [RDS](wiki/services/rds.md), [DynamoDB](wiki/services/dynamodb.md), [ElastiCache](wiki/services/elasticache.md), [Neptune](wiki/services/neptune.md), [OpenSearch](wiki/services/opensearch.md), and [data integration](wiki/concepts/data-integration.md)
-- **Messaging and design tradeoffs:** [streaming versus messaging](wiki/concepts/streaming-vs-messaging.md), [architecture evolution](wiki/patterns/architecture-evolution.md), [global and regional architecture](wiki/patterns/global-regional-architecture.md), [scaling](wiki/patterns/scaling.md), and [cost optimization](wiki/patterns/cost-optimization.md)
+- **Messaging and design tradeoffs:** [streaming versus messaging](wiki/concepts/streaming-vs-messaging.md), [Amazon MSK](wiki/services/msk.md), [architecture evolution](wiki/patterns/architecture-evolution.md), [global and regional architecture](wiki/patterns/global-regional-architecture.md), [scaling](wiki/patterns/scaling.md), and [cost optimization](wiki/patterns/cost-optimization.md)
 
 ## Structure
 
