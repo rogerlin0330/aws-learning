@@ -3,7 +3,7 @@ title: RDS — Relational Database Service
 type: service
 tags: [rds, rds-custom, database, relational, db2, ec2, ebs, vpc, subnet-group, multi-az, multi-az-instance, multi-az-cluster, read-replica, synchronous-replication, semi-synchronous-replication, asynchronous-replication, quorum, failover, reader-endpoint, cluster-endpoint, graviton, nvme, aurora, dms, dr, high-availability, acid, cost, backup, snapshot, automated-backup, manual-snapshot, transaction-logs, pitr, point-in-time-recovery, retention, restore, rpo, rto, s3, cross-region-backup, security, encryption, encryption-in-transit, encryption-at-rest, ssl, tls, kms, kms-key, cmk, dek, envelope-encryption, aes-256, tde, transparent-data-encryption, cloudhsm, iam-authentication, generate-db-auth-token, authentication, authorization, credentials-provider-chain, imds, postgresql, jdbc, aws-advanced-jdbc-wrapper, connection-pool, druid, hikaricp, rds-iam, ssl-mode, ca-bundle, session-manager, ssh, rdp, shared-responsibility]
 certs: [aws-saa]
-updated: 2026-11-13
+updated: 2026-11-23
 ---
 
 # RDS — Relational Database Service
@@ -20,10 +20,10 @@ You *can* run any database directly on an [EC2](ec2.md) instance. The honest fra
 
 Two architectures people picture:
 
-| Architecture | Description |
-| --- | --- |
-| **Single instance** | One larger EC2 instance running the DB, the application, and often a web server (Apache). Everything in one place, one AZ. |
-| **Split architecture** | Two smaller instances — app/web server separated from the database, in the same AZ or split across AZs. |
+| Architecture           | Description                                                                                                                |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| **Single instance**    | One larger EC2 instance running the DB, the application, and often a web server (Apache). Everything in one place, one AZ. |
+| **Split architecture** | Two smaller instances — app/web server separated from the database, in the same AZ or split across AZs.                    |
 
 Splitting introduces a **dependency**: the app and DB instances need reliable communication or the app breaks. It also touches cost — traffic between [AZs](../concepts/resource-scope.md) in the same region is charged, while communication over **private IPs in the same AZ is free**.
 
@@ -31,14 +31,14 @@ Splitting introduces a **dependency**: the app and DB instances need reliable co
 
 There *are* exam questions where "run the database on EC2" is correct. The justifications that genuinely hold up:
 
-| Reason | Verdict |
-| --- | --- |
-| Need a **DB engine or version AWS doesn't provide** | ✅ Often genuinely justified (niche/emerging databases) |
-| Need a **specific OS + DB version combo** AWS doesn't offer | ✅ Valid |
-| Need a **specific architecture / replication** AWS doesn't provide | ✅ Valid |
-| Need **OS-level / root access** to the DB host | ⚠️ Question hard — rarely truly needed; often a vendor demand, and many vendors now support managed DBs. **RDS Custom** also closes much of this gap |
-| **Root-level DB tuning** | ⚠️ Question — RDS exposes many historically root-only parameters without OS access |
-| **Decision-makers just want it** on EC2 | Possibly unreasonable, but you may not have a choice |
+| Reason                                                             | Verdict                                                                                                                                              |
+| ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Need a **DB engine or version AWS doesn't provide**                | ✅ Often genuinely justified (niche/emerging databases)                                                                                              |
+| Need a **specific OS + DB version combo** AWS doesn't offer        | ✅ Valid                                                                                                                                             |
+| Need a **specific architecture / replication** AWS doesn't provide | ✅ Valid                                                                                                                                             |
+| Need **OS-level / root access** to the DB host                     | ⚠️ Question hard — rarely truly needed; often a vendor demand, and many vendors now support managed DBs. **RDS Custom** also closes much of this gap |
+| **Root-level DB tuning**                                           | ⚠️ Question — RDS exposes many historically root-only parameters without OS access                                                                   |
+| **Decision-makers just want it** on EC2                            | Possibly unreasonable, but you may not have a choice                                                                                                 |
 
 ### The negatives you take on
 
@@ -70,11 +70,11 @@ There *are* exam questions where "run the database on EC2" is correct. The justi
 
 RDS Custom is the **middle ground** on the spectrum between the two extremes this page has already drawn: fully managed [standard RDS](#what-rds-actually-is) at one end and a fully self-managed [database on EC2](#databases-on-ec2--why-you-usually-shouldnt) at the other.
 
-| Option | Who manages the OS + engine | Access you get |
-| --- | --- | --- |
-| **Standard RDS** | AWS — fully managed database-server-as-a-service | **No** OS or engine access |
-| **RDS Custom** | Shared — RDS automation **plus** your own customization | **OS + DB engine** access (SSH, RDP, Session Manager) |
-| **DB on [EC2](ec2.md)** | You — fully self-managed | Everything, from the OS up (high overhead) |
+| Option                  | Who manages the OS + engine                             | Access you get                                        |
+| ----------------------- | ------------------------------------------------------- | ----------------------------------------------------- |
+| **Standard RDS**        | AWS — fully managed database-server-as-a-service        | **No** OS or engine access                            |
+| **RDS Custom**          | Shared — RDS automation **plus** your own customization | **OS + DB engine** access (SSH, RDP, Session Manager) |
+| **DB on [EC2](ec2.md)** | You — fully self-managed                                | Everything, from the OS up (high overhead)            |
 
 RDS Custom keeps the RDS managed-service automation but *also* lets you into the operating system and database engine to customize them — the thing standard RDS deliberately forbids. This is aimed at **legacy, custom, and packaged applications** that need OS/DB-level tweaks (vendor agents, specific patches, native features) yet still want managed-service benefits.
 
@@ -98,16 +98,16 @@ Because RDS automation and your manual changes would otherwise fight each other,
 
 Read the diagram as four columns from most-customer-managed (left) to most-AWS-managed (right), with each row a layer of the stack. The takeaway: **RDS Custom = AWS owns the hardware, the customer owns application optimization, and everything in between is shared** — RDS automation benefits *plus* the ability to customize.
 
-| Layer (bottom to top) | On-Premises | RDS | **RDS Custom** | EC2 |
-| --- | --- | --- | --- | --- |
-| Optimization | Customer | Customer | Customer | Customer |
-| Scaling | Customer | AWS | **Shared** | Customer |
-| HA | Customer | AWS | **Shared** | Customer |
-| Backups | Customer | AWS | **Shared** | Customer |
-| DB patches | Customer | AWS | **Shared** | Customer |
-| OS patches | Customer | AWS | **Shared** | Customer |
-| OS install | Customer | AWS | **Shared** | Customer |
-| Hardware | Customer | AWS | AWS | AWS |
+| Layer (bottom to top) | On-Premises | RDS      | **RDS Custom** | EC2      |
+| --------------------- | ----------- | -------- | -------------- | -------- |
+| Optimization          | Customer    | Customer | Customer       | Customer |
+| Scaling               | Customer    | AWS      | **Shared**     | Customer |
+| HA                    | Customer    | AWS      | **Shared**     | Customer |
+| Backups               | Customer    | AWS      | **Shared**     | Customer |
+| DB patches            | Customer    | AWS      | **Shared**     | Customer |
+| OS patches            | Customer    | AWS      | **Shared**     | Customer |
+| OS install            | Customer    | AWS      | **Shared**     | Customer |
+| Hardware              | Customer    | AWS      | AWS            | AWS      |
 
 > [!warning] Gotchas
 >
@@ -143,13 +143,13 @@ A **DB subnet group** is a named *list of subnets* RDS is allowed to place insta
 
 ### Storage, Replication & Backups
 
-| Aspect | RDS behaviour |
-| --- | --- |
-| **Databases per instance** | Multiple databases can live on one RDS instance |
-| **Storage** | Each instance has its **own dedicated [EBS](ebs.md) storage**; in a Multi-AZ pair, primary and standby each have separate storage. ⚠️ Differs from Aurora |
-| **Multi-AZ replication** | **Synchronous** primary → standby — data replicated as soon as the primary receives it; standby is an identical copy |
-| **Read replicas** | **Asynchronous** replication; same-region or **cross-region**; used to **scale read load** or add **DR** resilience in another region |
-| **Backups** | Go to AWS-managed **S3**, replicated across AZs in the region (survive an AZ failure). In **Multi-AZ instance** mode, backups for MariaDB/MySQL/Oracle/PostgreSQL are taken from the standby so the primary avoids I/O suspension; **SQL Server still briefly suspends I/O** during backup |
+| Aspect                     | RDS behaviour                                                                                                                                                                                                                                                                              |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Databases per instance** | Multiple databases can live on one RDS instance                                                                                                                                                                                                                                            |
+| **Storage**                | Each instance has its **own dedicated [EBS](ebs.md) storage**; in a Multi-AZ pair, primary and standby each have separate storage. ⚠️ Differs from Aurora                                                                                                                                  |
+| **Multi-AZ replication**   | **Synchronous** primary → standby — data replicated as soon as the primary receives it; standby is an identical copy                                                                                                                                                                       |
+| **Read replicas**          | **Asynchronous** replication; same-region or **cross-region**; used to **scale read load** or add **DR** resilience in another region                                                                                                                                                      |
+| **Backups**                | Go to AWS-managed **S3**, replicated across AZs in the region (survive an AZ failure). In **Multi-AZ instance** mode, backups for MariaDB/MySQL/Oracle/PostgreSQL are taken from the standby so the primary avoids I/O suspension; **SQL Server still briefly suspends I/O** during backup |
 
 > [!tip] Exam Tip
 > Two replication words to keep straight: **standby = synchronous** (HA, identical copy, automatic failover target — *not* readable by your app), **read replica = asynchronous** (read scaling and/or DR, can be cross-region, *is* readable). Mixing these up is a classic trap.
@@ -212,11 +212,11 @@ A write is viewed as **committed once at least one reader confirms it has writte
 
 **Three endpoint types** in cluster mode:
 
-| Endpoint | Points at | Used for |
-| --- | --- | --- |
-| **Cluster endpoint** | The **writer** | Reads, writes, administration (analogous to the database CNAME in instance mode) |
-| **Reader endpoint** | Any available **reader** (sometimes the writer too) | Read scaling — apps balance reads across readers here |
-| **Instance endpoint** | One **specific instance** | **Testing / fault-finding only** — does **not** fail over, so never use in production |
+| Endpoint              | Points at                                           | Used for                                                                              |
+| --------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| **Cluster endpoint**  | The **writer**                                      | Reads, writes, administration (analogous to the database CNAME in instance mode)      |
+| **Reader endpoint**   | Any available **reader** (sometimes the writer too) | Read scaling — apps balance reads across readers here                                 |
+| **Instance endpoint** | One **specific instance**                           | **Testing / fault-finding only** — does **not** fail over, so never use in production |
 
 **Hardware and performance:** cluster mode runs on **Graviton** processors with **local NVMe SSD** storage. Writes hit the **local fast SSD first**, then flush through to **EBS** — combining local-storage speed with EBS durability. Readers offload the writer, giving the highest performance of any RDS mode short of Aurora.
 
@@ -224,23 +224,23 @@ A write is viewed as **committed once at least one reader confirms it has writte
 
 ### Instance vs Cluster — Comparison
 
-| Feature | Multi-AZ **Instance** | Multi-AZ **Cluster** |
-| --- | --- | --- |
-| Topology | 1 primary + **1 standby** (2 AZs) | 1 writer + **2 readable standbys** (3 AZs) |
-| Standby usable for reads? | **No** — passive, failover only | **Yes** — readers serve read-only traffic |
-| Read scaling? | **No** (need a separate read replica) | **Yes** via the reader endpoint |
-| Write access | Primary only | Writer only |
-| Replication | **Synchronous**, storage-level | **Semi-synchronous** (quorum, ≥ 1 reader ack), transaction-log-based |
-| Commit latency | Higher than Single-AZ | **Up to 2× faster** write commits than instance mode |
-| Failover time | **60–120 s** (DNS change) | **~35 s** floor / **25–75 s** typical (no crash recovery) |
-| RPO on failover | **Zero** (synchronous) | Effectively zero (quorum guarantees commit on ≥ 1 standby) |
-| Storage | EBS | **Local NVMe SSD flushed to EBS**, per-instance |
-| Hardware | Standard | **Graviton** |
-| Supported engines | Db2, MariaDB, MySQL, Oracle, PostgreSQL, **SQL Server** | **MySQL & PostgreSQL only** |
-| Backups | Standby-sourced for MariaDB/MySQL/Oracle/PostgreSQL; **SQL Server briefly suspends I/O** | Crash-consistent EBS snapshot, no I/O suspension |
-| Access pattern | Single **database CNAME** | **Cluster / Reader / Instance** endpoints |
-| Free tier | No | No |
-| Region scope | Same region, multi-AZ | Same region, multi-AZ |
+| Feature                   | Multi-AZ **Instance**                                                                    | Multi-AZ **Cluster**                                                 |
+| ------------------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Topology                  | 1 primary + **1 standby** (2 AZs)                                                        | 1 writer + **2 readable standbys** (3 AZs)                           |
+| Standby usable for reads? | **No** — passive, failover only                                                          | **Yes** — readers serve read-only traffic                            |
+| Read scaling?             | **No** (need a separate read replica)                                                    | **Yes** via the reader endpoint                                      |
+| Write access              | Primary only                                                                             | Writer only                                                          |
+| Replication               | **Synchronous**, storage-level                                                           | **Semi-synchronous** (quorum, ≥ 1 reader ack), transaction-log-based |
+| Commit latency            | Higher than Single-AZ                                                                    | **Up to 2× faster** write commits than instance mode                 |
+| Failover time             | **60–120 s** (DNS change)                                                                | **~35 s** floor / **25–75 s** typical (no crash recovery)            |
+| RPO on failover           | **Zero** (synchronous)                                                                   | Effectively zero (quorum guarantees commit on ≥ 1 standby)           |
+| Storage                   | EBS                                                                                      | **Local NVMe SSD flushed to EBS**, per-instance                      |
+| Hardware                  | Standard                                                                                 | **Graviton**                                                         |
+| Supported engines         | Db2, MariaDB, MySQL, Oracle, PostgreSQL, **SQL Server**                                  | **MySQL & PostgreSQL only**                                          |
+| Backups                   | Standby-sourced for MariaDB/MySQL/Oracle/PostgreSQL; **SQL Server briefly suspends I/O** | Crash-consistent EBS snapshot, no I/O suspension                     |
+| Access pattern            | Single **database CNAME**                                                                | **Cluster / Reader / Instance** endpoints                            |
+| Free tier                 | No                                                                                       | No                                                                   |
+| Region scope              | Same region, multi-AZ                                                                    | Same region, multi-AZ                                                |
 
 > [!tip] Exam Tip
 > Three resilience tools, three jobs: **Multi-AZ instance** = in-region HA with a passive standby; **Multi-AZ cluster** = in-region HA **plus** read scaling and faster failover (MySQL/PostgreSQL only); **[read replica](#read-replicas)** = read scaling and/or **cross-region DR** (asynchronous, app-readable). Trigger words: "readable standby" / "faster failover" / "lower commit latency" → **cluster**; "SQL Server or Oracle + Multi-AZ" → must be **instance** (cluster is MySQL/PostgreSQL only); "read scaling" → cluster **or** read replica, **never** instance mode.
@@ -354,10 +354,10 @@ The diagram's three arrows separate the **three data streams** — manual snapsh
 
 🎯 **A restore always creates a brand-new RDS instance** — true for both snapshot restores and automated-backup PITR. The new instance gets a **new endpoint address**, so you **must re-point applications** at it. A restore never overwrites the existing database.
 
-| Restore source | Recovery point | RPO quality |
-| --- | --- | --- |
-| **Manual snapshot** | Fixed to the **single moment** the snapshot was taken | Often suboptimal unless taken right before failure |
-| **Automated backup (PITR)** | **Any chosen point in time** (~5-min granularity) | Much better — pick minutes before failure |
+| Restore source              | Recovery point                                        | RPO quality                                        |
+| --------------------------- | ----------------------------------------------------- | -------------------------------------------------- |
+| **Manual snapshot**         | Fixed to the **single moment** the snapshot was taken | Often suboptimal unless taken right before failure |
+| **Automated backup (PITR)** | **Any chosen point in time** (~5-min granularity)     | Much better — pick minutes before failure          |
 
 **How PITR works:** RDS restores the **closest snapshot**, then **replays transaction logs** forward to your chosen time.
 
@@ -368,12 +368,12 @@ The diagram's three arrows separate the **three data streams** — manual snapsh
 
 RDS data security splits into **four separate concerns**. The exam likes to test whether you can tell them apart — especially authentication from authorization, and in-transit from at-rest encryption.
 
-| Concern | What it covers |
-| --- | --- |
-| **Authentication** | How a user proves who they are when logging in |
-| **Authorization** | What a logged-in user is allowed to do |
-| **Encryption in transit** | Protecting data moving between client and RDS |
-| **Encryption at rest** | Protecting data written to disk |
+| Concern                   | What it covers                                 |
+| ------------------------- | ---------------------------------------------- |
+| **Authentication**        | How a user proves who they are when logging in |
+| **Authorization**         | What a logged-in user is allowed to do         |
+| **Encryption in transit** | Protecting data moving between client and RDS  |
+| **Encryption at rest**    | Protecting data written to disk                |
 
 Authentication and authorization are the [identity-and-access](../concepts/identity-and-access.md) split applied to the database; in-transit protection is ordinary [TLS](../concepts/tls-https.md); at-rest protection leans on [KMS](kms.md) envelope encryption over [EBS](ebs.md).
 
@@ -415,19 +415,26 @@ Edition nuances:
 - **Oracle:** TDE requires the **Oracle Advanced Security** option on **Oracle Enterprise Edition**.
 - **SQL Server:** RDS supports TDE on **SQL Server 2022 Standard and Enterprise**, **2019 Standard and Enterprise**, and **2017/2016 Enterprise**. On RDS, SQL Server TDE is enabled via an **option group** (the `TDE` option).
 
-#### 3. Oracle + TDE via CloudHSM (strongest key control)
+#### 3. CloudHSM-held keys (course claim corrected)
 
-- **RDS Oracle** can additionally use **CloudHSM** for the TDE key material.
-- CloudHSM is managed **entirely by you, with no key exposure to AWS**, enabling a trust chain that **does not involve AWS** — valuable for demanding regulatory scenarios.
+The course says **RDS for Oracle** can use [CloudHSM](cloudhsm.md) for its TDE key material, removing AWS from the chain of trust. That is **no longer true**. The [Amazon RDS security FAQ](https://aws.amazon.com/rds/features/security/) states that an Oracle instance on Amazon RDS cannot be integrated with AWS CloudHSM (checked 2026-11-23). The 2015 integration was built for the old CloudHSM Classic service and was not carried over to the current CloudHSM.
+
+Current options when keys must be held in HSMs you control:
+
+- **Oracle on EC2 + TDE + CloudHSM** — Oracle supports PKCS #11 HSMs, so a self-managed Oracle database on [EC2](ec2.md) can keep its TDE master key in CloudHSM. This is the route the [CloudHSM lecture](cloudhsm.md#oracle-tde) describes. You give up the RDS managed features (see [Databases on EC2](#databases-on-ec2--why-you-usually-shouldnt)).
+- **RDS + a KMS key in a CloudHSM key store** — RDS still uses the normal host-side KMS encryption above, but the KMS key's material is generated and held in your CloudHSM cluster. The [CloudHSM FAQ](https://aws.amazon.com/cloudhsm/faqs/) recommends this route for RDS. See [KMS With a CloudHSM Key Store](cloudhsm.md#kms-with-a-cloudhsm-key-store).
 
 > [!tip] Exam Tip
-> *"AWS must have no access to the keys"* or *"no AWS in the chain of trust"* maps to **RDS Oracle + TDE + CloudHSM**. This is Oracle-specific — don't generalize it to other engines.
+> Older questions and course material may still pair *"AWS must have no access to the keys"* with **RDS Oracle + TDE + CloudHSM**. Current AWS behavior: CloudHSM-backed TDE needs **Oracle on EC2**; for RDS, use a **KMS key in a CloudHSM key store**.
 
 #### Diagram — KMS encryption vs TDE
 
 ![Amazon RDS KMS Encryption and TDE: on the left a CloudHSM appliance connects by a blue arrow to an Oracle instance, illustrating that with RDS Oracle the TDE keys can come from CloudHSM and remove AWS from the chain of trust. Two orange HOST boxes in the middle each run RDS instances (left host: Oracle plus a MySQL; right host: another MySQL), with a small key-lock icon showing DEKs resident on each host. Green double arrows between the MySQL engines and the EBS Volumes strip at the bottom are labelled data is encrypted and decrypted by the host — the KMS host-side path. A red double arrow between the two MySQL instances shows replica traffic is also encrypted with the same key. On the right, a KMS key icon sends red arrows loading DEKs onto the hosts as required, and a snapshot icon at the bottom-right shows snapshots of encrypted instances are also encrypted with the same key. Footer text reiterates TDE is native DB-engine encryption, with data encrypted before leaving the instance.](../assets/rds-kms-encryption-vs-tde.png)
 
 The visual contrast to lock in: the **TDE path encrypts inside the engine** (Oracle, left); the **KMS path encrypts on the host** (the green arrows under the MySQL engines). Everything KMS-encrypted — storage, the cross-instance replica traffic, and the snapshot — uses the **same key**.
+
+> [!warning] Gotcha — historical CloudHSM link in the diagram
+> The CloudHSM-to-Oracle arrow on this course slide reflects the old CloudHSM Classic integration. RDS for Oracle cannot use CloudHSM today; see [CloudHSM-held keys](#3-cloudhsm-held-keys-course-claim-corrected).
 
 For password-based applications, [Secrets Manager](secrets-manager.md#example-spring-boot--alibaba-druid--rds-postgresql-auto-rotation) can rotate database credentials automatically. The Spring Boot + Druid example explains credential refresh for new physical connections and why existing PostgreSQL sessions survive password changes.
 
@@ -607,71 +614,71 @@ spring:
       password-callback-class-name: com.example.config.RdsIamPasswordCallback
 ```
 
-| | Approach 1 — JDBC Wrapper | Approach 2 — manual callback |
-| --- | --- | --- |
-| Driver class | `software.amazon.jdbc.Driver` | `org.postgresql.Driver` |
-| URL scheme | `jdbc:aws-wrapper:postgresql://…` | `jdbc:postgresql://…` |
-| Token generation | wrapper `iam` plugin (automatic) | your code via `RdsUtilities` |
-| Refresh on new pool connection | automatic | you mint per connection |
-| Code to write | none | a callback class |
-| Extra capabilities | failover / read-write-split plugins | none — just the token |
+|                                | Approach 1 — JDBC Wrapper           | Approach 2 — manual callback |
+| ------------------------------ | ----------------------------------- | ---------------------------- |
+| Driver class                   | `software.amazon.jdbc.Driver`       | `org.postgresql.Driver`      |
+| URL scheme                     | `jdbc:aws-wrapper:postgresql://…`   | `jdbc:postgresql://…`        |
+| Token generation               | wrapper `iam` plugin (automatic)    | your code via `RdsUtilities` |
+| Refresh on new pool connection | automatic                           | you mint per connection      |
+| Code to write                  | none                                | a callback class             |
+| Extra capabilities             | failover / read-write-split plugins | none — just the token        |
 
 > [!warning] Gotcha — TLS is mandatory, and PostgreSQL handles the CA bundle more simply
 > IAM auth requires TLS (the token is sent as a cleartext password). PostgreSQL's JDBC driver reads the **RDS CA PEM bundle directly** via `sslmode=verify-full&sslrootcert=/opt/certs/global-bundle.pem` — **no JKS truststore needed**. (MySQL Connector/J instead needs the bundle imported into a **JKS** file referenced by `trustCertificateKeyStoreUrl`.) Both approaches above also assume the token is generated against the **real instance endpoint**, not a custom Route 53 record.
 
 ### Security Exam Quick-Reference
 
-| Trigger / scenario | Answer |
-| --- | --- |
-| Encrypt the client-to-RDS connection, per user | **SSL/TLS in transit** (all engines, can be mandatory) |
-| Default at-rest encryption, host does the work | **KMS + EBS** (KMS key generates DEKs; engine unaware; AES-256) |
-| Engine-native at-rest encryption | **TDE** — **SQL Server and Oracle only** (not MySQL/MariaDB/PostgreSQL) |
-| "AWS must have no key access" / no AWS in the chain of trust | **RDS Oracle + TDE + CloudHSM** |
-| Log in without a DB password, using an AWS identity | **IAM authentication** (`GenerateDBAuthToken`, 15-min token) |
-| "Does IAM control what the user can do in the DB?" | **No** — authorization stays with the local DB user |
-| Storage, logs, snapshots, replicas all encrypted | KMS at-rest, **same key** |
-| Add encryption to an existing unencrypted instance | Snapshot, **copy snapshot with encryption**, restore |
+| Trigger / scenario                                       | Answer                                                                                                                             |
+| -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Encrypt the client-to-RDS connection, per user           | **SSL/TLS in transit** (all engines, can be mandatory)                                                                             |
+| Default at-rest encryption, host does the work           | **KMS + EBS** (KMS key generates DEKs; engine unaware; AES-256)                                                                    |
+| Engine-native at-rest encryption                         | **TDE** — **SQL Server and Oracle only** (not MySQL/MariaDB/PostgreSQL)                                                            |
+| "AWS must have no key access" / keys in HSMs you control | **Oracle on EC2 + TDE + [CloudHSM](cloudhsm.md)**; for RDS, a **KMS key in a CloudHSM key store** (RDS Oracle cannot use CloudHSM) |
+| Log in without a DB password, using an AWS identity      | **IAM authentication** (`GenerateDBAuthToken`, 15-min token)                                                                       |
+| "Does IAM control what the user can do in the DB?"       | **No** — authorization stays with the local DB user                                                                                |
+| Storage, logs, snapshots, replicas all encrypted         | KMS at-rest, **same key**                                                                                                          |
+| Add encryption to an existing unencrypted instance       | Snapshot, **copy snapshot with encryption**, restore                                                                               |
 
 ## Cost Model
 
 RDS is **resource-allocation billed** (like [EC2](ec2.md)), *not* usage-billed — you pay for the instance whether or not it's busy.
 
-| Cost component | Notes |
-| --- | --- |
-| **Instance size & type** | Bigger / more capable = more; hourly rate, **billed per second** |
-| **Multi-AZ** | More instances = additional cost (amount depends on the Multi-AZ architecture) |
-| **Storage** | Per-GB-month; provisioned-IOPS types cost more, aligned to [EBS](ebs.md) pricing |
-| **Data transfer** | Per-GB for data in/out to the internet and other AWS regions |
-| **Backups & snapshots** | Snapshot storage **equal to your DB storage is free** (2 TB DB → 2 TB free snapshots); beyond that, per-GB-month (1 TB for 1 month = 500 GB for 2 months) |
-| **Commercial engine licensing** | Extra for Oracle / SQL Server |
+| Cost component                  | Notes                                                                                                                                                     |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Instance size & type**        | Bigger / more capable = more; hourly rate, **billed per second**                                                                                          |
+| **Multi-AZ**                    | More instances = additional cost (amount depends on the Multi-AZ architecture)                                                                            |
+| **Storage**                     | Per-GB-month; provisioned-IOPS types cost more, aligned to [EBS](ebs.md) pricing                                                                          |
+| **Data transfer**               | Per-GB for data in/out to the internet and other AWS regions                                                                                              |
+| **Backups & snapshots**         | Snapshot storage **equal to your DB storage is free** (2 TB DB → 2 TB free snapshots); beyond that, per-GB-month (1 TB for 1 month = 500 GB for 2 months) |
+| **Commercial engine licensing** | Extra for Oracle / SQL Server                                                                                                                             |
 
 ## Exam Quick-Reference
 
-| Concept | Trigger / key point |
-| --- | --- |
-| DB on EC2 is the *right* answer | Unsupported engine/version, specific OS+DB combo, genuine OS/root access, AWS-unsupported replication architecture |
-| RDS = "DB **server** as a service" | Not DBaaS — one instance hosts **multiple databases** |
-| No SSH / no OS access | Exception: **RDS Custom** |
-| **RDS Custom** | Middle ground between RDS and DB-on-EC2; **SQL Server + Oracle only**; OS/engine access via **SSH/RDP/Session Manager**; resources (EC2/EBS/S3) **visible in your account**; pause automation to customize |
-| Aurora ≠ RDS | Separate product; different (shared-cluster) storage architecture |
-| Multi-AZ replication | **Synchronous**, same region, different AZ, standby identical (and not readable) |
-| Multi-AZ **instance** mode | 1 primary + 1 passive standby; failover = **DNS repoint**, **60–120 s**; all engines incl. SQL Server/Oracle |
-| Multi-AZ **cluster** mode | 1 writer + **2 readable** readers; semi-synchronous quorum; failover **~35 s / 25–75 s**; Graviton + NVMe; **MySQL/PostgreSQL only** |
-| Multi-AZ endpoints (cluster) | **Cluster** (writer), **Reader** (read scaling), **Instance** (testing only — no failover) |
-| Read replicas | **Asynchronous**, same- or **cross-region**, read scaling + DR; **own endpoint**, app must be changed, **no automatic failover** |
-| Read replica count | **5** per instance (course) / **up to 15** (current AWS docs); **cascading** allowed but **lag compounds** |
-| Read replica DR limit | Near-zero **RPO and RTO** via fast **promotion** — but only for **failure**, **not data corruption** (replica holds the corrupted data) |
-| Promotion | Replica is read-only until promoted; once promoted it is a standalone read/write instance and **stops replicating** |
-| Storage | Dedicated **EBS per instance** (unlike Aurora) |
-| Backups | Go to **S3** (AWS-managed, **invisible in your S3 console**); regionally resilient; Multi-AZ instance backups are standby-sourced for MariaDB/MySQL/Oracle/PostgreSQL, but SQL Server briefly suspends I/O |
-| Manual snapshot | Instance-level (all DBs); **never expires**, survives instance deletion, manual delete only; 100/Region |
-| Automated backup | Daily snapshot **+ transaction logs every 5 min**; retention **0–35 days** (0 = disabled) |
-| PITR | Needs **automated backups** (the 5-min logs); ~**5-min RPO**; manual snapshot alone restores only to its fixed moment |
-| Keep data past 35 days on deletion | Take a **final manual snapshot** (retained automated backups still expire) |
-| Cross-region backup replication | **Opt-in**, not default; copies snapshots **and** logs; extra cost |
-| Restore | Always a **new instance + new endpoint** — re-point apps; restore time is your **RTO** |
-| Subnet group | List of subnets RDS may use; required at launch; Multi-AZ → primary + standby in different AZs (random unless specified) |
-| Billing | Resource-allocation (like EC2), hourly rate **billed per second**, not usage-based |
+| Concept                            | Trigger / key point                                                                                                                                                                                        |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| DB on EC2 is the *right* answer    | Unsupported engine/version, specific OS+DB combo, genuine OS/root access, AWS-unsupported replication architecture                                                                                         |
+| RDS = "DB **server** as a service" | Not DBaaS — one instance hosts **multiple databases**                                                                                                                                                      |
+| No SSH / no OS access              | Exception: **RDS Custom**                                                                                                                                                                                  |
+| **RDS Custom**                     | Middle ground between RDS and DB-on-EC2; **SQL Server + Oracle only**; OS/engine access via **SSH/RDP/Session Manager**; resources (EC2/EBS/S3) **visible in your account**; pause automation to customize |
+| Aurora ≠ RDS                       | Separate product; different (shared-cluster) storage architecture                                                                                                                                          |
+| Multi-AZ replication               | **Synchronous**, same region, different AZ, standby identical (and not readable)                                                                                                                           |
+| Multi-AZ **instance** mode         | 1 primary + 1 passive standby; failover = **DNS repoint**, **60–120 s**; all engines incl. SQL Server/Oracle                                                                                               |
+| Multi-AZ **cluster** mode          | 1 writer + **2 readable** readers; semi-synchronous quorum; failover **~35 s / 25–75 s**; Graviton + NVMe; **MySQL/PostgreSQL only**                                                                       |
+| Multi-AZ endpoints (cluster)       | **Cluster** (writer), **Reader** (read scaling), **Instance** (testing only — no failover)                                                                                                                 |
+| Read replicas                      | **Asynchronous**, same- or **cross-region**, read scaling + DR; **own endpoint**, app must be changed, **no automatic failover**                                                                           |
+| Read replica count                 | **5** per instance (course) / **up to 15** (current AWS docs); **cascading** allowed but **lag compounds**                                                                                                 |
+| Read replica DR limit              | Near-zero **RPO and RTO** via fast **promotion** — but only for **failure**, **not data corruption** (replica holds the corrupted data)                                                                    |
+| Promotion                          | Replica is read-only until promoted; once promoted it is a standalone read/write instance and **stops replicating**                                                                                        |
+| Storage                            | Dedicated **EBS per instance** (unlike Aurora)                                                                                                                                                             |
+| Backups                            | Go to **S3** (AWS-managed, **invisible in your S3 console**); regionally resilient; Multi-AZ instance backups are standby-sourced for MariaDB/MySQL/Oracle/PostgreSQL, but SQL Server briefly suspends I/O |
+| Manual snapshot                    | Instance-level (all DBs); **never expires**, survives instance deletion, manual delete only; 100/Region                                                                                                    |
+| Automated backup                   | Daily snapshot **+ transaction logs every 5 min**; retention **0–35 days** (0 = disabled)                                                                                                                  |
+| PITR                               | Needs **automated backups** (the 5-min logs); ~**5-min RPO**; manual snapshot alone restores only to its fixed moment                                                                                      |
+| Keep data past 35 days on deletion | Take a **final manual snapshot** (retained automated backups still expire)                                                                                                                                 |
+| Cross-region backup replication    | **Opt-in**, not default; copies snapshots **and** logs; extra cost                                                                                                                                         |
+| Restore                            | Always a **new instance + new endpoint** — re-point apps; restore time is your **RTO**                                                                                                                     |
+| Subnet group                       | List of subnets RDS may use; required at launch; Multi-AZ → primary + standby in different AZs (random unless specified)                                                                                   |
+| Billing                            | Resource-allocation (like EC2), hourly rate **billed per second**, not usage-based                                                                                                                         |
 
 > [!warning] Gotchas
 >
@@ -697,4 +704,5 @@ RDS is **resource-allocation billed** (like [EC2](ec2.md)), *not* usage-billed �
 - [AWS — SQL Server Transparent Data Encryption (TDE) option](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Appendix.SQLServer.Options.TDE.html) and [RDS security features](https://aws.amazon.com/rds/features/security/) (engine/edition restrictions, option-group mechanism)
 - [AWS — IAM database authentication](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.html) and the [SDK default credentials-provider chain](https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/credentials-chain.html) (token mechanics, 15-min validity, mandatory TLS, IMDS-on-EC2 resolution)
 - [AWS Advanced JDBC Wrapper — IAM authentication plugin](https://github.com/aws/aws-advanced-jdbc-wrapper) and [`RdsUtilities.generateAuthenticationToken`](https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/rds/RdsUtilities.html) (the two JDBC connection-pool wiring approaches; PostgreSQL `rds_iam` role and `sslmode=verify-full` CA handling)
-- Related: [EC2](ec2.md) · [EBS](ebs.md) · [VPC](vpc.md) · [KMS](kms.md) · [IAM](iam.md) · [DMS](dms.md) · [Identity and Access](../concepts/identity-and-access.md) · [TLS/HTTPS](../concepts/tls-https.md) · [Database Transaction Models (ACID/BASE/CAP)](../concepts/db-transaction-model.md) · [Resource Scope](../concepts/resource-scope.md)
+- [Amazon RDS security FAQ](https://aws.amazon.com/rds/features/security/) and [AWS CloudHSM FAQs](https://aws.amazon.com/cloudhsm/faqs/) — RDS for Oracle cannot be integrated with CloudHSM; use a KMS CloudHSM key store for RDS (checked 2026-11-23)
+- Related: [EC2](ec2.md) · [EBS](ebs.md) · [VPC](vpc.md) · [KMS](kms.md) · [CloudHSM](cloudhsm.md) · [IAM](iam.md) · [DMS](dms.md) · [Identity and Access](../concepts/identity-and-access.md) · [TLS/HTTPS](../concepts/tls-https.md) · [Database Transaction Models (ACID/BASE/CAP)](../concepts/db-transaction-model.md) · [Resource Scope](../concepts/resource-scope.md)

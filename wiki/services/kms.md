@@ -3,7 +3,7 @@ title: KMS — Key Management Service
 type: service
 tags: [kms, security, encryption, cryptography, key-management]
 certs: [aws-saa]
-updated: 2026-07-02
+updated: 2026-11-23
 ---
 
 # KMS — Key Management Service
@@ -14,7 +14,7 @@ AWS KMS is the **encryption root of trust** for almost every other AWS service t
 
 - **Regional + public endpoint** — every region has an isolated KMS endpoint; a key created in `us-west-2` exists only in `us-west-2`. (Cross-region availability is a separate feature: **multi-region keys**, which work by replicating key material into peer regions.)
 - **Public service** — reachable from anywhere with [IAM](iam.md) credentials plus network access; it is not VPC-bound.
-- **FIPS 140-2 Level 2** validated at the service level. Some operations inside the underlying HSMs meet Level 3, but the headline compliance claim is L2.
+- **FIPS 140-3 Security Level 3** — KMS keys are protected by [FIPS 140-3 Security Level 3 validated HSMs](https://docs.aws.amazon.com/kms/latest/developerguide/overview.html) (China Regions excepted; checked 2026-11-23). Older course material and notes say FIPS 140-2 Level 2 overall; AWS has since raised the validation to Level 3 overall. FIPS level alone therefore no longer separates KMS from [CloudHSM](cloudhsm.md).
 - Supports both **symmetric** and **asymmetric** keys.
 - Performs the cryptographic operations itself: `Encrypt`, `Decrypt`, `Sign`, `Verify`, `GenerateDataKey`, and friends. The caller sends data **in** and gets ciphertext (or signature, etc.) **out** — they never see the raw key.
 - **Keys never leave KMS.** Backing key material is generated inside, used inside, and destroyed inside. This is the property the entire trust model depends on.
@@ -42,11 +42,11 @@ The diagram makes three properties explicit:
 
 KMS distinguishes who **owns** the key from who **manages** it. Three categories:
 
-| Category | Owner | Managed by | Visibility | Configurability |
-| --- | --- | --- | --- | --- |
-| **AWS Owned** | AWS | AWS | Invisible to you; shared across many accounts | None — no cost, no control |
-| **AWS Managed** | Your account | AWS (creates, rotates) | Visible (e.g. `aws/s3`, `aws/rds`) | Limited — cannot edit policy or rotation |
-| **Customer Managed** | Your account | **You** | Visible | **Full** — key policy, rotation, alias, grants, disable, delete |
+| Category             | Owner        | Managed by             | Visibility                                    | Configurability                                                 |
+| -------------------- | ------------ | ---------------------- | --------------------------------------------- | --------------------------------------------------------------- |
+| **AWS Owned**        | AWS          | AWS                    | Invisible to you; shared across many accounts | None — no cost, no control                                      |
+| **AWS Managed**      | Your account | AWS (creates, rotates) | Visible (e.g. `aws/s3`, `aws/rds`)            | Limited — cannot edit policy or rotation                        |
+| **Customer Managed** | Your account | **You**                | Visible                                       | **Full** — key policy, rotation, alias, grants, disable, delete |
 
 Only **Customer Managed** keys give you the full surface area for compliance and incident response (custom key policy, manual rotation control, deletion windows, grants, etc.). If an exam question requires editing the key policy, controlling rotation, or sharing across accounts, the answer is a **Customer Managed key** — never an AWS Managed one.
 
@@ -77,13 +77,13 @@ aws kms encrypt \
 
 What each piece does:
 
-| Flag / Step | Purpose |
-| --- | --- |
-| `--key-id alias/catrobot` | Reference the KMS Key by **alias** instead of the raw UUID. |
-| `--plaintext fileb://battleplans.txt` | `fileb://` reads the file as **raw binary**; `file://` would treat it as text. |
-| `--output text --query CiphertextBlob` | Strip the JSON envelope and emit only the ciphertext field. |
-| `\| base64 --decode` | KMS returns ciphertext **base64-encoded** by default; decode back to raw bytes. |
-| `> not_battleplans.enc` | Write the encrypted blob to disk. |
+| Flag / Step                            | Purpose                                                                         |
+| -------------------------------------- | ------------------------------------------------------------------------------- |
+| `--key-id alias/catrobot`              | Reference the KMS Key by **alias** instead of the raw UUID.                     |
+| `--plaintext fileb://battleplans.txt`  | `fileb://` reads the file as **raw binary**; `file://` would treat it as text.  |
+| `--output text --query CiphertextBlob` | Strip the JSON envelope and emit only the ciphertext field.                     |
+| `\| base64 --decode`                   | KMS returns ciphertext **base64-encoded** by default; decode back to raw bytes. |
+| `> not_battleplans.enc`                | Write the encrypted blob to disk.                                               |
 
 Symmetric decrypt is the mirror call:
 
@@ -127,12 +127,12 @@ To decrypt later:
 
 ### Symmetric vs asymmetric
 
-| Use | Symmetric (AES-256) | Asymmetric (RSA / ECC) |
-| --- | --- | --- |
-| `Encrypt` / `Decrypt` | Yes — same key both ways | Yes — encrypt with public, decrypt with private |
-| `Sign` / `Verify` | HMAC-style only | RSA / ECDSA signing |
-| `GenerateDataKey` (envelope encryption) | Yes | No — DEKs are always symmetric |
-| Key material leaves KMS? | Never | Only the **public** half can be downloaded |
+| Use                                     | Symmetric (AES-256)      | Asymmetric (RSA / ECC)                          |
+| --------------------------------------- | ------------------------ | ----------------------------------------------- |
+| `Encrypt` / `Decrypt`                   | Yes — same key both ways | Yes — encrypt with public, decrypt with private |
+| `Sign` / `Verify`                       | HMAC-style only          | RSA / ECDSA signing                             |
+| `GenerateDataKey` (envelope encryption) | Yes                      | No — DEKs are always symmetric                  |
+| Key material leaves KMS?                | Never                    | Only the **public** half can be downloaded      |
 
 For most "encrypt my data at rest" workloads the answer is a **symmetric key**. Asymmetric keys are for signing artifacts, code-signing, or interoperating with external parties who hold the public half.
 
@@ -209,9 +209,15 @@ Either side missing = access denied. This is the same intersection rule from [Re
 
 In all these cases, the actual bulk data encryption happens **inside the service** with a DEK; KMS only manages the key and the wrapping.
 
+## KMS and CloudHSM
+
+KMS is a shared service: AWS operates the HSMs behind it, and access goes through AWS APIs, key policies, and IAM. [AWS CloudHSM](cloudhsm.md) instead gives you single-tenant HSMs that you control, accessed with PKCS #11, JCE, CNG/KSP, or OpenSSL, but with no direct AWS service integration.
+
+The two connect through a **[CloudHSM key store](https://docs.aws.amazon.com/kms/latest/developerguide/keystore-cloudhsm.html)**, a type of KMS custom key store. KMS keys in that store have their key material generated and held in your CloudHSM cluster, while S3, EBS, RDS, and other services keep using the normal KMS integration. The key store supports only symmetric AES encryption keys and needs at least two active HSMs in different AZs. See [KMS With a CloudHSM Key Store](cloudhsm.md#kms-with-a-cloudhsm-key-store).
+
 ## Quick Reference
 
-- KMS = **regional**, **public**, **FIPS 140-2 L2**, keys **never leave** the service.
+- KMS = **regional**, **public**, **FIPS 140-3 L3**, keys **never leave** the service.
 - Direct `Encrypt`/`Decrypt` is **≤ 4 KB**; larger payloads use **`GenerateDataKey`** + envelope encryption.
 - `GenerateDataKey` returns **plaintext + ciphertext** versions of the DEK; use plaintext, discard, store ciphertext with the data. KMS does **not** store DEKs.
 - **AWS Owned vs AWS Managed vs Customer Managed** — only **Customer Managed** gives full control (policy, rotation, aliases, grants, deletion).
@@ -225,6 +231,9 @@ In all these cases, the actual bulk data encryption happens **inside the service
 - [Resource Policies vs Identity Policies](../concepts/resource-vs-identity-policies.md) — key policy is the canonical example after S3 bucket policies
 - [IAM](iam.md) — identity policies that complement the key policy
 - [S3](s3.md) — heaviest KMS integration (SSE-KMS)
+- [AWS CloudHSM](cloudhsm.md) — single-tenant HSMs; CloudHSM key stores for KMS
+- [AWS KMS: AWS CloudHSM key stores](https://docs.aws.amazon.com/kms/latest/developerguide/keystore-cloudhsm.html) (checked 2026-11-23)
+- [AWS Security Blog: AWS KMS is now FIPS 140-3 Security Level 3](https://aws.amazon.com/blogs/security/aws-kms-now-fips-140-2-level-3-what-does-this-mean-for-you/)
 - [AWS SAA Exam Notes — KMS](../certifications/aws-saa.md#kms)
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/kms_101.md`
 - [AWS KMS Developer Guide](https://docs.aws.amazon.com/kms/latest/developerguide/overview.html)

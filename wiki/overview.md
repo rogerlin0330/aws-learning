@@ -2,7 +2,7 @@
 title: AWS Learning — Overview
 type: overview
 tags: [aws, architecture, athena, redshift, data-warehouse, elasticache, caching, valkey, redis, memcached, iam, vpc, organizations, control-tower, cost, s3, ec2, ecs, eks, kubernetes, containers, cloudwatch, cloudtrail, cloudformation, bootstrapping, serverless, lambda, step-functions, api-gateway, orchestration, dns, dnssec, rds, rds-custom, aurora, dms, database, database-migration, multi-az, high-availability, acid, base, cap-theorem, global, regional, tiers, cloudfront, elb, asg, auto-scaling, sqs, sns, messaging, queues, decoupling, fifo, dead-letter-queue, kinesis, streaming, ingestion, firehose, analytics, video-streams, kafka, msk, log-vs-queue]
-updated: 2026-11-18
+updated: 2026-11-23
 ---
 
 # AWS Learning Overview
@@ -151,6 +151,7 @@ The [ENI (Elastic Network Interface)](concepts/networking.md) is the fundamental
 - [API Gateway](services/api-gateway.md) — managed APIs; an **intermediary between clients and integrations** with a request phase (authorize, validate, transform), the integration itself, and a response phase (transform, prepare, return); HTTP/REST/WebSocket types, three endpoint types (edge-optimized, regional, private), Cognito / Lambda-authorizer / IAM authentication, per-stage settings including **caching** and **canary deployments**, and direct AWS service integrations that need **no compute**; the front door of a [serverless architecture](patterns/serverless-architecture.md) and the regional entry point alongside [ELB](services/elb.md)
 - [Kinesis](services/kinesis.md) — the streaming-data family; **Data Streams** ingests at scale and lets many consumers read independently from a **24-hour-to-365-day rolling window** (the replay property [SQS](services/sqs.md) lacks), scaling through **shards** with **enhanced fan-out** for contention-free per-consumer throughput; **Firehose** (now Amazon Data Firehose) adds managed **near real-time delivery** to S3, Redshift, OpenSearch, Splunk, and HTTP with an optional [Lambda](services/lambda.md) transform; **Data Analytics** (now Managed Service for Apache Flink) does real-time processing between an input and an output stream, enriched with S3 reference data; **Video Streams** ingests live media for analytics via Rekognition
 - [KMS](services/kms.md) — key management; envelope encryption, key policies + IAM + grants
+- [AWS CloudHSM](services/cloudhsm.md) — single-tenant HSMs you control through PKCS #11, JCE, CNG/KSP, or OpenSSL; no direct AWS service integration, so AWS services reach CloudHSM keys through a KMS CloudHSM key store
 
 ### Concepts
 

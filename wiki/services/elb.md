@@ -3,7 +3,7 @@ title: Elastic Load Balancer (ELB)
 type: service
 tags: [elb, alb, nlb, clb, gwlb, load-balancing, networking, ha, scaling, sni, listener-rules, end-to-end-encryption, privatelink, ssl-tls, ssl-bridging, ssl-offload, tls-termination, stickiness, sticky-sessions, target-group, geneve, ingress-routing, network-inspection, security-appliance]
 certs: [aws-saa]
-updated: 2026-11-11
+updated: 2026-11-23
 ---
 
 # Elastic Load Balancer (ELB)
@@ -219,7 +219,7 @@ Bridging is the ALB default because terminating the connection strips the SSL wr
 ### Pass-through (NLB, TCP listener)
 
 - **NLB with a TCP listener**: the NLB **never decrypts anything** — one encrypted tunnel from client to backend instance, end to end (the same behaviour described under [unbroken end-to-end encryption](#unbroken-end-to-end-encryption-tcp-pass-through) above).
-- Certificate lives on the **instances only** — never on the load balancer, **never exposed to AWS**. For stronger key control it can pair with **CloudHSM**.
+- Certificate lives on the **instances only** — never on the load balancer, **never exposed to AWS**. For stronger key control, the instances can keep the private key in **[CloudHSM](cloudhsm.md#ssltls-offload-for-web-servers)**, which performs the handshake's private-key operation so the key never sits on the instance disk.
 - The NLB balances on what it *can* see: source/destination IP and port.
 
 | Pros                                                    | Cons                                                              |

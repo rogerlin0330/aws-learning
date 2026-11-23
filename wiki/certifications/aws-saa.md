@@ -117,6 +117,9 @@ tags:
   - multipart
   - transfer-acceleration
   - kms
+  - cloudhsm-key-store
+  - hsm
+  - fips-140-3
   - encryption
   - sse
   - sse-kms
@@ -407,7 +410,7 @@ tags:
   - exam-dumps
 certs:
   - aws-saa
-updated: 2026-11-18
+updated: 2026-11-23
 ---
 
 # AWS Solutions Architect Associate (SAA-C03)
@@ -2085,24 +2088,24 @@ Four separate concerns — keep **authentication vs authorization** and **in-tra
 - **Encryption in transit** — **SSL/TLS**, all engines, can be made **mandatory per user**. Trigger: *"force/require SSL"*
 - **Encryption at rest, default** — **KMS + EBS**, done **by the host** below the engine (the engine writes plaintext, unaware). A **KMS key** (customer- or AWS-managed `aws/rds`) generates **DEKs** ([envelope encryption](../services/kms.md), **AES-256**). Storage, logs, snapshots, and replicas all use the **same key**
 - **Encryption at rest, engine-native** — **TDE**, **SQL Server and Oracle only**. **MySQL / MariaDB / PostgreSQL cannot use TDE** (they still get at-rest protection via the host-side KMS/EBS path)
-- **No AWS in the chain of trust** — **RDS Oracle + TDE + CloudHSM** (you hold the keys; AWS never sees them). Oracle-specific
+- **Keys in HSMs you control** — the course answer **RDS Oracle + TDE + CloudHSM** is outdated: [RDS for Oracle cannot be integrated with CloudHSM](https://aws.amazon.com/rds/features/security/) (checked 2026-11-23). CloudHSM-backed TDE needs **Oracle on EC2**; for RDS, use a **KMS key in a [CloudHSM key store](../services/cloudhsm.md#kms-with-a-cloudhsm-key-store)**
 - **IAM authentication** — log in with a **15-minute token** from **`GenerateDBAuthToken`** instead of a DB password. **Authentication only — never authorization**: once in, the **local DB user** still governs permissions. Must be explicitly enabled; **TLS is mandatory** (token is sent as a cleartext password); mint a **fresh token per new connection**
 
 | At-rest mechanism       | Who encrypts                   | Engines                      |
 | ----------------------- | ------------------------------ | ---------------------------- |
 | **KMS + EBS** (default) | **The host**, below the engine | **All** engines              |
 | **TDE**                 | **The DB engine** itself       | **SQL Server & Oracle only** |
-| **TDE + CloudHSM**      | The engine, with **your** keys | **Oracle only**              |
+| **TDE + CloudHSM**      | The engine, with **your** keys | **Oracle on EC2** (not RDS)  |
 
 > [!tip] Exam Tip
-> Pattern-match: *"force/require SSL"* → **per-user mandatory TLS**. *"default at-rest, host does the encryption"* → **KMS + EBS** (KMS key → DEKs, AES-256). *"engine-native encryption"* → **TDE** (SQL Server/Oracle only — never MySQL/MariaDB/PostgreSQL). *"AWS must have no access to the keys"* → **Oracle + TDE + CloudHSM**. *"log in without a stored DB password using an AWS identity"* → **IAM authentication** (`GenerateDBAuthToken`, 15-min token). *"does IAM decide what the user can do in the DB?"* → **No, the local DB user does**.
+> Pattern-match: *"force/require SSL"* → **per-user mandatory TLS**. *"default at-rest, host does the encryption"* → **KMS + EBS** (KMS key → DEKs, AES-256). *"engine-native encryption"* → **TDE** (SQL Server/Oracle only — never MySQL/MariaDB/PostgreSQL). *"AWS must have no access to the keys"* → **Oracle on EC2 + TDE + CloudHSM** (or, for RDS, a KMS key in a CloudHSM key store). *"log in without a stored DB password using an AWS identity"* → **IAM authentication** (`GenerateDBAuthToken`, 15-min token). *"does IAM decide what the user can do in the DB?"* → **No, the local DB user does**.
 
 > [!warning] Gotchas
 >
 > - **IAM auth ≠ authorization** — it only authenticates; the local DB user still controls permissions. The single most-tested point here
 > - **TDE is restricted to SQL Server and Oracle** — "MySQL is encrypted" does **not** mean MySQL supports TDE (it uses host-side KMS/EBS instead)
 > - **Encryption can't be removed, and can't be added in place** after creation — only via **snapshot → copy-with-encryption → restore**; a read replica's encryption state must **match its source**
-> - **CloudHSM "no AWS trust" option is RDS Oracle-specific** — don't generalize it to other engines
+> - **RDS for Oracle cannot use CloudHSM** — the course-era RDS Oracle + CloudHSM integration belonged to CloudHSM Classic. CloudHSM-backed TDE means Oracle on EC2
 > - **Don't confuse the KMS key (CMK) with the DEK** — the KMS key *generates* DEKs; the DEKs do the actual bulk AES-256 encryption
 
 ### RDS Proxy
@@ -2411,7 +2414,7 @@ See [SSL/TLS connection modes](../services/elb.md#ssltls-connection-modes--bridg
 
 - **Three connection modes** — the recurring theme is *who holds the certificate, who does the crypto, what the LB can see*:
   - **Bridging** (ALB default): HTTPS terminated on the ELB, **re-encrypted** to instances. Certs needed on the ELB **and every instance** (the second half is easy to forget). Termination is what makes L7 routing possible.
-  - **Pass-through** (NLB, TCP listener): never decrypted, one tunnel client-to-instance. Cert on **instances only** — the only mode where **AWS never touches your private key**. Pairs with **CloudHSM**.
+  - **Pass-through** (NLB, TCP listener): never decrypted, one tunnel client-to-instance. Cert on **instances only** — the only mode where **AWS never touches your private key**. Pairs with **[CloudHSM](../services/cloudhsm.md)**.
   - **Offload**: HTTPS terminated on the ELB, **plain HTTP** behind. No certs or crypto on instances (smaller instance types), but data crosses the AWS network **in plaintext**.
 - **The listener protocol determines the mode, not the LB type** — NLB has supported TLS termination since January 2019. TCP listener = pass-through; HTTPS/TLS listener = terminated.
 - **Stickiness is a target-group setting** — not a listener setting, not a load-balancer setting. LB-generated **`AWSALB`** cookie, duration **1 second to 7 days**; breaks on **instance failure** or **cookie expiry**; causes **uneven backend load**.
@@ -3187,7 +3190,7 @@ See [CloudTrail](../services/cloudtrail.md) for full details.
 
 See [KMS](../services/kms.md) for full details.
 
-- KMS is **regional + public-endpoint**; keys are scoped to a region and **never leave** the service (FIPS 140-2 Level 2)
+- KMS is **regional + public-endpoint**; keys are scoped to a region and **never leave** the service (HSMs validated at **FIPS 140-3 Level 3**; older material says 140-2 Level 2)
 - Direct `Encrypt` / `Decrypt` is capped at **4 KB** per call — for larger payloads use **`GenerateDataKey`** + envelope encryption
 - `GenerateDataKey` returns **two copies of the same DEK**: a **plaintext** version (use immediately, then discard) and a **ciphertext** version (store alongside the encrypted data). KMS does **not** store DEKs
 - For **symmetric** `Decrypt`, you do **not** pass `--key-id` — KMS reads it from metadata embedded in the ciphertext blob
@@ -3254,6 +3257,26 @@ See [S3 Bucket Keys](../services/s3.md#s3-bucket-keys-for-sse-kms-cost-and-throt
 
 > [!tip] Exam Tip
 > Pattern-match: *"SSE-KMS works but the KMS bill is huge on a bucket with millions of objects"* → **enable S3 Bucket Keys**. *"Cheaper than SSE-KMS"* on the same data is a misleading framing — Bucket Keys reduce **KMS request charges**, not the price per byte stored.
+
+## AWS CloudHSM
+
+See [AWS CloudHSM](../services/cloudhsm.md) for the architecture diagram, HSM types, and use cases.
+
+- **What it is:** single-tenant, tamper-resistant **hardware security modules** in AWS. AWS provisions and maintains them but **cannot access the key material**. [KMS](../services/kms.md) also uses HSMs, but as a shared, AWS-managed service
+- **Access model:** users (admins, crypto users) are created **inside the HSM**, not in [IAM](../services/iam.md). IAM only controls the cluster management API. AWS **cannot recover lost HSM credentials**
+- **Industry-standard APIs:** **PKCS #11**, **JCE**, Microsoft **CNG/KSP**, **OpenSSL** Dynamic Engine/Provider, through the CloudHSM Client SDK
+- **FIPS:** CloudHSM (hsm2m.medium) and KMS are both **FIPS 140-3 Level 3**, so FIPS level alone does not decide between them. CloudHSM also supports a **non-FIPS cluster mode** (chosen at creation, cannot be changed); KMS does not
+- **Architecture:** HSMs run in an **AWS-managed CloudHSM VPC**; each HSM gets an **ENI in your subnet**. For HA, use **at least two HSMs in two AZs** in a cluster; HSMs sync keys, users, and policies, and the client load-balances across them
+- **Backups:** automatic and encrypted, stored in a service-controlled S3 bucket; AWS cannot decrypt them
+- **No direct AWS service integration:** S3, EBS, and RDS cannot point at CloudHSM. Use **client-side encryption**, or a **KMS key in a CloudHSM key store** (symmetric AES only, at least two HSMs in different AZs)
+- **Use cases:** SSL/TLS offload for web servers (private key stays in the HSM; the HSM performs the handshake's private-key operation), **Oracle TDE on EC2**, protecting an issuing **CA's private keys**, and non-FIPS algorithms
+- **Pricing:** per HSM per hour (example: $1.60 per HSM-hour in us-east-1, checked 2026-11-23)
+
+> [!tip] Exam Tip
+> *"Single-tenant HSM"*, *"PKCS #11 / JCE / CNG"*, *"AWS must not have access to the keys"*, or *"non-FIPS algorithm"* points to **CloudHSM**. *"Integrate with S3/EBS/RDS encryption"* points to **KMS**; add a **CloudHSM key store** only when the keys must also be in HSMs you control.
+
+> [!warning] Gotcha
+> RDS for Oracle cannot use CloudHSM for TDE, even though older course material says it can. CloudHSM-backed TDE needs Oracle on EC2.
 
 ## CloudFormation
 
@@ -3431,6 +3454,7 @@ See [Amazon GuardDuty](../services/guardduty.md) for the architecture diagram, p
 | [EC2](../services/ec2.md) instance                  | AZ-specific                                                                                                            |
 | [S3](../services/s3.md) bucket                      | Regional (globally unique name)                                                                                        |
 | [KMS](../services/kms.md) key                       | Regional (single-region by default; multi-region keys are a separate feature)                                          |
+| [CloudHSM](../services/cloudhsm.md) HSM             | AZ-specific (each HSM and its ENI sit in one AZ; spread a cluster across AZs for HA)                                   |
 | [SSM Parameter Store](../services/ssm.md) parameter | Regional (multi-AZ within Region; no cross-Region replication)                                                         |
 | [CloudTrail](../services/cloudtrail.md) trail       | Regional (all-regions trail spans every region; global service events → `us-east-1`)                                   |
 | [DMS](../services/dms.md)                           | Regional; DMS Standard replication instances are placed in VPC subnets, while DMS Serverless hides instance management |
