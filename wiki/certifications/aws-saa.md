@@ -1333,7 +1333,7 @@ See [ECR](../services/ecr.md) for the full service page.
 - **One private registry per account, per region** (endpoint `<account>.dkr.ecr.<region>.amazonaws.com`); plus access to a public registry. The private registry is a **regional** resource
 - **Public registry:** anyone can pull, push needs permissions. **Private registry:** permissions required for **all** operations
 - **[IAM](../services/iam.md) controls all access**; **repository policies** (resource policies) enable cross-account pulls
-- **Enhanced scanning = Amazon Inspector**, OS + software packages, layer-by-layer; **Basic** is the lighter built-in scan
+- **Enhanced scanning = [Amazon Inspector](../services/inspector.md)**, OS + programming language packages, layer-by-layer, continuous or on push; **Basic** scans OS packages only, on push or manually
 - **Observability:** CloudWatch (metrics), CloudTrail (API audit), EventBridge (image-change events)
 - **Replication is cross-region AND cross-account**
 - **Who pulls the private image?** On ECS it's the **[task execution role](../services/ecs.md#task-definitions-and-task-roles)**, not the task role
@@ -3462,7 +3462,7 @@ See [Amazon GuardDuty](../services/guardduty.md) for the architecture diagram, p
 > | Notify the security team about findings | EventBridge rule to SNS |
 > | Enable and manage GuardDuty for every account, including new ones | Delegated administrator in Organizations, auto-enable |
 > | Detect suspicious S3 data access or mass deletions | GuardDuty S3 Protection |
-> | Software vulnerabilities on EC2 or container images | Amazon Inspector, not GuardDuty |
+> | Software vulnerabilities on EC2 or container images | [Amazon Inspector](../services/inspector.md), not GuardDuty |
 > | Personal data stored in S3 | [Amazon Macie](../services/macie.md), not GuardDuty |
 > | Resource misconfiguration against a standard | AWS Config, not GuardDuty |
 
@@ -3492,6 +3492,31 @@ See [Amazon Macie](../services/macie.md) for the architecture diagram, data iden
 > | Detect malicious access to S3 data | GuardDuty S3 Protection, not Macie |
 > | Sensitive data outside S3 (RDS, EBS) | Not Macie; it analyzes S3 only |
 
+## Amazon Inspector
+
+See [Amazon Inspector](../services/inspector.md) for scan methods, finding details, CIS scans, and pricing.
+
+- **What it is:** continuous **vulnerability management** for [EC2](../services/ec2.md) instances and their OS, container images in [ECR](../services/ecr.md), and [Lambda](../services/lambda.md) functions. Looks for **software vulnerabilities (CVEs)** and **unintended network exposure**.
+- **Continuous, no schedule:** rescans automatically on new instances or images, new software, patches, and newly published CVEs. Inspector Classic, which needed assessment schedules, reached end of support on May 20, 2026.
+- **EC2 methods:** **agent-based** (SSM Agent; instance must be SSM-managed) or **agentless** (Inspector snapshots the EBS volumes and analyzes them, every 24 hours). **Hybrid** is the default: agent-based for SSM-managed instances, agentless for the rest. It does not run both on one instance.
+- **Network reachability:** **EC2 only, no agent, every 12 hours.** Finds open TCP or UDP paths from VPC edges (internet gateway, VPC peering, VPN through a virtual private gateway), following the full path through SGs, NACLs, route tables, load balancers, and endpoints.
+- **Finding types:** **package vulnerability** (with CVE IDs), **code vulnerability** (Lambda code scanning, Code Security), **network reachability** (the overly permissive SG, NACL, or IGW route).
+- **Prioritized by the Inspector score:** CVSS adjusted for your environment, such as reachability and exploitability. Findings **close automatically** once fixed.
+- **Identifies only, does not fix.** Findings go to [EventBridge](../services/eventbridge.md) automatically (then SNS, Lambda, or SSM Automation) and to Security Hub CSPM.
+- **CIS Benchmark scans:** targeted EC2 OS configuration checks, one-time or daily, weekly, or monthly, selected by instance tags; need SSM-managed instances. Results are pass, fail, or skipped checks, not findings.
+- **Multi-account:** [Organizations](../services/organizations.md) delegated administrator (up to 10,000 members). **Regional.**
+
+> [!tip] Exam Tip
+>
+> | Requirement | Answer |
+> | --- | --- |
+> | "CVE", "vulnerability scan", or "software vulnerabilities" on EC2, ECR images, or Lambda | Inspector |
+> | Which instances have ports reachable from the internet, with no agent | Inspector network reachability |
+> | Vulnerability scanning without installing an agent on EC2 | Inspector agentless (EBS snapshots) |
+> | Scheduled CIS Benchmark checks of EC2 operating systems | Inspector CIS scans |
+> | Auto-remediate or notify on a new vulnerability | Inspector finding to EventBridge, then Lambda or SNS |
+> | Active threats, such as calls to a known malicious IP | GuardDuty, not Inspector |
+
 ## Key Service Properties to Memorize
 
 | Service                                             | Resilience level                                                                                                       |
@@ -3507,6 +3532,7 @@ See [Amazon Macie](../services/macie.md) for the architecture diagram, data iden
 | [CloudHSM](../services/cloudhsm.md) HSM             | AZ-specific (each HSM and its ENI sit in one AZ; spread a cluster across AZs for HA)                                   |
 | [MSK](../services/msk.md) cluster                   | Regional; brokers spread across two or three AZs (Express brokers always use three)                                    |
 | [Macie](../services/macie.md)                       | Regional (enable in each Region; findings and settings are per Region)                                                 |
+| [Inspector](../services/inspector.md)               | Regional (activate scan types and designate the delegated administrator in each Region)                                |
 | [SSM Parameter Store](../services/ssm.md) parameter | Regional (multi-AZ within Region; no cross-Region replication)                                                         |
 | [CloudTrail](../services/cloudtrail.md) trail       | Regional (all-regions trail spans every region; global service events → `us-east-1`)                                   |
 | [DMS](../services/dms.md)                           | Regional; DMS Standard replication instances are placed in VPC subnets, while DMS Serverless hides instance management |

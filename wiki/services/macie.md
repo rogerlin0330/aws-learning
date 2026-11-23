@@ -219,14 +219,14 @@ Automated discovery samples objects, so it costs far less than a job that reads 
 
 ## Macie and Related Security Services
 
-| Service                     | Job                                                                                      |
-| --------------------------- | ---------------------------------------------------------------------------------------- |
-| **Macie**                   | Find sensitive data in S3 objects and report bucket settings that reduce security        |
-| [GuardDuty](guardduty.md)   | Detect threats and malicious activity, including suspicious S3 access with S3 Protection |
-| [AWS Config](config.md)     | Record resource configuration and check it against rules                                 |
-| [CloudTrail](cloudtrail.md) | Record API calls: who did what, when                                                     |
-| Amazon Inspector            | Scan EC2, container images, and Lambda for software vulnerabilities                      |
-| AWS Security Hub CSPM       | Collect findings from Macie, GuardDuty, Inspector, Config, and others in one place       |
+| Service                          | Job                                                                                      |
+| -------------------------------- | ---------------------------------------------------------------------------------------- |
+| **Macie**                        | Find sensitive data in S3 objects and report bucket settings that reduce security        |
+| [GuardDuty](guardduty.md)        | Detect threats and malicious activity, including suspicious S3 access with S3 Protection |
+| [AWS Config](config.md)          | Record resource configuration and check it against rules                                 |
+| [CloudTrail](cloudtrail.md)      | Record API calls: who did what, when                                                     |
+| [Amazon Inspector](inspector.md) | Scan EC2, container images, and Lambda for software vulnerabilities                      |
+| AWS Security Hub CSPM            | Collect findings from Macie, GuardDuty, Inspector, Config, and others in one place       |
 
 Macie and GuardDuty are easy to confuse because both can report on S3. Macie looks at **what data is stored** and how the bucket is configured. GuardDuty looks at **who is accessing it** and whether that activity looks malicious.
 

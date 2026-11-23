@@ -3,7 +3,7 @@ title: Amazon ECR
 type: service
 tags: [ecr, containers, container-image, container-registry, ecs, eks, fargate, docker, iam, inspector, image-scanning, cloudwatch, cloudtrail, eventbridge, replication, cross-region, cross-account]
 certs: [aws-saa]
-updated: 2026-06-05
+updated: 2026-11-23
 ---
 
 # Amazon ECR
@@ -23,12 +23,12 @@ Registry (public or private)
         └── Tag (many per image — unique within the repository)
 ```
 
-| Level | Mental model | Notes |
-| --- | --- | --- |
-| **Registry** | The whole hosting service for an account | Each account has a **private** registry and access to a **public** registry. Top-level container. |
-| **Repository** | One Git-style repo | Many per registry; one repository typically holds all versions of one application image. |
-| **Image** | One built container image | Many per repository. |
-| **Tag** | A human-friendly version label | Many per image; a **tag must be unique within its repository** (e.g. `latest`, `v1.2.3`). |
+| Level          | Mental model                             | Notes                                                                                             |
+| -------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| **Registry**   | The whole hosting service for an account | Each account has a **private** registry and access to a **public** registry. Top-level container. |
+| **Repository** | One Git-style repo                       | Many per registry; one repository typically holds all versions of one application image.          |
+| **Image**      | One built container image                | Many per repository.                                                                              |
+| **Tag**        | A human-friendly version label           | Many per image; a **tag must be unique within its repository** (e.g. `latest`, `v1.2.3`).         |
 
 > [!warning] Gotcha
 > A private registry is **regional**, not global. Each account gets one private registry **per region**, addressed as `<account-id>.dkr.ecr.<region>.amazonaws.com`. Repositories and images live inside a specific region's registry; pushing to `us-east-1` does not make the image appear in `eu-west-1` unless you configure [replication](#replication). The "one private registry per account" shorthand is fine for the exam, but the region is part of the identity. See [Resource Scope](../concepts/resource-scope.md) for the broader regional-resource framing.
@@ -37,10 +37,10 @@ Registry (public or private)
 
 The registry type sets the default permission model — specifically, whether anonymous reads are allowed.
 
-| Registry type | Read (pull) | Write (push) |
-| --- | --- | --- |
-| **Public** | Anyone — read-only, no permissions or credentials needed | Permissions required |
-| **Private** | Permissions required | Permissions required |
+| Registry type | Read (pull)                                              | Write (push)         |
+| ------------- | -------------------------------------------------------- | -------------------- |
+| **Public**    | Anyone — read-only, no permissions or credentials needed | Permissions required |
+| **Private**   | Permissions required                                     | Permissions required |
 
 In plain terms:
 
@@ -67,10 +67,12 @@ This is why ECR fits cleanly with the AWS container orchestrators:
 
 ECR can scan stored images for software vulnerabilities (CVEs). There are two scanning tiers, and the distinction is a common exam target:
 
-| Tier | Engine | What it covers |
-| --- | --- | --- |
-| **Basic** | ECR's built-in scanner | Lighter, default-style OS-package scanning. |
-| **Enhanced** | [Amazon Inspector](https://docs.aws.amazon.com/inspector/latest/user/scanning-ecr.html) | Scans the **operating system AND application/software packages**, on a **layer-by-layer** basis, with continuous rescanning as new CVEs are published. |
+| Tier         | Engine                                                                   | What it covers                                                                                                                                                                                                                                                                                               |
+| ------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Basic**    | ECR's built-in scanner, using AWS native technology and the CVE database | **Operating system packages only.** Scans run on push or manually, at most once per image every 24 hours ([AWS: basic scanning](https://docs.aws.amazon.com/AmazonECR/latest/userguide/image-scanning-basic.html)).                                                                                          |
+| **Enhanced** | [Amazon Inspector](inspector.md#ecr-and-lambda-scanning)                 | Scans the **operating system AND programming language packages**, on a **layer-by-layer** basis. Use **continuous scanning**, which rescans as new CVEs are published, or scan on push only ([AWS: enhanced scanning](https://docs.aws.amazon.com/AmazonECR/latest/userguide/image-scanning-enhanced.html)). |
+
+Turning on ECR scanning in Inspector switches the registry from basic to enhanced scanning. Continuous rescanning covers only images pushed or used within Inspector's **re-scan duration** (7 days by default for accounts activated on or after October 15, 2026), so old, unused images eventually stop being rescanned ([AWS: scanning ECR images with Inspector](https://docs.aws.amazon.com/inspector/latest/user/scanning-ecr.html)).
 
 > [!tip] Exam Tip
 > Only **Enhanced** scanning uses **Amazon Inspector** and adds OS plus software-package, layer-by-layer coverage. *"CVE / vulnerability scanning of container images, including language-package dependencies"* points to **Enhanced scanning (Inspector)**. *"Basic, default scanning"* is the lighter built-in option. Do not attribute Inspector to the Basic tier.
@@ -79,12 +81,12 @@ ECR can scan stored images for software vulnerabilities (CVEs). There are two sc
 
 ECR plugs into the standard AWS operational and event services:
 
-| Capability | Service | What you get |
-| --- | --- | --- |
-| **Metrics** | [CloudWatch](cloudwatch.md) | Near real-time metrics for authentication, push, and pull operations. |
-| **API audit log** | CloudTrail | A record of all ECR **API actions** (who pushed, who pulled, who changed a repository). |
-| **Event-driven workflows** | EventBridge | ECR emits **events** when images change, so you can trigger automation (e.g. start a deployment or a scan-based gate when a new image is pushed). |
-| **Replication** | ECR (built-in) | Copy images **cross-region and cross-account** automatically. |
+| Capability                 | Service                     | What you get                                                                                                                                      |
+| -------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Metrics**                | [CloudWatch](cloudwatch.md) | Near real-time metrics for authentication, push, and pull operations.                                                                             |
+| **API audit log**          | CloudTrail                  | A record of all ECR **API actions** (who pushed, who pulled, who changed a repository).                                                           |
+| **Event-driven workflows** | EventBridge                 | ECR emits **events** when images change, so you can trigger automation (e.g. start a deployment or a scan-based gate when a new image is pushed). |
+| **Replication**            | ECR (built-in)              | Copy images **cross-region and cross-account** automatically.                                                                                     |
 
 > [!tip] Exam Tip — match the job to the service
 >
@@ -128,6 +130,9 @@ ECR does not build images, orchestrate containers, or run them. It stores them, 
 ## References
 
 - Source: `raw/aws-cert-study-notes/aws-solution-architect/ecr_101.md`
+- [AWS: ECR basic scanning](https://docs.aws.amazon.com/AmazonECR/latest/userguide/image-scanning-basic.html) (checked 2026-11-23)
+- [AWS: ECR enhanced scanning](https://docs.aws.amazon.com/AmazonECR/latest/userguide/image-scanning-enhanced.html) (checked 2026-11-23)
+- [AWS: scanning ECR images with Amazon Inspector](https://docs.aws.amazon.com/inspector/latest/user/scanning-ecr.html) (checked 2026-11-23)
 - [What is Amazon ECR? — AWS docs](https://docs.aws.amazon.com/AmazonECR/latest/userguide/what-is-ecr.html)
 - [Amazon ECR private registry — AWS docs](https://docs.aws.amazon.com/AmazonECR/latest/userguide/Registries.html)
 - [Image scanning in Amazon ECR — AWS docs](https://docs.aws.amazon.com/AmazonECR/latest/userguide/image-scanning.html)

@@ -138,17 +138,17 @@ Each account gets a **30-day free trial** in each Region the first time it enabl
 
 The exam often lists several security services as answer options. Each does a different job:
 
-| Service                     | Job                                                                                      |
-| --------------------------- | ---------------------------------------------------------------------------------------- |
-| **GuardDuty**               | Detect threats and malicious activity from logs and runtime activity                     |
-| [AWS Config](config.md)     | Record resource configuration and check it against rules                                 |
-| [CloudTrail](cloudtrail.md) | Record API calls: who did what, when                                                     |
-| Amazon Inspector            | Scan EC2, container images, and Lambda for software vulnerabilities and network exposure |
-| [Amazon Macie](macie.md)    | Find sensitive data, such as personal data, in S3                                        |
-| Amazon Detective            | Investigate the root cause of a finding using graphs of related activity                 |
-| AWS Security Hub            | Collect findings from GuardDuty, Inspector, Macie, Config, and others in one place       |
-| [AWS WAF](waf.md)           | Block malicious HTTP requests                                                            |
-| [AWS Shield](shield.md)     | Protect against DDoS attacks                                                             |
+| Service                          | Job                                                                                      |
+| -------------------------------- | ---------------------------------------------------------------------------------------- |
+| **GuardDuty**                    | Detect threats and malicious activity from logs and runtime activity                     |
+| [AWS Config](config.md)          | Record resource configuration and check it against rules                                 |
+| [CloudTrail](cloudtrail.md)      | Record API calls: who did what, when                                                     |
+| [Amazon Inspector](inspector.md) | Scan EC2, container images, and Lambda for software vulnerabilities and network exposure |
+| [Amazon Macie](macie.md)         | Find sensitive data, such as personal data, in S3                                        |
+| Amazon Detective                 | Investigate the root cause of a finding using graphs of related activity                 |
+| AWS Security Hub                 | Collect findings from GuardDuty, Inspector, Macie, Config, and others in one place       |
+| [AWS WAF](waf.md)                | Block malicious HTTP requests                                                            |
+| [AWS Shield](shield.md)          | Protect against DDoS attacks                                                             |
 
 GuardDuty findings can also feed [OpenSearch](opensearch.md#use-cases) for SIEM-style analysis.
 
@@ -177,7 +177,7 @@ GuardDuty findings can also feed [OpenSearch](opensearch.md#use-cases) for SIEM-
 > | Manage GuardDuty across every account in an organization | Delegated administrator through AWS Organizations, with auto-enable |
 > | Detect threats from S3 data access, such as mass deletions | GuardDuty S3 Protection |
 > | Scan EC2 volumes for malware without installing an agent | GuardDuty Malware Protection for EC2 |
-> | Find software vulnerabilities on EC2 | Amazon Inspector, not GuardDuty |
+> | Find software vulnerabilities on EC2 | [Amazon Inspector](inspector.md), not GuardDuty |
 > | Find personal data stored in S3 | [Amazon Macie](macie.md), not GuardDuty |
 
 ## References
