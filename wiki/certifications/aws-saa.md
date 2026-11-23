@@ -411,6 +411,9 @@ tags:
   - skill-builder
   - study-plan
   - exam-dumps
+  - macie
+  - sensitive-data
+  - data-identifiers
 certs:
   - aws-saa
 updated: 2026-11-23
@@ -595,25 +598,25 @@ See [S3 — Foundations](../services/s3.md#foundations) for full details.
 
 ### S3 foundations cheat sheet
 
-| Keyword in the question                             | Answer                                                   |
-| --------------------------------------------------- | -------------------------------------------------------- |
-| "Globally unique" bucket name                       | ✅ S3 — names collide across **all accounts and regions** |
-| Bucket name with `_`, uppercase, or `1.1.1.1` shape | ❌ Invalid bucket name                                    |
-| Max object size                                     | **5 TB** (multipart above 5 GB)                          |
-| Min object size                                     | **0 bytes**                                              |
-| Max objects per bucket                              | **Unlimited**                                            |
-| Default general-purpose bucket quota per account    | **10,000**                                               |
-| Higher bucket quota                                 | **Adjustable** via quota increase                        |
-| "Thousands of users, one bucket each"               | ❌ Use **one bucket + per-user prefix**                   |
-| "Mount as a drive / volume"                         | ❌ Not S3 — use **EBS** (block) or **EFS / FSx** (file)   |
-| "Network file share for Windows / Linux"            | ❌ Not S3 — use **FSx** or **EFS**                        |
-| "Default destination for an AWS service's output"   | ✅ S3                                                     |
-| "Large-scale distribution to many users"            | ✅ S3                                                     |
-| "Offload static assets from EC2"                    | ✅ S3                                                     |
-| "Folder" in S3                                      | Actually a **prefix** — flat structure underneath        |
-| Data leaves the home region automatically?          | ❌ No — only via explicit **Replication** or **MRAP**     |
-| Blast radius of an S3 bucket                        | **The region** it was created in                         |
-| Resilience model                                    | Replicated **across AZs within the region**              |
+| Keyword in the question                             | Answer                                                 |
+| --------------------------------------------------- | ------------------------------------------------------ |
+| "Globally unique" bucket name                       | S3 — names collide across **all accounts and regions** |
+| Bucket name with `_`, uppercase, or `1.1.1.1` shape | Invalid bucket name                                    |
+| Max object size                                     | **5 TB** (multipart above 5 GB)                        |
+| Min object size                                     | **0 bytes**                                            |
+| Max objects per bucket                              | **Unlimited**                                          |
+| Default general-purpose bucket quota per account    | **10,000**                                             |
+| Higher bucket quota                                 | **Adjustable** via quota increase                      |
+| "Thousands of users, one bucket each"               | No — use **one bucket + per-user prefix**              |
+| "Mount as a drive / volume"                         | Not S3 — use **EBS** (block) or **EFS / FSx** (file)   |
+| "Network file share for Windows / Linux"            | Not S3 — use **FSx** or **EFS**                        |
+| "Default destination for an AWS service's output"   | S3                                                     |
+| "Large-scale distribution to many users"            | S3                                                     |
+| "Offload static assets from EC2"                    | S3                                                     |
+| "Folder" in S3                                      | Actually a **prefix** — flat structure underneath      |
+| Data leaves the home region automatically?          | No — only via explicit **Replication** or **MRAP**     |
+| Blast radius of an S3 bucket                        | **The region** it was created in                       |
+| Resilience model                                    | Replicated **across AZs within the region**            |
 
 > [!tip] Exam Tip
 > When multiple storage options appear next to each other (S3, EBS, EFS, FSx), **the access verb is the discriminator**, not the data type. *"Mount", "format", "drive letter", "block device"* → not S3. *"Shared file share between EC2 instances"* → EFS (Linux) / FSx (Windows). *"Whole-object HTTP", "static asset hosting", "data lake", "service input/output"* → S3.
@@ -825,7 +828,7 @@ Every class can transition down to a colder class, with **one exception**: **One
 | Standard                   | All other classes                                                                                                                                                                                                                                                  |
 | Standard-IA                | Intelligent-Tiering, One Zone-IA, GIR, Glacier Flexible, Glacier Deep Archive                                                                                                                                                                                      |
 | Intelligent-Tiering        | Varies by IT access tier — narrows as the source tier gets colder (Frequent/Infrequent → One Zone-IA + Glacier classes; Archive Instant Access → GIR + Glacier classes only; Archive Access → Glacier Flexible/Deep only; Deep Archive Access → Deep Archive only) |
-| One Zone-IA                | Glacier Flexible, Glacier Deep Archive ⚠️ (**not** GIR)                                                                                                                                                                                                             |
+| One Zone-IA                | Glacier Flexible, Glacier Deep Archive (**not** GIR)                                                                                                                                                                                                               |
 | Glacier Instant Retrieval  | Glacier Flexible, Glacier Deep Archive                                                                                                                                                                                                                             |
 | Glacier Flexible Retrieval | Glacier Deep Archive                                                                                                                                                                                                                                               |
 | Glacier Deep Archive       | (terminal)                                                                                                                                                                                                                                                         |
@@ -883,12 +886,12 @@ See [S3 — Replication](../services/s3.md#replication) for full details.
 
 #### Encryption support
 
-| Method      | Replication                                                                                                |
-| ----------- | ---------------------------------------------------------------------------------------------------------- |
-| Unencrypted | ✅ Default                                                                                                  |
-| **SSE-S3**  | ✅ Default                                                                                                  |
-| **SSE-KMS** | ✅ Requires extra config — KMS key permissions on both sides, destination key named in the replication rule |
-| **SSE-C**   | ⚠️ Only recently supported — historically blocked                                                           |
+| Method      | Replication                                                                                                             |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Unencrypted | Replicated by default                                                                                                   |
+| **SSE-S3**  | Replicated by default                                                                                                   |
+| **SSE-KMS** | Supported, but requires extra config — KMS key permissions on both sides, destination key named in the replication rule |
+| **SSE-C**   | Only recently supported — historically blocked                                                                          |
 
 #### Use-case lookup
 
@@ -1192,23 +1195,23 @@ See [EC2](../services/ec2.md) for full details.
 
 ### EC2 state-based costs
 
-| Component                   |  Running  |            Stopped             |             Terminated              |
-| --------------------------- | :-------: | :----------------------------: | :---------------------------------: |
-| CPU / Memory / Network      | 💰 Charged |             ✅ Free             |               ✅ Free                |
-| **EBS volumes**             | 💰 Charged |      💰 **Still charged**       |          ✅ Free (deleted)           |
-| Public IPv4 (auto-assigned) |   Held    |            Released            |              Released               |
-| Instance-store volumes      |  Present  |            **Lost**            |                Lost                 |
-| Elastic IP (attached)       |   Free    | Small hourly charge while idle | Charge continues until **released** |
+| Component                   | Running |            Stopped             |             Terminated              |
+| --------------------------- | :-----: | :----------------------------: | :---------------------------------: |
+| CPU / Memory / Network      | Charged |              Free              |                Free                 |
+| **EBS volumes**             | Charged |       **Still charged**        |           Free (deleted)            |
+| Public IPv4 (auto-assigned) |  Held   |            Released            |              Released               |
+| Instance-store volumes      | Present |            **Lost**            |                Lost                 |
+| Elastic IP (attached)       |  Free   | Small hourly charge while idle | Charge continues until **released** |
 
 ### EC2 cheat sheet
 
 | Keyword in the question                                     | Answer                                                                                                                       |
 | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
 | "Stopped the instance to save money, still being billed"    | **[EBS](../services/ec2.md#storage-options) storage** still charged — only **Terminate** ends all costs                      |
-| "Restore terminated instance"                               | ❌ Not possible — Terminate is irreversible; snapshot/AMI **before** terminating                                              |
-| "Single instance survives AZ failure"                       | ❌ Impossible — instance is AZ-scoped; need multi-AZ fleet                                                                    |
+| "Restore terminated instance"                               | Not possible — Terminate is irreversible; snapshot/AMI **before** terminating                                                |
+| "Single instance survives AZ failure"                       | Impossible — instance is AZ-scoped; need multi-AZ fleet                                                                      |
 | "Move instance to another AZ"                               | Snapshot EBS / capture AMI → launch new instance in target AZ; instances don't natively cross AZs                            |
-| "Attach EBS volume from another AZ"                         | ❌ Impossible — EBS is AZ-scoped; snapshot → create volume in target AZ                                                       |
+| "Attach EBS volume from another AZ"                         | Impossible — EBS is AZ-scoped; snapshot → create volume in target AZ                                                         |
 | "Multiple ENIs on different subnets"                        | OK only if the subnets are in the **same AZ**                                                                                |
 | "Rebooted, lost scratch disk"                               | Was it really a reboot? **Stop/Start** can land on a new host → **instance-store lost**. Restart keeps the same host         |
 | "Public IP changed after I cycled the instance"             | Stop/Start releases auto public IPv4; use an **Elastic IP** for stability                                                    |
@@ -1420,7 +1423,7 @@ See [EC2 — Status Checks and Auto Recovery](../services/ec2.md#status-checks-a
 
 | Operation            | Host migration               |       Instance-store data       | Auto public IPv4               | Elastic IP |
 | -------------------- | ---------------------------- | :-----------------------------: | ------------------------------ | :--------: |
-| **Restart (reboot)** | ❌ Never — same host          |            Preserved            | Preserved                      | Preserved  |
+| **Restart (reboot)** | Never — same host            |            Preserved            | Preserved                      | Preserved  |
 | **Stop → Start**     | Possible (new host, same AZ) |            **Lost**             | **Released — new IP on Start** | Preserved  |
 | **Auto recovery**    | Possible (new host, same AZ) | **Lost** (EBS-only requirement) | **Preserved**                  | Preserved  |
 
@@ -1431,17 +1434,17 @@ See [EC2 — Status Checks and Auto Recovery](../services/ec2.md#status-checks-a
 | "Healthy instance shows X/Y checks"                                               | **2/2 checks passed**                                                                                                                                                       |
 | "The check that failed indicates a host hardware fault"                           | **System status check**                                                                                                                                                     |
 | "The check that failed indicates an OS-level issue / corrupt FS / kernel problem" | **Instance status check**                                                                                                                                                   |
-| "Static public IPv4 set on the OS interface"                                      | ❌ Instance check failure pattern — public IPv4 is NAT'd at the IGW, never in the guest                                                                                      |
+| "Static public IPv4 set on the OS interface"                                      | Instance check failure pattern — public IPv4 is NAT'd at the IGW, never in the guest                                                                                        |
 | "How do I get notified when a check fails"                                        | **CloudWatch Status Check Alarm → SNS topic**                                                                                                                               |
 | "Alarm triggers when…"                                                            | Either check fails for **at least one consecutive 5-minute period**                                                                                                         |
 | "Optional EC2 actions on the alarm"                                               | **Reboot / Stop / Terminate / Recover**                                                                                                                                     |
 | "Self-heal a failed instance, keep its IP, no manual action"                      | **Recover** (auto recovery)                                                                                                                                                 |
 | "Auto recovery preserves which IPs?"                                              | **All of them** — primary private IPv4, auto-assigned public IPv4, **and** Elastic IP                                                                                       |
-| "Auto recovery and AZ failure"                                                    | ❌ Same-AZ only — does not survive AZ-wide failure. Use **multi-AZ + ELB + Auto Scaling** for HA                                                                             |
-| "Auto recovery on an instance with instance-store volumes"                        | ❌ Not supported — **EBS-only** requirement                                                                                                                                  |
+| "Auto recovery and AZ failure"                                                    | Same-AZ only — does not survive AZ-wide failure. Use **multi-AZ + ELB + Auto Scaling** for HA                                                                               |
+| "Auto recovery on an instance with instance-store volumes"                        | Not supported — **EBS-only** requirement                                                                                                                                    |
 | "Auto recovery fails during a major regional event"                               | Likely **no spare host capacity** in the AZ — recovery depends on AWS having a target host to migrate to                                                                    |
 | "Auto recovery isn't working on this old instance type"                           | Verify the type is supported — older list **A1, C4, C5, M4, M5, R3, R4, R5**; modern types are broader and most are recovered automatically (Simplified Automatic Recovery) |
-| "Terminate action on a single instance — does it replace?"                        | ❌ No — Terminate **deletes**; replacement requires pairing with [Auto Scaling](../patterns/scaling.md)                                                                      |
+| "Terminate action on a single instance — does it replace?"                        | No — Terminate **deletes**; replacement requires pairing with [Auto Scaling](../patterns/scaling.md)                                                                        |
 
 > [!tip] Exam Tip
 > Pattern-match: *"check the host underneath"* → **System status check**. *"check the OS inside"* → **Instance status check**. *"automated heal that preserves the same IP"* → **Recover** (auto recovery), not Stop/Start. *"automated heal that survives AZ failure"* → ❌ not auto recovery — you need a **multi-AZ fleet behind a load balancer**. *"alarm fires after 5 minutes of failed checks"* → standard Status Check Alarm trigger. *"notify the team when an instance becomes unhealthy"* → **CloudWatch Status Check Alarm + SNS**.
@@ -1554,13 +1557,13 @@ One hostname works everywhere; **intra-VPC traffic stays private** (never hairpi
 | "Multiple ENIs on different subnets"                                       | Allowed only if those subnets are in the **same AZ**                                                             |
 | "Move the licence with the server when I replace it"                       | **Secondary ENI** with the MAC-bound licence + re-attach on the replacement                                      |
 | "Stable public IPv4 across stop/start"                                     | **Elastic IP** (EIP)                                                                                             |
-| "Detached my EIP and the original public IP came back"                     | ❌ Wrong — a **new, different** dynamic public IP is assigned; the original is lost                               |
+| "Detached my EIP and the original public IP came back"                     | Wrong — a **new, different** dynamic public IP is assigned; the original is lost                                 |
 | "Public IP changed after rebooting"                                        | Likely a **Stop/Start in disguise** — reboot preserves the auto public IPv4                                      |
 | "Internal DNS name doesn't resolve from on-prem"                           | `ip-…ec2.internal` is **VPC-only**; use Route 53 Resolver inbound endpoints or split-view PHZ for hybrid         |
 | "Public DNS name resolves to a private IP from inside the VPC"             | **Split-horizon DNS** — intended behaviour                                                                       |
 | "Apps in two peered VPCs connect via public DNS — does traffic leave AWS?" | **No** — split-horizon DNS resolves to the **private IP** on both sides                                          |
 | "EC2 acting as a NAT instance drops packets"                               | **Source/destination check** is still enabled — disable it on the NAT instance's ENI                             |
-| "Configure the public IPv4 inside the guest OS"                            | ❌ Not possible — public IPv4 is invisible to the OS; only IPv6 is OS-visible                                     |
+| "Configure the public IPv4 inside the guest OS"                            | Not possible — public IPv4 is invisible to the OS; only IPv6 is OS-visible                                       |
 | "Cannot SSH after stop/start, OS firewall unchanged"                       | New auto public IPv4 was assigned — update your SSH target (or attach an **EIP** for stability)                  |
 | "Need every existing public IP to remain forever"                          | **Allocate an EIP** *before* detaching anything — otherwise the dynamic IP is permanently lost on first EIP swap |
 
@@ -1593,19 +1596,19 @@ See [EC2 — Instance Metadata Service (IMDS)](../services/ec2.md#instance-metad
 
 #### IMDS cheat sheet
 
-| Keyword in the question                                         | Answer                                                                                                                   |
-| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| The metadata service URL                                        | **`http://169.254.169.254/latest/meta-data/`**                                                                           |
-| "Code on the instance needs its public IPv4"                    | **IMDS** — `meta-data/public-ipv4`                                                                                       |
-| "App on EC2 needs to call S3 without storing access keys"       | **IAM role on the instance + SDK reads creds from IMDS** at `iam/security-credentials/<role>`                            |
-| "Bootstrap script needs to read the user-data passed at launch" | `http://169.254.169.254/latest/user-data/`                                                                               |
-| "Pulled credentials from the metadata service via SSRF"         | The **Capital One** pattern — IMDSv1 vulnerability; fix is **enforce IMDSv2**                                            |
-| "Mitigate SSRF against the metadata service"                    | **`HttpTokens=required`** (forces IMDSv2 session-token handshake)                                                        |
-| "Block all metadata access from inside the OS"                  | Local OS firewall rule blocking `169.254.169.254` — per-instance, high-overhead; IMDSv2 is the real answer               |
-| "Metadata service uses TLS"                                     | ❌ No — IMDS is **plain HTTP** over link-local. Confidentiality comes from the local-only addressing, not from encryption |
-| "169.254.169.254 reachable from outside the instance"           | ❌ No — link-local; never leaves the instance                                                                             |
-| "Same IP address for IMDS in `us-east-1` and `ap-southeast-2`"  | ✅ Yes — link-local, identical on every instance everywhere                                                               |
-| "Which Amazon Linux requires IMDSv2 by default"                 | **AL2023** (`imds-support=v2.0`, IMDSv1 disabled). **AL2** defaults to `optional` (both enabled)                         |
+| Keyword in the question                                         | Answer                                                                                                                 |
+| --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| The metadata service URL                                        | **`http://169.254.169.254/latest/meta-data/`**                                                                         |
+| "Code on the instance needs its public IPv4"                    | **IMDS** — `meta-data/public-ipv4`                                                                                     |
+| "App on EC2 needs to call S3 without storing access keys"       | **IAM role on the instance + SDK reads creds from IMDS** at `iam/security-credentials/<role>`                          |
+| "Bootstrap script needs to read the user-data passed at launch" | `http://169.254.169.254/latest/user-data/`                                                                             |
+| "Pulled credentials from the metadata service via SSRF"         | The **Capital One** pattern — IMDSv1 vulnerability; fix is **enforce IMDSv2**                                          |
+| "Mitigate SSRF against the metadata service"                    | **`HttpTokens=required`** (forces IMDSv2 session-token handshake)                                                      |
+| "Block all metadata access from inside the OS"                  | Local OS firewall rule blocking `169.254.169.254` — per-instance, high-overhead; IMDSv2 is the real answer             |
+| "Metadata service uses TLS"                                     | No — IMDS is **plain HTTP** over link-local. Confidentiality comes from the local-only addressing, not from encryption |
+| "169.254.169.254 reachable from outside the instance"           | No — link-local; never leaves the instance                                                                             |
+| "Same IP address for IMDS in `us-east-1` and `ap-southeast-2`"  | Yes — link-local, identical on every instance everywhere                                                               |
+| "Which Amazon Linux requires IMDSv2 by default"                 | **AL2023** (`imds-support=v2.0`, IMDSv1 disabled). **AL2** defaults to `optional` (both enabled)                       |
 
 > [!tip] Exam Tip
 > Pattern-match: *"discover own public IPv4 from inside the instance"* → **IMDS** at `meta-data/public-ipv4`. *"SDK on EC2 obtains credentials"* → **IAM role + IMDS** (no static keys). *"SSRF stole the role credentials from metadata"* → **enforce IMDSv2** (`HttpTokens=required`). *"the metadata endpoint URL"* → **`http://169.254.169.254/latest/meta-data/`** — memorize verbatim.
@@ -1640,7 +1643,7 @@ See [EC2 — AMI](../services/ec2.md#ami--amazon-machine-image) for full details
 | "Same OS, different AMI IDs across regions"      | Yes — AMIs are **regional**; same OS gets a distinct AMI ID in each region                                                                |
 | "Move an AMI to another region"                  | **`aws ec2 copy-image`** — copies the underlying snapshots; permissions reset to Private                                                  |
 | "Move an AMI to another AZ"                      | **No action needed** — an AMI deploys to any AZ in its home region                                                                        |
-| "Modify an existing AMI"                         | ❌ Not possible — launch from it, configure, capture a **new** AMI                                                                         |
+| "Modify an existing AMI"                         | Not possible — launch from it, configure, capture a **new** AMI                                                                           |
 | "Share AMI with a specific AWS account"          | **Explicit** permission with that account's ID                                                                                            |
 | "Share AMI with everyone"                        | **Public** permission — also the model for AWS-provided base images                                                                       |
 | "Default AMI permission"                         | **Private** (owner-only)                                                                                                                  |
@@ -2066,13 +2069,13 @@ There are **two** Multi-AZ architectures — both **in-region HA only** (not DR)
 
 Two mechanisms, both stored in **AWS-managed [S3](../services/s3.md)** (regionally resilient; **invisible in your own S3 console** — exam trap):
 
-|              | Manual snapshot                                                        | Automated backup                                                   |
-| ------------ | ---------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| Trigger      | **You** (or a script)                                                  | **RDS, once/day** in a backup window                               |
-| Extra stream | None                                                                   | **Transaction logs every 5 min**                                   |
-| Retention    | **Never expires** — manual delete only; **survives instance deletion** | **0–35 days** (0 = disabled)                                       |
-| PITR         | ❌ restores only to its **fixed moment**                                | ✅ **~5-min Recovery Point Objective (RPO)** point-in-time recovery |
-| Scope        | **Instance-level** (all DBs)                                           | Instance-level                                                     |
+|              | Manual snapshot                                                        | Automated backup                                                       |
+| ------------ | ---------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Trigger      | **You** (or a script)                                                  | **RDS, once/day** in a backup window                                   |
+| Extra stream | None                                                                   | **Transaction logs every 5 min**                                       |
+| Retention    | **Never expires** — manual delete only; **survives instance deletion** | **0–35 days** (0 = disabled)                                           |
+| PITR         | No — restores only to its **fixed moment**                             | Yes — **~5-min Recovery Point Objective (RPO)** point-in-time recovery |
+| Scope        | **Instance-level** (all DBs)                                           | Instance-level                                                         |
 
 - **First snapshot is full, the rest incremental** — true for **both** manual snapshots **and** automated backups (AWS treats an automated backup as an automated snapshot)
 - **PITR works** by restoring the closest snapshot then **replaying transaction logs** to the chosen time — so it requires automated backups; a manual snapshot alone can't do it
@@ -2903,14 +2906,14 @@ See [Registrar vs DNS Hosting](../services/route53.md#registrar-vs-dns-hosting-i
 
 See [DNS — Record Types](../concepts/dns.md#dns-record-types) for full details and diagrams.
 
-| Record    | Maps / does                                                     | Trigger keywords                                             |
-| --------- | --------------------------------------------------------------- | ------------------------------------------------------------ |
-| **NS**    | Delegation — parent zone points at the child zone's nameservers | "delegation", "points at the servers hosting the zone"       |
-| **A**     | Hostname to **IPv4**                                            | "hostname to IPv4"                                           |
-| **AAAA**  | Hostname to **IPv6**                                            | "hostname to IPv6"                                           |
-| **CNAME** | Host to **another host (name)**                                 | "alias", "shortcut", "reduce admin overhead" — ⚠️ never an IP |
-| **MX**    | Find the **mail server (SMTP)** for a domain                    | "mail server", "email delivery"                              |
-| **TXT**   | Arbitrary text on a domain                                      | "prove domain ownership", "verification", "SPF / anti-spam"  |
+| Record    | Maps / does                                                     | Trigger keywords                                               |
+| --------- | --------------------------------------------------------------- | -------------------------------------------------------------- |
+| **NS**    | Delegation — parent zone points at the child zone's nameservers | "delegation", "points at the servers hosting the zone"         |
+| **A**     | Hostname to **IPv4**                                            | "hostname to IPv4"                                             |
+| **AAAA**  | Hostname to **IPv6**                                            | "hostname to IPv6"                                             |
+| **CNAME** | Host to **another host (name)**                                 | "alias", "shortcut", "reduce admin overhead" — **never** an IP |
+| **MX**    | Find the **mail server (SMTP)** for a domain                    | "mail server", "email delivery"                                |
+| **TXT**   | Arbitrary text on a domain                                      | "prove domain ownership", "verification", "SPF / anti-spam"    |
 
 - **CNAME → name only, never an IP**, and never at the **zone apex** — use a Route 53 **Alias** for the apex case
 - **MX: lower priority number = higher priority** (tried first). A value with **no trailing dot** is a host inside the same zone (`mail` means `mail.example.com`); a value **with a trailing dot** is an FQDN that can point to an external provider (Office 365, etc.). The host name itself is arbitrary
@@ -3460,8 +3463,34 @@ See [Amazon GuardDuty](../services/guardduty.md) for the architecture diagram, p
 > | Enable and manage GuardDuty for every account, including new ones | Delegated administrator in Organizations, auto-enable |
 > | Detect suspicious S3 data access or mass deletions | GuardDuty S3 Protection |
 > | Software vulnerabilities on EC2 or container images | Amazon Inspector, not GuardDuty |
-> | Personal data stored in S3 | Amazon Macie, not GuardDuty |
+> | Personal data stored in S3 | [Amazon Macie](../services/macie.md), not GuardDuty |
 > | Resource misconfiguration against a standard | AWS Config, not GuardDuty |
+
+## Amazon Macie
+
+See [Amazon Macie](../services/macie.md) for the architecture diagram, data identifier options, finding types, and pricing.
+
+- **What it is:** a **data security and data privacy** service that discovers, monitors, and protects data in **[S3](../services/s3.md) only**. It finds PII, PHI, financial data, and credentials inside objects.
+- **Two kinds of work:** bucket inventory and monitoring (bucket **settings**, giving **policy findings**) and sensitive data discovery (object **contents**, giving **sensitive data findings**).
+- **Discovery:** **automated sensitive data discovery** samples objects continuously and gives each bucket a sensitivity score. **Discovery jobs** run once or on a daily, weekly, or monthly schedule against buckets you choose. Jobs cannot be edited; copy one to change it.
+- **Managed data identifiers:** built in and maintained by AWS; machine learning and pattern matching; credentials, financial, PII, and PHI.
+- **Custom data identifiers:** your own **regex** (for example `[A-Z]-\d{8}` for an employee ID), plus optional **keywords**, **maximum match distance** (default 50 characters), and **ignore words**. They cannot be changed after creation. **Allow lists** tell Macie which text to ignore.
+- **Policy findings:** `S3BlockPublicAccessDisabled`, `S3BucketEncryptionDisabled` (default encryption reset to SSE-S3; S3 always encrypts new objects), `S3BucketPublic`, `S3BucketSharedExternally`, `S3BucketReplicatedExternally`, `S3BucketSharedWithCloudFront`. Only changes made after Macie is enabled.
+- **Sensitive data findings:** `S3Object/Credentials`, `CustomIdentifier`, `Financial`, `Personal`, `Multiple` (more than one category in one object).
+- **Encryption:** Macie reads SSE-S3 and AWS managed KMS keys; a **customer managed KMS key** needs a key policy that lets Macie's service-linked role decrypt. SSE-C and client-side encrypted objects cannot be analyzed.
+- **Response:** every finding goes to [EventBridge](../services/eventbridge.md) automatically, then **Lambda** to remediate or **SNS** to notify. **Security Hub CSPM** gets policy findings by default; sensitive data findings are optional.
+- **Multi-account:** administrator and members through an [Organizations](../services/organizations.md) delegated administrator (10,000 members, recommended) or invitations (1,000).
+- **Regional;** findings kept 90 days. **Detective, not preventative.**
+
+> [!tip] Exam Tip
+>
+> | Requirement | Answer |
+> | --- | --- |
+> | Discover and classify PII, PHI, or financial data in S3 | Macie |
+> | Find a company-specific pattern, such as employee IDs, in S3 | Macie custom data identifier (regex) |
+> | Automatically respond when sensitive data is found | Macie finding to EventBridge, then Lambda |
+> | Detect malicious access to S3 data | GuardDuty S3 Protection, not Macie |
+> | Sensitive data outside S3 (RDS, EBS) | Not Macie; it analyzes S3 only |
 
 ## Key Service Properties to Memorize
 
@@ -3477,6 +3506,7 @@ See [Amazon GuardDuty](../services/guardduty.md) for the architecture diagram, p
 | [KMS](../services/kms.md) key                       | Regional (single-region by default; multi-region keys are a separate feature)                                          |
 | [CloudHSM](../services/cloudhsm.md) HSM             | AZ-specific (each HSM and its ENI sit in one AZ; spread a cluster across AZs for HA)                                   |
 | [MSK](../services/msk.md) cluster                   | Regional; brokers spread across two or three AZs (Express brokers always use three)                                    |
+| [Macie](../services/macie.md)                       | Regional (enable in each Region; findings and settings are per Region)                                                 |
 | [SSM Parameter Store](../services/ssm.md) parameter | Regional (multi-AZ within Region; no cross-Region replication)                                                         |
 | [CloudTrail](../services/cloudtrail.md) trail       | Regional (all-regions trail spans every region; global service events → `us-east-1`)                                   |
 | [DMS](../services/dms.md)                           | Regional; DMS Standard replication instances are placed in VPC subnets, while DMS Serverless hides instance management |
