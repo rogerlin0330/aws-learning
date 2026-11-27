@@ -3,7 +3,7 @@ title: VPC — Virtual Private Cloud
 type: service
 tags: [vpc, networking, subnets, route-tables, internet-gateway, nacl, security-groups, nat-gateway, private-link, dns]
 certs: [aws-saa]
-updated: 2026-11-05
+updated: 2026-11-26
 ---
 
 # VPC — Virtual Private Cloud
@@ -84,7 +84,7 @@ A typical VPC subnet design uses tiers (WEB, APP, DB, Spare) across AZs, each ti
 
 - Every subnet is associated with a route table that controls where traffic is directed.
 - The VPC router (at `network + 1`) handles inter-subnet and egress routing.
-- Route tables are the configuration the VPC router (at `network + 1`) reads — editing routes or subnet associations changes the router's forwarding behavior immediately; the router itself is never directly configured. Route targets (IGW, NAT gateway, [VPC peering](vpc-peering.md), Transit Gateway) tell the router where to hand packets off next; a peering connection is not a gateway appliance.
+- Route tables are the configuration the VPC router (at `network + 1`) reads — editing routes or subnet associations changes the router's forwarding behavior immediately; the router itself is never directly configured. Route targets (IGW, NAT gateway, [VPC peering](vpc-peering.md), [virtual private gateway](site-to-site-vpn.md), Transit Gateway) tell the router where to hand packets off next; a peering connection is not a gateway appliance.
 - Route tables operate at **Layer 3 only** — they deal purely with IP destinations and next hops; no awareness of ports or protocols.
 - **A subnet can only be associated with 1 route table at a time, but you can associate multiple subnets with the same subnet route table.** ([AWS docs: Subnet route tables](https://docs.aws.amazon.com/vpc/latest/userguide/subnet-route-tables.html))
 
@@ -326,6 +326,10 @@ The packet translation steps are the same for both zonal and regional:
 ## VPC Gateway Endpoints
 
 [VPC Gateway Endpoints](vpc-gateway-endpoints.md) provide route-table-based access to [S3](s3.md) and DynamoDB without an internet gateway, NAT device, or public client IP. AWS adds a service-prefix-list destination pointing to the endpoint in each selected route table. The endpoint is highly available across AZs, serves its own Region, and cannot be extended to clients outside its VPC. The dedicated page includes before/after architecture diagrams, editable Excalidraw diagram, endpoint versus bucket policies, and configuration checks.
+
+## Site-to-Site VPN
+
+[AWS Site-to-Site VPN](site-to-site-vpn.md) connects a VPC to an on-premises or other outside network over two [IPsec](../concepts/ipsec-vpn.md) tunnels. On the AWS side, a **virtual private gateway** attached to the VPC (or a transit gateway) terminates the tunnels. Subnet route tables need routes for the on-premises prefixes targeting that gateway, added statically or by **route propagation**. Routes are exchanged statically or with [BGP](../concepts/bgp.md). The dedicated page covers the high-availability design, routing priority, bandwidth limits, and the relationship with Direct Connect.
 
 ## AWS PrivateLink
 

@@ -85,7 +85,7 @@ Network reachability scanning checks whether TCP and UDP ports on your instances
 
 - The internet, through an [internet gateway](vpc.md#internet-gateway-igw)
 - Another VPC, through a [VPC peering connection](vpc-peering.md)
-- An on-premises network, through a VPN connection on a virtual private gateway
+- An on-premises network, through a [VPN connection](site-to-site-vpn.md) on a virtual private gateway
 
 Key facts:
 

@@ -414,9 +414,14 @@ tags:
   - macie
   - sensitive-data
   - data-identifiers
+  - site-to-site-vpn
+  - ipsec
+  - bgp
+  - virtual-private-gateway
+  - customer-gateway
 certs:
   - aws-saa
-updated: 2026-11-23
+updated: 2026-11-26
 ---
 
 # AWS Solutions Architect Associate (SAA-C03)
@@ -1171,6 +1176,34 @@ See [VPC Interface Endpoints](../services/vpc-interface-endpoints.md) and its [g
 - Default VPC CIDR: `172.31.0.0/16` — avoid in production
 - 5 reserved IPs per subnet: network, router (+1), DNS (+2), reserved (+3), broadcast (last)
 - `enableDnsHostnames` = false by default on custom VPCs; set to true to get public DNS names
+
+### Site-to-Site VPN
+
+See [AWS Site-to-Site VPN](../services/site-to-site-vpn.md) for the architecture and HA diagrams, routing details, bandwidth options, and pricing. The protocols underneath are on [IPsec VPN Fundamentals](../concepts/ipsec-vpn.md) and [BGP](../concepts/bgp.md).
+
+- **What it is:** an IPsec-encrypted connection between a [VPC](../services/vpc.md) and an outside network, normally over the public internet. Quick to set up, in hours or less, because it is all software.
+- **Components:** a **virtual private gateway (VGW)** attached to 1 VPC (or a transit gateway for many VPCs), a **customer gateway (CGW)** that records your router's static public IP (and ASN for BGP), and a **VPN connection** linking them. Each VPN connection has **2 tunnels** to AWS endpoints in **different AZs**.
+- **HA:** the AWS side is already highly available. Your router is the **single point of failure**. Full HA needs a second router, internet line, and building, with a second VPN connection, for 4 tunnels in total. Configure **both** tunnels on every device, because AWS maintains endpoints one tunnel at a time.
+- **Static vs dynamic:** static routing works with any IPsec device. Dynamic routing uses **BGP** (TCP 179, private ASNs 64512–65534) and is required for ECMP, multiple connections, and Direct Connect backup. **Route propagation** adds VPN routes to VPC route tables for both types.
+- **IPsec basics:** IKE Phase 1 (slow: authenticate with a pre-shared key or certificate, then Diffie-Hellman) creates the IKE SA. IKE Phase 2 (fast) agrees on ciphers and keys and creates a pair of IPsec SAs. AWS VPN is **route-based**: 1 SA pair per tunnel.
+- **Bandwidth:** **1.25 Gbps per tunnel**. A VGW sends AWS-to-customer traffic over 1 tunnel and has no ECMP. For more, use a transit gateway with ECMP (BGP required), Large Bandwidth Tunnels (5 Gbps, transit gateway or Cloud WAN only), or Direct Connect.
+- **Latency:** varies with the internet path. Accelerated Site-to-Site VPN uses Global Accelerator and needs a transit gateway.
+- **Cost:** per VPN connection-hour plus data transfer out, and your own internet costs and data caps.
+- **With Direct Connect:** use a VPN while Direct Connect is being provisioned, as its **backup** (the Direct Connect route wins for the same prefix), or **over** it to add encryption (Private IP VPN).
+
+> [!tip] Exam Tip
+>
+> | Requirement | Answer |
+> | --- | --- |
+> | Connect an office to a VPC quickly, encrypted, over the internet | Site-to-Site VPN |
+> | Remove the single point of failure in a VPN design | A second customer gateway device and VPN connection |
+> | On-premises router does not support BGP | Static routing |
+> | Automatic route exchange, failover across connections, ECMP | Dynamic routing with BGP |
+> | Add on-premises routes to VPC route tables automatically | Enable route propagation |
+> | More than 1.25 Gbps over VPN | Transit gateway with ECMP, or Large Bandwidth Tunnels |
+> | Consistent low latency or high throughput | Direct Connect, not VPN |
+> | Cheap backup for Direct Connect | Site-to-Site VPN |
+> | Encrypt traffic over Direct Connect | IPsec VPN over Direct Connect |
 
 ## EC2
 
@@ -3519,23 +3552,24 @@ See [Amazon Inspector](../services/inspector.md) for scan methods, finding detai
 
 ## Key Service Properties to Memorize
 
-| Service                                             | Resilience level                                                                                                       |
-| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| [IAM](../services/iam.md)                           | Global                                                                                                                 |
-| [VPC](../services/vpc.md)                           | Regional                                                                                                               |
-| IGW                                                 | Regional                                                                                                               |
-| Subnet                                              | AZ-specific                                                                                                            |
-| NAT GW                                              | Zonal (need one per AZ for HA)                                                                                         |
-| [EC2](../services/ec2.md) instance                  | AZ-specific                                                                                                            |
-| [S3](../services/s3.md) bucket                      | Regional (globally unique name)                                                                                        |
-| [KMS](../services/kms.md) key                       | Regional (single-region by default; multi-region keys are a separate feature)                                          |
-| [CloudHSM](../services/cloudhsm.md) HSM             | AZ-specific (each HSM and its ENI sit in one AZ; spread a cluster across AZs for HA)                                   |
-| [MSK](../services/msk.md) cluster                   | Regional; brokers spread across two or three AZs (Express brokers always use three)                                    |
-| [Macie](../services/macie.md)                       | Regional (enable in each Region; findings and settings are per Region)                                                 |
-| [Inspector](../services/inspector.md)               | Regional (activate scan types and designate the delegated administrator in each Region)                                |
-| [SSM Parameter Store](../services/ssm.md) parameter | Regional (multi-AZ within Region; no cross-Region replication)                                                         |
-| [CloudTrail](../services/cloudtrail.md) trail       | Regional (all-regions trail spans every region; global service events → `us-east-1`)                                   |
-| [DMS](../services/dms.md)                           | Regional; DMS Standard replication instances are placed in VPC subnets, while DMS Serverless hides instance management |
+| Service                                                 | Resilience level                                                                                                                   |
+| ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| [IAM](../services/iam.md)                               | Global                                                                                                                             |
+| [VPC](../services/vpc.md)                               | Regional                                                                                                                           |
+| IGW                                                     | Regional                                                                                                                           |
+| Subnet                                                  | AZ-specific                                                                                                                        |
+| NAT GW                                                  | Zonal (need one per AZ for HA)                                                                                                     |
+| [EC2](../services/ec2.md) instance                      | AZ-specific                                                                                                                        |
+| [S3](../services/s3.md) bucket                          | Regional (globally unique name)                                                                                                    |
+| [KMS](../services/kms.md) key                           | Regional (single-region by default; multi-region keys are a separate feature)                                                      |
+| [CloudHSM](../services/cloudhsm.md) HSM                 | AZ-specific (each HSM and its ENI sit in one AZ; spread a cluster across AZs for HA)                                               |
+| [MSK](../services/msk.md) cluster                       | Regional; brokers spread across two or three AZs (Express brokers always use three)                                                |
+| [Macie](../services/macie.md)                           | Regional (enable in each Region; findings and settings are per Region)                                                             |
+| [Inspector](../services/inspector.md)                   | Regional (activate scan types and designate the delegated administrator in each Region)                                            |
+| [Site-to-Site VPN](../services/site-to-site-vpn.md) VGW | Regional; each VPN connection has 2 tunnel endpoints in different AZs (your customer gateway is the usual single point of failure) |
+| [SSM Parameter Store](../services/ssm.md) parameter     | Regional (multi-AZ within Region; no cross-Region replication)                                                                     |
+| [CloudTrail](../services/cloudtrail.md) trail           | Regional (all-regions trail spans every region; global service events → `us-east-1`)                                               |
+| [DMS](../services/dms.md)                               | Regional; DMS Standard replication instances are placed in VPC subnets, while DMS Serverless hides instance management             |
 
 ## Common Exam Traps
 

@@ -1,14 +1,14 @@
 ---
 title: Networking Concepts
 type: concept
-tags: [networking, eni, elastic-network-interface, osi, firewall, layer-7-firewall, waf, ephemeral-ports, ip-addresses, routing]
+tags: [networking, eni, elastic-network-interface, osi, firewall, layer-7-firewall, waf, ephemeral-ports, ip-addresses, routing, hybrid-networking, vpn, ipsec, bgp]
 certs: [aws-saa]
-updated: 2026-11-13
+updated: 2026-11-26
 ---
 
 # Networking Concepts
 
-Cross-cutting networking ideas that span multiple AWS services. The foundational service is [VPC](../services/vpc.md); [EC2](../services/ec2.md) instances (and other resources) run inside it. For name resolution see [DNS](dns.md); for encrypted transport see [TLS/HTTPS](tls-https.md).
+Cross-cutting networking ideas that span multiple AWS services. The foundational service is [VPC](../services/vpc.md); [EC2](../services/ec2.md) instances (and other resources) run inside it. For name resolution see [DNS](dns.md); for encrypted transport see [TLS/HTTPS](tls-https.md); for connecting on-premises networks see [Hybrid Connectivity](#hybrid-connectivity-vpn-and-bgp).
 
 ## Elastic Network Interfaces (ENIs)
 
@@ -106,6 +106,16 @@ Traffic flows through these components in order:
 
 Peering also does not share a peer's internet/NAT gateway, VPN, Direct Connect connection, or [gateway endpoint](../services/vpc-gateway-endpoints.md). For centralized transit, evaluate a dedicated routing service such as [AWS Transit Gateway](https://docs.aws.amazon.com/vpc/latest/tgw/what-is-transit-gateway.html). Separately configure [DNS](dns.md) visibility: a route to a private IP does not automatically expose the destination's private hosted zone.
 
+## Hybrid Connectivity: VPN and BGP
+
+Connecting an on-premises network to a VPC raises three separate questions, and each has its own page:
+
+1. **How is the traffic protected on the way?** An [IPsec](ipsec-vpn.md) tunnel encrypts it across the public internet. IKE Phase 1 authenticates the two peers and agrees on a key; Phase 2 builds the security associations that carry the data.
+2. **How does each side learn the other's networks?** Either you type the routes in (static routing), or the two sides exchange them with [BGP](bgp.md) (dynamic routing). BGP also notices when a path fails and withdraws its routes.
+3. **Which AWS product terminates the connection?** [AWS Site-to-Site VPN](../services/site-to-site-vpn.md) builds two IPsec tunnels from a virtual private gateway or transit gateway to your customer gateway device. AWS Direct Connect is a private physical link instead of the internet. A Site-to-Site VPN can back it up or encrypt traffic over it.
+
+The VPC side still follows the [routing hierarchy](#routing-hierarchy) above. Routes for the on-premises networks must reach the subnet route tables, by static entries or by route propagation, and security groups and NACLs must still allow the traffic.
+
 ## Internet Connectivity Patterns
 
 | Scenario                                         | Solution                                                                                         |
@@ -164,3 +174,6 @@ When a client connects to a server, the OS assigns a random **ephemeral (source)
 - [AWS WAF](../services/waf.md)
 - [AWS Shield](../services/shield.md)
 - Adrian Cantrill, AWS Certified Solutions Architect – Associate (SAA-C03): "Application Layer (L7) Firewall"
+- [IPsec VPN Fundamentals](ipsec-vpn.md)
+- [BGP](bgp.md)
+- [AWS Site-to-Site VPN](../services/site-to-site-vpn.md)

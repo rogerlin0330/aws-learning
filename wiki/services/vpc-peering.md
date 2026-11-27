@@ -8,20 +8,20 @@ updated: 2026-11-05
 
 # VPC Peering
 
-VPC peering connects **two [VPCs](vpc.md)** so their resources can communicate using private IPv4 or IPv6 addresses. The VPCs can belong to the same or different accounts and Regions. For example, an application in one VPC can connect to a database's private address in another without an internet gateway, NAT gateway, or VPN. [Routing and firewalls](../concepts/networking.md) still determine which resources can communicate.
+VPC peering connects **two [VPCs](vpc.md)** so their resources can communicate using private IPv4 or IPv6 addresses. The VPCs can belong to the same or different accounts and Regions. For example, an application in one VPC can connect to a database's private address in another without an internet gateway, NAT gateway, or [VPN](site-to-site-vpn.md). [Routing and firewalls](../concepts/networking.md) still determine which resources can communicate.
 
 ## Connection Model and Scope
 
 Each connection represents one VPC pair and has a `pcx-...` ID. AWS implements it in the existing VPC infrastructure: there is no gateway appliance to deploy, size, or duplicate in each AZ. Peering itself has no single point of failure; application availability still depends on the resources at each end. ([AWS peering overview](https://docs.aws.amazon.com/vpc/latest/peering/what-is-vpc-peering.html))
 
-| Property | What it means in practice |
-| --- | --- |
-| Exactly two VPCs per connection | A–B peering connects A and B. Connecting A to C requires another connection. |
-| Same or different accounts | One owner requests the connection; the other accepts it. Each owner manages their own routes and security rules. |
-| Same or different Regions | Cross-Region peering uses AWS's global backbone without traversing the public internet. |
-| Non-overlapping address space | A `10.16.0.0/16` VPC can peer with `10.17.0.0/16`; it cannot peer with `10.16.128.0/17`, which overlaps. Check secondary CIDRs too. |
-| No automatic routes | Accepting the connection does not add remote-network routes to either VPC. |
-| No connection creation charge | Same-AZ peering data transfer is free, including across accounts; cross-AZ and cross-Region transfer charges apply. |
+| Property                        | What it means in practice                                                                                                           |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Exactly two VPCs per connection | A–B peering connects A and B. Connecting A to C requires another connection.                                                        |
+| Same or different accounts      | One owner requests the connection; the other accepts it. Each owner manages their own routes and security rules.                    |
+| Same or different Regions       | Cross-Region peering uses AWS's global backbone without traversing the public internet.                                             |
+| Non-overlapping address space   | A `10.16.0.0/16` VPC can peer with `10.17.0.0/16`; it cannot peer with `10.16.128.0/17`, which overlaps. Check secondary CIDRs too. |
+| No automatic routes             | Accepting the connection does not add remote-network routes to either VPC.                                                          |
+| No connection creation charge   | Same-AZ peering data transfer is free, including across accounts; cross-AZ and cross-Region transfer charges apply.                 |
 
 ## Non-Transitive Routing
 
@@ -40,15 +40,15 @@ For all three VPCs to communicate directly, add A–C peering and its routes and
 
 Use the remote destination CIDR and the corresponding peering connection as the target. These are illustrative connection IDs, not IDs to paste into AWS:
 
-| Route table serving workloads in | Destination | Target | Purpose |
-| --- | --- | --- | --- |
-| A | `10.16.0.0/16` | `local` | A's own network |
-| A | `10.17.0.0/16` | `pcx-<a-b>` | A → B |
-| B | `10.17.0.0/16` | `local` | B's own network |
-| B | `10.16.0.0/16` | `pcx-<a-b>` | B → A, including replies |
-| B | `10.18.0.0/16` | `pcx-<b-c>` | B → C |
-| C | `10.18.0.0/16` | `local` | C's own network |
-| C | `10.17.0.0/16` | `pcx-<b-c>` | C → B, including replies |
+| Route table serving workloads in | Destination    | Target      | Purpose                  |
+| -------------------------------- | -------------- | ----------- | ------------------------ |
+| A                                | `10.16.0.0/16` | `local`     | A's own network          |
+| A                                | `10.17.0.0/16` | `pcx-<a-b>` | A → B                    |
+| B                                | `10.17.0.0/16` | `local`     | B's own network          |
+| B                                | `10.16.0.0/16` | `pcx-<a-b>` | B → A, including replies |
+| B                                | `10.18.0.0/16` | `pcx-<b-c>` | B → C                    |
+| C                                | `10.18.0.0/16` | `local`     | C's own network          |
+| C                                | `10.17.0.0/16` | `pcx-<b-c>` | C → B, including replies |
 
 For example, A's client `10.16.1.10` sends to B's server `10.17.2.20` using A's B-CIDR route. The server replies using B's A-CIDR route. A missing return route breaks the exchange even when the forward route is correct.
 
@@ -58,11 +58,11 @@ Update the [route tables associated with the participating subnets](vpc.md#route
 
 [Security groups](vpc.md#security-groups-sg) must permit client egress and server ingress for the intended protocol and port. Their stateful handling permits tracked response traffic. [NACLs](vpc.md#network-acl-nacl) are stateless: check both subnet boundaries in both directions, including client ephemeral ports for TCP replies.
 
-| Peering placement | How to identify permitted peer workloads in a security-group rule |
-| --- | --- |
-| Same Region, same account | Reference the peer workload's security group, such as `sg-...`. |
-| Same Region, different accounts | Reference the peer account and group, such as `123456789012/sg-...`. |
-| Different Regions | Use the appropriate private IP/CIDR; cross-Region peer security-group references are unsupported. |
+| Peering placement               | How to identify permitted peer workloads in a security-group rule                                 |
+| ------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Same Region, same account       | Reference the peer workload's security group, such as `sg-...`.                                   |
+| Same Region, different accounts | Reference the peer account and group, such as `123456789012/sg-...`.                              |
+| Different Regions               | Use the appropriate private IP/CIDR; cross-Region peer security-group references are unsupported. |
 
 For example, B's database group can allow inbound TCP 5432 from A's application group when both VPCs are in the same Region. The reference identifies workloads associated with that group; it does not copy the group's rules or create routes. The peering connection must be active. ([AWS peer security-group rules](https://docs.aws.amazon.com/vpc/latest/peering/vpc-peering-security-groups.html))
 
